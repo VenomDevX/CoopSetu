@@ -1,12 +1,20 @@
-# ⚡ Handoff
+<p align="center">
+  <img src="public/logo.png" alt="Handoff Logo" width="120" height="120" />
+</p>
 
-Handoff brings projects, sprints, teams, releases, documentation, compliance, and AI intelligence into one hyper-structured, high-performance workspace. Designed for engineering and product teams to sync seamlessly.
+<h1 align="center">Handoff</h1>
 
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-Database%20%26%20Auth-blueviolet?style=flat-square&logo=supabase)](https://supabase.com/)
-[![Gemini](https://img.shields.io/badge/Google%20Gemini-AI%20Assistant-blue?style=flat-square&logo=google-gemini)](https://ai.google.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
+<p align="center">
+  Handoff brings projects, sprints, teams, releases, documentation, compliance, and AI intelligence into one hyper-structured, high-performance workspace. Designed for engineering and product teams to sync seamlessly.
+</p>
+
+<p align="center">
+  <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js" alt="Next.js" /></a>
+  <a href="https://supabase.com/"><img src="https://img.shields.io/badge/Supabase-Database%20%26%20Auth-blueviolet?style=flat-square&logo=supabase" alt="Supabase" /></a>
+  <a href="https://ai.google.dev/"><img src="https://img.shields.io/badge/Google%20Gemini-AI%20Assistant-blue?style=flat-square&logo=google-gemini" alt="Gemini" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript" alt="TypeScript" /></a>
+  <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?style=flat-square&logo=tailwind-css" alt="Tailwind CSS" /></a>
+</p>
 
 ---
 
