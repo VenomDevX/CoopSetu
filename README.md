@@ -1,4 +1,4 @@
-<h1 align="center"><img src="public/logo-dark.png" alt="Handoff Logo" width="38" height="38" align="absmiddle" /> HANDOFF</h1>
+<h1 align="center"><sup><img src="public/logo-dark.png" alt="Handoff Logo" width="38" height="38" align="absmiddle" /></sup> HANDOFF</h1>
 
 <p align="center">
   Handoff brings projects, sprints, teams, releases, documentation, compliance, and AI intelligence into one hyper-structured, high-performance workspace. Designed for engineering and product teams to sync seamlessly.
