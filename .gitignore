@@ -11,3 +11,4 @@ coverage/
 .mcp.json
 app/page.tsx.restored
 tsconfig.tsbuildinfo
+metadata.json
