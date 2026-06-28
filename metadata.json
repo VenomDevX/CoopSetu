@@ -1,6 +1,0 @@
-{
-  "name": "HANDOFF",
-  "description": "A secure AI-powered engineering work management platform for large technology companies and enterprise teams.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
