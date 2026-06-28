@@ -113,7 +113,7 @@ create table if not exists public.organization_invites (
   email           text not null,
   role_code       text not null,
   invited_by      uuid references public.organization_members(id) on delete set null,
-  token           text not null unique default encode(gen_random_bytes(24), 'hex'),
+  token           text not null unique default replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', ''),
   status          text not null default 'PENDING'
     check (status in ('PENDING','ACCEPTED','REVOKED','EXPIRED')),
   expires_at      timestamptz not null default (now() + interval '14 days'),
