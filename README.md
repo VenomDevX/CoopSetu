@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="public/logo-dark.png" alt="Handoff Logo" width="32" height="32" align="middle" /> Handoff
+  <img src="public/logo-dark.png" alt="Handoff Logo" width="38" height="38" align="middle" /> HANDOFF
 </h1>
 
 <p align="center">
