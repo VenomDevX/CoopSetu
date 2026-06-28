@@ -1,18 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  ChevronRight, 
-  Search, 
-  Filter, 
-  Plus, 
-  Bot, 
-  GitBranch, 
-  GitPullRequest, 
-  GitCommit, 
-  Activity, 
-  Server, 
+import {
+  ChevronRight,
+  Search,
+  Filter,
+  Plus,
+  Bot,
+  GitBranch,
+  GitPullRequest,
+  GitCommit,
+  Activity,
+  Server,
   Cloud,
   Rocket,
   CheckCircle2,
@@ -24,10 +24,13 @@ import {
   ArrowRight,
   TerminalSquare,
   Box,
-  Layers
+  Layers,
+  Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
+import { DataViewport } from '@/components/layout/data-viewport';
 
 const tabs = [
   'Repositories',
@@ -38,42 +41,59 @@ const tabs = [
   'Deployments'
 ];
 
-const mockRepositories = [
-  { id: 'repo-1', name: 'payments-core', owner: 'Payments Team', branch: 'main', project: 'UPI Refund System', prs: 4, commit: 'a1b2c3d', build: 'Passing', deploy: 'Prod v2.1', health: 'Healthy' },
-  { id: 'repo-2', name: 'ledger-api', owner: 'Platform', branch: 'master', project: 'Core Engine V2', prs: 1, commit: '8f9e0a1', build: 'Failing', deploy: 'Staging', health: 'At Risk' },
-  { id: 'repo-3', name: 'mobile-ios', owner: 'Mobile Team', branch: 'main', project: 'Mobile Banking', prs: 8, commit: 'c4d5e6f', build: 'Passing', deploy: 'TestFlight', health: 'Healthy' },
-  { id: 'repo-4', name: 'auth-service', owner: 'Security', branch: 'main', project: 'Auth V2', prs: 0, commit: '7b8a9c0', build: 'Passing', deploy: 'Prod v1.8', health: 'Healthy' },
-];
 
-const mockPRs = [
-  { id: 'pr-482', title: 'feat: webhook retry engine', repo: 'payments-core', author: 'S. Chen', reviewers: ['T. Vance'], task: 'PAY-231', build: 'Passing', tests: '124/124', status: 'Open', files: 12, risk: 'Medium', created: '2h ago' },
-  { id: 'pr-485', title: 'fix: idempotency key validation', repo: 'payments-core', author: 'M. Johnson', reviewers: ['R. Gupta'], task: 'PAY-234', build: 'Passing', tests: '125/125', status: 'Approved', files: 3, risk: 'Low', created: '5h ago' },
-  { id: 'pr-102', title: 'feat: offline transaction sync', repo: 'mobile-ios', author: 'E. Wright', reviewers: [], task: 'MOB-890', build: 'Failing', tests: '89/92', status: 'Draft', files: 45, risk: 'High', created: '1d ago' },
-];
+const fmtRel = (iso?: string | null) => {
+  if (!iso) return '—';
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (m < 60) return `${m}m ago`;
+  if (m < 1440) return `${Math.floor(m / 60)}h ago`;
+  return `${Math.floor(m / 1440)}d ago`;
+};
+const cap = (s?: string) => (s ? s.charAt(0) + s.slice(1).toLowerCase() : '—');
+const PR_STATUS: Record<string, string> = { OPEN: 'Open', MERGED: 'Approved', CLOSED: 'Closed', DRAFT: 'Draft' };
+const CI_STATUS: Record<string, string> = { PASSED: 'Success', FAILED: 'Failed', RUNNING: 'Running', QUEUED: 'Queued', CANCELLED: 'Failed' };
 
-const mockCommits = [
-  { hash: 'a1b2c3d', author: 'S. Chen', branch: 'feat/webhook-retry', message: 'add exponential backoff to webhook dispatcher', task: 'PAY-231', date: '1h ago' },
-  { hash: '8f9e0a1', author: 'L. Davis', branch: 'fix/ledger-export', message: 'resolve race condition in export worker', task: 'PAY-239', date: '3h ago' },
-  { hash: 'c4d5e6f', author: 'E. Wright', branch: 'feat/offline-mode', message: 'WIP: local database schema for sync', task: 'MOB-890', date: '1d ago' },
-];
+function mapRepo(r: any) {
+  return {
+    id: r.id, name: r.name, owner: '—', branch: r.default_branch, project: '—',
+    prs: r.pull_requests?.[0]?.count ?? 0, commit: '—',
+    build: 'Passing', deploy: '—', health: r.status === 'ACTIVE' ? 'Healthy' : 'At Risk'
+  };
+}
+function mapPR(r: any) {
+  return {
+    key: r.id, id: r.external_id ?? r.id.slice(0, 8), title: r.title, repo: '—',
+    author: r.author_member_id ? 'Assigned' : '—', reviewers: [], task: r.linked_task_id ? 'Linked' : '—',
+    build: cap(r.build_status), tests: r.test_status ?? '—', status: PR_STATUS[r.status] ?? r.status,
+    files: 0, risk: r.risk_level ?? 'Low', created: fmtRel(r.opened_at)
+  };
+}
+function mapCommit(r: any) {
+  return {
+    key: r.id, hash: r.external_hash ?? r.id.slice(0, 7), author: r.author_member_id ? 'Assigned' : '—',
+    branch: r.branch ?? '—', message: r.message ?? '', task: r.linked_task_id ? 'Linked' : '—', date: fmtRel(r.committed_at)
+  };
+}
+function mapPipeline(r: any) {
+  const jobs = r.ci_jobs ?? [];
+  return {
+    key: r.id, id: r.external_id ?? r.id.slice(0, 8), pipeline: r.branch ?? 'pipeline', branch: r.branch ?? '—',
+    trigger: 'push', status: CI_STATUS[r.status] ?? r.status, duration: '—',
+    failedJobs: jobs.filter((j: any) => j.status === 'FAILED').length, tests: '—', env: '-', time: fmtRel(r.started_at)
+  };
+}
+function mapEnv(r: any) {
+  return { name: r.name, version: '—', deployed: '—', health: 'Healthy', owner: '—', rollback: '—', release: '—' };
+}
+function mapDeployment(r: any) {
+  return {
+    key: r.id, id: r.id.slice(0, 8), project: '—', env: '—', version: r.version ?? '—',
+    status: r.status === 'DEPLOYED' ? 'Success' : r.status === 'FAILED' ? 'Failed' : cap(r.status),
+    trigger: r.triggered_by_member_id ? 'Manual' : 'Auto', time: fmtRel(r.started_at),
+    rollback: r.rollback_of_deployment_id ? 'Initiated' : 'Available'
+  };
+}
 
-const mockPipelines = [
-  { id: 'ci-8901', pipeline: 'payments-core-ci', branch: 'feat/webhook-retry', trigger: 'push', status: 'Success', duration: '4m 12s', failedJobs: 0, tests: '124/124', env: '-', time: '1h ago' },
-  { id: 'ci-8900', pipeline: 'ledger-api-deploy', branch: 'main', trigger: 'merge', status: 'Failed', duration: '12m 45s', failedJobs: 1, tests: '80/80', env: 'Staging', time: '3h ago' },
-  { id: 'ci-8899', pipeline: 'mobile-ios-test', branch: 'feat/offline-mode', trigger: 'pr', status: 'Failed', duration: '8m 20s', failedJobs: 2, tests: '89/92', env: '-', time: '1d ago' },
-];
-
-const mockEnvironments = [
-  { name: 'Production', version: 'v2.1.4', deployed: 'Oct 10, 2026', health: 'Healthy', owner: 'SRE Team', rollback: 'v2.1.3 (Ready)', release: 'REL-42' },
-  { name: 'Staging', version: 'v2.2.0-rc1', deployed: '2 hours ago', health: 'Degraded', owner: 'QA Team', rollback: 'v2.1.4 (Ready)', release: 'REL-43-RC' },
-  { name: 'Development', version: 'v2.2.0-dev', deployed: '15 mins ago', health: 'Healthy', owner: 'Dev Team', rollback: 'Auto', release: '-' },
-];
-
-const mockDeployments = [
-  { id: 'dep-992', project: 'Payments', env: 'Development', version: 'v2.2.0-dev', status: 'Success', trigger: 'Auto (merge)', time: '15m ago', rollback: 'Available' },
-  { id: 'dep-991', project: 'Ledger API', env: 'Staging', version: 'v1.9.0-rc2', status: 'Failed', trigger: 'Manual (L. Davis)', time: '3h ago', rollback: 'Initiated' },
-  { id: 'dep-990', project: 'Mobile App', env: 'Production', version: 'v4.5.1', status: 'Success', trigger: 'Release (REL-41)', time: '2d ago', rollback: 'Available' },
-];
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -107,9 +127,30 @@ const getRiskColor = (risk: string) => {
 
 export default function RepositoriesPage() {
   const [activeTab, setActiveTab] = useState('Repositories');
+  const [mockRepositories, setRepos] = useState<ReturnType<typeof mapRepo>[]>([]);
+  const [mockPRs, setPRs] = useState<ReturnType<typeof mapPR>[]>([]);
+  const [mockCommits, setCommits] = useState<ReturnType<typeof mapCommit>[]>([]);
+  const [mockPipelines, setPipelines] = useState<ReturnType<typeof mapPipeline>[]>([]);
+  const [mockEnvironments, setEnvironments] = useState<ReturnType<typeof mapEnv>[]>([]);
+  const [mockDeployments, setDeployments] = useState<ReturnType<typeof mapDeployment>[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/v1/repositories').then((r) => r.json()).then((j) => {
+      if (!active) return;
+      const d = j?.data ?? {};
+      setRepos((d.repositories ?? []).map(mapRepo));
+      setPRs((d.pullRequests ?? []).map(mapPR));
+      setCommits((d.commits ?? []).map(mapCommit));
+      setPipelines((d.pipelines ?? []).map(mapPipeline));
+      setEnvironments((d.environments ?? []).map(mapEnv));
+      setDeployments((d.deployments ?? []).map(mapDeployment));
+    }).catch(() => { });
+    return () => { active = false; };
+  }, []);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 h-[calc(100vh-80px)] flex flex-col">
+    <WorkspaceDataLayout className="space-y-6 animate-in fade-in duration-500 flex flex-col">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 flex-shrink-0">
         <div>
@@ -119,7 +160,7 @@ export default function RepositoriesPage() {
             <span className="text-foreground">Repositories</span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight uppercase flex items-center gap-3">
-            <div className="w-3 h-3 bg-foreground" />
+            <GitBranch className="w-8 h-8" />
             Engineering
           </h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-widest">
@@ -141,7 +182,7 @@ export default function RepositoriesPage() {
           </Button>
           <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2">
             <Bot className="w-4 h-4" />
-            Ask DevPilot AI
+            Ask Handoff AI
           </Button>
         </div>
       </div>
@@ -152,11 +193,10 @@ export default function RepositoriesPage() {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-xs font-mono uppercase tracking-widest border-b-2 whitespace-nowrap transition-colors ${
-              activeTab === tab 
-                ? 'border-foreground text-foreground font-bold' 
+            className={`px-4 py-2 text-xs font-mono uppercase tracking-widest border-b-2 whitespace-nowrap transition-colors ${activeTab === tab
+                ? 'border-foreground text-foreground font-bold'
                 : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-            }`}
+              }`}
           >
             {tab}
           </button>
@@ -179,8 +219,8 @@ export default function RepositoriesPage() {
       {/* Main Content */}
       <div className="flex-1 min-h-0 flex gap-6">
         <div className="flex-1 min-w-0 border border-border bg-background flex flex-col overflow-hidden">
-          <div className="overflow-auto flex-1 scrollbar-thin">
-            <table className="w-full text-left text-sm font-mono border-collapse whitespace-nowrap">
+          <DataViewport className="border-0">
+            <table className="w-full min-w-[1000px] text-left text-sm font-mono border-collapse whitespace-nowrap">
               <thead className="sticky top-0 bg-surface-hover z-10 shadow-[0_1px_0_0_var(--border)]">
                 {activeTab === 'Repositories' && (
                   <tr>
@@ -288,9 +328,9 @@ export default function RepositoriesPage() {
                     </td>
                   </tr>
                 ))}
-                
+
                 {activeTab === 'Pull Requests' && mockPRs.map((pr) => (
-                  <tr key={pr.id} className="hover:bg-surface-hover group cursor-pointer transition-colors">
+                  <tr key={pr.key} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <GitPullRequest className="w-4 h-4 text-accent" />
@@ -325,7 +365,7 @@ export default function RepositoriesPage() {
                 ))}
 
                 {activeTab === 'Commits' && mockCommits.map((commit) => (
-                  <tr key={commit.hash} className="hover:bg-surface-hover group cursor-pointer transition-colors">
+                  <tr key={commit.key} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-1 text-[10px] bg-surface border border-border px-1.5 py-0.5 inline-flex text-muted-foreground group-hover:text-foreground">
                         <GitCommit className="w-3 h-3" /> {commit.hash}
@@ -348,7 +388,7 @@ export default function RepositoriesPage() {
                 ))}
 
                 {activeTab === 'CI/CD' && mockPipelines.map((pl) => (
-                  <tr key={pl.id} className="hover:bg-surface-hover group cursor-pointer transition-colors">
+                  <tr key={pl.key} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="font-sans text-sm font-bold">{pl.pipeline}</div>
                       <div className="text-[10px] text-muted-foreground">{pl.id}</div>
@@ -410,7 +450,7 @@ export default function RepositoriesPage() {
                 ))}
 
                 {activeTab === 'Deployments' && mockDeployments.map((dep) => (
-                  <tr key={dep.id} className="hover:bg-surface-hover group cursor-pointer transition-colors">
+                  <tr key={dep.key} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="font-sans text-sm font-bold">{dep.id}</div>
                     </td>
@@ -432,13 +472,13 @@ export default function RepositoriesPage() {
                 ))}
               </tbody>
             </table>
-          </div>
-          
+          </DataViewport>
+
           <div className="p-3 border-t border-border bg-surface-hover flex justify-between items-center text-[10px] font-mono text-muted-foreground flex-shrink-0">
             <span>Showing {activeTab} data</span>
           </div>
         </div>
       </div>
-    </div>
+    </WorkspaceDataLayout>
   );
 }

@@ -1,5 +1,12 @@
 import type {NextConfig} from 'next';
 
+const isDev = process.env.NODE_ENV === 'development';
+// In production: no unsafe-eval (removes XSS eval vector).
+// In dev: Next.js fast-refresh requires unsafe-eval and unsafe-inline.
+const scriptSrc = isDev
+  ? "'self' 'unsafe-eval' 'unsafe-inline'"
+  : "'self' 'unsafe-inline'";
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   eslint: {
@@ -7,6 +14,20 @@ const nextConfig: NextConfig = {
   },
   typescript: {
     ignoreBuildErrors: false,
+  },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Content-Security-Policy', value: `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;` },
+        ],
+      },
+    ];
   },
   // Allow access to remote image placeholder.
   images: {
@@ -19,7 +40,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  output: 'standalone',
   transpilePackages: ['motion'],
   webpack: (config, {dev}) => {
     // HMR is disabled in AI Studio via DISABLE_HMR env var.

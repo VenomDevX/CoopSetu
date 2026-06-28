@@ -151,7 +151,7 @@ export default function ProductPage() {
                  <div className="border border-border bg-background p-4">
                    <div className="flex items-center gap-2 mb-3">
                      <Bot className="w-3 h-3 text-accent" />
-                     <span className="font-mono text-[10px] uppercase tracking-widest font-bold">DevPilot Insight</span>
+                     <span className="font-mono text-[10px] uppercase tracking-widest font-bold">Handoff Insight</span>
                    </div>
                    <p className="text-xs text-muted-foreground">Release v2.4.0 is blocked by 2 critical security vulnerabilities. QA signoff pending for 3 hours.</p>
                  </div>

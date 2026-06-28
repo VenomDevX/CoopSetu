@@ -1,16 +1,80 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
+import {
   Building2, Users, Shield, Key, Webhook, Activity, CreditCard
 } from 'lucide-react';
 
+interface AuditRow { id: string; action: string; resource_type: string; created_at: string; ip_address: string | null; }
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('org');
+  const [orgName, setOrgName] = useState('');
+  const [orgSlug, setOrgSlug] = useState('');
+  const [auditLogs, setAuditLogs] = useState<AuditRow[]>([]);
+
+  useEffect(() => {
+    fetch('/api/v1/organizations/current').then((r) => r.json()).then((j) => {
+      if (j?.data) { setOrgName(j.data.name ?? ''); setOrgSlug(j.data.slug ?? ''); }
+    }).catch(() => { });
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'audit') return;
+    fetch('/api/v1/audit-logs').then((r) => r.json()).then((j) => {
+      setAuditLogs(Array.isArray(j?.data) ? j.data : []);
+    }).catch(() => { });
+  }, [activeTab]);
+
+  const handleSaveSettings = async () => {
+    try {
+      const res = await fetch('/api/v1/organizations/current', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: orgName, slug: orgSlug })
+      });
+      if (res.ok) alert('Settings saved successfully');
+      else alert('Failed to save settings');
+    } catch (e) {
+      alert('Error saving settings');
+    }
+  };
+
+  const handleConfigureIdP = () => {
+    alert('SSO/IdP Configuration is disabled in the local development environment.');
+  };
+
+  const handleExportCSV = () => {
+    if (auditLogs.length === 0) {
+      alert('No audit logs to export');
+      return;
+    }
+    const headers = ['Timestamp', 'Actor', 'Action', 'Resource', 'IP Address'];
+    const csvContent = [
+      headers.join(','),
+      ...auditLogs.map(row =>
+        [
+          new Date(row.created_at).toLocaleString(),
+          'System/User',
+          row.action,
+          row.resource_type,
+          row.ip_address || 'Unknown'
+        ].join(',')
+      )
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const tabs = [
     { id: 'org', label: 'Organization', icon: Building2 },
@@ -35,11 +99,10 @@ export default function SettingsPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-sm transition-colors ${
-                activeTab === tab.id 
-                  ? 'bg-foreground text-background' 
+              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-sm transition-colors ${activeTab === tab.id
+                  ? 'bg-foreground text-background'
                   : 'text-muted-foreground hover:bg-surface-hover hover:text-foreground'
-              }`}
+                }`}
             >
               <tab.icon className="w-4 h-4" />
               {tab.label}
@@ -58,18 +121,18 @@ export default function SettingsPage() {
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Company Name</label>
-                  <Input defaultValue="Apex Financial Technologies" className="max-w-md bg-surface border-border text-foreground focus:border-border-strong rounded-sm" />
+                  <Input value={orgName} onChange={(e) => setOrgName(e.target.value)} className="max-w-md bg-surface border-border text-foreground focus:border-border-strong rounded-sm" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Workspace URL</label>
                   <div className="flex items-center gap-0 max-w-md">
                     <span className="text-muted-foreground bg-surface border border-r-0 border-border rounded-l-sm px-3 h-10 flex items-center text-sm">https://</span>
-                    <Input defaultValue="apex-financial" className="flex-1 rounded-none border-border bg-surface text-foreground focus:border-border-strong focus:z-10" />
-                    <span className="text-muted-foreground bg-surface border border-l-0 border-border rounded-r-sm px-3 h-10 flex items-center text-sm">.devpilot.app</span>
+                    <Input value={orgSlug} onChange={(e) => setOrgSlug(e.target.value)} className="flex-1 rounded-none border-border bg-surface text-foreground focus:border-border-strong focus:z-10" />
+                    <span className="text-muted-foreground bg-surface border border-l-0 border-border rounded-r-sm px-3 h-10 flex items-center text-sm">.handoff.app</span>
                   </div>
                 </div>
                 <div className="pt-4">
-                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-sm">Save Changes</Button>
+                  <Button onClick={handleSaveSettings} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-sm">Save Changes</Button>
                 </div>
               </CardContent>
             </Card>
@@ -90,7 +153,7 @@ export default function SettingsPage() {
                     </div>
                     <Badge className="bg-surface-hover text-foreground border-border font-mono text-[10px] uppercase rounded-sm">Active</Badge>
                   </div>
-                  <Button variant="outline" className="bg-surface-elevated text-foreground border-border hover:bg-surface-hover rounded-sm">Configure IdP</Button>
+                  <Button onClick={handleConfigureIdP} variant="outline" className="bg-surface-elevated text-foreground border-border hover:bg-surface-hover rounded-sm">Configure IdP</Button>
                 </CardContent>
               </Card>
 
@@ -131,11 +194,11 @@ export default function SettingsPage() {
                     <CardTitle className="text-foreground">Audit Logs</CardTitle>
                     <CardDescription className="text-muted-foreground">Security and compliance event tracking.</CardDescription>
                   </div>
-                  <Button variant="outline" size="sm" className="bg-surface-elevated text-foreground border-border hover:bg-surface-hover rounded-sm">Export CSV</Button>
+                  <Button onClick={handleExportCSV} variant="outline" size="sm" className="bg-surface-elevated text-foreground border-border hover:bg-surface-hover rounded-sm">Export CSV</Button>
                 </div>
               </CardHeader>
               <CardContent>
-                <table className="w-full text-sm text-left border-collapse">
+                <table className="w-full min-w-[640px] text-sm text-left border-collapse">
                   <thead className="text-xs text-muted-foreground bg-surface font-mono uppercase border-y border-border">
                     <tr>
                       <th className="px-4 py-2 font-medium">Timestamp</th>
@@ -145,16 +208,15 @@ export default function SettingsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {[
-                      { time: '2026-06-25 09:15:00', actor: 'Sarah J.', event: 'user.login', ip: '192.168.1.1' },
-                      { time: '2026-06-25 08:30:12', actor: 'David L.', event: 'release.approve', ip: '10.0.0.4' },
-                      { time: '2026-06-24 16:45:00', actor: 'System', event: 'sso.sync', ip: 'Internal' },
-                    ].map((log, i) => (
-                      <tr key={i} className="hover:bg-surface-hover transition-colors">
-                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{log.time}</td>
-                        <td className="px-4 py-3 font-medium text-foreground">{log.actor}</td>
-                        <td className="px-4 py-3 text-foreground"><Badge variant="secondary" className="bg-surface text-foreground border-border font-mono font-normal text-[10px] uppercase rounded-sm">{log.event}</Badge></td>
-                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground opacity-70">{log.ip}</td>
+                    {auditLogs.length === 0 && (
+                      <tr><td colSpan={4} className="px-4 py-6 text-center text-muted-foreground font-mono text-xs">No audit events.</td></tr>
+                    )}
+                    {auditLogs.map((log) => (
+                      <tr key={log.id} className="hover:bg-surface-hover transition-colors">
+                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString()}</td>
+                        <td className="px-4 py-3 font-medium text-foreground">{log.resource_type}</td>
+                        <td className="px-4 py-3 text-foreground"><Badge variant="secondary" className="bg-surface text-foreground border-border font-mono font-normal text-[10px] uppercase rounded-sm">{log.action}</Badge></td>
+                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground opacity-70">{log.ip_address ?? '—'}</td>
                       </tr>
                     ))}
                   </tbody>

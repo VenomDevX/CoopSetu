@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  ChevronRight, 
-  Search, 
-  Filter, 
-  Plus, 
-  Bot, 
+import {
+  ChevronRight,
+  Search,
+  Filter,
+  Plus,
+  Bot,
   Bug,
   ShieldCheck,
   CheckSquare,
@@ -26,6 +26,9 @@ import {
   Play
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
+import { AskAiButton } from '@/components/ai/ask-ai-button';
+import { DataViewport } from '@/components/layout/data-viewport';
 
 const tabs = [
   'QA Testing',
@@ -35,37 +38,44 @@ const tabs = [
   'Approvals'
 ];
 
-const mockBugs = [
-  { id: 'BUG-402', title: 'Webhook timeout on large payloads', severity: 'Critical', priority: 'P1', project: 'Payments', env: 'Staging', reporter: 'QA Team', assignee: 'S. Chen', task: 'PAY-231', release: 'REL-42', status: 'In Progress', rootCause: '-', created: '2h ago' },
-  { id: 'BUG-401', title: 'Idempotency key collision under load', severity: 'High', priority: 'P1', project: 'Payments', env: 'Development', reporter: 'Load Testing', assignee: 'M. Johnson', task: 'PAY-234', release: 'REL-42', status: 'In Review', rootCause: 'DB Constraint', created: '1d ago' },
-  { id: 'BUG-398', title: 'Offline sync fails on iOS 16', severity: 'Medium', priority: 'P2', project: 'Mobile App', env: 'UAT', reporter: 'Beta User', assignee: 'E. Wright', task: 'MOB-890', release: 'REL-41', status: 'To Do', rootCause: 'Cache expiry', created: '2d ago' },
-  { id: 'BUG-395', title: 'Misaligned icon on settings page', severity: 'Low', priority: 'P4', project: 'Web Portal', env: 'Production', reporter: 'Support', assignee: 'Unassigned', task: '-', release: '-', status: 'Open', rootCause: '-', created: '5d ago' },
-];
 
-const mockQA = [
-  { plan: 'REL-42 Core Regression', project: 'Payments', automated: '145/150', manual: '12/12', ratio: '97%', regression: 'Passing', uat: 'Pending', owner: 'QA Automation', release: 'REL-42' },
-  { plan: 'Auth V2 Security Testing', project: 'Core Backend', automated: '80/80', manual: '5/5', ratio: '100%', regression: 'Passed', uat: 'Signed-off', owner: 'SecOps', release: 'REL-43' },
-  { plan: 'Mobile Offline Mode UAT', project: 'Mobile App', automated: '40/45', manual: '2/10', ratio: '65%', regression: 'Failing', uat: 'Blocked', owner: 'Mobile QA', release: 'REL-41' },
-];
+const SEV_CAP: Record<string, string> = { CRITICAL: 'Critical', HIGH: 'High', MEDIUM: 'Medium', LOW: 'Low' };
+const BUG_STATUS: Record<string, string> = { OPEN: 'Open', IN_PROGRESS: 'In Progress', RESOLVED: 'In Review', CLOSED: 'Closed', WONT_FIX: 'Closed' };
+const REVIEW_STATUS: Record<string, string> = { PENDING: 'In Review', IN_PROGRESS: 'In Review', APPROVED: 'Approved', REJECTED: 'Needs Revision' };
+const COMPLIANCE_STATUS: Record<string, string> = { NOT_STARTED: 'Needs Review', IN_PROGRESS: 'Needs Review', COMPLIANT: 'Compliant', NON_COMPLIANT: 'At Risk' };
 
-const mockSecurity = [
-  { review: 'Ledger API v2 Threat Model', project: 'Payments', vulns: '0 High, 2 Med', score: '24 (Low)', owner: 'SecOps', due: 'Oct 20, 2026', evidence: '3 attached', status: 'Approved', tasks: '0 open' },
-  { review: 'Auth V2 JWT Migration', project: 'Core Backend', vulns: '1 High, 0 Med', score: '75 (High)', owner: 'SecOps', due: 'Oct 15, 2026', evidence: '1 attached', status: 'Needs Revision', tasks: '1 open' },
-  { review: 'Mobile Biometric Login', project: 'Mobile App', vulns: '0 High, 0 Med', score: '10 (Info)', owner: 'Mobile Sec', due: 'Oct 25, 2026', evidence: '2 attached', status: 'In Review', tasks: '0 open' },
-];
+const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : '—');
 
-const mockCompliance = [
-  { control: 'SOC2-CC6.1', requirement: 'Logical Access', owner: 'IT Admin', evidence: 'Access Logs Q3', due: 'Nov 01, 2026', status: 'Needs Review', project: 'Auth V2', approval: 'Pending' },
-  { control: 'PCI-DSS 3.2', requirement: 'Data Encryption', owner: 'Platform Lead', evidence: 'KMS Config', due: 'Oct 15, 2026', status: 'Compliant', project: 'Payments', approval: 'Approved' },
-  { control: 'GDPR-Art.17', requirement: 'Right to Erasure', owner: 'Data Privacy', evidence: 'Deletion Job Logs', due: 'Nov 15, 2026', status: 'At Risk', project: 'Core Backend', approval: 'Rejected' },
-];
+function mapBug(r: any) {
+  return {
+    id: r.id.slice(0, 8), title: r.title, severity: SEV_CAP[r.severity] ?? r.severity,
+    priority: r.priority, project: '—', env: r.environment ?? '—', reporter: '—',
+    assignee: r.assignee_member_id ? 'Assigned' : 'Unassigned', task: '—', release: '—',
+    status: BUG_STATUS[r.status] ?? r.status, rootCause: r.root_cause ?? '-', created: fmtDate(r.created_at)
+  };
+}
+function mapReview(r: any) {
+  return {
+    review: r.title, project: '—', vulns: '—', score: r.risk_score != null ? String(r.risk_score) : '—',
+    owner: r.reviewer_member_id ? 'Assigned' : '—', due: fmtDate(r.due_date),
+    evidence: `${r.security_review_checks?.length ?? 0} checks`, status: REVIEW_STATUS[r.status] ?? r.status, tasks: '—'
+  };
+}
+function mapCompliance(r: any) {
+  return {
+    control: r.name, requirement: r.framework_name ?? '—', owner: r.owner_member_id ? 'Assigned' : '—',
+    evidence: '—', due: fmtDate(r.due_date), status: COMPLIANCE_STATUS[r.status] ?? r.status, project: '—',
+    approval: r.status === 'COMPLIANT' ? 'Approved' : 'Pending'
+  };
+}
+function mapApproval(r: any) {
+  return {
+    chain: r.approval_type, type: r.required_role ?? r.approval_type,
+    approver: '—', decision: r.status === 'PENDING' ? 'Pending' : r.status === 'APPROVED' ? 'Approved' : 'Rejected',
+    time: fmtDate(r.created_at), comments: '—'
+  };
+}
 
-const mockApprovals = [
-  { chain: 'Release 42', type: 'Release Manager', approver: 'T. Vance', decision: 'Approved', time: '1h ago', comments: 'All tests passing, approved for prod.' },
-  { chain: 'Release 42', type: 'Security Review', approver: 'L. Davis', decision: 'Approved', time: '3h ago', comments: 'Threat model updated. No blockers.' },
-  { chain: 'Auth V2', type: 'Compliance', approver: 'J. Smith', decision: 'Rejected', time: '1d ago', comments: 'Missing SOC2 evidence for access control.' },
-  { chain: 'Release 41', type: 'QA Sign-off', approver: 'QA Team', decision: 'Pending', time: '-', comments: '-' },
-];
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -103,9 +113,53 @@ const getSeverityColor = (severity: string) => {
 
 export default function QaSecurityPage() {
   const [activeTab, setActiveTab] = useState('Bugs');
+  const [query, setQuery] = useState('');
+  const [mockBugs, setMockBugs] = useState<ReturnType<typeof mapBug>[]>([]);
+  const [mockQA, setMockQA] = useState<{ plan: string; project: string; automated: string; manual: string; ratio: string; regression: string; uat: string; owner: string; release: string }[]>([]);
+  const [mockSecurity, setMockSecurity] = useState<ReturnType<typeof mapReview>[]>([]);
+  const [mockCompliance, setMockCompliance] = useState<ReturnType<typeof mapCompliance>[]>([]);
+  const [mockApprovals, setMockApprovals] = useState<ReturnType<typeof mapApproval>[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/v1/qa').then((r) => r.json()).then((j) => {
+      if (!active) return;
+      setMockBugs((j?.data?.bugs ?? []).map(mapBug));
+
+      setMockQA((j?.data?.testPlans ?? []).map((p: any) => ({
+        plan: p.title, project: '—', automated: '—', manual: '—', ratio: '—',
+        regression: p.status ?? '—', uat: '—', owner: p.owner_member_id ? 'Assigned' : '—', release: '—',
+      })));
+    }).catch(() => { });
+    fetch('/api/v1/security').then((r) => r.json()).then((j) => {
+      if (!active) return;
+      setMockSecurity((j?.data?.reviews ?? []).map(mapReview));
+      setMockCompliance((j?.data?.compliance ?? []).map(mapCompliance));
+    }).catch(() => { });
+    fetch('/api/v1/approvals').then((r) => r.json()).then((j) => {
+      if (active) setMockApprovals((Array.isArray(j?.data) ? j.data : []).map(mapApproval));
+    }).catch(() => { });
+    return () => { active = false; };
+  }, []);
+
+  // Client-side search over the active tab's primary text column.
+  const q = query.trim().toLowerCase();
+  const fBugs = mockBugs.filter((b) => q === '' || b.title.toLowerCase().includes(q) || b.id.toLowerCase().includes(q));
+  const fQA = mockQA.filter((p) => q === '' || p.plan.toLowerCase().includes(q));
+  const fSecurity = mockSecurity.filter((s) => q === '' || s.review.toLowerCase().includes(q));
+  const fCompliance = mockCompliance.filter((c) => q === '' || c.control.toLowerCase().includes(q) || c.requirement.toLowerCase().includes(q));
+  const fApprovals = mockApprovals.filter((a) => q === '' || a.chain.toLowerCase().includes(q) || a.type.toLowerCase().includes(q));
+  const activeCount = { 'Bugs': fBugs, 'QA Testing': fQA, 'Security Reviews': fSecurity, 'Compliance': fCompliance, 'Approvals': fApprovals }[activeTab]?.length ?? 0;
+
+  // Real summary counts derived from the loaded data (no fabricated release).
+  const openBugs = mockBugs.filter((b) => b.status !== 'Closed').length;
+  const criticalBugs = mockBugs.filter((b) => b.severity === 'Critical').length;
+  const pendingReviews = mockSecurity.filter((s) => s.status === 'In Review').length;
+  const atRiskCompliance = mockCompliance.filter((c) => c.status === 'At Risk' || c.status === 'Needs Review').length;
+  const pendingApprovals = mockApprovals.filter((a) => a.decision === 'Pending').length;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 h-[calc(100vh-80px)] flex flex-col">
+    <WorkspaceDataLayout className="space-y-6 animate-in fade-in duration-500 flex flex-col">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 flex-shrink-0">
         <div>
@@ -115,7 +169,7 @@ export default function QaSecurityPage() {
             <span className="text-foreground">QA & Security</span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight uppercase flex items-center gap-3">
-            <div className="w-3 h-3 bg-foreground" />
+            <ShieldCheck className="w-8 h-8" />
             QA & Security
           </h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-widest">
@@ -123,22 +177,19 @@ export default function QaSecurityPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
             <ShieldCheck className="w-4 h-4" />
             Start Security Review
           </Button>
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
             <FileCheck className="w-4 h-4" />
             Create Test Plan
           </Button>
-          <Button className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
+          <Button disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background gap-2 disabled:opacity-40">
             <Plus className="w-4 h-4" />
             Create Bug
           </Button>
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2">
-            <Bot className="w-4 h-4" />
-            Ask DevPilot AI
-          </Button>
+          <AskAiButton intent="summarize-qa" permissions={['qa:view', 'security:view']} label="Ask Handoff AI" title="QA & Security Digest" />
         </div>
       </div>
 
@@ -148,11 +199,10 @@ export default function QaSecurityPage() {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-xs font-mono uppercase tracking-widest border-b-2 whitespace-nowrap transition-colors ${
-              activeTab === tab 
-                ? 'border-foreground text-foreground font-bold' 
+            className={`px-4 py-2 text-xs font-mono uppercase tracking-widest border-b-2 whitespace-nowrap transition-colors ${activeTab === tab
+                ? 'border-foreground text-foreground font-bold'
                 : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-            }`}
+              }`}
           >
             {tab}
           </button>
@@ -164,21 +214,21 @@ export default function QaSecurityPage() {
         <div className="flex items-center gap-2 flex-1">
           <div className="relative flex-1 max-w-sm">
             <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder={`SEARCH ${activeTab.toUpperCase()}...`} className="w-full h-8 pl-8 pr-3 bg-background border border-border text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors" />
+            <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`SEARCH ${activeTab.toUpperCase()}...`} className="w-full h-8 pl-8 pr-3 bg-background border border-border text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors" />
           </div>
-          <Button variant="outline" size="sm" className="h-8 px-3 rounded-none text-[10px] font-mono uppercase border-border bg-background">
+          <Button variant="outline" size="sm" disabled title="Not available yet" className="h-8 px-3 rounded-none text-[10px] font-mono uppercase border-border bg-background disabled:opacity-40">
             <Filter className="w-3 h-3 mr-2" /> Filters
           </Button>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 min-h-0 flex gap-6">
-        
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-6">
+
         {/* Left Column (Table) */}
         <div className="flex-1 min-w-0 border border-border bg-background flex flex-col overflow-hidden">
-          <div className="overflow-auto flex-1 scrollbar-thin">
-            <table className="w-full text-left text-sm font-mono border-collapse whitespace-nowrap">
+          <DataViewport className="border-0">
+            <table className="w-full min-w-[1000px] text-left text-sm font-mono border-collapse whitespace-nowrap">
               <thead className="sticky top-0 bg-surface-hover z-10 shadow-[0_1px_0_0_var(--border)]">
                 {activeTab === 'Bugs' && (
                   <tr>
@@ -240,7 +290,7 @@ export default function QaSecurityPage() {
                 )}
               </thead>
               <tbody className="divide-y divide-border">
-                {activeTab === 'Bugs' && mockBugs.map((bug) => (
+                {activeTab === 'Bugs' && fBugs.map((bug) => (
                   <tr key={bug.id} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="text-[10px] bg-surface border border-border px-1.5 py-0.5 inline-flex text-muted-foreground">
@@ -280,8 +330,8 @@ export default function QaSecurityPage() {
                     <td className="p-3 text-xs text-muted-foreground">{bug.created}</td>
                   </tr>
                 ))}
-                
-                {activeTab === 'QA Testing' && mockQA.map((qa, i) => (
+
+                {activeTab === 'QA Testing' && fQA.map((qa, i) => (
                   <tr key={i} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
@@ -312,7 +362,7 @@ export default function QaSecurityPage() {
                   </tr>
                 ))}
 
-                {activeTab === 'Security Reviews' && mockSecurity.map((sec, i) => (
+                {activeTab === 'Security Reviews' && fSecurity.map((sec, i) => (
                   <tr key={i} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
@@ -330,11 +380,11 @@ export default function QaSecurityPage() {
                     <td className="p-3 text-xs">{sec.vulns}</td>
                     <td className="p-3 text-xs">{sec.owner}</td>
                     <td className="p-3 text-xs text-muted-foreground">{sec.due}</td>
-                    <td className="p-3 text-xs flex items-center gap-1"><Link2 className="w-3 h-3"/> {sec.evidence}</td>
+                    <td className="p-3 text-xs flex items-center gap-1"><Link2 className="w-3 h-3" /> {sec.evidence}</td>
                   </tr>
                 ))}
 
-                {activeTab === 'Compliance' && mockCompliance.map((comp, i) => (
+                {activeTab === 'Compliance' && fCompliance.map((comp, i) => (
                   <tr key={i} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="text-[10px] bg-surface border border-border px-1.5 py-0.5 inline-flex font-bold">
@@ -358,7 +408,7 @@ export default function QaSecurityPage() {
                   </tr>
                 ))}
 
-                {activeTab === 'Approvals' && mockApprovals.map((app, i) => (
+                {activeTab === 'Approvals' && fApprovals.map((app, i) => (
                   <tr key={i} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="font-sans font-bold text-sm">{app.chain}</div>
@@ -376,72 +426,56 @@ export default function QaSecurityPage() {
                 ))}
               </tbody>
             </table>
-          </div>
-          
+          </DataViewport>
+
           <div className="p-3 border-t border-border bg-surface-hover flex justify-between items-center text-[10px] font-mono text-muted-foreground flex-shrink-0">
-            <span>Showing {activeTab} data</span>
+            <span>Showing {activeCount} {activeTab.toLowerCase()} {query ? '(filtered)' : ''}</span>
           </div>
         </div>
 
-        {/* Right Column (Release Readiness & AI) */}
-        <div className="w-80 flex-shrink-0 flex flex-col gap-6">
-          
-          {/* Release Readiness Panel */}
+        {/* Right Column — real quality summary derived from loaded data */}
+        <div className="w-full lg:w-80 flex-shrink-0 flex flex-col gap-6">
+
+          {/* Quality Summary Panel */}
           <div className="border border-border bg-background flex flex-col">
             <div className="p-4 border-b border-border bg-surface-hover">
               <h3 className="font-mono text-xs uppercase tracking-widest font-bold flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Release Readiness
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Quality Summary
               </h3>
-              <p className="text-[10px] font-mono text-muted-foreground mt-1 uppercase tracking-widest">Target: REL-42</p>
+              <p className="text-[10px] font-mono text-muted-foreground mt-1 uppercase tracking-widest">Across this organization</p>
             </div>
-            <div className="p-4 space-y-4">
+            <div className="divide-y divide-border">
               {[
-                { label: 'Development Complete', status: 'done' },
-                { label: 'Code Review Complete', status: 'done' },
-                { label: 'QA Passed', status: 'pending' },
-                { label: 'Security Approved', status: 'pending' },
-                { label: 'Compliance Approved', status: 'blocked' },
-                { label: 'Release Manager Approved', status: 'pending' },
-              ].map((step, i) => (
-                <div key={i} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-3">
-                    {step.status === 'done' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-                    {step.status === 'pending' && <div className="w-4 h-4 border border-border rounded-full" />}
-                    {step.status === 'blocked' && <XCircle className="w-4 h-4 text-destructive" />}
-                    <span className={step.status === 'blocked' ? 'text-destructive font-bold' : step.status === 'done' ? 'text-muted-foreground line-through' : 'text-foreground font-bold'}>
-                      {step.label}
-                    </span>
-                  </div>
+                { label: 'Open Bugs', value: openBugs, alert: openBugs > 0 },
+                { label: 'Critical Bugs', value: criticalBugs, alert: criticalBugs > 0 },
+                { label: 'Security Reviews In Progress', value: pendingReviews, alert: false },
+                { label: 'Compliance Needs Attention', value: atRiskCompliance, alert: atRiskCompliance > 0 },
+                { label: 'Approvals Pending', value: pendingApprovals, alert: false },
+              ].map((row) => (
+                <div key={row.label} className="p-4 flex items-center justify-between text-sm">
+                  <span className="text-xs text-muted-foreground">{row.label}</span>
+                  <span className={`font-mono font-bold ${row.alert ? 'text-destructive' : 'text-foreground'}`}>{row.value}</span>
                 </div>
               ))}
             </div>
-            <div className="p-4 border-t border-border bg-surface-hover">
-              <Button className="w-full h-8 rounded-none text-[10px] font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
-                Request Missing Approvals
-              </Button>
-            </div>
           </div>
 
-          {/* AI Assistant Panel */}
-          <div className="border border-accent/30 bg-accent/5 relative overflow-hidden flex-1 flex flex-col">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-bl-full pointer-events-none" />
-            <div className="p-4 border-b border-accent/20 bg-accent/10 flex items-center gap-2">
-              <Bot className="w-4 h-4 text-accent" />
-              <h2 className="font-mono text-[10px] uppercase tracking-widest font-bold text-foreground">DevPilot QA & Sec</h2>
+          {/* AI Assistant Panel — honestly disabled (no AI wired here yet) */}
+          <div className="border border-border bg-surface/40 relative overflow-hidden flex-1 flex flex-col">
+            <div className="p-4 border-b border-border flex items-center gap-2">
+              <Bot className="w-4 h-4 text-muted-foreground" />
+              <h2 className="font-mono text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Handoff QA & Sec</h2>
             </div>
-            <div className="p-4 flex-1 flex flex-col gap-4 overflow-y-auto">
-              <div className="text-sm text-foreground/80 leading-relaxed">
-                <p className="mb-2">Release 42 is <span className="font-bold text-destructive">blocked</span>.</p>
-                <p>There is 1 critical bug (BUG-402) open in Staging. Compliance approval is pending SOC2 evidence for access logs. Security review requires threat model updates.</p>
-              </div>
+            <div className="p-4 flex-1 flex flex-col gap-4">
+              <p className="text-xs font-mono text-muted-foreground">AI analysis not available yet.</p>
               <div className="space-y-2 mt-auto">
-                <Button variant="outline" size="sm" className="w-full justify-start h-8 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-accent/50 text-accent hover:bg-accent hover:text-background text-left">
+                <Button variant="outline" size="sm" disabled title="Not available yet" className="w-full justify-start h-8 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border text-left disabled:opacity-40">
                   Draft Remediation Tasks
                 </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start h-8 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-left">
+                <Button variant="outline" size="sm" disabled title="Not available yet" className="w-full justify-start h-8 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border text-left disabled:opacity-40">
                   Summarize Compliance Gaps
                 </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start h-8 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-left">
+                <Button variant="outline" size="sm" disabled title="Not available yet" className="w-full justify-start h-8 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border text-left disabled:opacity-40">
                   Identify Release Risk
                 </Button>
               </div>
@@ -451,6 +485,6 @@ export default function QaSecurityPage() {
         </div>
 
       </div>
-    </div>
+    </WorkspaceDataLayout>
   );
 }

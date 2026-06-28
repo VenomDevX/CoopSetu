@@ -1,0 +1,272 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
+import { TASK_TYPES, PRIORITIES, SECURITY_CLASSIFICATIONS } from '@/lib/constants/task-statuses';
+
+interface AssignableMember {
+  member_id: string;
+  full_name: string;
+  job_title: string | null;
+  team_name: string | null;
+  role: string | null;
+  capacity_percent: number | null;
+}
+interface Sprint { id: string; name: string; status?: string }
+interface Epic { id: string; title: string; status?: string }
+
+/** Human label per the assignment spec: "Name · Title · Team · ROLE · NN% allocated". */
+function memberLabel(m: AssignableMember) {
+  const titleTeam = [m.job_title, m.team_name].filter(Boolean).join(' · ');
+  const roleCap = [m.role, m.capacity_percent != null ? `${m.capacity_percent}% allocated` : null]
+    .filter(Boolean).join(' · ');
+  return [m.full_name, titleTeam, roleCap].filter(Boolean).join('  ·  ');
+}
+
+export function CreateTaskModal({
+  projectId, projectLabel, onClose, onCreated,
+}: {
+  projectId: string;
+  projectLabel?: string;
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [taskType, setTaskType] = useState<string>('TASK');
+  const [priority, setPriority] = useState<string>('MEDIUM');
+  const [sprintId, setSprintId] = useState('');
+  const [epicId, setEpicId] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [assignee, setAssignee] = useState('');
+  const [additional, setAdditional] = useState<string[]>([]);
+  const [estimatedHours, setEstimatedHours] = useState('');
+  const [storyPoints, setStoryPoints] = useState('');
+  const [securityClass, setSecurityClass] = useState('');
+  const [acceptance, setAcceptance] = useState('');
+
+  const [members, setMembers] = useState<AssignableMember[]>([]);
+  const [sprints, setSprints] = useState<Sprint[]>([]);
+  const [epics, setEpics] = useState<Epic[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/v1/projects/${projectId}/assignable-members`)
+      .then((r) => r.json())
+      .then((j) => { if (active) setMembers(Array.isArray(j?.data) ? j.data : []); })
+      .catch(() => {});
+    fetch(`/api/v1/sprints?projectId=${projectId}`)
+      .then((r) => r.json())
+      .then((j) => { if (active) setSprints(Array.isArray(j?.data) ? j.data : []); })
+      .catch(() => {});
+    fetch(`/api/v1/projects/${projectId}/epics`)
+      .then((r) => r.json())
+      .then((j) => { if (active) setEpics(Array.isArray(j?.data) ? j.data : []); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [projectId]);
+
+  async function submit() {
+    if (!title.trim()) { setError('Title is required.'); return; }
+    setSubmitting(true);
+    setError(null);
+    const payload: Record<string, unknown> = {
+      project_id: projectId,
+      title: title.trim(),
+      task_type: taskType,
+      priority,
+      status: 'BACKLOG',
+    };
+    if (description.trim()) payload.description = description.trim();
+    if (sprintId) payload.sprint_id = sprintId;
+    if (epicId) payload.epic_id = epicId;
+    if (dueDate) payload.due_date = dueDate;
+    if (startDate) payload.start_date = startDate;
+    if (assignee) payload.primary_assignee_member_id = assignee;
+    if (estimatedHours) payload.estimated_hours = Number(estimatedHours);
+    if (storyPoints) payload.story_points = Number(storyPoints);
+    if (securityClass) payload.security_classification = securityClass;
+    if (acceptance.trim()) payload.acceptance_criteria = acceptance.trim();
+
+    const res = await fetch('/api/v1/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const j = await res.json().catch(() => null);
+    if (!res.ok) {
+      setSubmitting(false);
+      setError(j?.error?.message ?? 'Failed to create task.');
+      return;
+    }
+
+    // Additional assignees: persisted individually (each validated server-side).
+    const newId = j?.data?.id;
+    const extras = additional.filter((id) => id && id !== assignee);
+    if (newId && extras.length) {
+      await Promise.all(extras.map((id) =>
+        fetch(`/api/v1/tasks/${newId}/assignees`, {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ organization_member_id: id }),
+        }).catch(() => {}),
+      ));
+    }
+    setSubmitting(false);
+    onCreated();
+    onClose();
+  }
+
+  const labelCls = 'font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1 block';
+  const fieldCls = 'w-full h-9 px-3 bg-background border border-border text-sm';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4" onClick={onClose}>
+      <div
+        data-testid="create-task-modal"
+        className="w-full max-w-lg bg-background sm:border sm:border-border h-[100dvh] sm:h-auto sm:max-h-[90vh] flex flex-col animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:fade-in duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="h-14 flex items-center justify-between px-6 border-b border-border shrink-0">
+          <div className="font-mono text-[10px] uppercase tracking-widest">
+            New Task{projectLabel ? ` · ${projectLabel}` : ''}
+          </div>
+          <button onClick={onClose} className="p-2 -mr-2 text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+        </div>
+
+        <div className="p-6 space-y-4 overflow-y-auto flex-1">
+          <div>
+            <label className={labelCls}>Title *</label>
+            <input data-testid="task-title-input" autoFocus value={title} onChange={(e) => setTitle(e.target.value)}
+              placeholder="What needs to be done?" className={fieldCls} />
+          </div>
+
+          <div>
+            <label className={labelCls}>Description</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)}
+              rows={3} className="w-full px-3 py-2 bg-background border border-border text-sm" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Type</label>
+              <select value={taskType} onChange={(e) => setTaskType(e.target.value)} className={fieldCls}>
+                {TASK_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Priority</label>
+              <select value={priority} onChange={(e) => setPriority(e.target.value)} className={fieldCls}>
+                {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Epic</label>
+              <select data-testid="task-epic-select" value={epicId} onChange={(e) => setEpicId(e.target.value)} className={fieldCls}>
+                <option value="">— None —</option>
+                {epics.map((ep) => <option key={ep.id} value={ep.id}>{ep.title}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Sprint</label>
+              <select value={sprintId} onChange={(e) => setSprintId(e.target.value)} className={fieldCls}>
+                <option value="">— None —</option>
+                {sprints.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className={labelCls}>Due Date</label>
+            <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={fieldCls} />
+          </div>
+
+          <div>
+            <label className={labelCls}>Assignee {members.length > 0 && `(${members.length} eligible)`}</label>
+            <select data-testid="task-assignee-select" value={assignee} onChange={(e) => setAssignee(e.target.value)} className={fieldCls}>
+              <option value="">— Unassigned —</option>
+              {members.map((m) => (
+                <option key={m.member_id} value={m.member_id}>{memberLabel(m)}</option>
+              ))}
+            </select>
+            {members.length === 0 && (
+              <p className="font-mono text-[10px] text-muted-foreground mt-1">
+                No eligible members — add project members or a project team first.
+              </p>
+            )}
+          </div>
+
+          {members.length > 0 && (
+            <div>
+              <label className={labelCls}>Additional Assignees</label>
+              <select
+                data-testid="task-additional-assignees"
+                multiple
+                value={additional}
+                onChange={(e) => setAdditional([...e.target.selectedOptions].map((o) => o.value))}
+                className="w-full px-2 py-1 bg-background border border-border text-xs min-h-[72px]"
+              >
+                {members.filter((m) => m.member_id !== assignee).map((m) => (
+                  <option key={m.member_id} value={m.member_id}>{memberLabel(m)}</option>
+                ))}
+              </select>
+              <p className="font-mono text-[10px] text-muted-foreground mt-1">Ctrl/Cmd-click to select multiple.</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Start Date</label>
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={fieldCls} />
+            </div>
+            <div>
+              <label className={labelCls}>Security Classification</label>
+              <select value={securityClass} onChange={(e) => setSecurityClass(e.target.value)} className={fieldCls}>
+                <option value="">— Default —</option>
+                {SECURITY_CLASSIFICATIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Estimated Hours</label>
+              <input type="number" min="0" step="0.5" value={estimatedHours}
+                onChange={(e) => setEstimatedHours(e.target.value)} className={fieldCls} />
+            </div>
+            <div>
+              <label className={labelCls}>Story Points</label>
+              <input type="number" min="0" step="1" value={storyPoints}
+                onChange={(e) => setStoryPoints(e.target.value)} className={fieldCls} />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelCls}>Acceptance Criteria</label>
+            <textarea value={acceptance} onChange={(e) => setAcceptance(e.target.value)}
+              rows={2} className="w-full px-3 py-2 bg-background border border-border text-sm" />
+          </div>
+
+          {error && (
+            <div className="border border-red-500/50 bg-red-500/10 text-red-500 text-xs px-3 py-2 font-mono">
+              {error}
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-border flex justify-end gap-2">
+          <button onClick={onClose} className="h-9 px-4 border border-border text-xs font-mono uppercase">Cancel</button>
+          <button data-testid="task-save-button" onClick={submit} disabled={submitting}
+            className="h-9 px-4 bg-foreground text-background text-xs font-mono uppercase tracking-widest disabled:opacity-50">
+            {submitting ? 'Creating…' : 'Create Task'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

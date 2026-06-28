@@ -5,3 +5,9 @@ coverage/
 *.log
 .env*
 !.env.example
+/test-results/
+/playwright-report/
+/tests/e2e/.auth/
+.mcp.json
+app/page.tsx.restored
+tsconfig.tsbuildinfo

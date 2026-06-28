@@ -88,14 +88,14 @@ export default function AIPage() {
               AI that understands delivery work — without bypassing control.
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-              DevPilot AI helps teams plan, prioritize, summarize, investigate, and report using the work, code, documents, and data they are already allowed to access.
+              Handoff AI helps teams plan, prioritize, summarize, investigate, and report using the work, code, documents, and data they are already allowed to access.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Button 
                 onClick={() => handleNavigate('/product', 'explore')}
                 className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
-                Explore DevPilot AI
+                Explore Handoff AI
               </Button>
               <Button 
                 variant="outline"
@@ -114,7 +114,7 @@ export default function AIPage() {
             <div className="flex items-center justify-between border-b border-border pb-4 mb-4">
               <div className="flex items-center gap-4">
                 <Bot className="w-4 h-4 text-accent" />
-                <span className="font-mono text-xs uppercase tracking-widest font-bold">DevPilot Intelligence Console</span>
+                <span className="font-mono text-xs uppercase tracking-widest font-bold">Handoff Intelligence Console</span>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-500 bg-emerald-500/10 px-2 py-0.5 border border-emerald-500/20">
@@ -186,7 +186,7 @@ export default function AIPage() {
                 <Search className="w-4 h-4 text-muted-foreground ml-2" />
                 <input 
                   type="text" 
-                  placeholder="Ask DevPilot..." 
+                  placeholder="Ask Handoff..." 
                   className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-sm px-3 font-mono"
                   disabled
                 />
@@ -226,7 +226,7 @@ export default function AIPage() {
             
             <div className="border border-border bg-surface p-6 shadow-xl relative">
                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2 flex justify-between">
-                 <span>DevPilot Generation</span>
+                 <span>Handoff Generation</span>
                  <Bot className="w-3 h-3 text-accent" />
                </div>
                <div className="bg-background border border-border p-4">
@@ -399,7 +399,7 @@ export default function AIPage() {
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">AI with enterprise guardrails.</h2>
             <p className="text-muted-foreground text-lg">
-              DevPilot AI respects the same permissions, access controls, and compliance boundaries as human users.
+              Handoff AI respects the same permissions, access controls, and compliance boundaries as human users.
             </p>
           </div>
 

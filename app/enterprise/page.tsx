@@ -86,7 +86,7 @@ export default function EnterprisePage() {
               Coordinate complex delivery across the entire organization.
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-              DevPilot Enterprise gives large organizations a controlled system for programs, projects, teams, releases, security, and operational reporting.
+              Handoff gives large organizations a controlled system for programs, projects, teams, releases, security, and operational reporting.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Button 
@@ -347,7 +347,7 @@ export default function EnterprisePage() {
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32 border-t border-border pt-32">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <Blocks className="w-10 h-10 mx-auto mb-6 text-foreground" />
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">Connect DevPilot to the tools your organization already uses.</h2>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">Connect Handoff to the tools your organization already uses.</h2>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">

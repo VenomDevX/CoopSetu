@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  ChevronRight, 
-  Search, 
-  Filter, 
-  Plus, 
-  Bot, 
+import {
+  ChevronRight,
+  Search,
+  Filter,
+  Plus,
+  Bot,
   BarChart3,
   Download,
   FileText,
@@ -47,39 +47,57 @@ const tabs = [
   'Executive Reports'
 ];
 
-const velocityData = [
-  { sprint: 'Sprint 21', planned: 45, completed: 42 },
-  { sprint: 'Sprint 22', planned: 50, completed: 48 },
-  { sprint: 'Sprint 23', planned: 48, completed: 48 },
-  { sprint: 'Sprint 24', planned: 55, completed: 51 },
-  { sprint: 'Sprint 25', planned: 52, completed: 49 },
-  { sprint: 'Sprint 26', planned: 60, completed: 58 },
-];
-
-const cycleTimeData = [
-  { week: 'W1', time: 5.2 },
-  { week: 'W2', time: 5.0 },
-  { week: 'W3', time: 4.8 },
-  { week: 'W4', time: 4.5 },
-  { week: 'W5', time: 4.2 },
-  { week: 'W6', time: 3.9 },
-];
-
-const projectHealthData = [
-  { name: 'On Track', value: 65, color: 'var(--foreground)' },
-  { name: 'At Risk', value: 25, color: 'var(--muted-foreground)' },
-  { name: 'Off Track', value: 10, color: 'var(--border)' },
-];
-
-const workStatusData = [
-  { name: 'To Do', value: 30 },
-  { name: 'In Progress', value: 45 },
-  { name: 'In Review', value: 15 },
-  { name: 'Done', value: 10 },
-];
-
 export default function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState('Delivery Analytics');
+  const [velocityData, setVelocityData] = useState<{ sprint: string; planned: number; completed: number }[]>([]);
+  const [projectHealthData, setProjectHealthData] = useState<{ name: string; value: number; color: string }[]>([]);
+  const [workStatusData, setWorkStatusData] = useState<{ name: string; value: number }[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/v1/sprints').then((r) => r.json()).then((j) => {
+      if (!active) return;
+
+      setVelocityData((Array.isArray(j?.data) ? j.data : []).slice(0, 8).map((s: any) => ({
+        sprint: s.name, planned: Number(s.planned_story_points) || 0, completed: Number(s.completed_story_points) || 0,
+      })));
+    }).catch(() => { });
+
+    fetch('/api/v1/analytics/projects').then((r) => r.json()).then((j) => {
+      if (!active) return;
+      const rows = Array.isArray(j?.data) ? j.data : [];
+      const by = (h: string) => rows.filter((p: { health: string }) => p.health === h).length;
+      setProjectHealthData([
+        { name: 'On Track', value: by('ON_TRACK'), color: 'var(--foreground)' },
+        { name: 'At Risk', value: by('AT_RISK'), color: 'var(--muted-foreground)' },
+        { name: 'Off Track', value: by('OFF_TRACK'), color: 'var(--border)' },
+      ]);
+    }).catch(() => { });
+
+    fetch('/api/v1/tasks').then((r) => r.json()).then((j) => {
+      if (!active) return;
+      const rows = Array.isArray(j?.data) ? j.data : [];
+      const grp = { 'To Do': 0, 'In Progress': 0, 'In Review': 0, Done: 0 };
+      const map: Record<string, keyof typeof grp> = {
+        BACKLOG: 'To Do', READY: 'To Do', IN_PROGRESS: 'In Progress', BLOCKED: 'In Progress',
+        CODE_REVIEW: 'In Review', QA_TESTING: 'In Review', SECURITY_REVIEW: 'In Review',
+        READY_FOR_RELEASE: 'In Review', DONE: 'Done', CANCELLED: 'Done',
+      };
+      rows.forEach((t: { status: string }) => { const k = map[t.status]; if (k) grp[k]++; });
+      setWorkStatusData(Object.entries(grp).map(([name, value]) => ({ name, value })));
+    }).catch(() => { });
+    return () => { active = false; };
+  }, []);
+
+  // Real, derived delivery metrics (no fabricated baselines).
+  const totalPlanned = velocityData.reduce((s, v) => s + v.planned, 0);
+  const totalCompleted = velocityData.reduce((s, v) => s + v.completed, 0);
+  const avgVelocity = velocityData.length ? Math.round(totalCompleted / velocityData.length) : 0;
+  const completionRate = totalPlanned > 0 ? Math.round((totalCompleted / totalPlanned) * 100) : 0;
+  const totalProjects = projectHealthData.reduce((s, p) => s + p.value, 0);
+  const onTrackPct = totalProjects > 0
+    ? Math.round(((projectHealthData.find((p) => p.name === 'On Track')?.value ?? 0) / totalProjects) * 100)
+    : 0;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 min-h-[calc(100vh-80px)]">
@@ -92,7 +110,7 @@ export default function AnalyticsPage() {
             <span className="text-foreground">Reports</span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight uppercase flex items-center gap-3">
-            <div className="w-3 h-3 bg-foreground" />
+            <BarChart3 className="w-8 h-8" />
             Analytics
           </h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-widest max-w-2xl">
@@ -100,25 +118,25 @@ export default function AnalyticsPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
             <Printer className="w-4 h-4" />
             Export PDF
           </Button>
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
             <Download className="w-4 h-4" />
             Export CSV
           </Button>
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
             <Calendar className="w-4 h-4" />
             Schedule
           </Button>
-          <Button className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
+          <Button disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background gap-2 disabled:opacity-40">
             <Plus className="w-4 h-4" />
             Create Report
           </Button>
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2">
+          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent gap-2 disabled:opacity-40">
             <Bot className="w-4 h-4" />
-            Ask DevPilot AI
+            Ask Handoff AI
           </Button>
         </div>
       </div>
@@ -128,25 +146,19 @@ export default function AnalyticsPage() {
         <div className="flex items-center gap-4 text-sm font-mono flex-wrap">
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase text-muted-foreground tracking-widest">Date Range:</span>
-            <select className="bg-background border border-border px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase">
-              <option>Last 30 Days</option>
-              <option>Last Quarter</option>
-              <option>Year to Date</option>
+            <select disabled title="Not available yet" className="bg-background border border-border px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase disabled:opacity-40">
+              <option>All Time</option>
             </select>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase text-muted-foreground tracking-widest">Team:</span>
-            <select className="bg-background border border-border px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase">
-              <option>All Engineering</option>
-              <option>Frontend Team</option>
-              <option>Backend Team</option>
+            <select disabled title="Not available yet" className="bg-background border border-border px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase disabled:opacity-40">
+              <option>All Teams</option>
             </select>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase text-muted-foreground tracking-widest">Compare:</span>
-            <select className="bg-background border border-border px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase">
-              <option>Previous Period</option>
-              <option>Same Period Last Year</option>
+            <select disabled title="Not available yet" className="bg-background border border-border px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase disabled:opacity-40">
               <option>None</option>
             </select>
           </div>
@@ -157,11 +169,10 @@ export default function AnalyticsPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-[10px] font-mono uppercase tracking-widest transition-colors border ${
-                activeTab === tab
+              className={`px-4 py-2 text-[10px] font-mono uppercase tracking-widest transition-colors border ${activeTab === tab
                   ? 'bg-foreground text-background border-foreground'
                   : 'bg-surface text-muted-foreground border-transparent hover:border-border hover:text-foreground'
-              }`}
+                }`}
             >
               {tab}
             </button>
@@ -173,61 +184,35 @@ export default function AnalyticsPage() {
       <div className="space-y-6 pb-12">
         {activeTab === 'Delivery Analytics' && (
           <div className="space-y-6 animate-in fade-in">
-            
-            {/* DevPilot Summary */}
-            <div className="border border-accent/30 bg-accent/5 p-5 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-bl-full pointer-events-none" />
-              <div className="flex items-center gap-2 mb-3">
-                <Bot className="w-5 h-5 text-accent" />
-                <h3 className="font-mono text-xs uppercase tracking-widest font-bold text-foreground">DevPilot Analysis</h3>
-              </div>
-              <p className="text-sm leading-relaxed max-w-3xl mb-4">
-                Delivery performance is trending positive. Cycle time has decreased by <span className="font-bold">12%</span> over the last 6 weeks, indicating improved pipeline efficiency. Sprint velocity remains stable with a completion rate of <span className="font-bold text-emerald-500">96.6%</span>.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">
-                  Explain velocity changes
-                </Button>
-                <Button variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">
-                  Detect bottlenecks
-                </Button>
-                <Button variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">
-                  Forecast completion
-                </Button>
-              </div>
-            </div>
 
-            {/* Top KPIs */}
+            {/* Top KPIs — derived from real sprint/project data */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="border border-border p-5 bg-surface flex flex-col justify-between">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Average Cycle Time</div>
-                <div className="text-3xl font-bold font-mono tracking-tight">3.9d</div>
-                <div className="flex items-center gap-1 text-[10px] font-mono text-emerald-500 mt-2">
-                  <TrendingDown className="w-3 h-3" />
-                  <span>-12% vs last period</span>
-                </div>
-              </div>
-              <div className="border border-border p-5 bg-surface flex flex-col justify-between">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Avg Sprint Velocity</div>
-                <div className="text-3xl font-bold font-mono tracking-tight">52 pts</div>
-                <div className="flex items-center gap-1 text-[10px] font-mono text-emerald-500 mt-2">
-                  <TrendingUp className="w-3 h-3" />
-                  <span>+8% vs last period</span>
+                <div className="text-3xl font-bold font-mono tracking-tight">{avgVelocity} pts</div>
+                <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground mt-2">
+                  <span>Across {velocityData.length} sprint{velocityData.length === 1 ? '' : 's'}</span>
                 </div>
               </div>
               <div className="border border-border p-5 bg-surface flex flex-col justify-between">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">On-time Completion</div>
-                <div className="text-3xl font-bold font-mono tracking-tight">94%</div>
+                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Completion Rate</div>
+                <div className="text-3xl font-bold font-mono tracking-tight">{completionRate}%</div>
                 <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground mt-2">
-                  <TrendingUp className="w-3 h-3" />
-                  <span>+2% vs last period</span>
+                  <span>{totalCompleted}/{totalPlanned} story points</span>
                 </div>
               </div>
               <div className="border border-border p-5 bg-surface flex flex-col justify-between">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Delivery Forecast</div>
-                <div className="text-xl font-bold tracking-tight">On Target</div>
+                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Projects On Track</div>
+                <div className="text-3xl font-bold font-mono tracking-tight">{onTrackPct}%</div>
                 <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground mt-2">
-                  <span>Based on current velocity</span>
+                  <span>{projectHealthData.find((p) => p.name === 'On Track')?.value ?? 0}/{totalProjects} projects</span>
+                </div>
+              </div>
+              <div className="border border-border p-5 bg-surface flex flex-col justify-between">
+                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Average Cycle Time</div>
+                <div className="text-xl font-bold tracking-tight text-muted-foreground">—</div>
+                <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground mt-2">
+                  <span>Not tracked yet</span>
                 </div>
               </div>
             </div>
@@ -243,7 +228,7 @@ export default function AnalyticsPage() {
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                       <XAxis dataKey="sprint" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} dy={10} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
-                      <RechartsTooltip 
+                      <RechartsTooltip
                         contentStyle={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)', borderRadius: '0', fontSize: '12px' }}
                         cursor={{ fill: 'var(--surface-hover)' }}
                       />
@@ -254,21 +239,12 @@ export default function AnalyticsPage() {
                 </div>
               </div>
 
-              {/* Cycle Time Trend */}
+              {/* Cycle Time Trend — no historical cycle-time series tracked yet */}
               <div className="border border-border p-5 bg-surface">
                 <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold mb-6">Cycle Time Trend (Days)</h3>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={cycleTimeData} margin={{ left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                      <XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} dy={10} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
-                      <RechartsTooltip 
-                        contentStyle={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)', borderRadius: '0', fontSize: '12px' }}
-                      />
-                      <Line type="monotone" dataKey="time" name="Avg Cycle Time" stroke="var(--foreground)" strokeWidth={2} dot={{ r: 4, fill: 'var(--foreground)' }} activeDot={{ r: 6 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
+                <div className="h-64 flex flex-col items-center justify-center text-center border border-dashed border-border bg-surface/40">
+                  <Clock className="w-8 h-8 text-muted-foreground mb-3" />
+                  <p className="text-xs font-mono text-muted-foreground">Cycle-time history not available yet.</p>
                 </div>
               </div>
             </div>
@@ -295,13 +271,13 @@ export default function AnalyticsPage() {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <RechartsTooltip 
+                      <RechartsTooltip
                         contentStyle={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)', borderRadius: '0', fontSize: '12px', color: 'var(--foreground)' }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
-                    <span className="text-2xl font-bold font-mono">65%</span>
+                    <span className="text-2xl font-bold font-mono">{onTrackPct}%</span>
                     <span className="text-[10px] font-mono text-muted-foreground uppercase">On Track</span>
                   </div>
                 </div>
@@ -324,7 +300,7 @@ export default function AnalyticsPage() {
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
                       <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
                       <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--foreground)' }} width={80} />
-                      <RechartsTooltip 
+                      <RechartsTooltip
                         contentStyle={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)', borderRadius: '0', fontSize: '12px' }}
                         cursor={{ fill: 'var(--surface-hover)' }}
                       />
@@ -341,14 +317,10 @@ export default function AnalyticsPage() {
         {activeTab !== 'Delivery Analytics' && (
           <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-border bg-surface/50 animate-in fade-in">
             <BarChart3 className="w-12 h-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-bold mb-2">Select parameters to view {activeTab}</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mb-6">
-              Data is being aggregated for this view. Use DevPilot AI to generate a custom analysis.
+            <h3 className="text-lg font-bold mb-2">{activeTab}</h3>
+            <p className="text-sm text-muted-foreground max-w-sm font-mono">
+              Not available yet.
             </p>
-            <Button className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
-              <Bot className="w-4 h-4" />
-              Generate with DevPilot
-            </Button>
           </div>
         )}
       </div>

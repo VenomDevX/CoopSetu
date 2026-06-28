@@ -1,35 +1,122 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  CheckCircle2, 
-  Clock, 
-  AlertOctagon, 
-  AlertCircle, 
-  FileSignature, 
-  TrendingUp, 
-  Play, 
-  MessageSquare, 
-  Eye, 
-  ChevronRight, 
-  Search, 
-  Filter, 
-  ArrowUpRight, 
-  CheckSquare, 
-  GitPullRequest, 
-  Terminal, 
-  Bot, 
+import {
+  Clock,
+  AlertOctagon,
+  AlertCircle,
+  FileSignature,
+  TrendingUp,
+  ChevronRight,
+  Search,
+  Filter,
+  CheckSquare,
+  GitPullRequest,
   ShieldAlert,
   Calendar,
   MoreVertical,
   X,
-  Plus
+  Plus,
+  Briefcase
 } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useCurrentMembership } from '@/lib/permissions/context';
+import { useTablesRealtime } from '@/hooks/use-tables-realtime';
+import { AiDailyBrief } from '@/components/ai/ai-daily-brief';
+
+const STATUS_DISPLAY: Record<string, string> = {
+  BACKLOG: 'Not Started', READY: 'Not Started', IN_PROGRESS: 'In Progress', BLOCKED: 'Blocked',
+  CODE_REVIEW: 'In Review', QA_TESTING: 'In Review', SECURITY_REVIEW: 'In Review',
+  READY_FOR_RELEASE: 'In Review', DONE: 'Completed', CANCELLED: 'Completed',
+};
+const CLOSED = ['DONE', 'CANCELLED'];
+const REVIEW = ['CODE_REVIEW', 'QA_TESTING', 'SECURITY_REVIEW', 'READY_FOR_RELEASE'];
+const PAGE_SIZE = 8;
+
+const TABS = [
+  { label: 'All Work', match: () => true },
+  { label: 'In Progress', match: (s: string) => s === 'IN_PROGRESS' },
+  { label: 'Waiting for Review', match: (s: string) => REVIEW.includes(s) },
+  { label: 'Blocked', match: (s: string) => s === 'BLOCKED' },
+  { label: 'Completed', match: (s: string) => CLOSED.includes(s) },
+];
+
+interface Task {
+  id: string; task_key: string; title: string; status: string; priority: string;
+  task_type: string; due_date: string | null; story_points: number | null; project_code: string;
+}
+interface MyWork {
+  tasks: Task[];
+  kpis: { active: number; dueToday: number; overdue: number; blocked: number; points: number; donePoints: number; total: number };
+  blockers: { task_key: string; title: string; project?: { code?: string } | null }[];
+  upcoming: { task_key: string; title: string; due_date: string | null }[];
+  recentActivity: { actor: string; activity: string; taskKey: string; at: string }[];
+  sprint: null | { name: string; goal: string | null; plannedPoints: number; completedPoints: number; myOpen: number; myPoints: number };
+  approvals: { id: string; type: string; requester: string; project: string; dueDate: string | null }[];
+}
+
+function fmtDue(d?: string | null) {
+  if (!d) return '—';
+  const due = new Date(d); const today = new Date();
+  const diff = Math.round((due.getTime() - new Date(today.toDateString()).getTime()) / 86400000);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  if (diff === -1) return 'Yesterday';
+  return due.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+}
+function relTime(iso: string) {
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
 
 export default function MyWorkPage() {
-  const [selectedTask, setSelectedTask] = useState<string | null>(null);
+  const membership = useCurrentMembership();
+  const [data, setData] = useState<MyWork | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [tabIndex, setTabIndex] = useState(0);
+  const [page, setPage] = useState(0);
+  const [search, setSearch] = useState('');
+
+  const load = useCallback(() => {
+    fetch('/api/v1/my-work')
+      .then((r) => r.json())
+      .then((j) => { if (j?.data) setData(j.data); })
+      .catch(() => { });
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+  useTablesRealtime(['tasks', 'task_assignees', 'task_activity', 'notifications'], load);
+
+  const tasks = useMemo(() => data?.tasks ?? [], [data]);
+  const kpis = data?.kpis ?? { active: 0, dueToday: 0, overdue: 0, blocked: 0, points: 0, donePoints: 0, total: 0 };
+
+  // Filtered list drives BOTH the table rows and the "Showing X–Y of Z" line —
+  // they are computed from the same array so they can never disagree.
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return tasks.filter((t) =>
+      TABS[tabIndex].match(t.status) &&
+      (!q || t.title.toLowerCase().includes(q) || t.task_key.toLowerCase().includes(q)),
+    );
+  }, [tasks, tabIndex, search]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount - 1);
+  const pageRows = filtered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
+  const rangeStart = filtered.length === 0 ? 0 : safePage * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(filtered.length, safePage * PAGE_SIZE + PAGE_SIZE);
+
+  const priorities = tasks.filter((t) => !CLOSED.includes(t.status)).slice(0, 5);
+
+  const completionPct = kpis.points > 0 ? Math.round((kpis.donePoints / kpis.points) * 100) : 0;
+  const sprintPct = data?.sprint && data.sprint.plannedPoints > 0
+    ? Math.round((data.sprint.completedPoints / data.sprint.plannedPoints) * 100) : 0;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -42,37 +129,32 @@ export default function MyWorkPage() {
             <span className="text-foreground">My Work</span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight uppercase flex items-center gap-3">
-            <div className="w-3 h-3 bg-foreground" />
+            <Briefcase className="w-8 h-8" />
             My Work
           </h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-widest">
-            Your assigned work, approvals, deadlines, and active delivery items.
+            {membership.organizationName} · Your assigned work, deadlines, and active delivery items.
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover">
-            Update Status
-          </Button>
-          <Button className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
-            <Plus className="w-4 h-4" />
-            Create Task
-          </Button>
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2">
-            <Bot className="w-4 h-4" />
-            Ask DevPilot AI
-          </Button>
+          <Link href="/dashboard/tasks">
+            <Button className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
+              <Plus className="w-4 h-4" />
+              Go to Task Board
+            </Button>
+          </Link>
         </div>
       </div>
 
-      {/* Top KPI Strip */}
+      {/* Top KPI Strip — every value derived from the same /my-work payload. */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
-          { label: 'Active Tasks', value: '14', icon: CheckSquare, trend: '+2 this week' },
-          { label: 'Due Today', value: '3', icon: Clock, trend: '2 High Priority', alert: true },
-          { label: 'Overdue', value: '1', icon: AlertOctagon, trend: 'Needs action', error: true },
-          { label: 'Blocked Items', value: '2', icon: AlertCircle, trend: 'Awaiting API team', error: true },
-          { label: 'Pending Approvals', value: '5', icon: FileSignature, trend: '3 PRs, 2 QA' },
-          { label: 'Sprint Points', value: '32/45', icon: TrendingUp, trend: '71% completion' },
+          { label: 'Active Tasks', value: String(kpis.active), icon: CheckSquare, trend: 'Assigned to you' },
+          { label: 'Due Today', value: String(kpis.dueToday), icon: Clock, trend: 'Due today', alert: kpis.dueToday > 0 },
+          { label: 'Overdue', value: String(kpis.overdue), icon: AlertOctagon, trend: 'Needs action', error: kpis.overdue > 0 },
+          { label: 'Blocked Items', value: String(kpis.blocked), icon: AlertCircle, trend: 'Blocked', error: kpis.blocked > 0 },
+          { label: 'Completed Pts', value: String(kpis.donePoints), icon: FileSignature, trend: 'Done' },
+          { label: 'Total Points', value: `${kpis.donePoints}/${kpis.points}`, icon: TrendingUp, trend: `${completionPct}% completion` },
         ].map((kpi, i) => (
           <div key={i} className={`p-4 border ${kpi.error ? 'border-destructive/50 bg-destructive/5' : kpi.alert ? 'border-accent/50 bg-accent/5' : 'border-border bg-surface'} relative overflow-hidden group`}>
             <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-100 transition-opacity">
@@ -89,10 +171,10 @@ export default function MyWorkPage() {
 
       {/* Main Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* Left Column (Main) */}
         <div className="lg:col-span-2 space-y-8">
-          
+
           {/* Priorities */}
           <div className="border border-border bg-background">
             <div className="p-4 border-b border-border flex items-center justify-between bg-surface-hover">
@@ -102,39 +184,31 @@ export default function MyWorkPage() {
               </h3>
             </div>
             <div className="divide-y divide-border">
-              {[
-                { id: 'APX-4921', title: 'Implement Retry Logic for Stripe Webhooks', project: 'Payments Core', time: '14:00', priority: 'P1', status: 'In Progress', pr: 'Open' },
-                { id: 'APX-4925', title: 'Fix Race Condition in Ledger Export', project: 'Ledger API', time: '16:30', priority: 'P1', status: 'Not Started', pr: 'None' },
-                { id: 'APX-4910', title: 'Review Security Audit Findings', project: 'Compliance', time: '18:00', priority: 'P2', status: 'In Review', pr: 'Merged' },
-                { id: 'APX-4899', title: 'Update Node.js Runtime in CI Pipeline', project: 'Platform', time: 'EOD', priority: 'P2', status: 'Blocked', pr: 'Draft' },
-              ].map((task, i) => (
-                <div key={i} className="p-4 hover:bg-surface-hover transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer" onClick={() => setSelectedTask(task.id)}>
+              {priorities.map((t) => (
+                <div key={t.id} className="p-4 hover:bg-surface-hover transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer" onClick={() => setSelectedTask(t)}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-1">
-                      <span className="font-mono text-[10px] px-2 py-0.5 bg-surface border border-border text-muted-foreground">{task.id}</span>
-                      <span className={`font-mono text-[10px] px-2 py-0.5 border ${task.priority === 'P1' ? 'bg-destructive/10 border-destructive/30 text-destructive' : 'bg-surface border-border text-foreground'}`}>
-                        {task.priority}
+                      <span className="font-mono text-[10px] px-2 py-0.5 bg-surface border border-border text-muted-foreground">{t.task_key}</span>
+                      <span className={`font-mono text-[10px] px-2 py-0.5 border ${t.priority === 'CRITICAL' || t.priority === 'HIGH' ? 'bg-destructive/10 border-destructive/30 text-destructive' : 'bg-surface border-border text-foreground'}`}>
+                        {t.priority}
                       </span>
                       <span className="font-mono text-[10px] uppercase text-accent border border-accent/30 px-2 py-0.5 bg-accent/5 flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> Due {task.time}
+                        <Clock className="w-3 h-3" /> Due {fmtDue(t.due_date)}
                       </span>
                     </div>
-                    <div className="text-sm font-bold truncate">{task.title}</div>
+                    <div className="text-sm font-bold truncate">{t.title}</div>
                     <div className="text-xs text-muted-foreground mt-1 flex items-center gap-4 font-mono tracking-wider">
-                      <span>{task.project}</span>
-                      <span className="flex items-center gap-1"><GitPullRequest className="w-3 h-3" /> PR: {task.pr}</span>
+                      <span>{t.project_code}</span>
+                      <span>{STATUS_DISPLAY[t.status] ?? t.status}</span>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="h-8 px-3 rounded-none text-[10px] font-mono uppercase border-border hover:bg-accent hover:text-background hover:border-accent">
-                      <Play className="w-3 h-3 mr-2" /> Start
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-8 px-3 rounded-none text-[10px] font-mono uppercase border-border hover:bg-destructive hover:text-background hover:border-destructive">
-                      Block
-                    </Button>
                   </div>
                 </div>
               ))}
+              {priorities.length === 0 && (
+                <div className="p-6 text-center text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                  No open tasks assigned to you.
+                </div>
+              )}
             </div>
           </div>
 
@@ -145,25 +219,31 @@ export default function MyWorkPage() {
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input type="text" placeholder="FILTER TASKS..." className="h-7 pl-7 pr-3 bg-background border border-border text-[10px] font-mono uppercase w-48 focus:outline-none focus:border-foreground" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+                    placeholder="FILTER TASKS..."
+                    className="h-7 pl-7 pr-3 bg-background border border-border text-[10px] font-mono uppercase w-48 focus:outline-none focus:border-foreground"
+                  />
                 </div>
-                <Button variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase border-border">
+                <Button variant="outline" size="sm" disabled title="Not available yet" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase border-border opacity-50">
                   <Filter className="w-3 h-3 mr-2" /> Filter
                 </Button>
               </div>
             </div>
-            
+
             {/* Tabs */}
             <div className="flex border-b border-border overflow-x-auto scrollbar-none">
-              {['All Work', 'In Progress', 'Waiting for Review', 'Blocked', 'Completed'].map((tab, i) => (
-                <button key={i} className={`px-4 py-3 text-xs font-mono uppercase tracking-widest whitespace-nowrap border-b-2 ${i === 1 ? 'border-foreground text-foreground font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
-                  {tab}
+              {TABS.map((tab, i) => (
+                <button key={i} onClick={() => { setTabIndex(i); setPage(0); }} className={`px-4 py-3 text-xs font-mono uppercase tracking-widest whitespace-nowrap border-b-2 ${i === tabIndex ? 'border-foreground text-foreground font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+                  {tab.label}
                 </button>
               ))}
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm font-mono border-collapse">
+              <table className="w-full min-w-[800px] text-left text-sm font-mono border-collapse">
                 <thead>
                   <tr className="border-b border-border bg-surface-hover/50">
                     <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">ID</th>
@@ -175,73 +255,83 @@ export default function MyWorkPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {[
-                    { id: 'APX-4921', title: 'Implement Retry Logic', status: 'In Progress', due: 'Today', pts: '5' },
-                    { id: 'APX-4912', title: 'Update Auth Tokens', status: 'In Review', due: 'Tomorrow', pts: '3' },
-                    { id: 'APX-4899', title: 'Node.js Runtime Update', status: 'Blocked', due: 'Oct 24', pts: '8' },
-                    { id: 'APX-4905', title: 'Refactor Dashboard Queries', status: 'In Progress', due: 'Oct 25', pts: '5' },
-                    { id: 'APX-4882', title: 'Export PDF Fix', status: 'Not Started', due: 'Oct 26', pts: '2' },
-                  ].map((row, i) => (
-                    <tr key={i} className="hover:bg-surface-hover group cursor-pointer" onClick={() => setSelectedTask(row.id)}>
-                      <td className="p-3 text-muted-foreground text-xs">{row.id}</td>
-                      <td className="p-3 text-xs font-sans font-medium truncate max-w-[200px]">{row.title}</td>
-                      <td className="p-3">
-                        <span className={`text-[10px] px-2 py-0.5 border ${row.status === 'Blocked' ? 'border-destructive text-destructive' : row.status === 'In Progress' ? 'border-accent text-accent' : 'border-border text-muted-foreground'}`}>
-                          {row.status}
-                        </span>
-                      </td>
-                      <td className="p-3 text-[10px] text-muted-foreground">{row.due}</td>
-                      <td className="p-3 text-[10px] text-muted-foreground">{row.pts}</td>
-                      <td className="p-3">
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-none opacity-0 group-hover:opacity-100 transition-opacity">
-                          <MoreVertical className="w-3 h-3 text-muted-foreground" />
-                        </Button>
+                  {pageRows.map((t) => {
+                    const display = STATUS_DISPLAY[t.status] ?? t.status;
+                    return (
+                      <tr key={t.id} className="hover:bg-surface-hover group cursor-pointer" onClick={() => setSelectedTask(t)}>
+                        <td className="p-3 text-muted-foreground text-xs">{t.task_key}</td>
+                        <td className="p-3 text-xs font-sans font-medium truncate max-w-[200px]">{t.title}</td>
+                        <td className="p-3">
+                          <span className={`text-[10px] px-2 py-0.5 border ${display === 'Blocked' ? 'border-destructive text-destructive' : display === 'In Progress' ? 'border-accent text-accent' : 'border-border text-muted-foreground'}`}>
+                            {display}
+                          </span>
+                        </td>
+                        <td className="p-3 text-[10px] text-muted-foreground">{fmtDue(t.due_date)}</td>
+                        <td className="p-3 text-[10px] text-muted-foreground">{t.story_points ?? '—'}</td>
+                        <td className="p-3">
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-none opacity-0 group-hover:opacity-100 transition-opacity">
+                            <MoreVertical className="w-3 h-3 text-muted-foreground" />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filtered.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="p-6 text-center text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                        No tasks in this view.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
-            
+
             <div className="p-3 border-t border-border flex justify-between items-center text-[10px] font-mono text-muted-foreground bg-surface-hover">
-              <span>Showing 1-5 of 14 tasks</span>
-              <div className="flex gap-2">
-                <button className="hover:text-foreground">Prev</button>
-                <span>1 / 3</span>
-                <button className="hover:text-foreground">Next</button>
+              <span>Showing {rangeStart}-{rangeEnd} of {filtered.length} tasks</span>
+              <div className="flex gap-2 items-center">
+                <button className="hover:text-foreground disabled:opacity-40" disabled={safePage === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>Prev</button>
+                <span>{safePage + 1} / {pageCount}</span>
+                <button className="hover:text-foreground disabled:opacity-40" disabled={safePage >= pageCount - 1} onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}>Next</button>
               </div>
             </div>
           </div>
 
           {/* Grid for Sprint & Activity */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            
+
             {/* My Sprint Work */}
             <div className="border border-border bg-background p-5">
-              <h3 className="font-mono text-xs uppercase tracking-widest font-bold mb-4">Sprint 42: Ledger Finalization</h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-2 uppercase tracking-widest">
-                    <span>Points Completed</span>
-                    <span className="text-foreground">32 / 45</span>
+              <h3 className="font-mono text-xs uppercase tracking-widest font-bold mb-4">
+                {data?.sprint ? data.sprint.name : 'My Sprint Work'}
+              </h3>
+              {data?.sprint ? (
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-2 uppercase tracking-widest">
+                      <span>Sprint Points Completed</span>
+                      <span className="text-foreground">{data.sprint.completedPoints} / {data.sprint.plannedPoints}</span>
+                    </div>
+                    <div className="h-2 w-full bg-surface border border-border overflow-hidden">
+                      <div className="h-full bg-foreground" style={{ width: `${sprintPct}%` }} />
+                    </div>
                   </div>
-                  <div className="h-2 w-full bg-surface border border-border overflow-hidden">
-                    <div className="h-full bg-foreground w-[71%]" />
+                  <div className="grid grid-cols-2 gap-4 mt-6">
+                    <div className="p-3 border border-border bg-surface-hover">
+                      <div className="text-2xl font-bold">{data.sprint.myOpen}</div>
+                      <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">My Open Items</div>
+                    </div>
+                    <div className="p-3 border border-border bg-surface-hover">
+                      <div className="text-2xl font-bold">{data.sprint.myPoints}</div>
+                      <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">My Points</div>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                  <div className="p-3 border border-border bg-surface-hover">
-                    <div className="text-2xl font-bold">13</div>
-                    <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Pts Remaining</div>
-                  </div>
-                  <div className="p-3 border border-border bg-surface-hover border-l-destructive/50">
-                    <div className="text-2xl font-bold text-destructive">8</div>
-                    <div className="text-[10px] font-mono text-destructive uppercase tracking-widest">Pts at Risk</div>
-                  </div>
+              ) : (
+                <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest py-6">
+                  No active sprint with work assigned to you.
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Recent Activity */}
@@ -250,22 +340,22 @@ export default function MyWorkPage() {
                 <h3 className="font-mono text-xs uppercase tracking-widest font-bold">Recent Activity</h3>
               </div>
               <div className="p-4 flex-1 overflow-y-auto space-y-4">
-                {[
-                  { user: 'S. Chen', action: 'approved your PR', target: '#4921-webhook-retry', time: '10m ago' },
-                  { user: 'M. Johnson', action: 'mentioned you in', target: 'APX-4899', time: '1h ago' },
-                  { user: 'System', action: 'deployed to staging', target: 'Release v2.4', time: '2h ago' },
-                  { user: 'You', action: 'changed status to In Progress', target: 'APX-4921', time: '3h ago' },
-                ].map((item, i) => (
+                {(data?.recentActivity ?? []).map((item, i) => (
                   <div key={i} className="flex gap-3 text-sm">
                     <div className="w-6 h-6 bg-surface border border-border rounded-none flex items-center justify-center text-[10px] font-mono text-muted-foreground flex-shrink-0 mt-0.5">
-                      {item.user.charAt(0)}
+                      {item.actor.charAt(0)}
                     </div>
                     <div>
-                      <span className="font-bold text-xs">{item.user}</span> <span className="text-muted-foreground text-xs">{item.action}</span> <span className="font-mono text-[10px] px-1 bg-surface border border-border text-foreground">{item.target}</span>
-                      <div className="text-[10px] font-mono text-muted-foreground mt-1">{item.time}</div>
+                      <span className="font-bold text-xs">{item.actor}</span> <span className="text-muted-foreground text-xs">{item.activity}</span> <span className="font-mono text-[10px] px-1 bg-surface border border-border text-foreground">{item.taskKey}</span>
+                      <div className="text-[10px] font-mono text-muted-foreground mt-1">{relTime(item.at)}</div>
                     </div>
                   </div>
                 ))}
+                {(data?.recentActivity ?? []).length === 0 && (
+                  <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest py-2">
+                    No recent activity on your tasks.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -275,64 +365,31 @@ export default function MyWorkPage() {
 
         {/* Right Column (Side Panel) */}
         <div className="space-y-8">
-          
-          {/* AI Brief */}
-          <div className="border border-border bg-background relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 rounded-bl-full pointer-events-none" />
-            <div className="p-4 border-b border-border bg-surface-hover flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Bot className="w-4 h-4 text-accent" />
-                <h3 className="font-mono text-xs uppercase tracking-widest font-bold">AI Daily Brief</h3>
-              </div>
-              <div className="text-[9px] font-mono uppercase text-muted-foreground bg-surface px-1.5 py-0.5 border border-border flex items-center gap-1">
-                <Eye className="w-3 h-3" />
-                Auth: JD
-              </div>
-            </div>
-            <div className="p-4 space-y-4 text-sm leading-relaxed text-muted-foreground font-light">
-              <p>
-                Good morning. You have <strong className="text-foreground font-normal">7 active tasks</strong> today. 
-                <strong className="text-accent font-normal"> Two items are due by EOD.</strong>
-              </p>
-              <p>
-                <span className="inline-block w-2 h-2 bg-destructive mr-2" />
-                The <span className="font-mono text-xs text-foreground bg-surface border border-border px-1">Node.js Update</span> task is currently blocked by a pending architecture review from Platform Engineering.
-              </p>
-              <p>
-                <span className="inline-block w-2 h-2 bg-foreground mr-2" />
-                Sarah approved your PR for webhook retries. You can proceed with merging.
-              </p>
-            </div>
-            <div className="px-4 pb-2">
-              <div className="text-[10px] font-mono text-muted-foreground border-t border-border/50 pt-2 flex flex-col gap-1">
-                <span className="flex items-center gap-1"><ArrowUpRight className="w-3 h-3"/> Sources: Jira (3), GitHub (1), Slack (2)</span>
-                <span className="flex items-center gap-1"><Terminal className="w-3 h-3"/> Logged query. Human approval required for actions.</span>
-              </div>
-            </div>
-            <div className="p-3 border-t border-border bg-surface-hover/50 flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" className="h-6 px-2 rounded-none text-[9px] font-mono uppercase border-border text-accent hover:bg-accent hover:text-background">
-                Summarize Blockers
-              </Button>
-              <Button variant="outline" size="sm" className="h-6 px-2 rounded-none text-[9px] font-mono uppercase border-border hover:bg-foreground hover:text-background">
-                Suggest Priority
-              </Button>
-            </div>
-          </div>
+
+          {/* AI Daily Brief — real streamed summary from /api/v1/ai/stream
+              (daily-brief intent) with source links; renders only for members
+              with the ai:use permission. */}
+          <AiDailyBrief />
 
           {/* Blockers */}
           <div className="border border-destructive/30 bg-background">
             <div className="p-4 border-b border-destructive/30 bg-destructive/5 flex items-center justify-between">
               <h3 className="font-mono text-xs uppercase tracking-widest font-bold text-destructive flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4" /> My Blockers (1)
+                <ShieldAlert className="w-4 h-4" /> My Blockers ({data?.blockers.length ?? 0})
               </h3>
             </div>
-            <div className="p-4 space-y-3">
-              <div className="text-sm font-bold">APX-4899: Update Node.js</div>
-              <div className="text-xs text-muted-foreground">Blocked by: <span className="font-mono text-[10px] text-foreground">ARC-102 Platform Review</span></div>
-              <div className="text-xs text-muted-foreground flex items-center gap-2">Owner: <span className="text-foreground">D. Smith</span> <span className="text-[10px] font-mono px-1 bg-destructive/10 text-destructive">2 Days</span></div>
-              <Button variant="outline" size="sm" className="w-full h-7 mt-2 rounded-none text-[10px] font-mono uppercase border-destructive text-destructive hover:bg-destructive hover:text-background">
-                Escalate Blocker
-              </Button>
+            <div className="p-4 space-y-4">
+              {(data?.blockers ?? []).map((b, i) => (
+                <div key={i} className="space-y-1">
+                  <div className="text-sm font-bold">{b.task_key}: {b.title}</div>
+                  <div className="text-xs text-muted-foreground font-mono">{b.project?.code ?? ''}</div>
+                </div>
+              ))}
+              {(data?.blockers ?? []).length === 0 && (
+                <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                  No blocked tasks assigned to you.
+                </div>
+              )}
             </div>
           </div>
 
@@ -343,167 +400,107 @@ export default function MyWorkPage() {
               <h3 className="font-mono text-xs uppercase tracking-widest font-bold">Next 7 Days</h3>
             </div>
             <div className="p-4 space-y-4">
-              {[
-                { date: 'Today', task: 'Stripe Webhooks', label: 'APX-4921' },
-                { date: 'Tomorrow', task: 'Auth Tokens', label: 'APX-4912' },
-                { date: 'Oct 25', task: 'Dashboard Queries', label: 'APX-4905' },
-              ].map((item, i) => (
+              {(data?.upcoming ?? []).map((item, i) => (
                 <div key={i} className="flex gap-4">
-                  <div className="w-16 font-mono text-[10px] uppercase text-muted-foreground text-right pt-1">{item.date}</div>
+                  <div className="w-16 font-mono text-[10px] uppercase text-muted-foreground text-right pt-1">{fmtDue(item.due_date)}</div>
                   <div className="flex-1 border-l border-border pl-4 relative">
                     <div className="absolute -left-1 top-1.5 w-2 h-2 bg-background border border-foreground" />
-                    <div className="text-xs font-bold">{item.task}</div>
-                    <div className="font-mono text-[10px] text-muted-foreground">{item.label}</div>
+                    <div className="text-xs font-bold">{item.title}</div>
+                    <div className="font-mono text-[10px] text-muted-foreground">{item.task_key}</div>
                   </div>
                 </div>
               ))}
+              {(data?.upcoming ?? []).length === 0 && (
+                <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                  No deadlines in the next 7 days.
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Approvals */}
+          {/* Pending Approvals */}
           <div className="border border-border bg-background">
-             <div className="p-4 border-b border-border bg-surface-hover flex items-center justify-between">
-              <h3 className="font-mono text-xs uppercase tracking-widest font-bold">My Approvals</h3>
-              <span className="font-mono text-[10px] px-2 py-0.5 bg-foreground text-background">3 Pending</span>
+            <div className="p-4 border-b border-border bg-surface-hover flex items-center justify-between">
+              <h3 className="font-mono text-xs uppercase tracking-widest font-bold">Pending Approvals</h3>
+              <span className="font-mono text-[10px] px-2 py-0.5 bg-foreground text-background">{data?.approvals.length ?? 0} Pending</span>
             </div>
             <div className="divide-y divide-border">
-              {[
-                { title: 'Merge PR #492: Fix Pagination API', type: 'Code Review', req: 'T. Vance' },
-                { title: 'Release Candidate v2.4 Sign-off', type: 'QA Approval', req: 'Release Mgr' },
-              ].map((item, i) => (
-                <div key={i} className="p-4 hover:bg-surface-hover transition-colors">
-                  <div className="text-xs font-bold mb-1">{item.title}</div>
+              {(data?.approvals ?? []).map((item) => (
+                <div key={item.id} className="p-4 hover:bg-surface-hover transition-colors">
+                  <div className="text-xs font-bold mb-1">{item.type}</div>
                   <div className="flex justify-between items-center mt-2">
-                    <div className="text-[10px] font-mono text-muted-foreground uppercase">{item.type} • {item.req}</div>
-                    <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] font-mono uppercase hover:bg-foreground hover:text-background rounded-none">
+                    <div className="text-[10px] font-mono text-muted-foreground uppercase">{item.project} • {item.requester}</div>
+                    <Link href="/dashboard/qa-security" className="h-6 px-2 text-[10px] font-mono uppercase hover:bg-foreground hover:text-background rounded-none flex items-center border border-border">
                       Review
-                    </Button>
+                    </Link>
                   </div>
                 </div>
               ))}
+              {(data?.approvals ?? []).length === 0 && (
+                <div className="p-4 text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                  No pending approvals.
+                </div>
+              )}
             </div>
           </div>
 
         </div>
       </div>
 
-      {/* Task Detail Drawer */}
+      {/* Task Detail Drawer — real fields from the selected task only. */}
       <AnimatePresence>
         {selectedTask && (
           <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
               onClick={() => setSelectedTask(null)}
             />
-            <motion.div 
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
+            <motion.div
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className="fixed top-0 right-0 w-full md:w-[600px] h-full bg-background border-l border-border z-50 flex flex-col shadow-2xl"
             >
               <div className="h-16 flex items-center justify-between px-6 border-b border-border bg-surface-hover flex-shrink-0">
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-xs bg-surface border border-border px-2 py-1">{selectedTask}</span>
-                  <span className="font-mono text-[10px] uppercase text-accent border border-accent/30 px-2 py-1 bg-accent/5">In Progress</span>
+                  <span className="font-mono text-xs bg-surface border border-border px-2 py-1">{selectedTask.task_key}</span>
+                  <span className="font-mono text-[10px] uppercase text-accent border border-accent/30 px-2 py-1 bg-accent/5">{STATUS_DISPLAY[selectedTask.status] ?? selectedTask.status}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" className="h-8 rounded-none border-border">Copy Link</Button>
-                  <button onClick={() => setSelectedTask(null)} className="p-2 hover:bg-surface border border-transparent hover:border-border transition-colors">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
+                <button onClick={() => setSelectedTask(null)} className="p-2 hover:bg-surface border border-transparent hover:border-border transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              
+
               <div className="flex-1 overflow-y-auto p-6 space-y-8">
                 <div>
-                  <h2 className="text-2xl font-bold mb-4 tracking-tight">Implement Retry Logic for Stripe Webhooks</h2>
+                  <h2 className="text-2xl font-bold mb-4 tracking-tight">{selectedTask.title}</h2>
                   <div className="flex flex-wrap gap-6 text-sm">
                     <div>
-                      <div className="text-muted-foreground font-mono text-[10px] uppercase tracking-widest mb-1">Assignee</div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 bg-surface border border-border flex items-center justify-center text-[10px] font-mono">Y</div>
-                        <span>You</span>
-                      </div>
-                    </div>
-                    <div>
                       <div className="text-muted-foreground font-mono text-[10px] uppercase tracking-widest mb-1">Project</div>
-                      <div>Payments Core</div>
+                      <div>{selectedTask.project_code}</div>
                     </div>
                     <div>
                       <div className="text-muted-foreground font-mono text-[10px] uppercase tracking-widest mb-1">Due Date</div>
-                      <div className="text-accent flex items-center gap-1"><Clock className="w-3 h-3"/> Today, 14:00</div>
+                      <div className="flex items-center gap-1"><Clock className="w-3 h-3" /> {fmtDue(selectedTask.due_date)}</div>
                     </div>
                     <div>
                       <div className="text-muted-foreground font-mono text-[10px] uppercase tracking-widest mb-1">Priority</div>
-                      <div className="text-destructive">P1 - Critical</div>
+                      <div>{selectedTask.priority}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground font-mono text-[10px] uppercase tracking-widest mb-1">Type</div>
+                      <div>{selectedTask.task_type}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground font-mono text-[10px] uppercase tracking-widest mb-1">Story Points</div>
+                      <div>{selectedTask.story_points ?? '—'}</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <h3 className="font-mono text-xs uppercase tracking-widest font-bold border-b border-border pb-2">Description</h3>
-                  <div className="text-sm text-muted-foreground space-y-4 leading-relaxed font-light">
-                    <p>
-                      Webhook events from Stripe occasionally fail due to transient database locks on the <code>LedgerTransaction</code> table. We need to implement an exponential backoff retry mechanism for the webhook handler.
-                    </p>
-                    <pre className="p-4 bg-surface border border-border font-mono text-xs overflow-x-auto text-foreground">
-                      {`// Expected implementation pattern
-const retryConfig = {
-  retries: 5,
-  minTimeout: 1000,
-  maxTimeout: 30000,
-  factor: 2
-};`}
-                    </pre>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-mono text-xs uppercase tracking-widest font-bold border-b border-border pb-2 flex items-center justify-between">
-                    <span>Linked Pull Requests</span>
-                    <Button variant="ghost" size="sm" className="h-6 text-[10px] uppercase p-0">Create PR</Button>
-                  </h3>
-                  <div className="p-3 border border-border bg-surface-hover flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <GitPullRequest className="w-4 h-4 text-accent" />
-                      <div>
-                        <div className="text-sm font-bold">feat(payments): exponential backoff for webhooks</div>
-                        <div className="text-xs text-muted-foreground font-mono mt-1">#4921-webhook-retry • Opened 2h ago</div>
-                      </div>
-                    </div>
-                    <div className="text-xs px-2 py-1 bg-surface border border-border">Open</div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-mono text-xs uppercase tracking-widest font-bold border-b border-border pb-2 flex items-center gap-2">
-                    <Bot className="w-4 h-4 text-accent" /> DevPilot Analysis
-                  </h3>
-                  <div className="p-4 border border-border bg-accent/5 text-sm space-y-3">
-                    <p>Based on the PR changes, the implementation matches the requirements. However, ensure that idempotency keys are being passed correctly in the retry loop.</p>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="h-7 text-[10px] font-mono uppercase bg-background border-border text-foreground hover:bg-foreground hover:text-background rounded-none">
-                        Review Code
-                      </Button>
-                      <Button variant="outline" size="sm" className="h-7 text-[10px] font-mono uppercase bg-background border-border text-foreground hover:bg-foreground hover:text-background rounded-none">
-                        Generate Tests
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-              
-              <div className="h-20 border-t border-border bg-surface p-4 flex items-center justify-between flex-shrink-0">
-                <Button variant="outline" className="rounded-none border-border font-mono text-xs uppercase">Add Comment</Button>
-                <div className="flex gap-3">
-                  <Button variant="outline" className="rounded-none border-destructive text-destructive hover:bg-destructive hover:text-background font-mono text-xs uppercase">Mark Blocked</Button>
-                  <Button className="rounded-none bg-foreground text-background hover:bg-foreground/90 font-mono text-xs uppercase">Complete Task</Button>
-                </div>
+                <Link href="/dashboard/tasks" className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest border border-border px-3 py-2 hover:bg-foreground hover:text-background transition-colors">
+                  <GitPullRequest className="w-3 h-3" /> Open in Task Board
+                </Link>
               </div>
             </motion.div>
           </>

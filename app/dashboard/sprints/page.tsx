@@ -1,24 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { 
-  ChevronRight, 
-  Search, 
-  Filter, 
-  Plus, 
-  Bot, 
-  Download, 
-  Play, 
-  CheckCircle2, 
-  AlertTriangle, 
-  Clock, 
+import React, { useState, useEffect, useCallback } from 'react';
+import { CreateSprintModal } from '@/components/dashboard/create-sprint-modal';
+import { usePermission } from '@/lib/permissions/context';
+import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
+import { DataViewport } from '@/components/layout/data-viewport';
+import {
+  ChevronRight,
+  Search,
+  Filter,
+  Plus,
+  Bot,
+  Download,
+  Play,
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
   Activity,
   Users,
   Flag,
   MoreVertical,
   ArrowRight
-} from 'lucide-react';
+, KanbanSquare} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -37,78 +40,31 @@ type Sprint = {
   velocity: number;
 };
 
-const mockSprints: Sprint[] = [
-  {
-    id: 'spr-42',
-    name: 'Sprint 42: Refund Engine',
-    team: 'Payments Platform',
-    goal: 'Complete core refund API and begin integration testing.',
-    startDate: 'Oct 15, 2026',
-    endDate: 'Oct 28, 2026',
-    status: 'Active',
-    plannedPoints: 45,
-    completedPoints: 32,
-    progress: 71,
-    riskLevel: 'High',
-    velocity: 42,
-  },
-  {
-    id: 'spr-43',
-    name: 'Sprint 43: Reconciliation',
-    team: 'Payments Platform',
-    goal: 'Implement automated reconciliation reports.',
-    startDate: 'Oct 29, 2026',
-    endDate: 'Nov 11, 2026',
-    status: 'Planning',
-    plannedPoints: 38,
-    completedPoints: 0,
-    progress: 0,
-    riskLevel: 'Medium',
-    velocity: 42,
-  },
-  {
-    id: 'spr-18',
-    name: 'Sprint 18: Biometrics',
-    team: 'Mobile Banking',
-    goal: 'Roll out FaceID login for iOS beta users.',
-    startDate: 'Oct 10, 2026',
-    endDate: 'Oct 23, 2026',
-    status: 'Active',
-    plannedPoints: 52,
-    completedPoints: 40,
-    progress: 76,
-    riskLevel: 'Low',
-    velocity: 50,
-  },
-  {
-    id: 'spr-89',
-    name: 'Sprint 89: Auth V2',
-    team: 'Core Backend',
-    goal: 'Migrate legacy auth tokens to JWT format.',
-    startDate: 'Oct 12, 2026',
-    endDate: 'Oct 25, 2026',
-    status: 'Active',
-    plannedPoints: 60,
-    completedPoints: 45,
-    progress: 75,
-    riskLevel: 'Medium',
-    velocity: 58,
-  },
-  {
-    id: 'spr-41',
-    name: 'Sprint 41: Ledger Export',
-    team: 'Payments Platform',
-    goal: 'Fix export race conditions and optimize queries.',
-    startDate: 'Oct 01, 2026',
-    endDate: 'Oct 14, 2026',
-    status: 'Completed',
-    plannedPoints: 40,
-    completedPoints: 40,
-    progress: 100,
-    riskLevel: 'Low',
-    velocity: 40,
-  },
-];
+const STATUS_LABEL: Record<string, Sprint['status']> = {
+  ACTIVE: 'Active', PLANNED: 'Planning', COMPLETED: 'Completed', CANCELLED: 'Completed',
+};
+const fmtDate = (d?: string | null) =>
+  d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : '—';
+
+
+function mapSprint(r: any): Sprint {
+  const planned = Number(r.planned_story_points) || 0;
+  const completed = Number(r.completed_story_points) || 0;
+  return {
+    id: r.id,
+    name: r.name,
+    team: r.team_id ? 'Team' : '—',
+    goal: r.goal ?? '',
+    startDate: fmtDate(r.start_date),
+    endDate: fmtDate(r.end_date),
+    status: STATUS_LABEL[r.status] ?? 'Planning',
+    plannedPoints: planned,
+    completedPoints: completed,
+    progress: planned > 0 ? Math.round((completed / planned) * 100) : 0,
+    riskLevel: planned > 0 && completed / planned < 0.4 ? 'High' : completed / planned < 0.7 ? 'Medium' : 'Low',
+    velocity: completed,
+  };
+}
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -129,8 +85,53 @@ const getRiskColor = (risk: string) => {
 };
 
 export default function SprintsPage() {
+  const [mockSprints, setMockSprints] = useState<Sprint[]>([]);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | Sprint['status']>('ALL');
+  const { has } = usePermission();
+  const canCreate = has('sprint:create');
+
+  const load = useCallback(async () => {
+    const r = await fetch('/api/v1/sprints').catch(() => null);
+    if (!r) return;
+    const j = await r.json().catch(() => null);
+    setMockSprints((Array.isArray(j?.data) ? j.data : []).map(mapSprint));
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/v1/sprints')
+      .then((r) => r.json())
+      .then((j) => { if (active) setMockSprints((Array.isArray(j?.data) ? j.data : []).map(mapSprint)); })
+      .catch(() => { });
+    return () => { active = false; };
+  }, []);
+
+  // Client-side search (name/goal) + status filter over the loaded rows.
+  const q = query.trim().toLowerCase();
+  const filteredSprints = mockSprints.filter((s) => {
+    const matchesQuery = q === '' || s.name.toLowerCase().includes(q) || s.goal.toLowerCase().includes(q);
+    const matchesStatus = statusFilter === 'ALL' || s.status === statusFilter;
+    return matchesQuery && matchesStatus;
+  });
+
+  const activeCount = filteredSprints.filter((s) => s.status === 'Active').length;
+  const planningCount = filteredSprints.filter((s) => s.status === 'Planning').length;
+  const completedCount = filteredSprints.filter((s) => s.status === 'Completed').length;
+  const canStart = has('sprint:start');
+  const canComplete = has('sprint:complete');
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function act(id: string, action: 'start' | 'complete') {
+    setBusyId(id);
+    await fetch(`/api/v1/sprints/${id}/${action}`, { method: 'POST' }).catch(() => { });
+    setBusyId(null);
+    load();
+  }
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 h-[calc(100vh-80px)] flex flex-col">
+    <WorkspaceDataLayout className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 flex-shrink-0">
         <div>
@@ -140,7 +141,7 @@ export default function SprintsPage() {
             <span className="text-foreground">Sprints</span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight uppercase flex items-center gap-3">
-            <div className="w-3 h-3 bg-foreground" />
+            <KanbanSquare className="w-8 h-8" />
             Sprints
           </h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-widest">
@@ -148,21 +149,19 @@ export default function SprintsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
             <Download className="w-4 h-4" />
             Export Sprint Report
           </Button>
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
-            <Play className="w-4 h-4" />
-            Start Sprint
-          </Button>
-          <Button className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
-            <Plus className="w-4 h-4" />
-            Create Sprint
-          </Button>
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2">
+          {canCreate && (
+            <Button data-testid="create-sprint-button" onClick={() => setIsCreateOpen(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
+              <Plus className="w-4 h-4" />
+              Create Sprint
+            </Button>
+          )}
+          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent gap-2 disabled:opacity-40">
             <Bot className="w-4 h-4" />
-            Ask DevPilot AI
+            Ask Handoff AI
           </Button>
         </div>
       </div>
@@ -172,18 +171,34 @@ export default function SprintsPage() {
         <div className="flex items-center gap-2 flex-1">
           <div className="relative flex-1 max-w-sm">
             <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder="SEARCH SPRINTS..." className="w-full h-8 pl-8 pr-3 bg-background border border-border text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="SEARCH SPRINTS..."
+              className="w-full h-8 pl-8 pr-3 bg-background border border-border text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors"
+            />
           </div>
-          <Button variant="outline" size="sm" className="h-8 px-3 rounded-none text-[10px] font-mono uppercase border-border bg-background">
-            <Filter className="w-3 h-3 mr-2" /> Team Filter
-          </Button>
+          <div className="relative flex items-center">
+            <Filter className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'ALL' | Sprint['status'])}
+              className="h-8 pl-7 pr-3 rounded-none text-[10px] font-mono uppercase border border-border bg-background focus:outline-none focus:border-foreground transition-colors cursor-pointer"
+            >
+              <option value="ALL">All Status</option>
+              <option value="Active">Active</option>
+              <option value="Planning">Planning</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 min-h-0 border border-border bg-background flex flex-col">
-        <div className="overflow-auto flex-1 scrollbar-thin">
-          <table className="w-full text-left text-sm font-mono border-collapse whitespace-nowrap">
+        <DataViewport className="border-0">
+          <table className="w-full min-w-[800px] text-left text-sm font-mono border-collapse whitespace-nowrap">
             <thead className="sticky top-0 bg-surface-hover z-10 shadow-[0_1px_0_0_var(--border)]">
               <tr>
                 <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Sprint Name</th>
@@ -198,7 +213,7 @@ export default function SprintsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {mockSprints.map((sprint) => (
+              {filteredSprints.map((sprint) => (
                 <tr key={sprint.id} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                   <td className="p-3">
                     <Link href={`/dashboard/sprints/${sprint.id}`} className="block">
@@ -247,25 +262,43 @@ export default function SprintsPage() {
                     )}
                   </td>
                   <td className="p-3 text-right">
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-none opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      {sprint.status === 'Planning' && canStart && (
+                        <button data-testid="sprint-start-button" disabled={busyId === sprint.id} onClick={() => act(sprint.id, 'start')}
+                          className="h-6 px-2 border border-border text-[10px] font-mono uppercase tracking-widest hover:bg-foreground hover:text-background disabled:opacity-50">
+                          {busyId === sprint.id ? '…' : 'Start'}
+                        </button>
+                      )}
+                      {sprint.status === 'Active' && canComplete && (
+                        <button data-testid="sprint-complete-button" disabled={busyId === sprint.id} onClick={() => act(sprint.id, 'complete')}
+                          className="h-6 px-2 border border-border text-[10px] font-mono uppercase tracking-widest hover:bg-foreground hover:text-background disabled:opacity-50">
+                          {busyId === sprint.id ? '…' : 'Complete'}
+                        </button>
+                      )}
+                      <Link href={`/dashboard/sprints/${sprint.id}`} className="h-6 w-6 p-0 rounded-none opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center justify-center">
+                        <ArrowRight className="w-4 h-4" />
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-        
+        </DataViewport>
+
         <div className="p-3 border-t border-border bg-surface-hover flex justify-between items-center text-[10px] font-mono text-muted-foreground flex-shrink-0">
-          <span>Showing 5 sprints</span>
+          <span>Showing {filteredSprints.length} of {mockSprints.length} sprint{mockSprints.length === 1 ? '' : 's'}</span>
           <div className="flex gap-4">
-             <span className="flex items-center gap-1"><span className="w-2 h-2 bg-emerald-500/20 border border-emerald-500 block" /> 3 Active</span>
-             <span className="flex items-center gap-1"><span className="w-2 h-2 bg-accent/20 border border-accent block" /> 1 Planning</span>
-             <span className="flex items-center gap-1"><span className="w-2 h-2 bg-surface border border-border block" /> 1 Completed</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-emerald-500/20 border border-emerald-500 block" /> {activeCount} Active</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-accent/20 border border-accent block" /> {planningCount} Planning</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-surface border border-border block" /> {completedCount} Completed</span>
           </div>
         </div>
       </div>
-    </div>
+
+      {isCreateOpen && (
+        <CreateSprintModal onClose={() => setIsCreateOpen(false)} onCreated={load} />
+      )}
+    </WorkspaceDataLayout>
   );
 }

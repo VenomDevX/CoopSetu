@@ -135,7 +135,7 @@ export default function SolutionsPage() {
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Portfolio dashboards</div>
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Project health scoring</div>
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Cross-team dependencies</div>
-                <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> DevPilot AI risk summaries</div>
+                <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Handoff AI risk summaries</div>
               </div>
             </div>
             
@@ -281,7 +281,7 @@ export default function SolutionsPage() {
                  <div className="border border-accent/30 bg-accent/5 p-3 flex gap-3">
                    <Bot className="w-4 h-4 text-accent flex-shrink-0" />
                    <div>
-                     <div className="font-mono text-[10px] font-bold uppercase tracking-widest mb-1">DevPilot Summary</div>
+                     <div className="font-mono text-[10px] font-bold uppercase tracking-widest mb-1">Handoff Summary</div>
                      <p className="text-[10px] leading-relaxed text-muted-foreground">Changes look good. Make sure to update the API documentation to reflect the new 429 response structure.</p>
                    </div>
                  </div>

@@ -1,40 +1,48 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useNotificationsRealtime } from '@/hooks/use-notifications-realtime';
+import { AskAiButton } from '@/components/ai/ask-ai-button';
+import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
+import { DataViewport } from '@/components/layout/data-viewport';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  ChevronRight, 
-  CheckCircle2, 
-  Settings, 
-  Bot, 
-  Inbox as InboxIcon, 
-  Bell, 
-  AtSign, 
-  FileSignature, 
-  CheckSquare, 
-  GitPullRequest, 
-  Rocket, 
-  AlertTriangle, 
-  ShieldCheck, 
-  Sparkles, 
-  Terminal, 
-  Search, 
-  Filter, 
-  ListOrdered, 
-  MoreHorizontal, 
-  Eye, 
-  Clock, 
-  ArrowUpRight, 
+import {
+  ChevronRight,
+  CheckCircle2,
+  Settings,
+  Inbox as InboxIcon,
+  Bell,
+  AtSign,
+  FileSignature,
+  CheckSquare,
+  GitPullRequest,
+  Rocket,
+  AlertTriangle,
+  ShieldCheck,
+  Sparkles,
+  Terminal,
+  Search,
+  Filter,
+  ListOrdered,
+  MoreHorizontal,
+  Eye,
+  Clock,
+  ArrowUpRight,
   AlertCircle,
-  Archive,
-  MessageSquare
+  Archive
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  categoryOf, NOTIFICATION_CATEGORIES,
+  type NotificationCategory, type NotificationCounts,
+} from '@/lib/constants/notification-categories';
 
 type Notification = {
   id: string;
   read: boolean;
   type: string;
+  category: NotificationCategory;
   title: string;
   description: string;
   project: string;
@@ -42,83 +50,66 @@ type Notification = {
   sender: string;
   timestamp: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
+  entityId: string | null;
+  entityType: string | null;
+  commentId: string | null;
 };
 
-const notifications: Notification[] = [
-  {
-    id: 'notif-1',
-    read: false,
-    type: 'mention',
-    title: 'You were mentioned on PAY-231',
-    description: '"Can you take a look at the retry logic here? It seems we might be missing the idempotency key on the final attempt."',
-    project: 'Payments Core',
-    reference: 'PAY-231',
-    sender: 'S. Chen',
-    timestamp: '10m ago',
-    priority: 'medium',
-  },
-  {
-    id: 'notif-2',
-    read: false,
-    type: 'approval',
-    title: 'Security approval required for Release 3.8.0',
-    description: 'Release candidate is ready for production. Waiting for final security sign-off before deployment window opens.',
-    project: 'Platform',
-    reference: 'REL-3.8.0',
-    sender: 'Release System',
-    timestamp: '1h ago',
-    priority: 'high',
-  },
-  {
-    id: 'notif-3',
-    read: true,
-    type: 'incident',
-    title: 'Production incident INC-119 assigned to you',
-    description: 'Elevated error rates on the Ledger API endpoint /v1/export. Alert triggered by Datadog monitor.',
-    project: 'Ledger API',
-    reference: 'INC-119',
-    sender: 'PagerDuty',
-    timestamp: '2h ago',
-    priority: 'critical',
-  },
-  {
-    id: 'notif-4',
-    read: false,
-    type: 'pr',
-    title: 'Pull request #482 is ready for review',
-    description: 'feat(auth): implement token rotation for long-lived sessions',
-    project: 'Auth Service',
-    reference: 'PR #482',
-    sender: 'J. Doe',
-    timestamp: '3h ago',
-    priority: 'medium',
-  },
-  {
-    id: 'notif-5',
-    read: true,
-    type: 'ai',
-    title: 'Sprint 14 is at risk of missing its goal',
-    description: 'Velocity has dropped 15% this week. Two critical path items are blocked by external dependencies.',
-    project: 'Mobile Banking',
-    reference: 'SPRINT-14',
-    sender: 'DevPilot AI',
-    timestamp: '5h ago',
-    priority: 'high',
-  },
-];
+const TYPE_MAP: Record<string, string> = {
+  TASK_MENTIONED: 'mention', TASK_COMMENTED: 'mention',
+  APPROVAL_REQUESTED: 'approval', APPROVAL_DECIDED: 'approval',
+  RELEASE_ALERT: 'approval', INCIDENT_ASSIGNED: 'incident',
+  BUILD_FAILED: 'pr', SECURITY_ALERT: 'incident', AI_RECOMMENDATION: 'ai',
+};
 
-const categories = [
-  { name: 'All', icon: InboxIcon, count: 24 },
-  { name: 'Unread', icon: Bell, count: 5 },
-  { name: 'Mentions', icon: AtSign, count: 2 },
-  { name: 'Approvals', icon: FileSignature, count: 1 },
-  { name: 'Task Updates', icon: CheckSquare, count: 8 },
-  { name: 'Pull Requests', icon: GitPullRequest, count: 4 },
-  { name: 'Release Alerts', icon: Rocket, count: 1 },
-  { name: 'Incident Alerts', icon: AlertTriangle, count: 1 },
-  { name: 'QA & Security', icon: ShieldCheck, count: 1 },
-  { name: 'AI Recommendations', icon: Sparkles, count: 1 },
-  { name: 'System Notifications', icon: Terminal, count: 0 },
+const EMPTY_COUNTS: NotificationCounts = {
+  all: 0, unread: 0, mentions: 0, approvals: 0, task_updates: 0, pull_requests: 0,
+  release_alerts: 0, incident_alerts: 0, qa_security: 0, ai: 0, system: 0,
+};
+
+function relTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+
+function mapNotification(r: any): Notification {
+  return {
+    id: r.id,
+    read: !!r.read_at,
+    type: TYPE_MAP[r.type] ?? 'system',
+    category: categoryOf(r.type),
+    title: r.title,
+    description: r.body ?? '',
+    project: '',
+    reference: r.entity_type ?? '',
+    sender: r.actor ? 'Teammate' : 'System',
+    timestamp: relTime(r.created_at),
+    priority: r.type?.includes('SECURITY') || r.type?.includes('INCIDENT') ? 'critical'
+      : r.type?.includes('APPROVAL') || r.type?.includes('RELEASE') ? 'high' : 'medium',
+    entityId: r.entity_id ?? null,
+    entityType: r.entity_type ?? null,
+    commentId: r.metadata?.comment_id ?? null,
+  };
+}
+
+// Category rail config. Counts are injected at render time from the same
+// organization-scoped notifications query that feeds the list (never hardcoded).
+const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  all: InboxIcon, unread: Bell, mentions: AtSign, approvals: FileSignature,
+  task_updates: CheckSquare, pull_requests: GitPullRequest, release_alerts: Rocket,
+  incident_alerts: AlertTriangle, qa_security: ShieldCheck, ai: Sparkles, system: Terminal,
+};
+
+const CATEGORY_RAIL: { key: string; name: string }[] = [
+  { key: 'all', name: 'All' },
+  { key: 'unread', name: 'Unread' },
+  ...NOTIFICATION_CATEGORIES.map((c) => ({ key: c.key, name: c.label })),
 ];
 
 const getTypeIcon = (type: string) => {
@@ -143,15 +134,127 @@ const getPriorityColor = (priority: string) => {
 };
 
 export default function InboxPage() {
-  const [activeCategory, setActiveCategory] = useState('All');
-  const [selectedNotifId, setSelectedNotifId] = useState<string | null>(notifications[0].id);
+  const router = useRouter();
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [counts, setCounts] = useState<NotificationCounts>(EMPTY_COUNTS);
+  const [memberId, setMemberId] = useState<string | null>(null);
+  const [selectedNotifId, setSelectedNotifId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionBusy, setActionBusy] = useState(false);
+
+  const load = useCallback(() => {
+    fetch('/api/v1/notifications')
+      .then((r) => r.json())
+      .then((j) => {
+        const items = (j?.data?.items ?? []).map(mapNotification);
+        setNotifications(items);
+        setCounts(j?.data?.counts ?? EMPTY_COUNTS);
+        setSelectedNotifId((prev) => prev ?? items[0]?.id ?? null);
+      })
+      .catch(() => { });
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/v1/organizations/current').then((r) => r.json()).then((j) => {
+      if (j?.data?.membership) setMemberId(j.data.membership.memberId);
+    });
+    load();
+  }, [load]);
+
+  useNotificationsRealtime(memberId, load);
+
+  const handleMarkAllRead = async () => {
+    try {
+      const res = await fetch('/api/v1/notifications/mark-all-read', { method: 'POST' });
+      if (res.ok) load();
+    } catch { }
+  };
+
+  const handleUpdate = async (id: string, patch: { read?: boolean; archived?: boolean; snoozed_until?: string | null }) => {
+    // optimistic update
+    setNotifications(prev => prev.map(n => {
+      if (n.id !== id) return n;
+      if (patch.read !== undefined) return { ...n, read: patch.read };
+      return n;
+    }));
+    try {
+      const res = await fetch(`/api/v1/notifications/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch)
+      });
+      if (res.ok) load();
+    } catch { }
+  };
+
+  const handleSelectNotif = (id: string) => {
+    setSelectedNotifId(id);
+    setActionError(null);
+    const n = notifications.find(x => x.id === id);
+    if (n && !n.read) handleUpdate(id, { read: true });
+  };
+
+  // Deep-link a notification to the entity it references. Tasks open the task
+  // drawer via the shared ?task= primitive; incidents/approvals/releases route
+  // to their surfaces. Marks the notification read on navigate.
+  const handleOpenItem = (n: Notification) => {
+    if (!n.read) handleUpdate(n.id, { read: true });
+    const id = n.entityId;
+    switch (n.entityType) {
+      case 'task':
+        if (id) router.push(`/dashboard/tasks?task=${id}`);
+        break;
+      case 'incident':
+        if (id) router.push(`/dashboard/incidents/${id}`);
+        break;
+      case 'approval_request':
+      case 'release':
+        router.push('/dashboard/qa-security');
+        break;
+      default:
+        setActionError('This notification has no linked item to open.');
+    }
+  };
+
+  // Approve / reject an approval_request straight from the inbox. Never fakes
+  // success — surfaces the API error (e.g. 403) inline.
+  const handleDecide = async (n: Notification, decision: 'APPROVED' | 'REJECTED') => {
+    if (n.entityType !== 'approval_request' || !n.entityId) return;
+    setActionBusy(true);
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/v1/approvals/${n.entityId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ decision }),
+      });
+      const j = await res.json().catch(() => null);
+      if (res.ok) {
+        handleUpdate(n.id, { read: true });
+        load();
+      } else {
+        setActionError(j?.error?.message ?? `Could not ${decision.toLowerCase()} this request.`);
+      }
+    } catch {
+      setActionError('Network error — please try again.');
+    } finally {
+      setActionBusy(false);
+    }
+  };
+
+  const visibleNotifications = notifications.filter((n) => {
+    if (activeCategory === 'all') return true;
+    if (activeCategory === 'unread') return !n.read;
+    return n.category === activeCategory;
+  });
 
   const selectedNotif = notifications.find(n => n.id === selectedNotifId);
 
   return (
-    <div className="h-[calc(100vh-80px)] flex flex-col animate-in fade-in duration-500">
+    <WorkspaceDataLayout className="animate-in fade-in duration-500 space-y-6 flex flex-col">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 flex-shrink-0">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 flex-shrink-0">
         <div>
           <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
             <span>Overview</span>
@@ -159,7 +262,7 @@ export default function InboxPage() {
             <span className="text-foreground">Inbox</span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight uppercase flex items-center gap-3">
-            <div className="w-3 h-3 bg-foreground" />
+            <InboxIcon className="w-8 h-8" />
             Inbox
           </h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-widest">
@@ -167,7 +270,7 @@ export default function InboxPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+          <Button onClick={handleMarkAllRead} variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
             <CheckCircle2 className="w-4 h-4" />
             Mark All Read
           </Button>
@@ -175,45 +278,45 @@ export default function InboxPage() {
             <Settings className="w-4 h-4" />
             Configure
           </Button>
-          <Button className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
-            <Bot className="w-4 h-4" />
-            Ask DevPilot AI
-          </Button>
+          <AskAiButton />
         </div>
       </div>
 
       {/* Main Layout - 3 Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
-        
+
         {/* Left Column - Categories */}
-        <div className="lg:col-span-2 flex flex-col gap-1 overflow-y-auto pr-2 pb-8 scrollbar-none">
+        <div className="lg:col-span-2 flex flex-col gap-1 lg:overflow-y-auto pr-2 scrollbar-none">
           <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 pl-2">Categories</div>
-          {categories.map((cat) => (
-            <button
-              key={cat.name}
-              onClick={() => setActiveCategory(cat.name)}
-              className={`flex items-center justify-between w-full p-2 text-xs font-mono uppercase tracking-wider transition-colors ${
-                activeCategory === cat.name 
-                  ? 'bg-foreground text-background font-bold' 
-                  : 'text-muted-foreground hover:bg-surface-hover hover:text-foreground'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <cat.icon className="w-4 h-4" />
-                <span className="truncate">{cat.name}</span>
-              </div>
-              {cat.count > 0 && (
-                <span className={`px-1.5 py-0.5 text-[9px] ${activeCategory === cat.name ? 'bg-background text-foreground' : 'bg-surface border border-border'}`}>
-                  {cat.count}
-                </span>
-              )}
-            </button>
-          ))}
+          {CATEGORY_RAIL.map((cat) => {
+            const Icon = CATEGORY_ICONS[cat.key] ?? InboxIcon;
+            const count = counts[cat.key as keyof NotificationCounts] ?? 0;
+            return (
+              <button
+                key={cat.key}
+                onClick={() => setActiveCategory(cat.key)}
+                className={`flex items-center justify-between w-full p-2 text-xs font-mono uppercase tracking-wider transition-colors ${activeCategory === cat.key
+                    ? 'bg-foreground text-background font-bold'
+                    : 'text-muted-foreground hover:bg-surface-hover hover:text-foreground'
+                  }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon className="w-4 h-4" />
+                  <span className="truncate">{cat.name}</span>
+                </div>
+                {count > 0 && (
+                  <span className={`px-1.5 py-0.5 text-[9px] ${activeCategory === cat.key ? 'bg-background text-foreground' : 'bg-surface border border-border'}`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Middle Column - Notification List */}
-        <div className="lg:col-span-6 flex flex-col border border-border bg-background min-h-0 relative">
-          
+        <DataViewport className="lg:col-span-6 border-0 lg:border border-border">
+
           {/* Top Tools */}
           <div className="p-3 border-b border-border bg-surface-hover flex flex-col md:flex-row md:items-center justify-between gap-3 flex-shrink-0">
             <div className="flex items-center gap-2 flex-1">
@@ -237,15 +340,14 @@ export default function InboxPage() {
 
           {/* List */}
           <div className="flex-1 overflow-y-auto">
-            {notifications.length > 0 ? (
+            {visibleNotifications.length > 0 ? (
               <div className="divide-y divide-border">
-                {notifications.map((notif) => (
-                  <div 
+                {visibleNotifications.map((notif) => (
+                  <div
                     key={notif.id}
-                    onClick={() => setSelectedNotifId(notif.id)}
-                    className={`p-4 cursor-pointer transition-colors relative group ${
-                      selectedNotifId === notif.id ? 'bg-surface-hover border-l-2 border-l-foreground' : 'hover:bg-surface-hover border-l-2 border-l-transparent'
-                    } ${!notif.read ? 'bg-background' : 'bg-surface/30 opacity-70'}`}
+                    onClick={() => handleSelectNotif(notif.id)}
+                    className={`p-4 cursor-pointer transition-colors relative group ${selectedNotifId === notif.id ? 'bg-surface-hover border-l-2 border-l-foreground' : 'hover:bg-surface-hover border-l-2 border-l-transparent'
+                      } ${!notif.read ? 'bg-background' : 'bg-surface/30 opacity-70'}`}
                   >
                     {!notif.read && (
                       <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-accent animate-pulse" />
@@ -281,17 +383,21 @@ export default function InboxPage() {
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center p-8 opacity-50">
                 <CheckCircle2 className="w-12 h-12 text-muted-foreground mb-4" />
-                <h3 className="font-mono text-sm uppercase tracking-widest font-bold mb-2">Inbox Zero</h3>
+                <h3 className="font-mono text-sm uppercase tracking-widest font-bold mb-2">
+                  {counts.all === 0 ? 'Inbox Zero' : 'Nothing Here'}
+                </h3>
                 <p className="text-xs text-muted-foreground max-w-sm">
-                  You are all caught up. No notifications require action.
+                  {counts.all === 0
+                    ? 'You are all caught up. No notifications require action.'
+                    : 'No notifications in this category.'}
                 </p>
               </div>
             )}
           </div>
-        </div>
+        </DataViewport>
 
         {/* Right Column - Detail Panel */}
-        <div className="lg:col-span-4 flex flex-col border border-border bg-background min-h-0 relative">
+        <DataViewport className="lg:col-span-4 border-0 lg:border border-border">
           {selectedNotif ? (
             <>
               {/* Detail Header */}
@@ -309,103 +415,55 @@ export default function InboxPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-2 pt-2 border-t border-border/50">
-                  <Button size="sm" className="h-8 rounded-none text-[10px] font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 flex-1">
-                    {selectedNotif.type === 'approval' ? 'Approve' : 'Open Item'}
-                  </Button>
-                  {selectedNotif.type === 'approval' && (
-                    <Button variant="outline" size="sm" className="h-8 rounded-none text-[10px] font-mono uppercase tracking-widest border-destructive text-destructive hover:bg-destructive hover:text-background flex-1">
-                      Reject
+                  {selectedNotif.entityType === 'approval_request' ? (
+                    <>
+                      <Button onClick={() => handleDecide(selectedNotif, 'APPROVED')} disabled={actionBusy} size="sm" className="h-8 rounded-none text-[10px] font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 flex-1 disabled:opacity-50">
+                        Approve
+                      </Button>
+                      <Button onClick={() => handleDecide(selectedNotif, 'REJECTED')} disabled={actionBusy} variant="outline" size="sm" className="h-8 rounded-none text-[10px] font-mono uppercase tracking-widest border-destructive text-destructive hover:bg-destructive hover:text-background flex-1 disabled:opacity-50">
+                        Reject
+                      </Button>
+                    </>
+                  ) : (
+                    <Button onClick={() => handleOpenItem(selectedNotif)} disabled={!selectedNotif.entityType} size="sm" className="h-8 rounded-none text-[10px] font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 flex-1 disabled:opacity-50" title={selectedNotif.entityType ? undefined : 'No linked item'}>
+                      Open Item
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" className="h-8 px-3 rounded-none border-border hover:bg-surface-hover" title="Snooze">
+                  <Button onClick={() => handleUpdate(selectedNotif.id, { snoozed_until: new Date(Date.now() + 86400000).toISOString() })} variant="outline" size="sm" className="h-8 px-3 rounded-none border-border hover:bg-surface-hover" title="Snooze 24h">
                     <Clock className="w-4 h-4" />
                   </Button>
-                  <Button variant="outline" size="sm" className="h-8 px-3 rounded-none border-border hover:bg-surface-hover" title="Archive">
+                  <Button onClick={() => handleUpdate(selectedNotif.id, { archived: true })} variant="outline" size="sm" className="h-8 px-3 rounded-none border-border hover:bg-surface-hover" title="Archive">
                     <Archive className="w-4 h-4" />
                   </Button>
                 </div>
+                {actionError && (
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-destructive border border-destructive/30 bg-destructive/10 px-2 py-1">
+                    {actionError}
+                  </div>
+                )}
               </div>
 
               {/* Detail Content */}
               <div className="flex-1 overflow-y-auto p-0">
-                
-                {/* AI Brief panel inside detail */}
-                <div className="p-4 border-b border-border bg-accent/5 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-accent/10 rounded-bl-full pointer-events-none" />
-                  <div className="flex items-center gap-2 mb-3">
-                    <Bot className="w-4 h-4 text-accent" />
-                    <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold text-foreground">DevPilot AI Summary</h3>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-                    {selectedNotif.type === 'incident' && "This incident affects the core ledger export functionality. You are the primary on-call for this service. Datadog reports a 15% error rate spike in the last 10 minutes."}
-                    {selectedNotif.type === 'mention' && "S. Chen is asking for your input on the retry logic implementation in PAY-231. They specifically need confirmation on the idempotency key usage."}
-                    {selectedNotif.type === 'approval' && "This release contains 14 PRs across 3 teams. QA has already signed off. Security review is the final required gate."}
-                    {selectedNotif.type === 'ai' && "Mobile Banking sprint velocity has trended downward for 2 consecutive weeks. Addressing the blocked API dependencies could recover ~20 story points."}
-                    {selectedNotif.type === 'pr' && "This PR introduces a new token rotation mechanism. It touches critical auth paths and requires careful review of the session invalidation logic."}
-                  </p>
-                  <div className="flex gap-2">
-                     <Button variant="outline" size="sm" className="h-6 px-2 rounded-none text-[9px] font-mono uppercase tracking-widest border-accent/30 text-accent hover:bg-accent hover:text-background">
-                       Explain Context
-                     </Button>
-                     <Button variant="outline" size="sm" className="h-6 px-2 rounded-none text-[9px] font-mono uppercase tracking-widest border-border text-muted-foreground hover:bg-foreground hover:text-background">
-                       Draft Reply
-                     </Button>
-                  </div>
-                </div>
 
                 {/* Message / Description content */}
                 <div className="p-5">
                   <div className="flex items-center gap-3 mb-4">
-                     <div className="w-8 h-8 bg-surface border border-border flex items-center justify-center text-xs font-mono font-bold">
-                       {selectedNotif.sender.charAt(0)}
-                     </div>
-                     <div>
-                       <div className="text-xs font-bold">{selectedNotif.sender}</div>
-                       <div className="text-[10px] font-mono text-muted-foreground">{selectedNotif.timestamp}</div>
-                     </div>
+                    <div className="w-8 h-8 bg-surface border border-border flex items-center justify-center text-xs font-mono font-bold">
+                      {selectedNotif.sender.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold">{selectedNotif.sender}</div>
+                      <div className="text-[10px] font-mono text-muted-foreground">{selectedNotif.timestamp}</div>
+                    </div>
                   </div>
                   <div className="text-sm leading-relaxed border-l-2 border-border pl-4 py-1 text-foreground/90">
                     {selectedNotif.description}
                   </div>
                 </div>
 
-                {/* Related Activity / Details */}
-                <div className="p-5 border-t border-border bg-surface/30">
-                  <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold mb-4 flex items-center gap-2">
-                    <MessageSquare className="w-3 h-3" /> Related Activity
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="flex gap-3 text-xs">
-                      <div className="w-1.5 h-1.5 rounded-full bg-border mt-1.5 flex-shrink-0" />
-                      <div>
-                        <span className="font-bold">System</span> <span className="text-muted-foreground">linked task to epic</span>
-                        <div className="text-[10px] font-mono text-muted-foreground mt-0.5">2 hours ago</div>
-                      </div>
-                    </div>
-                    <div className="flex gap-3 text-xs">
-                      <div className="w-1.5 h-1.5 rounded-full bg-border mt-1.5 flex-shrink-0" />
-                      <div>
-                        <span className="font-bold">M. Johnson</span> <span className="text-muted-foreground">changed status to In Review</span>
-                        <div className="text-[10px] font-mono text-muted-foreground mt-0.5">3 hours ago</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Quick Reply Footer */}
-              <div className="p-4 border-t border-border bg-background flex gap-2">
-                <input 
-                  type="text" 
-                  placeholder="Type a quick reply..." 
-                  className="flex-1 h-9 px-3 bg-surface border border-border text-xs focus:outline-none focus:border-foreground"
-                />
-                <Button className="h-9 px-4 rounded-none text-xs font-mono uppercase bg-foreground text-background">
-                  Send
-                </Button>
               </div>
             </>
           ) : (
@@ -413,9 +471,9 @@ export default function InboxPage() {
               Select an item to view details
             </div>
           )}
-        </div>
+        </DataViewport>
 
       </div>
-    </div>
+    </WorkspaceDataLayout>
   );
 }

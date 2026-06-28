@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  ChevronRight, 
-  Search, 
-  Filter, 
-  Plus, 
-  Bot, 
+import {
+  ChevronRight,
+  Search,
+  Filter,
+  Plus,
+  Bot,
   Users,
   Briefcase,
   UserCircle,
@@ -30,21 +30,26 @@ import { Button } from '@/components/ui/button';
 
 // --- MOCK DATA ---
 
-const mockTeams = [
-  { id: 'T-01', name: 'Payments Platform', manager: 'Sarah Jenkins', department: 'Platform Engineering', members: 12, projects: 3, sprint: 'Sprint 24', capacity: 480, velocity: 420, openBugs: 14, health: 'Healthy' },
-  { id: 'T-02', name: 'Mobile Banking', manager: 'Michael Chang', department: 'Product Engineering', members: 8, projects: 2, sprint: 'Sprint 24', capacity: 320, velocity: 290, openBugs: 8, health: 'At Risk' },
-  { id: 'T-03', name: 'Core Backend', manager: 'David Lee', department: 'Platform Engineering', members: 15, projects: 4, sprint: 'Sprint 24', capacity: 600, velocity: 550, openBugs: 22, health: 'Healthy' },
-  { id: 'T-04', name: 'Web Platform', manager: 'Anna Kowalski', department: 'Product Engineering', members: 10, projects: 2, sprint: 'Sprint 24', capacity: 400, velocity: 350, openBugs: 12, health: 'Healthy' },
-  { id: 'T-05', name: 'QA Automation', manager: 'Robert Wilson', department: 'Quality Assurance', members: 6, projects: 5, sprint: 'Kanban', capacity: 240, velocity: 200, openBugs: 0, health: 'Healthy' },
-  { id: 'T-06', name: 'Security Engineering', manager: 'Elena Rodriguez', department: 'Security', members: 5, projects: 3, sprint: 'Kanban', capacity: 200, velocity: 180, openBugs: 4, health: 'Critical' },
-  { id: 'T-07', name: 'DevOps', manager: 'James Smith', department: 'Infrastructure', members: 7, projects: 4, sprint: 'Sprint 24', capacity: 280, velocity: 250, openBugs: 5, health: 'Healthy' },
-];
 
-const mockEmployees = [
-  { id: 'E-101', name: 'Sarah Jenkins', role: 'Engineering Manager', department: 'Platform Engineering', team: 'Payments Platform', manager: 'Director of Engineering', location: 'New York, NY', timezone: 'EST', skills: ['Management', 'Java', 'System Design'], activeTasks: 4, sprint: 'Sprint 24', capacity: 40, workload: 45, recentActivity: 'Approved PR #1042', github: 'sjenkins-corp' },
-  { id: 'E-102', name: 'Alex Moore', role: 'Senior Backend Engineer', department: 'Platform Engineering', team: 'Payments Platform', manager: 'Sarah Jenkins', location: 'Remote', timezone: 'PST', skills: ['Go', 'PostgreSQL', 'Kafka'], activeTasks: 6, sprint: 'Sprint 24', capacity: 40, workload: 35, recentActivity: 'Merged PR #1040', github: 'amoore-dev' },
-  { id: 'E-103', name: 'Priya Patel', role: 'Frontend Engineer', department: 'Product Engineering', team: 'Web Platform', manager: 'Anna Kowalski', location: 'London, UK', timezone: 'GMT', skills: ['React', 'TypeScript', 'Tailwind'], activeTasks: 5, sprint: 'Sprint 24', capacity: 40, workload: 40, recentActivity: 'Commented on Issue #55', github: 'priya-ui' },
-];
+function mapTeam(r: any) {
+  return {
+    id: r.id, name: r.name, manager: r.team_lead_member_id ? 'Lead assigned' : '—',
+    department: r.department_id ? 'Department' : '—',
+    members: r.team_members?.[0]?.count ?? 0, projects: 0, sprint: '—',
+    capacity: Number(r.capacity_hours_per_week) || 0, velocity: 0, openBugs: 0, health: 'Healthy',
+  };
+}
+function mapEmployee(r: any, teamNameById: Record<string, string>) {
+  const p = Array.isArray(r.profile) ? r.profile[0] : r.profile;
+  const teamId = r.team_members?.[0]?.team_id;
+  return {
+    id: r.id, name: p?.full_name ?? p?.email ?? 'Member', role: p?.job_title ?? '—',
+    department: '—', team: teamId ? (teamNameById[teamId] ?? '—') : '—', manager: '—',
+    location: '—', timezone: p?.timezone ?? 'UTC', skills: [] as string[],
+    activeTasks: 0, sprint: '—', capacity: 40, workload: 0, recentActivity: '—', github: '—',
+  };
+}
+
 
 const getHealthColor = (health: string) => {
   switch (health) {
@@ -62,6 +67,27 @@ export default function TeamsPage() {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [activeTeamTab, setActiveTeamTab] = useState('Overview');
+  const [mockTeams, setMockTeams] = useState<ReturnType<typeof mapTeam>[]>([]);
+  const [mockEmployees, setMockEmployees] = useState<ReturnType<typeof mapEmployee>[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const [teamsRes, empRes] = await Promise.all([
+        fetch('/api/v1/teams').then((r) => r.json()).catch(() => ({})),
+        fetch('/api/v1/employees').then((r) => r.json()).catch(() => ({})),
+      ]);
+      if (!active) return;
+      const teams = Array.isArray(teamsRes?.data) ? teamsRes.data : [];
+      const teamNameById: Record<string, string> = {};
+
+      teams.forEach((t: any) => { teamNameById[t.id] = t.name; });
+      setMockTeams(teams.map(mapTeam));
+
+      setMockEmployees((Array.isArray(empRes?.data) ? empRes.data : []).map((e: any) => mapEmployee(e, teamNameById)));
+    })();
+    return () => { active = false; };
+  }, []);
 
   const selectedTeam = mockTeams.find(t => t.id === selectedTeamId);
   const selectedEmployee = mockEmployees.find(e => e.id === selectedEmployeeId);
@@ -69,6 +95,10 @@ export default function TeamsPage() {
   const handleTeamClick = (id: string) => {
     setSelectedTeamId(id);
     setCurrentView('team_detail');
+  };
+
+  const handleAI = (prompt: string) => {
+    alert(`Mock AI Action: ${prompt}`);
   };
 
   const handleEmployeeClick = (id: string) => {
@@ -119,7 +149,7 @@ export default function TeamsPage() {
               </>
             )}
           </div>
-          
+
           <div className="flex items-center gap-3">
             {currentView !== 'directory' && (
               <Button variant="outline" size="sm" onClick={handleBack} className="h-8 w-8 p-0 rounded-none border-border">
@@ -127,14 +157,14 @@ export default function TeamsPage() {
               </Button>
             )}
             <h1 className="text-3xl font-bold tracking-tight uppercase flex items-center gap-3">
-              <div className="w-3 h-3 bg-foreground" />
+              <Users className="w-8 h-8" />
               {currentView === 'directory' && 'Teams Directory'}
               {currentView === 'team_detail' && selectedTeam && selectedTeam.name}
               {currentView === 'employee_profile' && selectedEmployee && selectedEmployee.name}
               {currentView === 'resource_planning' && 'Resource Planning'}
             </h1>
           </div>
-          
+
           <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-widest">
             {currentView === 'directory' && 'Manage delivery teams, skills, capacity, staffing, and workload allocation.'}
             {currentView === 'team_detail' && 'Team performance, workload, and capacity oversight.'}
@@ -142,7 +172,7 @@ export default function TeamsPage() {
             {currentView === 'resource_planning' && 'Cross-team capacity forecasting and skill allocation.'}
           </p>
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-3">
           {currentView === 'directory' && (
             <>
@@ -162,7 +192,7 @@ export default function TeamsPage() {
           )}
           <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2">
             <Bot className="w-4 h-4" />
-            Ask DevPilot AI
+            Ask Handoff AI
           </Button>
         </div>
       </div>
@@ -184,7 +214,7 @@ export default function TeamsPage() {
             </div>
 
             <div className="overflow-auto flex-1 scrollbar-thin">
-              <table className="w-full text-left text-sm font-mono border-collapse whitespace-nowrap">
+              <table className="w-full min-w-[800px] text-left text-sm font-mono border-collapse whitespace-nowrap">
                 <thead className="sticky top-0 bg-surface-hover z-10 shadow-[0_1px_0_0_var(--border)]">
                   <tr>
                     <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Team Name</th>
@@ -201,8 +231,8 @@ export default function TeamsPage() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {mockTeams.map((team) => (
-                    <tr 
-                      key={team.id} 
+                    <tr
+                      key={team.id}
                       className="hover:bg-surface-hover cursor-pointer transition-colors"
                       onClick={() => handleTeamClick(team.id)}
                     >
@@ -236,21 +266,21 @@ export default function TeamsPage() {
         {/* --- TEAM DETAIL VIEW --- */}
         {currentView === 'team_detail' && selectedTeam && (
           <div className="flex flex-col flex-1 gap-6">
-            
-            {/* DevPilot Assistant */}
+
+            {/* Handoff Assistant */}
             <div className="border border-accent/30 bg-accent/5 p-4 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-24 h-24 bg-accent/10 rounded-bl-full pointer-events-none" />
               <div className="flex items-center gap-2 mb-3">
                 <Bot className="w-4 h-4 text-accent" />
-                <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold text-foreground">DevPilot Insights</h3>
+                <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold text-foreground">Handoff Insights</h3>
               </div>
               <p className="text-sm mb-3">
                 {selectedTeam.health === 'At Risk' ? 'Team is currently overloaded. Consider reallocating 2 active projects.' : 'Team capacity is balanced. Velocity is trending upwards.'}
               </p>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Summarize Health</Button>
-                <Button variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Identify Skills Gaps</Button>
-                <Button variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Forecast Capacity</Button>
+                <Button onClick={() => handleAI('Summarize Health')} variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Summarize Health</Button>
+                <Button onClick={() => handleAI('Identify Skills Gaps')} variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Identify Skills Gaps</Button>
+                <Button onClick={() => handleAI('Forecast Capacity')} variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Forecast Capacity</Button>
               </div>
             </div>
 
@@ -298,11 +328,11 @@ export default function TeamsPage() {
                       {mockEmployees.filter(e => e.team === selectedTeam.name).map(emp => (
                         <div key={emp.id} className="p-3 flex items-center justify-between hover:bg-surface-hover cursor-pointer" onClick={() => handleEmployeeClick(emp.id)}>
                           <div className="flex items-center gap-3">
-                             <div className="w-8 h-8 bg-surface border border-border flex items-center justify-center font-mono text-[10px] uppercase">{emp.name.charAt(0)}</div>
-                             <div>
-                               <div className="font-bold text-sm">{emp.name}</div>
-                               <div className="text-xs text-muted-foreground">{emp.role}</div>
-                             </div>
+                            <div className="w-8 h-8 bg-surface border border-border flex items-center justify-center font-mono text-[10px] uppercase">{emp.name.charAt(0)}</div>
+                            <div>
+                              <div className="font-bold text-sm">{emp.name}</div>
+                              <div className="text-xs text-muted-foreground">{emp.role}</div>
+                            </div>
                           </div>
                           <ChevronRight className="w-4 h-4 text-muted-foreground" />
                         </div>
@@ -316,7 +346,7 @@ export default function TeamsPage() {
                     <h3 className="font-mono text-xs uppercase tracking-widest font-bold border-b border-border pb-2">Info</h3>
                     <div>
                       <div className="text-[10px] font-mono uppercase text-muted-foreground mb-1">Manager</div>
-                      <div className="text-sm font-bold flex items-center gap-2"><UserCircle className="w-4 h-4 text-muted-foreground"/> {selectedTeam.manager}</div>
+                      <div className="text-sm font-bold flex items-center gap-2"><UserCircle className="w-4 h-4 text-muted-foreground" /> {selectedTeam.manager}</div>
                     </div>
                     <div>
                       <div className="text-[10px] font-mono uppercase text-muted-foreground mb-1">Department</div>
@@ -370,37 +400,37 @@ export default function TeamsPage() {
                 <h2 className="text-xl font-bold tracking-tight">{selectedEmployee.name}</h2>
                 <p className="text-sm text-accent font-mono mb-1">{selectedEmployee.role}</p>
                 <p className="text-xs text-muted-foreground">{selectedEmployee.department}</p>
-                
+
                 <div className="flex gap-2 mt-4">
-                  <Button variant="outline" size="sm" className="h-8 px-3 rounded-none border-border"><Mail className="w-3 h-3 mr-2"/> Message</Button>
-                  <Button variant="outline" size="sm" className="h-8 px-3 rounded-none border-border"><Calendar className="w-3 h-3 mr-2"/> Meeting</Button>
+                  <Button onClick={() => window.location.href = `mailto:team-member@handoff.dev`} variant="outline" size="sm" className="h-8 px-3 rounded-none border-border"><Mail className="w-3 h-3 mr-2" /> Message</Button>
+                  <Button onClick={() => alert('Opening calendar integration...')} variant="outline" size="sm" className="h-8 px-3 rounded-none border-border"><Calendar className="w-3 h-3 mr-2" /> Meeting</Button>
                 </div>
               </div>
 
               <div className="border border-border bg-background p-5 space-y-4 text-sm">
-                 <h3 className="font-mono text-xs uppercase tracking-widest font-bold border-b border-border pb-2">Details</h3>
-                 <div className="flex items-center gap-3"><Users className="w-4 h-4 text-muted-foreground"/> <span>Team: <span className="font-bold">{selectedEmployee.team}</span></span></div>
-                 <div className="flex items-center gap-3"><UserCircle className="w-4 h-4 text-muted-foreground"/> <span>Manager: {selectedEmployee.manager}</span></div>
-                 <div className="flex items-center gap-3"><MapPin className="w-4 h-4 text-muted-foreground"/> <span>{selectedEmployee.location}</span></div>
-                 <div className="flex items-center gap-3"><Globe className="w-4 h-4 text-muted-foreground"/> <span>{selectedEmployee.timezone}</span></div>
-                 <div className="flex items-center gap-3"><GitPullRequest className="w-4 h-4 text-muted-foreground"/> <span className="font-mono text-xs">{selectedEmployee.github}</span></div>
+                <h3 className="font-mono text-xs uppercase tracking-widest font-bold border-b border-border pb-2">Details</h3>
+                <div className="flex items-center gap-3"><Users className="w-4 h-4 text-muted-foreground" /> <span>Team: <span className="font-bold">{selectedEmployee.team}</span></span></div>
+                <div className="flex items-center gap-3"><UserCircle className="w-4 h-4 text-muted-foreground" /> <span>Manager: {selectedEmployee.manager}</span></div>
+                <div className="flex items-center gap-3"><MapPin className="w-4 h-4 text-muted-foreground" /> <span>{selectedEmployee.location}</span></div>
+                <div className="flex items-center gap-3"><Globe className="w-4 h-4 text-muted-foreground" /> <span>{selectedEmployee.timezone}</span></div>
+                <div className="flex items-center gap-3"><GitPullRequest className="w-4 h-4 text-muted-foreground" /> <span className="font-mono text-xs">{selectedEmployee.github}</span></div>
               </div>
 
               <div className="border border-border bg-background p-5 space-y-4">
-                 <h3 className="font-mono text-xs uppercase tracking-widest font-bold border-b border-border pb-2">Skills</h3>
-                 <div className="flex flex-wrap gap-2">
-                   {selectedEmployee.skills.map(skill => (
-                     <span key={skill} className="px-2 py-1 border border-border bg-surface text-[10px] font-mono uppercase tracking-widest">
-                       {skill}
-                     </span>
-                   ))}
-                 </div>
+                <h3 className="font-mono text-xs uppercase tracking-widest font-bold border-b border-border pb-2">Skills</h3>
+                <div className="flex flex-wrap gap-2">
+                  {selectedEmployee.skills.map(skill => (
+                    <span key={skill} className="px-2 py-1 border border-border bg-surface text-[10px] font-mono uppercase tracking-widest">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
 
             {/* Right Main Content */}
             <div className="flex-1 space-y-6">
-              
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="border border-border p-4 bg-surface">
                   <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Active Tasks</div>
@@ -442,17 +472,17 @@ export default function TeamsPage() {
                 </div>
               </div>
 
-              {/* DevPilot Assistant */}
+              {/* Handoff Assistant */}
               <div className="border border-accent/30 bg-accent/5 p-4 flex items-start gap-4">
                 <Bot className="w-5 h-5 text-accent flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold text-foreground mb-2">DevPilot Career & Allocation Insights</h3>
+                  <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold text-foreground mb-2">Handoff Career & Allocation Insights</h3>
                   <p className="text-sm mb-3 text-muted-foreground">
                     {selectedEmployee.name} is currently allocated at {Math.round((selectedEmployee.workload / selectedEmployee.capacity) * 100)}% capacity. Skills match well with upcoming Q3 architecture projects.
                   </p>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Suggest Best Assignee</Button>
-                    <Button variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Suggest Training Focus</Button>
+                    <Button onClick={() => handleAI('Suggest Best Assignee')} variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Suggest Best Assignee</Button>
+                    <Button onClick={() => handleAI('Suggest Training Focus')} variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Suggest Training Focus</Button>
                   </div>
                 </div>
               </div>
@@ -484,12 +514,12 @@ export default function TeamsPage() {
               </div>
             </div>
 
-            {/* DevPilot Planning Assistant */}
+            {/* Handoff Planning Assistant */}
             <div className="border border-accent border-l-4 p-5 bg-accent/5 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
               <div className="max-w-3xl">
                 <div className="flex items-center gap-2 mb-2">
                   <Bot className="w-5 h-5 text-accent" />
-                  <h3 className="font-mono text-xs uppercase tracking-widest font-bold text-foreground">DevPilot Resource Recommendations</h3>
+                  <h3 className="font-mono text-xs uppercase tracking-widest font-bold text-foreground">Handoff Resource Recommendations</h3>
                 </div>
                 <p className="text-sm">
                   <span className="font-bold text-orange-500">Mobile Banking</span> team is at risk with 110% allocation. Consider shifting 2 developers from <span className="font-bold">Web Platform</span> (currently underutilized) to assist with the React Native migration sprint.
@@ -516,9 +546,9 @@ export default function TeamsPage() {
                 </div>
               </div>
               <div className="flex-1 p-8 flex flex-col items-center justify-center text-center">
-                 <BarChart3 className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
-                 <h4 className="text-lg font-bold mb-2">Resource Heatmap View</h4>
-                 <p className="text-sm text-muted-foreground max-w-sm">Detailed allocation charts and skill matrices will be rendered here. Use the DevPilot recommendations above for immediate actions.</p>
+                <BarChart3 className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
+                <h4 className="text-lg font-bold mb-2">Resource Heatmap View</h4>
+                <p className="text-sm text-muted-foreground max-w-sm">Detailed allocation charts and skill matrices will be rendered here. Use the Handoff recommendations above for immediate actions.</p>
               </div>
             </div>
 
@@ -528,4 +558,5 @@ export default function TeamsPage() {
     </div>
   );
 }
+
 

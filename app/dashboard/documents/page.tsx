@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  ChevronRight, 
-  Search, 
-  Filter, 
-  Plus, 
-  Bot, 
+import {
+  ChevronRight,
+  Search,
+  Filter,
+  Plus,
+  Bot,
   FileText,
   Upload,
   LayoutTemplate,
@@ -30,6 +30,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
+import { DataViewport } from '@/components/layout/data-viewport';
 
 const categories = [
   'Product Requirements',
@@ -46,14 +48,30 @@ const categories = [
   'Team Notes'
 ];
 
-const mockDocuments = [
-  { id: 'DOC-1024', name: 'Core Engine V2 Architecture', category: 'Architecture', owner: 'S. Chen', status: 'Published', version: 'v1.4', updated: '2h ago', access: 'Engineering', starred: true, classification: 'Internal', project: 'Core Engine V2', contributors: ['M. Johnson', 'T. Vance'] },
-  { id: 'DOC-1025', name: 'Ledger API Specification', category: 'API Documentation', owner: 'L. Davis', status: 'Draft', version: 'v2.0-draft', updated: '4h ago', access: 'Engineering', starred: false, classification: 'Public', project: 'Ledger API', contributors: ['S. Chen'] },
-  { id: 'DOC-1026', name: 'Q4 Product Roadmap', category: 'Product Requirements', owner: 'P. Manager', status: 'In Review', version: 'v0.9', updated: '1d ago', access: 'All Company', starred: true, classification: 'Confidential', project: '-', contributors: ['D. Director'] },
-  { id: 'DOC-1027', name: 'Incident Response Process', category: 'Runbooks', owner: 'T. Vance', status: 'Published', version: 'v3.1', updated: '3d ago', access: 'Engineering', starred: false, classification: 'Internal', project: '-', contributors: ['S. Chen', 'L. Davis'] },
-  { id: 'DOC-1028', name: 'SOC2 Access Control Evidence', category: 'Compliance Evidence', owner: 'J. Smith', status: 'Approved', version: 'v1.0', updated: 'Oct 15, 2026', access: 'SecOps', starred: false, classification: 'Confidential', project: 'Auth V2', contributors: [] },
-  { id: 'DOC-1029', name: 'Weekly Engineering Sync', category: 'Meeting Notes', owner: 'T. Vance', status: 'Published', version: 'v1.0', updated: '5h ago', access: 'Engineering', starred: false, classification: 'Internal', project: '-', contributors: ['All Engineering'] },
-];
+const DOC_STATUS: Record<string, string> = { DRAFT: 'Draft', IN_REVIEW: 'In Review', APPROVED: 'Approved', ARCHIVED: 'Archived' };
+const DOC_CLASS: Record<string, string> = { PUBLIC: 'Public', INTERNAL: 'Internal', CONFIDENTIAL: 'Confidential', RESTRICTED: 'Confidential' };
+const DOC_CATEGORY: Record<string, string> = {
+  PRD: 'Product Requirements', TECHNICAL_DESIGN: 'Architecture', ARCHITECTURE: 'Architecture',
+  API_DOCUMENTATION: 'API Documentation', RUNBOOK: 'Runbooks', MEETING_NOTES: 'Meeting Notes',
+  COMPLIANCE_EVIDENCE: 'Compliance Evidence', RELEASE_NOTES: 'Release Notes',
+};
+const fmtRel = (iso?: string | null) => {
+  if (!iso) return '—';
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (m < 60) return `${m}m ago`;
+  if (m < 1440) return `${Math.floor(m / 60)}h ago`;
+  return `${Math.floor(m / 1440)}d ago`;
+};
+
+function mapDocument(r: any) {
+  return {
+    id: r.id, name: r.title, category: DOC_CATEGORY[r.document_type] ?? 'Team Note',
+    owner: r.owner_member_id ? 'Owner' : '—', status: DOC_STATUS[r.status] ?? r.status,
+    version: `v${r.current_version ?? 1}`, updated: fmtRel(r.updated_at),
+    access: 'Organization', starred: false, classification: DOC_CLASS[r.classification] ?? 'Internal',
+    project: r.project_id ? 'Linked' : '-', contributors: [] as string[],
+  };
+}
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -84,12 +102,41 @@ const getClassificationColor = (classification: string) => {
 
 export default function DocumentsPage() {
   const [activeFilter, setActiveFilter] = useState('All Documents');
+  const [query, setQuery] = useState('');
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
+  const [mockDocuments, setMockDocuments] = useState<ReturnType<typeof mapDocument>[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/v1/documents')
+      .then((r) => r.json())
+      .then((j) => { if (active) setMockDocuments((Array.isArray(j?.data) ? j.data : []).map(mapDocument)); })
+      .catch(() => { });
+    return () => { active = false; };
+  }, []);
 
   const selectedDoc = mockDocuments.find(d => d.id === selectedDocId);
+  const draftCount = mockDocuments.filter((d) => d.status === 'Draft').length;
+
+  // Real search (by name) + left-rail filter. Drafts/Archived/Starred and the
+  // category rail map to real document fields; Recently Viewed / Shared with me
+  // aren't tracked yet, so they don't apply an extra filter.
+  const q = query.trim().toLowerCase();
+  const filteredDocs = mockDocuments.filter((d) => {
+    if (q && !d.name.toLowerCase().includes(q)) return false;
+    switch (activeFilter) {
+      case 'All Documents':
+      case 'Recently Viewed':
+      case 'Shared with me': return true;
+      case 'Drafts': return d.status === 'Draft';
+      case 'Archived': return d.status === 'Archived';
+      case 'Starred': return d.starred;
+      default: return d.category === activeFilter;
+    }
+  });
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 h-[calc(100vh-80px)] flex flex-col">
+    <WorkspaceDataLayout className="space-y-6 animate-in fade-in duration-500 flex flex-col">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 flex-shrink-0">
         <div>
@@ -99,7 +146,7 @@ export default function DocumentsPage() {
             <span className="text-foreground">Documents</span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight uppercase flex items-center gap-3">
-            <div className="w-3 h-3 bg-foreground" />
+            <FileText className="w-8 h-8" />
             Documents
           </h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-widest">
@@ -107,11 +154,11 @@ export default function DocumentsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
             <Upload className="w-4 h-4" />
             Import Document
           </Button>
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
             <LayoutTemplate className="w-4 h-4" />
             From Template
           </Button>
@@ -121,21 +168,21 @@ export default function DocumentsPage() {
               New Document
             </Button>
           </Link>
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2">
+          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent gap-2 disabled:opacity-40">
             <Bot className="w-4 h-4" />
-            Ask DevPilot AI
+            Ask Handoff AI
           </Button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-h-0 flex gap-6">
-        
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-6">
+
         {/* Left Sidebar navigation */}
-        <div className="w-64 flex-shrink-0 flex flex-col gap-6 overflow-y-auto scrollbar-thin">
+        <div className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-6 lg:overflow-y-auto scrollbar-thin">
           <div className="space-y-1">
             {['All Documents', 'Recently Viewed', 'Starred', 'Shared with me', 'Drafts', 'Archived'].map(item => (
-              <button 
+              <button
                 key={item}
                 onClick={() => setActiveFilter(item)}
                 className={`w-full text-left px-3 py-2 text-sm font-bold flex items-center justify-between border border-transparent transition-colors ${activeFilter === item ? 'bg-surface border-border text-foreground' : 'text-muted-foreground hover:bg-surface/50 hover:text-foreground'}`}
@@ -149,7 +196,7 @@ export default function DocumentsPage() {
                   {item === 'All Documents' && <FolderOpen className="w-4 h-4" />}
                   {item}
                 </div>
-                {item === 'Drafts' && <span className="font-mono text-[10px] px-1.5 py-0.5 bg-background border border-border">2</span>}
+                {item === 'Drafts' && draftCount > 0 && <span className="font-mono text-[10px] px-1.5 py-0.5 bg-background border border-border">{draftCount}</span>}
               </button>
             ))}
           </div>
@@ -158,7 +205,7 @@ export default function DocumentsPage() {
             <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-3 px-3">Categories</h3>
             <div className="space-y-1">
               {categories.map(cat => (
-                <button 
+                <button
                   key={cat}
                   onClick={() => setActiveFilter(cat)}
                   className={`w-full text-left px-3 py-2 text-sm flex items-center border border-transparent transition-colors ${activeFilter === cat ? 'bg-surface border-border text-foreground font-bold' : 'text-muted-foreground hover:bg-surface/50 hover:text-foreground'}`}
@@ -178,9 +225,9 @@ export default function DocumentsPage() {
             <div className="flex items-center gap-2 flex-1">
               <div className="relative flex-1 max-w-md">
                 <Search className="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input type="text" placeholder="SEARCH DOCUMENTS..." className="w-full h-8 pl-9 pr-3 bg-background border border-border text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors" />
+                <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="SEARCH DOCUMENTS..." className="w-full h-8 pl-9 pr-3 bg-background border border-border text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors" />
               </div>
-              <Button variant="outline" size="sm" className="h-8 px-3 rounded-none text-[10px] font-mono uppercase border-border bg-background">
+              <Button variant="outline" size="sm" disabled title="Not available yet" className="h-8 px-3 rounded-none text-[10px] font-mono uppercase border-border bg-background disabled:opacity-40">
                 <Filter className="w-3 h-3 mr-2" /> Filters
               </Button>
             </div>
@@ -189,8 +236,8 @@ export default function DocumentsPage() {
             </div>
           </div>
 
-          <div className="overflow-auto flex-1 scrollbar-thin">
-            <table className="w-full text-left text-sm font-mono border-collapse whitespace-nowrap">
+          <DataViewport className="border-0">
+            <table className="w-full min-w-[800px] text-left text-sm font-mono border-collapse whitespace-nowrap">
               <thead className="sticky top-0 bg-surface-hover z-10 shadow-[0_1px_0_0_var(--border)]">
                 <tr>
                   <th className="p-3 w-8"></th>
@@ -204,9 +251,12 @@ export default function DocumentsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {mockDocuments.map((doc) => (
-                  <tr 
-                    key={doc.id} 
+                {filteredDocs.length === 0 && (
+                  <tr><td colSpan={8} className="p-6 text-center text-xs font-mono text-muted-foreground">No documents.</td></tr>
+                )}
+                {filteredDocs.map((doc) => (
+                  <tr
+                    key={doc.id}
                     className="hover:bg-surface-hover group cursor-pointer transition-colors"
                     onClick={() => setSelectedDocId(doc.id)}
                   >
@@ -243,7 +293,7 @@ export default function DocumentsPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </DataViewport>
         </div>
 
       </div>
@@ -252,14 +302,14 @@ export default function DocumentsPage() {
       <AnimatePresence>
         {selectedDocId && selectedDoc && (
           <>
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
               onClick={() => setSelectedDocId(null)}
             />
-            <motion.div 
+            <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
@@ -285,11 +335,11 @@ export default function DocumentsPage() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-thin">
-                
+
                 {/* Title & Core Fields */}
                 <div>
                   <h2 className="text-2xl font-bold mb-6 tracking-tight leading-tight">{selectedDoc.name}</h2>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="border border-border p-3 flex flex-col gap-1">
                       <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Status</span>
@@ -318,21 +368,20 @@ export default function DocumentsPage() {
                   </div>
                 </div>
 
-                {/* DevPilot Assistant Panel */}
-                <div className="border border-accent/30 bg-accent/5 p-4 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-accent/10 rounded-bl-full pointer-events-none" />
+                {/* Handoff Assistant Panel — honestly disabled (no AI wired here yet) */}
+                <div className="border border-border bg-surface/40 p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Bot className="w-4 h-4 text-accent" />
-                    <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold text-foreground">DevPilot Insights</h3>
+                    <Bot className="w-4 h-4 text-muted-foreground" />
+                    <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Handoff Insights</h3>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-accent/50 text-accent hover:bg-accent hover:text-background">
+                    <Button variant="outline" size="sm" disabled title="Not available yet" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border disabled:opacity-40">
                       Summarize Document
                     </Button>
-                    <Button variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background">
+                    <Button variant="outline" size="sm" disabled title="Not available yet" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border disabled:opacity-40">
                       Extract Action Items
                     </Button>
-                    <Button variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background">
+                    <Button variant="outline" size="sm" disabled title="Not available yet" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border disabled:opacity-40">
                       Find Outdated Sections
                     </Button>
                   </div>
@@ -360,11 +409,11 @@ export default function DocumentsPage() {
                       <div className="text-[10px] font-mono uppercase text-muted-foreground mb-1">Contributors</div>
                       <div className="flex items-center gap-1">
                         {selectedDoc.contributors.length > 0 ? (
-                           <div className="flex -space-x-2">
-                             {selectedDoc.contributors.map((c, i) => (
-                                <div key={i} className="w-6 h-6 bg-surface border border-border flex items-center justify-center font-mono text-[9px] uppercase z-10">{c.charAt(0)}</div>
-                             ))}
-                           </div>
+                          <div className="flex -space-x-2">
+                            {selectedDoc.contributors.map((c, i) => (
+                              <div key={i} className="w-6 h-6 bg-surface border border-border flex items-center justify-center font-mono text-[9px] uppercase z-10">{c.charAt(0)}</div>
+                            ))}
+                          </div>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
@@ -402,7 +451,7 @@ export default function DocumentsPage() {
                     <div className="flex gap-4">
                       <div className="w-6 h-6 bg-surface border border-border flex items-center justify-center font-mono text-[9px] uppercase flex-shrink-0 mt-0.5">{selectedDoc.owner.charAt(0)}</div>
                       <div className="flex-1">
-                        <p className="text-sm"><span className="font-bold">{selectedDoc.owner}</span> updated the document</p>
+                        <p className="text-sm">Document last updated</p>
                         <div className="text-[10px] font-mono text-muted-foreground mt-0.5">{selectedDoc.updated}</div>
                       </div>
                     </div>
@@ -412,8 +461,7 @@ export default function DocumentsPage() {
                           <CheckCircle2 className="w-3 h-3" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm"><span className="font-bold">System</span> approved document via compliance workflow</p>
-                          <div className="text-[10px] font-mono text-muted-foreground mt-0.5">Oct 15, 2026</div>
+                          <p className="text-sm">Current status: <span className="font-bold">Approved</span></p>
                         </div>
                       </div>
                     )}
@@ -426,6 +474,6 @@ export default function DocumentsPage() {
         )}
       </AnimatePresence>
 
-    </div>
+    </WorkspaceDataLayout>
   );
 }

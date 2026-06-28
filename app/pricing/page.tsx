@@ -36,8 +36,8 @@ const FAQS = [
     answer: "Yes, our Team plan is designed for growing product and engineering teams. You can start small and upgrade as your organization scales and requires more advanced portfolio management or enterprise governance."
   },
   {
-    question: "Is DevPilot available for large organizations?",
-    answer: "Absolutely. DevPilot Enterprise is built specifically to coordinate complex delivery across hundreds of teams, offering advanced governance, security controls, and cross-team visibility."
+    question: "Is Handoff available for large organizations?",
+    answer: "Absolutely. Handoff is built specifically to coordinate complex delivery across hundreds of teams, offering advanced governance, security controls, and cross-team visibility."
   },
   {
     question: "Can we use SSO?",
@@ -45,15 +45,15 @@ const FAQS = [
   },
   {
     question: "Can we import from Jira?",
-    answer: "Yes, we offer dedicated import tools and scripts to migrate your projects, issues, and histories directly from Jira, Trello, and Asana into DevPilot."
+    answer: "Yes, we offer dedicated import tools and scripts to migrate your projects, issues, and histories directly from Jira, Trello, and Asana into Handoff."
   },
   {
-    question: "Does DevPilot integrate with GitHub?",
-    answer: "Yes, DevPilot features deep integrations with GitHub, GitLab, and Bitbucket. You can link branches, view pull requests, track CI/CD statuses, and block merges based on task approvals directly from your workspace."
+    question: "Does Handoff integrate with GitHub?",
+    answer: "Yes, Handoff features deep integrations with GitHub, GitLab, and Bitbucket. You can link branches, view pull requests, track CI/CD statuses, and block merges based on task approvals directly from your workspace."
   },
   {
     question: "Can we control AI access?",
-    answer: "Yes, on the Enterprise plan, DevPilot AI operates under strict enterprise guardrails. It respects existing user permissions, logs prompts for auditing, and includes configurable access controls to protect restricted data."
+    answer: "Yes, on the Enterprise plan, Handoff AI operates under strict enterprise guardrails. It respects existing user permissions, logs prompts for auditing, and includes configurable access controls to protect restricted data."
   },
   {
     question: "Is enterprise onboarding available?",
@@ -213,7 +213,7 @@ export default function PricingPage() {
                   'Comments and attachments',
                   'Documents',
                   'Standard integrations',
-                  'Basic DevPilot AI summaries',
+                  'Basic Handoff AI summaries',
                   'Email support'
                 ].map((feature, i) => (
                   <div key={i} className="flex items-start gap-3">
@@ -258,7 +258,7 @@ export default function PricingPage() {
                   'QA and bug tracking',
                   'Release management',
                   'GitHub and CI/CD integrations',
-                  'DevPilot AI planning and analytics',
+                  'Handoff AI planning and analytics',
                   'Scheduled reports',
                   'Priority support'
                 ].map((feature, i) => (
@@ -323,7 +323,7 @@ export default function PricingPage() {
               <div>
                 <div className="flex items-center gap-2 text-[10px] font-mono text-accent uppercase tracking-widest font-bold mb-4">
                   <Bot className="w-3 h-3" />
-                  DevPilot Enterprise Add-On
+                  Handoff Add-On
                 </div>
                 <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">AI with controls built for enterprise work.</h2>
                 <p className="text-muted-foreground mb-8 text-lg">

@@ -1,21 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { 
-  ChevronRight, 
-  Search, 
-  Filter, 
-  Plus, 
-  Bot, 
-  Download, 
-  LayoutGrid, 
-  List, 
-  Layers, 
-  Clock, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Rocket, 
+import React, { useState, useEffect, useCallback } from 'react';
+import { CreateProjectModal } from '@/components/dashboard/create-project-modal';
+import { usePermission } from '@/lib/permissions/context';
+import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
+import { DataViewport } from '@/components/layout/data-viewport';
+import {
+  ChevronRight,
+  Search,
+  Filter,
+  Plus,
+  Bot,
+  Download,
+  LayoutGrid,
+  List,
+  Layers,
+  Clock,
+  AlertTriangle,
+  CheckCircle2,
+  Rocket,
   Flag,
   MoreVertical,
   Upload,
@@ -42,127 +45,34 @@ type Project = {
   openRisks: number;
 };
 
-const mockProjects: Project[] = [
-  {
-    id: 'proj-1',
-    name: 'UPI Refund System',
-    code: 'UPI-REF',
-    department: 'Payments',
-    owner: 'R. Gupta',
-    manager: 'T. Vance',
-    team: 'Payments Core',
-    health: 'At Risk',
-    priority: 'P1',
-    progress: 45,
-    startDate: 'Sep 01, 2026',
-    targetDate: 'Nov 15, 2026',
-    nextMilestone: 'External API Integration',
-    nextRelease: 'v2.1 (Oct 30)',
-    openRisks: 3,
-  },
-  {
-    id: 'proj-2',
-    name: 'KYC Verification Upgrade',
-    code: 'KYC-V2',
-    department: 'Compliance',
-    owner: 'S. Patel',
-    manager: 'M. Johnson',
-    team: 'Identity',
-    health: 'On Track',
-    priority: 'P1',
-    progress: 80,
-    startDate: 'Jul 15, 2026',
-    targetDate: 'Oct 31, 2026',
-    nextMilestone: 'Security Audit',
-    nextRelease: 'v4.0 (Oct 31)',
-    openRisks: 1,
-  },
-  {
-    id: 'proj-3',
-    name: 'Fraud Detection Engine',
-    code: 'FRAUD-ML',
-    department: 'Risk',
-    owner: 'L. Chen',
-    manager: 'A. Davis',
-    team: 'Data Science',
-    health: 'On Track',
-    priority: 'P2',
-    progress: 25,
-    startDate: 'Oct 01, 2026',
-    targetDate: 'Feb 28, 2027',
-    nextMilestone: 'Model Training Complete',
-    nextRelease: 'v1.0-beta',
-    openRisks: 2,
-  },
-  {
-    id: 'proj-4',
-    name: 'Payment Gateway Migration',
-    code: 'GW-MIGRATE',
-    department: 'Infrastructure',
-    owner: 'K. Smith',
-    manager: 'D. Williams',
-    team: 'Platform',
-    health: 'Off Track',
-    priority: 'P1',
-    progress: 60,
-    startDate: 'Aug 01, 2026',
-    targetDate: 'Dec 15, 2026',
-    nextMilestone: 'Legacy Traffic Routing',
-    nextRelease: 'v5.0',
-    openRisks: 5,
-  },
-  {
-    id: 'proj-5',
-    name: 'Mobile Banking Redesign',
-    code: 'MB-V3',
-    department: 'Consumer',
-    owner: 'E. Wright',
-    manager: 'J. Doe',
-    team: 'Mobile App',
-    health: 'On Track',
-    priority: 'P2',
-    progress: 15,
-    startDate: 'Oct 15, 2026',
-    targetDate: 'Apr 30, 2027',
-    nextMilestone: 'Design System Sign-off',
-    nextRelease: 'v3.0.0-alpha',
-    openRisks: 0,
-  },
-  {
-    id: 'proj-6',
-    name: 'Security Compliance Upgrade',
-    code: 'SEC-2027',
-    department: 'Security',
-    owner: 'F. Castle',
-    manager: 'P. Parker',
-    team: 'SecOps',
-    health: 'On Track',
-    priority: 'P1',
-    progress: 90,
-    startDate: 'Jun 01, 2026',
-    targetDate: 'Oct 31, 2026',
-    nextMilestone: 'Final Reporting',
-    nextRelease: 'N/A',
-    openRisks: 0,
-  },
-  {
-    id: 'proj-7',
-    name: 'Internal Admin Portal',
-    code: 'ADMIN-PORTAL',
-    department: 'Internal Tools',
-    owner: 'G. Stacy',
-    manager: 'H. Osborn',
-    team: 'Tooling',
-    health: 'Completed',
-    priority: 'P3',
-    progress: 100,
-    startDate: 'Mar 01, 2026',
-    targetDate: 'Sep 30, 2026',
-    nextMilestone: 'Project Handoff',
-    nextRelease: 'v1.2 (Live)',
-    openRisks: 0,
-  },
-];
+// Maps a DB project row to the display shape used by this view.
+function mapProject(r: any): Project {
+  const healthMap: Record<string, Project['health']> = {
+    ON_TRACK: 'On Track', AT_RISK: 'At Risk', OFF_TRACK: 'Off Track',
+  };
+  const prioMap: Record<string, Project['priority']> = {
+    CRITICAL: 'P1', HIGH: 'P1', MEDIUM: 'P2', LOW: 'P3',
+  };
+  const fmt = (d?: string | null) =>
+    d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : '—';
+  return {
+    id: r.id,
+    name: r.name,
+    code: r.code,
+    department: r.security_classification ?? '—',
+    owner: r.owner_member_id ? 'Assigned' : '—',
+    manager: r.project_manager_member_id ? 'Assigned' : '—',
+    team: '—',
+    health: r.status === 'COMPLETED' ? 'Completed' : (healthMap[r.health] ?? 'On Track'),
+    priority: prioMap[r.priority] ?? 'P2',
+    progress: 0,
+    startDate: fmt(r.start_date),
+    targetDate: fmt(r.target_end_date),
+    nextMilestone: r.milestones?.[0]?.count != null ? `${r.milestones[0].count} milestone(s)` : '—',
+    nextRelease: '—',
+    openRisks: r.project_risks?.[0]?.count ?? 0,
+  };
+}
 
 const getHealthColor = (health: string) => {
   switch (health) {
@@ -186,9 +96,54 @@ const getPriorityColor = (priority: string) => {
 export default function ProjectsPage() {
   const [view, setView] = useState<'table' | 'grid'>('table');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
+  const [healthFilter, setHealthFilter] = useState<'ALL' | Project['health']>('ALL');
+  const { has } = usePermission();
+  const canCreate = has('project:create');
+
+  // Reusable refresh (used after create). Kept out of the effect so the
+  // setState calls aren't flagged as synchronous-in-effect.
+  const load = useCallback(async () => {
+    const r = await fetch('/api/v1/projects').catch(() => null);
+    if (!r) return;
+    const json = await r.json().catch(() => null);
+    const rows = Array.isArray(json?.data) ? json.data : [];
+    setProjects(rows.map(mapProject));
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/v1/projects')
+      .then((r) => r.json())
+      .then((json) => {
+        if (!active) return;
+        const rows = Array.isArray(json?.data) ? json.data : [];
+        setProjects(rows.map(mapProject));
+      })
+      .catch(() => { })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  void loading;
+
+  // Client-side search (name/code) + health filter over the loaded rows.
+  const q = query.trim().toLowerCase();
+  const filtered = projects.filter((p) => {
+    const matchesQuery = q === '' || p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q);
+    const matchesHealth = healthFilter === 'ALL' || p.health === healthFilter;
+    return matchesQuery && matchesHealth;
+  });
+
+  // Footer stats computed from the filtered view.
+  const onTrack = filtered.filter((p) => p.health === 'On Track').length;
+  const atRisk = filtered.filter((p) => p.health === 'At Risk').length;
+  const offTrack = filtered.filter((p) => p.health === 'Off Track').length;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 h-[calc(100vh-80px)] flex flex-col">
+    <WorkspaceDataLayout className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 flex-shrink-0">
         <div>
@@ -198,29 +153,31 @@ export default function ProjectsPage() {
             <span className="text-foreground">Projects</span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight uppercase flex items-center gap-3">
-            <div className="w-3 h-3 bg-foreground" />
+            <Layers className="w-8 h-8" />
             Projects
           </h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-widest">
             Manage delivery across products, engineering teams, programs, and business units.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
             <Upload className="w-4 h-4" />
             Import
           </Button>
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
             <Download className="w-4 h-4" />
             Export Report
           </Button>
-          <Button onClick={() => setIsCreateModalOpen(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
-            <Plus className="w-4 h-4" />
-            Create Project
-          </Button>
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2">
+          {canCreate && (
+            <Button data-testid="create-project-button" onClick={() => setIsCreateModalOpen(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
+              <Plus className="w-4 h-4" />
+              Create Project
+            </Button>
+          )}
+          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent gap-2 disabled:opacity-40">
             <Bot className="w-4 h-4" />
-            Ask DevPilot AI
+            Ask Handoff AI
           </Button>
         </div>
       </div>
@@ -230,20 +187,37 @@ export default function ProjectsPage() {
         <div className="flex items-center gap-2 flex-1">
           <div className="relative flex-1 max-w-sm">
             <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder="SEARCH PROJECTS..." className="w-full h-8 pl-8 pr-3 bg-background border border-border text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="SEARCH PROJECTS..."
+              className="w-full h-8 pl-8 pr-3 bg-background border border-border text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors"
+            />
           </div>
-          <Button variant="outline" size="sm" className="h-8 px-3 rounded-none text-[10px] font-mono uppercase border-border bg-background">
-            <Filter className="w-3 h-3 mr-2" /> Filters (2)
-          </Button>
+          <div className="relative flex items-center">
+            <Filter className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <select
+              value={healthFilter}
+              onChange={(e) => setHealthFilter(e.target.value as 'ALL' | Project['health'])}
+              className="h-8 pl-7 pr-3 rounded-none text-[10px] font-mono uppercase border border-border bg-background focus:outline-none focus:border-foreground transition-colors cursor-pointer"
+            >
+              <option value="ALL">All Health</option>
+              <option value="On Track">On Track</option>
+              <option value="At Risk">At Risk</option>
+              <option value="Off Track">Off Track</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
         </div>
         <div className="flex items-center gap-2 bg-background border border-border">
-          <button 
+          <button
             onClick={() => setView('table')}
             className={`p-1.5 transition-colors ${view === 'table' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}
           >
             <List className="w-4 h-4" />
           </button>
-          <button 
+          <button
             onClick={() => setView('grid')}
             className={`p-1.5 transition-colors ${view === 'grid' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}
           >
@@ -253,25 +227,25 @@ export default function ProjectsPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-h-0 border border-border bg-background overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0 border border-border bg-background flex flex-col">
         {view === 'table' ? (
-          <div className="overflow-auto flex-1 scrollbar-thin">
-            <table className="w-full text-left text-sm font-mono border-collapse whitespace-nowrap">
+          <DataViewport className="border-0">
+            <table className="w-full min-w-[800px] text-left text-sm font-mono border-collapse whitespace-nowrap">
               <thead className="sticky top-0 bg-surface-hover z-10 shadow-[0_1px_0_0_var(--border)]">
                 <tr>
                   <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Project</th>
                   <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Health</th>
-                  <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Progress</th>
-                  <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Team</th>
-                  <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Owner/Manager</th>
-                  <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Target Date</th>
-                  <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Next Milestone</th>
+                  <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal hidden sm:table-cell">Progress</th>
+                  <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal hidden md:table-cell">Team</th>
+                  <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal hidden sm:table-cell">Owner/Manager</th>
+                  <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal hidden md:table-cell">Target Date</th>
+                  <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal hidden lg:table-cell">Next Milestone</th>
                   <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Risks</th>
                   <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {mockProjects.map((project) => (
+                {filtered.map((project) => (
                   <tr key={project.id} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <Link href={`/dashboard/projects/${project.id}`} className="block">
@@ -290,7 +264,7 @@ export default function ProjectsPage() {
                         {project.health}
                       </span>
                     </td>
-                    <td className="p-3">
+                    <td className="p-3 hidden sm:table-cell">
                       <div className="flex items-center gap-2 w-32">
                         <div className="flex-1 h-1.5 bg-surface border border-border overflow-hidden">
                           <div className="h-full bg-foreground" style={{ width: `${project.progress}%` }} />
@@ -298,18 +272,18 @@ export default function ProjectsPage() {
                         <span className="text-[10px] text-muted-foreground w-6 text-right">{project.progress}%</span>
                       </div>
                     </td>
-                    <td className="p-3">
+                    <td className="p-3 hidden md:table-cell">
                       <div className="text-xs truncate max-w-[120px]">{project.team}</div>
                     </td>
-                    <td className="p-3">
+                    <td className="p-3 hidden sm:table-cell">
                       <div className="text-xs">{project.owner}</div>
                       <div className="text-[10px] text-muted-foreground">{project.manager}</div>
                     </td>
-                    <td className="p-3">
+                    <td className="p-3 hidden md:table-cell">
                       <div className="text-xs">{project.targetDate}</div>
                       <div className="text-[10px] text-muted-foreground">Started: {project.startDate}</div>
                     </td>
-                    <td className="p-3">
+                    <td className="p-3 hidden lg:table-cell">
                       <div className="text-xs truncate max-w-[150px]">{project.nextMilestone}</div>
                       <div className="text-[10px] text-muted-foreground">Release: {project.nextRelease}</div>
                     </td>
@@ -331,183 +305,85 @@ export default function ProjectsPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </DataViewport>
         ) : (
-          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-auto scrollbar-thin">
-            {mockProjects.map((project) => (
-              <Link href={`/dashboard/projects/${project.id}`} key={project.id} className="border border-border bg-background p-4 hover:border-foreground transition-colors group flex flex-col">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-[10px] px-1.5 py-0.5 bg-surface border border-border">{project.code}</span>
-                    <span className={`font-mono text-[10px] px-2 py-0.5 border ${getHealthColor(project.health)}`}>{project.health}</span>
-                  </div>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-none opacity-0 group-hover:opacity-100 transition-opacity -mt-1 -mr-1">
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </div>
-                
-                <h3 className="font-bold text-lg mb-1 group-hover:underline decoration-border underline-offset-4">{project.name}</h3>
-                <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
-                  <Layers className="w-3 h-3" /> {project.department}
-                </div>
-                
-                <div className="space-y-3 mb-4 flex-1">
-                  <div>
-                    <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-1 uppercase tracking-widest">
-                      <span>Progress</span>
-                      <span>{project.progress}%</span>
+          <DataViewport className="border-0 p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filtered.map((project) => (
+                <Link href={`/dashboard/projects/${project.id}`} key={project.id} className="border border-border bg-background p-4 hover:border-foreground transition-colors group flex flex-col">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono text-[10px] px-1.5 py-0.5 bg-surface border border-border">{project.code}</span>
+                      <span className={`font-mono text-[10px] px-2 py-0.5 border ${getHealthColor(project.health)}`}>{project.health}</span>
                     </div>
-                    <div className="h-1 bg-surface border border-border w-full overflow-hidden">
-                      <div className="h-full bg-foreground" style={{ width: `${project.progress}%` }} />
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-none opacity-0 group-hover:opacity-100 transition-opacity -mt-1 -mr-1">
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  <h3 className="font-bold text-lg mb-1 group-hover:underline decoration-border underline-offset-4">{project.name}</h3>
+                  <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <Layers className="w-3 h-3" /> {project.department}
+                  </div>
+
+                  <div className="space-y-3 mb-4 flex-1">
+                    <div>
+                      <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-1 uppercase tracking-widest">
+                        <span>Progress</span>
+                        <span>{project.progress}%</span>
+                      </div>
+                      <div className="h-1 bg-surface border border-border w-full overflow-hidden">
+                        <div className="h-full bg-foreground" style={{ width: `${project.progress}%` }} />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <div className="text-[10px] font-mono text-muted-foreground uppercase">Target</div>
+                        <div>{project.targetDate}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-mono text-muted-foreground uppercase">Next Release</div>
+                        <div className="truncate">{project.nextRelease}</div>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                     <div>
-                       <div className="text-[10px] font-mono text-muted-foreground uppercase">Target</div>
-                       <div>{project.targetDate}</div>
-                     </div>
-                     <div>
-                       <div className="text-[10px] font-mono text-muted-foreground uppercase">Next Release</div>
-                       <div className="truncate">{project.nextRelease}</div>
-                     </div>
+
+                  <div className="pt-3 border-t border-border flex items-center justify-between text-xs">
+                    <div className="flex -space-x-2">
+                      <div className="w-6 h-6 border border-border bg-surface flex items-center justify-center font-mono text-[9px] uppercase z-20" title={project.owner}>{project.owner.charAt(0)}</div>
+                      <div className="w-6 h-6 border border-border bg-surface-hover flex items-center justify-center font-mono text-[9px] uppercase z-10" title={project.manager}>{project.manager.charAt(0)}</div>
+                    </div>
+                    {project.openRisks > 0 && (
+                      <div className="flex items-center gap-1 text-[10px] font-mono uppercase text-destructive bg-destructive/10 px-1.5 py-0.5 border border-destructive/30">
+                        <AlertTriangle className="w-3 h-3" /> {project.openRisks} Risks
+                      </div>
+                    )}
                   </div>
-                </div>
-                
-                <div className="pt-3 border-t border-border flex items-center justify-between text-xs">
-                  <div className="flex -space-x-2">
-                    <div className="w-6 h-6 border border-border bg-surface flex items-center justify-center font-mono text-[9px] uppercase z-20" title={project.owner}>{project.owner.charAt(0)}</div>
-                    <div className="w-6 h-6 border border-border bg-surface-hover flex items-center justify-center font-mono text-[9px] uppercase z-10" title={project.manager}>{project.manager.charAt(0)}</div>
-                  </div>
-                  {project.openRisks > 0 && (
-                     <div className="flex items-center gap-1 text-[10px] font-mono uppercase text-destructive bg-destructive/10 px-1.5 py-0.5 border border-destructive/30">
-                       <AlertTriangle className="w-3 h-3" /> {project.openRisks} Risks
-                     </div>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
+          </DataViewport>
         )}
-        
+
         <div className="p-3 border-t border-border bg-surface-hover flex justify-between items-center text-[10px] font-mono text-muted-foreground flex-shrink-0">
-          <span>Showing 7 projects</span>
+          <span>Showing {filtered.length} of {projects.length} project{projects.length === 1 ? '' : 's'}</span>
           <div className="flex gap-4">
-             <span className="flex items-center gap-1"><span className="w-2 h-2 bg-emerald-500/20 border border-emerald-500 block" /> 4 On Track</span>
-             <span className="flex items-center gap-1"><span className="w-2 h-2 bg-orange-500/20 border border-orange-500 block" /> 1 At Risk</span>
-             <span className="flex items-center gap-1"><span className="w-2 h-2 bg-destructive/20 border border-destructive block" /> 1 Off Track</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-emerald-500/20 border border-emerald-500 block" /> {onTrack} On Track</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-orange-500/20 border border-orange-500 block" /> {atRisk} At Risk</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-destructive/20 border border-destructive block" /> {offTrack} Off Track</span>
           </div>
         </div>
       </div>
 
-      {/* Create Project Modal */}
-      <AnimatePresence>
-        {isCreateModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-              onClick={() => setIsCreateModalOpen(false)}
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl bg-background border border-border shadow-2xl flex flex-col max-h-[90vh]"
-            >
-              <div className="p-4 border-b border-border bg-surface-hover flex items-center justify-between">
-                <h2 className="font-mono text-sm uppercase tracking-widest font-bold flex items-center gap-2">
-                  <div className="w-2 h-2 bg-foreground" /> Create Project
-                </h2>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-none hover:bg-surface border border-transparent hover:border-border" onClick={() => setIsCreateModalOpen(false)}>
-                  <MoreVertical className="w-4 h-4 rotate-45" /> {/* Close icon lookalike */}
-                </Button>
-              </div>
-              
-              <div className="p-6 overflow-y-auto flex-1 space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2 col-span-2 md:col-span-1">
-                    <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Project Name *</label>
-                    <input type="text" className="w-full h-9 px-3 bg-background border border-border text-sm focus:outline-none focus:border-foreground transition-colors" placeholder="e.g. Ledger Migration" />
-                  </div>
-                  <div className="space-y-2 col-span-2 md:col-span-1">
-                    <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Project Code *</label>
-                    <input type="text" className="w-full h-9 px-3 bg-background border border-border text-sm font-mono uppercase focus:outline-none focus:border-foreground transition-colors" placeholder="e.g. LGR-MIG" />
-                  </div>
-                </div>
+      {/* Create Project Modal — real, wired to POST /api/v1/projects */}
+      {isCreateModalOpen && (
+        <CreateProjectModal
+          onClose={() => setIsCreateModalOpen(false)}
+          onCreated={load}
+        />
+      )}
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Description</label>
-                  <textarea className="w-full h-24 p-3 bg-background border border-border text-sm focus:outline-none focus:border-foreground transition-colors resize-none" placeholder="Brief project objective and scope..." />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Department</label>
-                    <select className="w-full h-9 px-3 bg-background border border-border text-sm focus:outline-none focus:border-foreground transition-colors">
-                      <option>Payments</option>
-                      <option>Compliance</option>
-                      <option>Infrastructure</option>
-                      <option>Consumer</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Priority</label>
-                    <select className="w-full h-9 px-3 bg-background border border-border text-sm focus:outline-none focus:border-foreground transition-colors">
-                      <option>P1 - Critical</option>
-                      <option>P2 - High</option>
-                      <option>P3 - Normal</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Project Manager</label>
-                    <input type="text" className="w-full h-9 px-3 bg-background border border-border text-sm focus:outline-none focus:border-foreground transition-colors" placeholder="Search users..." />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Team</label>
-                    <select className="w-full h-9 px-3 bg-background border border-border text-sm focus:outline-none focus:border-foreground transition-colors">
-                      <option>Payments Core</option>
-                      <option>Platform</option>
-                      <option>Mobile App</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Start Date</label>
-                    <input type="date" className="w-full h-9 px-3 bg-background border border-border text-sm font-mono focus:outline-none focus:border-foreground transition-colors" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Target Date</label>
-                    <input type="date" className="w-full h-9 px-3 bg-background border border-border text-sm font-mono focus:outline-none focus:border-foreground transition-colors" />
-                  </div>
-                </div>
-                
-                <div className="space-y-2 pt-4 border-t border-border">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Bot className="w-4 h-4 text-accent" />
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-foreground font-bold">DevPilot AI Assistants</span>
-                  </div>
-                  <label className="flex items-center gap-2 p-2 border border-border bg-surface-hover cursor-pointer">
-                    <input type="checkbox" className="accent-foreground w-3 h-3" defaultChecked />
-                    <span className="text-xs">Auto-generate epics and standard tasks from description</span>
-                  </label>
-                  <label className="flex items-center gap-2 p-2 border border-border bg-surface-hover cursor-pointer">
-                    <input type="checkbox" className="accent-foreground w-3 h-3" defaultChecked />
-                    <span className="text-xs">Create baseline project timeline</span>
-                  </label>
-                </div>
-
-              </div>
-              <div className="p-4 border-t border-border bg-surface flex justify-end gap-3">
-                <Button variant="outline" className="rounded-none border-border font-mono text-xs uppercase" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
-                <Button className="rounded-none bg-foreground text-background hover:bg-foreground/90 font-mono text-xs uppercase">Initialize Project</Button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-    </div>
+    </WorkspaceDataLayout>
   );
 }

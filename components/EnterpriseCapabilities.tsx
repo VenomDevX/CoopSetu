@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 export function EnterpriseCapabilities() {
   return (
     <section className="py-32 bg-background border-t border-b border-border transition-colors duration-200">
-      <div className="container mx-auto px-6 md:px-12 max-w-[1440px]">
+      <div className="container mx-auto px-6 md:px-12 max-w-7xl">
         
         {/* Header Section */}
         <div className="mb-20">
@@ -24,7 +24,7 @@ export function EnterpriseCapabilities() {
             Control Delivery.<br />End to End.
           </h2>
           <p className="text-muted-foreground text-lg leading-relaxed max-w-2xl font-light">
-            DevPilot Enterprise connects projects, people, engineering activity, quality controls, and release decisions in one accountable operating system.
+            Handoff connects projects, people, engineering activity, quality controls, and release decisions in one accountable operating system.
           </p>
         </div>
 
@@ -108,7 +108,7 @@ export function EnterpriseCapabilities() {
               </div>
             </div>
             <h3 className="text-xl font-bold uppercase tracking-tighter text-foreground mb-4 relative z-10">
-              DevPilot AI
+              Handoff AI
             </h3>
             <p className="text-muted-foreground text-sm leading-relaxed flex-1 relative z-10">
               Turn delivery signals into risk summaries, task plans, workload insights, sprint forecasts, and evidence-backed next actions.

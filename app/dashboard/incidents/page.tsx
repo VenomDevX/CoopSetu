@@ -1,29 +1,50 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { 
-  ChevronRight, 
-  Search, 
-  Filter, 
-  Plus, 
-  Bot, 
+import {
+  ChevronRight,
+  Search,
+  Filter,
+  Plus,
+  Bot,
   AlertTriangle,
   Download,
   FileText,
   Activity,
   ArrowRight
-} from 'lucide-react';
+, AlertCircle} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
+import { DataViewport } from '@/components/layout/data-viewport';
 
-const mockIncidents = [
-  { id: 'INC-119', title: 'Ledger API Export Timeout', severity: 'SEV-2', status: 'Resolved', commander: 'S. Chen', service: 'Ledger API', impact: 'High (Export failures)', start: 'Oct 15, 2026 14:20', duration: '4h 15m', release: 'REL-42', followUps: 3 },
-  { id: 'INC-118', title: 'Webhook Delivery Delays', severity: 'SEV-3', status: 'Mitigated', commander: 'M. Johnson', service: 'Payments Core', impact: 'Medium (Delayed notifications)', start: 'Oct 14, 2026 09:10', duration: '1h 45m', release: 'REL-42', followUps: 1 },
-  { id: 'INC-117', title: 'Database Lock Contention', severity: 'SEV-1', status: 'Closed', commander: 'T. Vance', service: 'Database', impact: 'Critical (Total outage)', start: 'Oct 10, 2026 18:00', duration: '45m', release: 'REL-41', followUps: 5 },
-  { id: 'INC-116', title: 'Auth Token Expiration Issue', severity: 'SEV-3', status: 'Closed', commander: 'L. Davis', service: 'Auth Service', impact: 'Low (Internal dashboards)', start: 'Oct 05, 2026 11:30', duration: '2h 10m', release: '-', followUps: 0 },
-  { id: 'INC-120', title: 'Mobile App Offline Sync Failure', severity: 'SEV-2', status: 'Investigating', commander: 'E. Wright', service: 'Mobile API', impact: 'High (iOS users)', start: '20 mins ago', duration: 'Ongoing', release: 'REL-42', followUps: 0 },
-];
+const SEV_LABEL: Record<string, string> = { SEV1: 'SEV-1', SEV2: 'SEV-2', SEV3: 'SEV-3', SEV4: 'SEV-4' };
+const STATUS_LABEL: Record<string, string> = {
+  OPEN: 'Investigating', INVESTIGATING: 'Investigating', IDENTIFIED: 'Mitigated',
+  MONITORING: 'Mitigated', RESOLVED: 'Resolved',
+};
+function mapIncident(r: any) {
+  const start = r.started_at ? new Date(r.started_at) : null;
+  let duration = 'Ongoing';
+  if (r.resolved_at && start) {
+    const mins = Math.round((new Date(r.resolved_at).getTime() - start.getTime()) / 60000);
+    duration = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
+  }
+  return {
+    id: r.id,
+    title: r.title,
+    severity: SEV_LABEL[r.severity] ?? r.severity,
+    status: STATUS_LABEL[r.status] ?? r.status,
+    commander: r.incident_commander_member_id ? 'Assigned' : '—',
+    service: '—',
+    impact: r.customer_impact ?? '—',
+    start: start ? start.toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—',
+    duration,
+    release: '—',
+    followUps: 0,
+  };
+}
 
 const getSeverityColor = (severity: string) => {
   switch (severity) {
@@ -46,8 +67,19 @@ const getStatusColor = (status: string) => {
 };
 
 export default function IncidentsPage() {
+  const [incidents, setIncidents] = useState<ReturnType<typeof mapIncident>[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/v1/incidents')
+      .then((r) => r.json())
+      .then((j) => { if (active) setIncidents((Array.isArray(j?.data) ? j.data : []).map(mapIncident)); })
+      .catch(() => { });
+    return () => { active = false; };
+  }, []);
+
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 h-[calc(100vh-80px)] flex flex-col">
+    <WorkspaceDataLayout className="space-y-6 animate-in fade-in duration-500 flex flex-col">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 flex-shrink-0">
         <div>
@@ -57,7 +89,7 @@ export default function IncidentsPage() {
             <span className="text-foreground">Incidents</span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight uppercase flex items-center gap-3">
-            <div className="w-3 h-3 bg-foreground" />
+            <AlertCircle className="w-8 h-8" />
             Incidents
           </h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-widest">
@@ -79,7 +111,7 @@ export default function IncidentsPage() {
           </Button>
           <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2">
             <Bot className="w-4 h-4" />
-            Ask DevPilot AI
+            Ask Handoff AI
           </Button>
         </div>
       </div>
@@ -100,8 +132,8 @@ export default function IncidentsPage() {
       {/* Main Content Area */}
       <div className="flex-1 min-h-0 flex gap-6">
         <div className="flex-1 min-w-0 border border-border bg-background flex flex-col overflow-hidden">
-          <div className="overflow-auto flex-1 scrollbar-thin">
-            <table className="w-full text-left text-sm font-mono border-collapse whitespace-nowrap">
+          <DataViewport className="border-0">
+            <table className="w-full min-w-[800px] text-left text-sm font-mono border-collapse whitespace-nowrap">
               <thead className="sticky top-0 bg-surface-hover z-10 shadow-[0_1px_0_0_var(--border)]">
                 <tr>
                   <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Incident ID</th>
@@ -117,7 +149,7 @@ export default function IncidentsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {mockIncidents.map((inc) => (
+                {incidents.map((inc) => (
                   <tr key={inc.id} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <Link href={`/dashboard/incidents/${inc.id}`} className="text-[10px] bg-surface border border-border px-1.5 py-0.5 inline-flex text-muted-foreground group-hover:text-foreground">
@@ -162,13 +194,13 @@ export default function IncidentsPage() {
                 ))}
               </tbody>
             </table>
-          </div>
-          
+          </DataViewport>
+
           <div className="p-3 border-t border-border bg-surface-hover flex justify-between items-center text-[10px] font-mono text-muted-foreground flex-shrink-0">
             <span>Showing 5 incidents</span>
           </div>
         </div>
       </div>
-    </div>
+    </WorkspaceDataLayout>
   );
 }
