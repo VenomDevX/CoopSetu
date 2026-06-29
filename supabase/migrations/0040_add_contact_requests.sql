@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0045 Add Contact Requests Table
+-- Handoff — 0040 Add Contact Requests Table
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS public.contact_requests (

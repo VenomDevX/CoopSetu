@@ -1,4 +1,4 @@
--- Migration 0052: QA & Security Phase A enhancements
+-- Migration 0047: QA & Security Phase A enhancements
 
 -- ----------------------------------------------------------------------------
 -- 1. BUGS
