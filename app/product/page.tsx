@@ -3,6 +3,7 @@ import { Logo } from '@/components/logo';
 
 import React from 'react';
 import Link from 'next/link';
+import { PublicFooter } from '@/components/layout/public-footer';
 import { motion, useScroll, useTransform } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -98,6 +99,7 @@ export default function ProductPage() {
                 Explore the Platform
               </Button>
               <Button 
+                onClick={() => handleNavigate('/contact', 'demo')}
                 variant="outline"
                 className="border-border text-foreground hover:bg-surface-hover rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
@@ -250,7 +252,7 @@ export default function ProductPage() {
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> Deadlines & dependencies</div>
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> Approval workflows</div>
               </div>
-              <Button variant="outline" className="border-border rounded-none h-10 px-6 font-mono text-xs uppercase tracking-widest">
+              <Button onClick={() => handleNavigate('/solutions', 'workflows')} variant="outline" className="border-border rounded-none h-10 px-6 font-mono text-xs uppercase tracking-widest">
                 Explore Workflows <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
@@ -475,6 +477,7 @@ export default function ProductPage() {
               Request Demo
             </Button>
             <Button 
+              onClick={() => handleNavigate('/contact', 'sales')}
               variant="outline"
               className="border-border text-foreground hover:bg-surface-hover rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
             >
@@ -485,17 +488,7 @@ export default function ProductPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-surface-hover py-12 px-6 md:px-12 mt-auto">
-        <div className="container mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-          <div className="flex items-center gap-4">
-            <Logo width={20} height={20} />
-            <span className="font-bold text-foreground">HANDOFF // 2026</span>
-          </div>
-          <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
-            Designed for teams shipping high-impact software.
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
 
       {/* Loading Overlay */}
       {isNavigating && (

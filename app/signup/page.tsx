@@ -18,7 +18,7 @@ const MANAGER_TYPES = ['Not a Manager', 'Project Manager', 'Team Manager', 'Engi
 // Basic Zod schemas for local validation (synced with server)
 const nameSchema = z.string().min(2).max(100).regex(/^[a-zA-Z\s'\-]+$/);
 const emailSchema = z.string().email();
-const usernameSyntaxSchema = z.string().min(3).max(30).regex(/^[a-zA-Z0-9\._\-]+$/).refine(s => !s.includes(' ') && !s.includes('..'));
+const usernameSyntaxSchema = z.string().min(3).max(30).regex(/^[a-z0-9\._\-]+$/).refine(s => !s.includes(' ') && !s.includes('..'));
 const slugSyntaxSchema = z.string().min(3).max(50).regex(/^[a-z0-9\-]+$/).refine(s => !s.startsWith('-') && !s.endsWith('-') && !s.includes('--'));
 const companyNameSchema = z.string().min(2).max(120).regex(/^[a-zA-Z0-9\s\&\-\.]+$/);
 const customInputSchema = z.string().min(2).max(100);
@@ -287,14 +287,15 @@ export default function SignupPage() {
                       <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Password</label>
                       <input className={`w-full h-11 px-4 pr-10 bg-surface border text-sm focus:outline-none transition-colors ${touched1 && !passLength ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-foreground'}`}
                         type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setTouched1(true)} required />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[26px] text-muted-foreground hover:text-foreground">
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 bottom-0 h-11 flex items-center text-muted-foreground hover:text-foreground">
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                     <div className="space-y-1.5 relative">
                       <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Confirm Password</label>
-                      <input className={`w-full h-11 px-4 bg-surface border text-sm focus:outline-none transition-colors ${touched1 && password.length > 0 && !passMatch ? 'border-red-500 focus:border-red-500' : passMatch ? 'border-green-500/50 focus:border-green-500/50' : 'border-border focus:border-foreground'}`}
+                      <input className={`w-full h-11 px-4 pr-10 bg-surface border text-sm focus:outline-none transition-colors ${touched1 && password.length > 0 && !passMatch ? 'border-red-500 focus:border-red-500' : passMatch ? 'border-green-500/50 focus:border-green-500/50' : 'border-border focus:border-foreground'}`}
                         type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+                      {passMatch && <span className="absolute right-3 bottom-0 h-11 flex items-center pointer-events-none"><CheckCircle2 className="w-4 h-4 text-green-500" /></span>}
                     </div>
                   </div>
 
@@ -348,7 +349,7 @@ export default function SignupPage() {
                 <div className="space-y-1.5 relative">
                   <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Username</label>
                   <input className={`w-full h-11 px-4 bg-surface border text-sm focus:outline-none transition-colors pr-10 ${usernameTouched && !isUsernameSyntaxValid ? 'border-red-500 focus:border-red-500' : usernameAvailable === true ? 'border-green-500/50 focus:border-green-500/50' : usernameAvailable === false && usernameTouched ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-foreground'}`}
-                    placeholder="janedoe" value={username} onChange={(e) => { setUsername(e.target.value); setUsernameTouched(true); }} required onFocus={() => setUsernameTouched(true)} />
+                    placeholder="janedoe" value={username} onChange={(e) => { setUsername(e.target.value.toLowerCase()); setUsernameTouched(true); }} required onFocus={() => setUsernameTouched(true)} />
                   <div className="absolute right-3 top-[26px]">
                     {checkingUsername ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> :
                       usernameAvailable === true ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : null}

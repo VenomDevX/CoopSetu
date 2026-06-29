@@ -1,7 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { AddDeadlineModal } from '@/components/dashboard/add-deadline-modal';
+import { usePermission } from '@/lib/permissions/context';
+import { useTablesRealtime } from '@/hooks/use-tables-realtime';
 import {
   ChevronRight,
   ChevronLeft,
@@ -22,6 +25,7 @@ import {
   CheckSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AskAiButton } from '@/components/ai/ask-ai-button';
 import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
 
 type EventType = 'task' | 'release' | 'milestone' | 'meeting' | 'compliance' | 'leave' | 'incident';
@@ -33,6 +37,7 @@ type CalendarEvent = {
   type: EventType;
   priority?: 'P1' | 'P2' | 'P3';
   project?: string;
+  href?: string;
 };
 
 interface DirectoryMember {
@@ -42,8 +47,7 @@ interface DirectoryMember {
 }
 
 // Builds calendar events from real task due dates (full Date, any month).
-
-function buildEvents(tasks: any[]): CalendarEvent[] {
+function buildTaskEvents(tasks: any[]): CalendarEvent[] {
   return tasks
     .filter((t) => t.due_date)
     .map((t) => ({
@@ -53,6 +57,21 @@ function buildEvents(tasks: any[]): CalendarEvent[] {
       type: 'task' as EventType,
       priority: (t.priority === 'CRITICAL' || t.priority === 'HIGH' ? 'P1' : 'P2') as 'P1' | 'P2',
       project: t.project?.code,
+      href: `/dashboard/tasks?task=${t.id}`,
+    }));
+}
+
+function buildDeadlineEvents(deadlines: any[]): CalendarEvent[] {
+  return deadlines
+    .filter((d) => d.due_date)
+    .map((d) => ({
+      id: `deadline:${d.id}`,
+      title: d.title,
+      date: new Date(d.due_date),
+      type: 'milestone' as EventType,
+      priority: d.status === 'MISSED' ? 'P1' : 'P2',
+      project: d.project?.code,
+      href: `/dashboard/projects/${d.project_id}`,
     }));
 }
 
@@ -104,8 +123,16 @@ const getPrioritySymbol = (priority?: string) => {
 const sameDay = (a: Date, b: Date) =>
   a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
+const eventLayer = (event: CalendarEvent) => {
+  if (event.type === 'milestone') return 'Project Milestones';
+  if (event.type === 'release') return 'Releases';
+  if (event.type === 'compliance') return 'Security Reviews';
+  return 'Team Tasks';
+};
+
 export default function CalendarPage() {
   const [view, setView] = useState('Month');
+  const [isDeadlineOpen, setIsDeadlineOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [members, setMembers] = useState<DirectoryMember[]>([]);
@@ -116,13 +143,29 @@ export default function CalendarPage() {
     const n = new Date();
     return new Date(n.getFullYear(), n.getMonth(), 1);
   });
+  const { has } = usePermission();
+  const canAddDeadline = has('deadline:create') || has('project:update');
+
+  const load = useCallback(async () => {
+    const [tasksRes, deadlinesRes] = await Promise.all([
+      fetch('/api/v1/tasks').catch(() => null),
+      fetch('/api/v1/project-deadlines').catch(() => null),
+    ]);
+    const [tasksJson, deadlinesJson] = await Promise.all([
+      tasksRes?.json().catch(() => null),
+      deadlinesRes?.json().catch(() => null),
+    ]);
+    setEvents([
+      ...buildTaskEvents(Array.isArray(tasksJson?.data) ? tasksJson.data : []),
+      ...buildDeadlineEvents(Array.isArray(deadlinesJson?.data) ? deadlinesJson.data : []),
+    ]);
+  }, []);
 
   useEffect(() => {
     let active = true;
-    fetch('/api/v1/tasks')
-      .then((r) => r.json())
-      .then((j) => { if (active) setEvents(buildEvents(Array.isArray(j?.data) ? j.data : [])); })
-      .catch(() => { });
+    const timer = window.setTimeout(() => {
+      if (active) void load();
+    }, 0);
     fetch('/api/v1/employees')
       .then((r) => r.json())
       .then((j) => {
@@ -133,8 +176,13 @@ export default function CalendarPage() {
         }));
       })
       .catch(() => { });
-    return () => { active = false; };
-  }, []);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [load]);
+
+  useTablesRealtime(['tasks', 'project_deadlines'], load);
 
   const today = useMemo(() => new Date(), []);
   const year = cursor.getFullYear();
@@ -144,8 +192,9 @@ export default function CalendarPage() {
   // Events for the displayed month, honoring the search filter.
   const monthEvents = useMemo(() => events.filter((e) =>
     e.date.getMonth() === month && e.date.getFullYear() === year &&
+    activeLayers.includes(eventLayer(e)) &&
     (!search || e.title.toLowerCase().includes(search.toLowerCase())),
-  ), [events, month, year, search]);
+  ), [events, month, year, search, activeLayers]);
 
   // Build a Monday-first grid that aligns real weekdays.
   const gridCells = useMemo(() => {
@@ -163,10 +212,10 @@ export default function CalendarPage() {
   const upcoming = useMemo(() => {
     const end = new Date(today); end.setDate(end.getDate() + 7);
     return events
-      .filter((e) => e.date >= new Date(today.getFullYear(), today.getMonth(), today.getDate()) && e.date <= end)
+      .filter((e) => activeLayers.includes(eventLayer(e)) && e.date >= new Date(today.getFullYear(), today.getMonth(), today.getDate()) && e.date <= end)
       .sort((a, b) => a.date.getTime() - b.date.getTime())
       .slice(0, 5);
-  }, [events, today]);
+  }, [events, today, activeLayers]);
 
   // Honest, derived schedule insights for the displayed month (no fabricated data).
   const insights = useMemo(() => {
@@ -202,14 +251,13 @@ export default function CalendarPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
-            <Plus className="w-4 h-4" />
-            Add Deadline
-          </Button>
-          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent gap-2 disabled:opacity-40">
-            <Bot className="w-4 h-4" />
-            Ask Handoff AI
-          </Button>
+          {canAddDeadline && (
+            <Button data-testid="add-deadline-button" onClick={() => setIsDeadlineOpen(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
+              <Plus className="w-4 h-4" />
+              Add Deadline
+            </Button>
+          )}
+          <AskAiButton intent="summarize-calendar" label="Ask Handoff AI" title="Schedule Digest" />
         </div>
       </div>
 
@@ -489,9 +537,9 @@ export default function CalendarPage() {
                   </div>
                 </div>
 
-                {selectedEvent.type === 'task' && (
-                  <a href={`/dashboard/tasks`} className="inline-flex items-center gap-2 h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest hover:bg-surface">
-                    Open in Tasks <ChevronRight className="w-3 h-3" />
+                {selectedEvent.href && (
+                  <a href={selectedEvent.href} className="inline-flex items-center gap-2 h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest hover:bg-surface">
+                    Open Item <ChevronRight className="w-3 h-3" />
                   </a>
                 )}
               </div>
@@ -499,6 +547,13 @@ export default function CalendarPage() {
           </>
         )}
       </AnimatePresence>
+
+      {isDeadlineOpen && (
+        <AddDeadlineModal
+          onClose={() => setIsDeadlineOpen(false)}
+          onCreated={load}
+        />
+      )}
 
     </WorkspaceDataLayout>
   );

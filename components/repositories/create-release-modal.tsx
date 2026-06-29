@@ -1,0 +1,204 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { X, Loader2, Rocket } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
+interface Project {
+  id: string;
+  name: string;
+  code: string;
+}
+
+interface Props {
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+export function CreateReleaseModal({ onClose, onSuccess }: Props) {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/v1/projects')
+      .then(res => res.json())
+      .then(data => {
+        setProjects(data.projects || []);
+        setLoadingProjects(false);
+      })
+      .catch(() => {
+        setLoadingProjects(false);
+      });
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+
+    const fd = new FormData(e.currentTarget);
+    const data = {
+      project_id: fd.get('project_id') as string,
+      name: fd.get('name') as string,
+      version: fd.get('version') as string,
+      description: fd.get('description') as string || undefined,
+      requires_compliance_approval: fd.get('requires_compliance_approval') === 'on',
+      rollback_plan: fd.get('rollback_plan') as string || undefined,
+      planned_release_at: fd.get('planned_release_at') ? new Date(fd.get('planned_release_at') as string).toISOString() : undefined,
+    };
+
+    try {
+      const res = await fetch('/api/v1/releases', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || 'Failed to create release.');
+      }
+      onSuccess();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-background border border-border w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="flex items-center justify-between p-4 border-b border-border bg-surface-hover">
+          <h2 className="text-sm font-mono uppercase tracking-widest font-bold flex items-center gap-2">
+            <Rocket className="w-4 h-4 text-primary" />
+            Create Release
+          </h2>
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-none hover:bg-background">
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-4 space-y-4 max-h-[80vh] overflow-y-auto">
+          {error && (
+            <div className="p-3 text-xs font-mono text-destructive border border-destructive/20 bg-destructive/5 uppercase tracking-wide">
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <div>
+              <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground block mb-1.5">
+                Project *
+              </label>
+              <select
+                name="project_id"
+                required
+                disabled={loadingProjects}
+                className="w-full h-9 px-3 bg-background border border-border text-xs font-mono focus:outline-none focus:border-foreground"
+              >
+                <option value="">{loadingProjects ? 'Loading projects...' : 'Select Project...'}</option>
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground block mb-1.5">
+                  Release Name *
+                </label>
+                <Input
+                  name="name"
+                  required
+                  placeholder="e.g., Summer Launch"
+                  className="font-mono text-xs rounded-none h-9"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground block mb-1.5">
+                  Version *
+                </label>
+                <Input
+                  name="version"
+                  required
+                  placeholder="e.g., v1.4.0"
+                  className="font-mono text-xs rounded-none h-9"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground block mb-1.5">
+                Description
+              </label>
+              <textarea
+                name="description"
+                rows={3}
+                className="w-full p-3 bg-background border border-border text-xs font-mono focus:outline-none focus:border-foreground resize-none"
+                placeholder="Brief description of this release..."
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground block mb-1.5">
+                Planned Release Date
+              </label>
+              <Input
+                name="planned_release_at"
+                type="datetime-local"
+                className="font-mono text-xs rounded-none h-9"
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground block mb-1.5">
+                Rollback Plan
+              </label>
+              <textarea
+                name="rollback_plan"
+                rows={2}
+                className="w-full p-3 bg-background border border-border text-xs font-mono focus:outline-none focus:border-foreground resize-none"
+                placeholder="Steps to rollback if deployment fails..."
+              />
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <input
+                type="checkbox"
+                name="requires_compliance_approval"
+                id="requires_compliance_approval"
+                className="rounded-none border-border bg-background"
+              />
+              <label htmlFor="requires_compliance_approval" className="text-xs font-mono uppercase tracking-widest text-foreground cursor-pointer">
+                Requires Compliance Approval
+              </label>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-border flex justify-end gap-3 mt-6">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest"
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90"
+              disabled={submitting}
+            >
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create Release'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

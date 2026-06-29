@@ -18,6 +18,9 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
 import { DataViewport } from '@/components/layout/data-viewport';
+import { AskAiButton } from '@/components/ai/ask-ai-button';
+import { DeclareIncidentModal } from '@/components/incidents/declare-incident-modal';
+import { CreatePostmortemModal } from '@/components/incidents/create-postmortem-modal';
 
 const SEV_LABEL: Record<string, string> = { SEV1: 'SEV-1', SEV2: 'SEV-2', SEV3: 'SEV-3', SEV4: 'SEV-4' };
 const STATUS_LABEL: Record<string, string> = {
@@ -68,17 +71,22 @@ const getStatusColor = (status: string) => {
 
 export default function IncidentsPage() {
   const [incidents, setIncidents] = useState<ReturnType<typeof mapIncident>[]>([]);
+  const [showDeclareModal, setShowDeclareModal] = useState(false);
+  const [showPostmortemModal, setShowPostmortemModal] = useState(false);
 
-  useEffect(() => {
-    let active = true;
+  const fetchIncidents = () => {
     fetch('/api/v1/incidents')
       .then((r) => r.json())
-      .then((j) => { if (active) setIncidents((Array.isArray(j?.data) ? j.data : []).map(mapIncident)); })
+      .then((j) => { setIncidents((Array.isArray(j?.data || j) ? (j.data || j) : []).map(mapIncident)); })
       .catch(() => { });
-    return () => { active = false; };
+  };
+
+  useEffect(() => {
+    fetchIncidents();
   }, []);
 
   return (
+    <>
     <WorkspaceDataLayout className="space-y-6 animate-in fade-in duration-500 flex flex-col">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 flex-shrink-0">
@@ -97,22 +105,25 @@ export default function IncidentsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
-            <Download className="w-4 h-4" />
-            Export Timeline
+          <Button variant="outline" className="border-border hover:bg-surface-hover hover:text-foreground" asChild>
+            <a href="/api/v1/incidents/export-timeline" download="timeline_export.csv">
+              <Download className="w-4 h-4 mr-2" />
+              Export Timeline
+            </a>
           </Button>
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
-            <FileText className="w-4 h-4" />
+          <Button variant="outline" className="border-border hover:bg-surface-hover hover:text-foreground" onClick={() => setShowPostmortemModal(true)}>
+            <FileText className="w-4 h-4 mr-2" />
             Create Postmortem
           </Button>
-          <Button className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2 border border-destructive">
-            <AlertTriangle className="w-4 h-4" />
+          <Button 
+            variant="default" 
+            className="bg-destructive text-destructive-foreground border-destructive hover:bg-destructive/90"
+            onClick={() => setShowDeclareModal(true)}
+          >
+            <AlertTriangle className="w-4 h-4 mr-2" />
             Declare Incident
           </Button>
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2">
-            <Bot className="w-4 h-4" />
-            Ask Handoff AI
-          </Button>
+          <AskAiButton intent="summarize-incidents" label="Ask Handoff AI" title="Incidents Digest" />
         </div>
       </div>
 
@@ -202,5 +213,8 @@ export default function IncidentsPage() {
         </div>
       </div>
     </WorkspaceDataLayout>
+    {showDeclareModal && <DeclareIncidentModal onClose={() => setShowDeclareModal(false)} onSuccess={() => { setShowDeclareModal(false); fetchIncidents(); }} />}
+    {showPostmortemModal && <CreatePostmortemModal onClose={() => setShowPostmortemModal(false)} onSuccess={() => { setShowPostmortemModal(false); fetchIncidents(); }} />}
+    </>
   );
 }

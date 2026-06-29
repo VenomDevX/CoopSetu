@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
-import { EntityForbidden, EntityNotFound } from '@/components/dashboard/entity-detail-layout';
-import { loadDetail } from '@/lib/dashboard/load-detail';
+import { EntityForbidden } from '@/components/dashboard/entity-detail-layout';
+import { getCurrentMembership } from '@/lib/auth/get-current-membership';
+import { hasPermission } from '@/lib/auth/require-organization';
+import { createClient } from '@/lib/supabase/server';
 
 const TASKS = { href: '/dashboard/tasks', label: 'Tasks' };
 
@@ -13,8 +15,22 @@ const TASKS = { href: '/dashboard/tasks', label: 'Tasks' };
  */
 export default async function TaskDetailRedirect({ params }: { params: Promise<{ taskId: string }> }) {
   const { taskId } = await params;
-  const res = await loadDetail<{ id: string }>({ table: 'tasks', id: taskId, permission: 'task:view', select: 'id' });
-  if (res.state === 'forbidden') return <EntityForbidden backHref={TASKS.href} backLabel={`Back to ${TASKS.label}`} />;
-  if (res.state === 'notfound') return <EntityNotFound backHref={TASKS.href} backLabel={`Back to ${TASKS.label}`} />;
-  redirect(`/dashboard/tasks?task=${res.data.id}`);
+  const supabase = await createClient();
+  const membership = await getCurrentMembership();
+  if (!membership || !hasPermission(membership, 'task:view')) {
+    return <EntityForbidden backHref={TASKS.href} backLabel={`Back to ${TASKS.label}`} />;
+  }
+
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('id')
+    .eq('id', taskId)
+    .eq('organization_id', membership.organizationId)
+    .maybeSingle();
+
+  if (error || !data) {
+    return <EntityForbidden backHref={TASKS.href} backLabel={`Back to ${TASKS.label}`} />;
+  }
+
+  redirect(`/dashboard/tasks?task=${data.id}`);
 }

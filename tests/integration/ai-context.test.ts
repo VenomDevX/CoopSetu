@@ -42,24 +42,23 @@ beforeAll(async () => {
 }, 30000);
 
 describe('AI context builder — grounding (no fabrication)', () => {
-  it('My Focus candidates are all real tasks assigned to the caller', async () => {
+  it('My Focus candidates are all real tasks visible to the caller', async () => {
     const ctx = await buildMyFocus(dev, devM, {});
-    const { data: mine } = await dev
+    const { data: visible } = await dev
       .from('tasks').select('id')
       .eq('organization_id', devM.organizationId)
-      .eq('primary_assignee_member_id', devM.memberId)
       .is('archived_at', null)
       .not('status', 'in', '(DONE,CANCELLED)');
-    const valid = new Set((mine ?? []).map((t) => t.id));
+    const valid = new Set((visible ?? []).map((t) => t.id));
     for (const s of ctx.candidates) {
       expect(s.source_type).toBe('task');
       expect(valid.has(s.source_id!)).toBe(true);
     }
     if (valid.size === 0) {
       expect(ctx.isEmpty).toBe(true);
-      expect(ctx.emptyMessage).toMatch(/no open assigned tasks/i);
+      expect(ctx.emptyMessage).toMatch(/no open visible tasks/i);
     } else {
-      expect(ctx.facts).toMatch(/assigned open task/i);
+      expect(ctx.facts).toMatch(/visible open task/i);
     }
   });
 

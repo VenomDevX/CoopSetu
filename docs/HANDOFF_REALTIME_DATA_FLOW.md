@@ -23,7 +23,7 @@ UI: Create Task modal (components/tasks/create-task-modal.tsx) → "Create Task"
        RLS epics_select → can_view_project)
 → DB writes:
      · tasks                     (insert; organization_id + reporter_member_id from session)
-     · task_assignees            (insert mirror of primary assignee)
+     · task_assignees            (insert active PRIMARY assignment history row)
      · task_activity             (trigger handoff.log_task_change on later updates; create logs audit)
      · audit_logs                (action 'task.created')
 → notification:
@@ -50,11 +50,14 @@ UI: Task Drawer assignee select (data-testid="task-assignee-select"), shown only
 → validation: assertAssignable(orgId, task.project_id, assignee)  (re-fetches task's project)
 → DB writes:
      · tasks (update primary_assignee_member_id)
-     · task_assignees (upsert) → fires notify_task_assigned → notifications
+     · task_assignees (old PRIMARY row gets removed_at; new PRIMARY row inserted/promoted)
+       → fires notify_task_assigned for new active assignments → notifications
      · task_activity ('assignee_changed' via trigger log_task_change)
      · audit_logs ('task.updated')
 → realtime: notifications → new assignee; tasks changes → boards/drawers
 ```
+
+Private-task note: task rows and task-adjacent rows now use `handoff.can_view_task(...)` RLS. Project membership alone does not reveal private tasks.
 
 ---
 
@@ -138,7 +141,7 @@ UI: Inbox (app/dashboard/inbox/page.tsx) + NotificationBell
 
 ```
 UI: Command Center (app/dashboard/page.tsx), analytics:view users only
-→ GET /api/v1/analytics/overview → getOverview(orgId)
+→ GET /api/v1/dashboard/overview → getOverview(orgId)
      · signals[]       = real counts (open incidents, overdue/blocked tasks, critical bugs,
                           open security findings, pending approvals, projects at risk) — empty ⇒ truthful empty state
      · priorityItems[] = real blocked+overdue tasks (assignee name) + open incidents (commander name)
@@ -152,13 +155,70 @@ UI: Command Center (app/dashboard/page.tsx), analytics:view users only
 ```
 UI: My Work (app/dashboard/my-work/page.tsx)
 → GET /api/v1/my-work → getMyWork(orgId, memberId)
-     · tasks (primary_assignee = me) — single source for KPIs + table + "Showing X–Y of Z"
+     · tasks (RLS-visible private-task set) — single source for KPIs + table + "Showing X–Y of Z"
      · kpis, blockers (status=BLOCKED), upcoming (due ≤ 7d), recentActivity (task_activity on my tasks),
        sprint (my most-active active sprint), approvals (PENDING approval_requests, RLS-scoped)
      · AI Daily Brief HIDDEN until it can cite authorized real data
 → realtime: useTablesRealtime(['tasks','task_assignees','task_activity','notifications']) → re-fetch
 ```
 **Verified:** pagination/KPI consistency in `tests/integration/de-fake-pass.test.ts`.
+
+## Flow 8 - Group A action buttons (backend-connected, browser verification pending)
+
+### Add Deadline
+
+```
+UI: AddDeadlineModal (components/dashboard/add-deadline-modal.tsx)
+-> POST /api/v1/project-deadlines
+-> permission: requirePermission('deadline:create') or requirePermission('project:update')
+-> validation: createProjectDeadlineSchema
+-> DB writes:
+     - project_deadlines (organization_id + created_by_member_id from session)
+     - project_activity ('deadline_created')
+     - audit_logs ('deadline.created')
+     - notifications (optional owner reminder when owner_member_id is set)
+-> realtime:
+     - Calendar subscribes to tasks + project_deadlines through useTablesRealtime()
+     - owner notification uses the existing notifications subscription
+```
+
+### Project CSV import
+
+```
+UI: ImportProjectsModal (components/dashboard/import-projects-modal.tsx)
+-> POST /api/v1/projects/imports/preview (multipart CSV)
+-> permission: requirePermission('project:import')
+-> CSV parse + mapping guess + row validation
+-> DB writes:
+     - import_jobs
+     - import_rows
+-> POST /api/v1/projects/imports/[importId]/confirm
+-> permission: requirePermission('project:import')
+-> DB writes:
+     - valid rows inserted into projects through the trusted admin client
+     - import_jobs status/summary updated
+     - audit_logs ('projects.imported')
+-> realtime:
+     - project list refreshes after confirm; projects table is already in realtime publication
+```
+
+### Project and sprint CSV export
+
+```
+UI: ExportReportModal (components/dashboard/export-report-modal.tsx)
+-> GET /api/v1/projects/export or GET /api/v1/sprints/export
+-> permission: requirePermission('report:export') for projects;
+              report:export or sprint:view for sprints
+-> validation: exportFormatSchema
+-> DB writes:
+     - report_exports
+     - audit_logs ('report.exported')
+-> response:
+     - CSV attachment with authorized, org-scoped rows only
+     - PDF currently returns a truthful validation error instead of fake output
+```
+
+**Verified this pass:** lint, typecheck, unit tests, targeted Group A integration (6/6), production build, and Supabase migration reset. Browser persistence/realtime walkthrough is still pending, so these remain PARTIAL in `docs/HANDOFF_ACTIONS_BACKEND_AUDIT.md`.
 
 ## Realtime channels / subscriptions in use
 | Surface | Hook | Subscription |
@@ -198,4 +258,4 @@ UI: AiPanel / AI Daily Brief renders sources → sourceHref(source) (lib/ai/sour
 
 ## Spec deltas (documented, not yet built)
 - Spec names a `member:{organizationMemberId}` channel; implementation notifies via `notifications` table subscription instead (equivalent effect).
-- "Additional assignees" broadcast on assign exists at table level (`task_assignees` + trigger) but is not surfaced in the create UI yet.
+- Additional assignees are surfaced in the create UI and write active assignment rows; reviewer/observer roles use the same `task_assignees` history model.

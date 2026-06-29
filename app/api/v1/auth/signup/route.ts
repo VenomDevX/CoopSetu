@@ -113,8 +113,8 @@ export async function POST(req: NextRequest) {
       throw Errors.internal('Failed to establish session after registration.');
     }
 
-    // 5. Call create_organization RPC as the authenticated user
-    const { error: orgError, data: orgData } = await supabase.rpc('create_organization', {
+    // 5. Call create_organization RPC via admin client (authenticated grant revoked)
+    const { error: orgError, data: orgData } = await createAdminClient().rpc('create_organization', {
       p_name: body.companyName,
       p_slug: normalizedSlug,
       p_industry: body.industry || null,

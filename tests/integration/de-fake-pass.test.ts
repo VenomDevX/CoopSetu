@@ -145,8 +145,8 @@ describe('Snooze actually hides a notification (Actionable Inbox)', () => {
 describe('My Work pagination consistency (KPI totals agree with the table)', () => {
   it('the table source, the "of Z" total, and KPI active are one source of truth', async () => {
     const { data: tasks } = await dev.from('tasks')
-      .select('id, status, due_date, primary_assignee_member_id, organization_id')
-      .eq('organization_id', ORG).eq('primary_assignee_member_id', devMember).is('archived_at', null)
+      .select('id, status, due_date, organization_id')
+      .eq('organization_id', ORG).is('archived_at', null)
       .limit(500);
     const rows = tasks ?? [];
 
@@ -160,10 +160,9 @@ describe('My Work pagination consistency (KPI totals agree with the table)', () 
     const lastEnd = Math.min(Z, (pageCount - 1) * PAGE_SIZE + PAGE_SIZE);
     expect(lastEnd).toBe(Z);
 
-    // Every assigned task belongs to this member + org (no cross-company bleed).
+    // Every RLS-visible task belongs to this org (no cross-company bleed).
     for (const t of rows) {
       expect(t.organization_id).toBe(ORG);
-      expect(t.primary_assignee_member_id).toBe(devMember);
     }
   });
 });

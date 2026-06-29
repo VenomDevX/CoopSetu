@@ -1,66 +1,73 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line
 } from 'recharts';
-import { Terminal, AlertTriangle, CheckCircle2, Clock, ShieldAlert } from 'lucide-react';
+import { Terminal, AlertTriangle, CheckCircle2, Clock, ShieldAlert, Plus, Users, FolderKanban, Calendar, ArrowRight } from 'lucide-react';
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
-import { usePermission } from "@/lib/permissions/context";
-import { EmployeeOverview } from "@/components/dashboard/employee-overview";
+import { usePermission, useCurrentMembership } from "@/lib/permissions/context";
 import { useTablesRealtime } from "@/hooks/use-tables-realtime";
-import { useCallback } from "react";
 import Link from "next/link";
+import type { DashboardPersona } from "@/lib/auth/dashboard-persona";
+import type { AttentionQueueItem, ActivityFeedItem } from "@/services/dashboard.service";
+import { CreateProjectModal } from "@/components/dashboard/create-project-modal";
+import { CreateTaskModal } from "@/components/tasks/create-task-modal";
+import { InviteMemberModal } from "@/components/dashboard/invite-member-modal";
+import { AskAiButton } from "@/components/ai/ask-ai-button";
 
-interface OverviewMetrics {
-  activeProjects: number; projectsAtRisk: number; overdueTasks: number;
-  openTasks: number; blockedTasks: number; completion: number;
-  totalTasks: number; doneTasks: number; unreadNotifications: number;
-}
-
-interface OverviewSignal {
-  kind: string; severity: 'critical' | 'high' | 'medium';
-  count: number; label: string; href: string;
-}
-interface PriorityItem {
-  identifier: string; cls: string; project: string; state: string; owner: string; href: string;
-}
-interface OverviewData {
-  metrics: OverviewMetrics;
-  signals: OverviewSignal[];
-  priorityItems: PriorityItem[];
+interface DashboardData {
+  persona: DashboardPersona;
+  metrics: {
+    activeProjects: number; projectsAtRisk: number; blockedTasks: number; overdueTasks: number;
+    pendingApprovals: number; criticalBugs: number; openIncidents: number; openSecurityFindings: number;
+    myActiveTasks: number; myBlockers: number; dueThisWeek: number; pendingReviews: number;
+  };
+  signals: any[];
+  attentionQueue: AttentionQueueItem[];
   velocity: { name: string; points: number }[];
   workload: { name: string; open: number }[];
+  upcomingDeadlines: any[];
+  recentActivity: ActivityFeedItem[];
 }
 
-export default function ExecutiveDashboard() {
+export default function CommandCenter() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [overview, setOverview] = useState<OverviewData | null>(null);
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [lastSync, setLastSync] = useState<string>('');
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  
   const { has } = usePermission();
-  const canViewAnalytics = has('analytics:view');
-  const metrics = overview?.metrics ?? null;
+  const membership = useCurrentMembership();
 
   const load = useCallback(() => {
-    if (!canViewAnalytics) return;
-    fetch('/api/v1/analytics/overview')
+    fetch('/api/v1/dashboard/overview')
       .then((r) => r.json())
-      .then((j) => j?.data && setOverview(j.data))
-      .catch(() => { });
-  }, [canViewAnalytics]);
+      .then((j) => {
+        if (j?.data) {
+          setData(j.data);
+          setLastSync(new Date().toLocaleTimeString());
+        }
+      })
+      .catch((err) => console.error(err));
+  }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     load();
   }, [load]);
 
-  // Live-refresh the executive overview as the underlying data changes.
-  useTablesRealtime(['tasks', 'incidents', 'approval_requests', 'bugs'], load);
+  // Realtime updates (debounced invalidation internally by the hook or API logic in typical setups)
+  // Revalidates data when these tables change. RLS ensures they only get events they are allowed to see,
+  // and load() re-fetches explicitly scoped authorized data.
+  useTablesRealtime(['tasks', 'projects', 'incidents', 'bugs', 'security_findings', 'approval_requests', 'sprints'], load);
 
   const pad = (n: number | undefined) => String(n ?? 0).padStart(2, '0');
 
@@ -70,63 +77,112 @@ export default function ExecutiveDashboard() {
   const tooltipBg = mounted && resolvedTheme === 'dark' ? '#171717' : '#FFFFFF';
 
   if (!mounted) return null;
+  if (!data) return <div className="p-8 font-mono text-sm uppercase tracking-widest text-muted-foreground animate-pulse">Initializing Command Center...</div>;
 
-  // Employees (no company analytics permission) get a personal, My-Work-focused
-  // overview instead of company-wide executive analytics.
-  if (!canViewAnalytics) return <EmployeeOverview />;
+  const { persona, metrics, signals, attentionQueue, velocity, workload, upcomingDeadlines, recentActivity } = data;
+
+  const today = new Date();
+  const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay())).toLocaleDateString();
+  const endOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + 6)).toLocaleDateString();
 
   return (
-    <div className="max-w-7xl mx-auto space-y-12 pb-24">
+    <div className="max-w-7xl mx-auto space-y-10 pb-24">
+      {/* HEADER */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border pb-8"
+        transition={{ duration: 0.5 }}
+        className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 border-b border-border pb-6"
       >
         <div>
-          <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-3">Module_Dashboard</div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">Command Center</h1>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono uppercase tracking-widest mb-3">
+            <div className="w-2 h-2 bg-foreground animate-pulse rounded-none" />
+            WORKSPACE: {membership.organizationName} // SYNC: ACTIVE // UPDATED: {lastSync}
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground mb-1">Command Center</h1>
+          <div className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
+            {startOfWeek} — {endOfWeek}
+          </div>
         </div>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono uppercase tracking-widest">
-          <div className="w-2 h-2 bg-foreground animate-pulse rounded-none" />
-          Sync_Active // {new Date().toLocaleTimeString()}
+        
+        {/* Actions based on Persona / Permissions */}
+        <div className="flex flex-wrap items-center gap-3">
+          {persona === 'ADMIN' && (
+            <>
+              {has('project:create') && (
+                <Button variant="outline" className="rounded-none font-mono text-xs uppercase" onClick={() => setIsProjectModalOpen(true)}>
+                  <FolderKanban className="w-4 h-4 mr-2" /> Create Project
+                </Button>
+              )}
+              {has('task:create') && (
+                <Button variant="outline" className="rounded-none font-mono text-xs uppercase" onClick={() => setIsTaskModalOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" /> Create Task
+                </Button>
+              )}
+              {has('member:invite') && (
+                <Button variant="outline" className="rounded-none font-mono text-xs uppercase" onClick={() => setIsInviteModalOpen(true)}>
+                  <Users className="w-4 h-4 mr-2" /> Invite Member
+                </Button>
+              )}
+            </>
+          )}
+
+          {persona === 'PROJECT_MANAGER' && (
+            <>
+              {has('task:create') && (
+                <Button variant="outline" className="rounded-none font-mono text-xs uppercase" onClick={() => setIsTaskModalOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" /> Create Task
+                </Button>
+              )}
+              {has('project:manage') && (
+                <Button variant="outline" className="rounded-none font-mono text-xs uppercase" asChild>
+                  <Link href="/dashboard/sprints/new"><Calendar className="w-4 h-4 mr-2" /> Create Sprint</Link>
+                </Button>
+              )}
+            </>
+          )}
+
+          {persona === 'EMPLOYEE' && (
+            <Button variant="outline" className="rounded-none font-mono text-xs uppercase" asChild>
+              <Link href="/dashboard/my-work"><ArrowRight className="w-4 h-4 mr-2" /> View My Work</Link>
+            </Button>
+          )}
+
+          {has('ai:use') && (
+            <AskAiButton />
+          )}
         </div>
       </motion.div>
 
-      {/* AI Summary */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-50px" }}
-        transition={{ duration: 0.6 }}
-      >
+      {/* INTELLIGENCE FEED */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
         <Card className="border border-border shadow-none rounded-none bg-background relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-accent" />
-          <CardContent className="p-6 md:p-8 flex items-start gap-6">
-            <div className="p-3 bg-foreground text-background border border-foreground rounded-none shrink-0 mt-1">
+          <CardContent className="p-6 flex flex-col md:flex-row items-start gap-6">
+            <div className="p-3 bg-foreground text-background border border-foreground rounded-none shrink-0 md:mt-1 hidden md:block">
               <Terminal className="w-6 h-6" />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 w-full">
               <h3 className="font-mono text-sm font-bold mb-4 uppercase tracking-widest text-foreground">Intelligence_Feed</h3>
-              {overview && overview.signals.length === 0 && (
-                <p className="text-base text-muted-foreground leading-relaxed font-light">
-                  No active signals. No overdue or blocked work, open incidents, pending approvals, or flagged projects across your organization.
+              {signals.length === 0 ? (
+                <p className="text-sm text-muted-foreground font-mono uppercase tracking-widest">
+                  No active delivery signals require attention.
                 </p>
-              )}
-              {overview && overview.signals.length > 0 && (
+              ) : (
                 <div className="flex flex-col divide-y divide-border border border-border">
-                  {overview.signals.map((s) => (
-                    <Link key={s.kind} href={s.href}
-                      className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-surface-hover transition-colors group">
+                  {signals.map((s, idx) => (
+                    <Link key={idx} href={s.href} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 hover:bg-surface-hover transition-colors group">
                       <div className="flex items-center gap-3">
-                        <span className={`uppercase text-[10px] font-mono px-1.5 py-0.5 border ${s.severity === 'critical' ? 'border-destructive/40 text-destructive bg-destructive/10'
-                            : s.severity === 'high' ? 'border-orange-500/40 text-orange-500 bg-orange-500/10'
-                              : 'border-border text-muted-foreground bg-surface'}`}>
+                        <span className={`uppercase text-[10px] font-mono px-1.5 py-0.5 border ${
+                          s.severity === 'critical' ? 'border-destructive/40 text-destructive bg-destructive/10' :
+                          s.severity === 'high' ? 'border-orange-500/40 text-orange-500 bg-orange-500/10' :
+                          'border-border text-muted-foreground bg-surface'
+                        }`}>
                           {s.severity}
                         </span>
                         <span className="text-sm text-foreground">{s.label}</span>
                       </div>
-                      <span className="font-mono text-xs text-muted-foreground group-hover:text-foreground">View →</span>
+                      <span className="font-mono text-[10px] text-muted-foreground group-hover:text-foreground hidden sm:block">VIEW →</span>
                     </Link>
                   ))}
                 </div>
@@ -136,164 +192,228 @@ export default function ExecutiveDashboard() {
         </Card>
       </motion.div>
 
-      {/* High-level metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { label: 'Active Projects', value: pad(metrics?.activeProjects), sub: 'Live', icon: <CheckCircle2 className="w-5 h-5" /> },
-          { label: 'Task Completion', value: `${metrics?.completion ?? 0}%`, sub: `${pad(metrics?.doneTasks)}/${pad(metrics?.totalTasks)} Done`, icon: <BarChart className="w-5 h-5" /> },
-          { label: 'Projects at Risk', value: pad(metrics?.projectsAtRisk), sub: 'Health Flag', icon: <AlertTriangle className="w-5 h-5" /> },
-          { label: 'Overdue Tasks', value: pad(metrics?.overdueTasks), sub: `${pad(metrics?.blockedTasks)} Blocked`, icon: <ShieldAlert className="w-5 h-5" /> },
-        ].map((stat, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.5, delay: i * 0.1 }}
-          >
-            <Card className="shadow-none border-border rounded-none bg-background hover:border-foreground transition-colors group relative h-full">
-              <div className="absolute top-0 right-0 p-2 font-mono text-[10px] text-muted-foreground group-hover:text-foreground">0{i + 1}</div>
-              <CardContent className="p-6 flex flex-col justify-between h-full">
-                <div className="flex items-center justify-between text-muted-foreground mb-8">
-                  <span className="font-mono text-[10px] uppercase tracking-widest">{stat.label}</span>
-                  <div className="p-2 border border-border group-hover:bg-foreground group-hover:text-background transition-colors">{stat.icon}</div>
-                </div>
-                <div>
-                  <div className="text-5xl font-bold mb-2 text-foreground tracking-tighter">{stat.value}</div>
-                  <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">{stat.sub}</div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+      {/* KPI ROW */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {(persona === 'EMPLOYEE' ? [
+          { label: 'My Active Tasks', value: pad(metrics.myActiveTasks), sub: 'Assigned', icon: <CheckCircle2 className="w-5 h-5" /> },
+          { label: 'My Blockers', value: pad(metrics.myBlockers), sub: 'Requires Action', icon: <AlertTriangle className="w-5 h-5" /> },
+          { label: 'Due This Week', value: pad(metrics.dueThisWeek), sub: 'Approaching', icon: <Clock className="w-5 h-5" /> },
+          { label: 'Pending Reviews', value: pad(metrics.pendingReviews), sub: 'PRs & QA', icon: <ShieldAlert className="w-5 h-5" /> },
+        ] : [
+          { label: 'Active Projects', value: pad(metrics.activeProjects), sub: 'In Flight', icon: <FolderKanban className="w-5 h-5" /> },
+          { label: 'Projects at Risk', value: pad(metrics.projectsAtRisk), sub: 'Requires Review', icon: <AlertTriangle className="w-5 h-5" /> },
+          { label: 'Blocked / Overdue', value: pad(metrics.blockedTasks + metrics.overdueTasks), sub: `${metrics.blockedTasks} Blocked · ${metrics.overdueTasks} Overdue`, icon: <Clock className="w-5 h-5" /> },
+          { label: 'Pending Approvals', value: pad(metrics.pendingApprovals), sub: 'Release Gates', icon: <ShieldAlert className="w-5 h-5" /> },
+        ]).map((stat, i) => (
+          <Card key={i} className="shadow-none border-border rounded-none bg-background hover:border-foreground transition-colors group relative">
+            <div className="absolute top-0 right-0 p-2 font-mono text-[10px] text-muted-foreground group-hover:text-foreground">0{i + 1}</div>
+            <CardContent className="p-6 flex flex-col justify-between h-full">
+              <div className="flex items-center justify-between text-muted-foreground mb-8">
+                <span className="font-mono text-[10px] uppercase tracking-widest">{stat.label}</span>
+                <div className="p-2 border border-border group-hover:bg-foreground group-hover:text-background transition-colors">{stat.icon}</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold mb-2 text-foreground tracking-tighter">{stat.value}</div>
+                <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground truncate">{stat.sub}</div>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
-      {/* Charts Row */}
+      {/* OPERATIONAL GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.7 }}
-        >
-          <Card className="shadow-none border-border rounded-none bg-background h-full">
-            <CardHeader className="border-b border-border pb-4 mb-4">
-              <CardTitle className="text-sm font-mono uppercase tracking-widest text-foreground">Sprint_Velocity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] w-full">
-                {overview && overview.velocity.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-6">
-                    No completed sprints yet — velocity history will appear once a sprint is completed.
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={overview?.velocity ?? []} margin={{ top: 10, right: 10, bottom: 10, left: -20 }}>
-                      <CartesianGrid strokeDasharray="2 2" vertical={false} stroke={gridColor} />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} dy={15} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} />
-                      <Tooltip
-                        contentStyle={{ borderRadius: '0', border: `1px solid ${chartColor}`, fontSize: '12px', fontFamily: 'monospace', backgroundColor: tooltipBg, textTransform: 'uppercase' }}
-                        cursor={{ stroke: gridColor, strokeWidth: 1, strokeDasharray: '4 4' }}
-                      />
-                      <Line type="step" dataKey="points" stroke={chartColor} strokeWidth={2} dot={{ r: 4, fill: tooltipBg, stroke: chartColor, strokeWidth: 2 }} activeDot={{ r: 6, fill: chartColor }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, x: 30 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.7 }}
-        >
-          <Card className="shadow-none border-border rounded-none bg-background h-full">
-            <CardHeader className="border-b border-border pb-4 mb-4">
-              <CardTitle className="text-sm font-mono uppercase tracking-widest text-foreground">Open_Tasks_By_Project</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] w-full">
-                {overview && overview.workload.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-6">
-                    No open tasks across active projects.
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={overview?.workload ?? []} margin={{ top: 10, right: 10, bottom: 10, left: -20 }} barGap={0} barCategoryGap="20%">
-                      <CartesianGrid strokeDasharray="2 2" vertical={false} stroke={gridColor} />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} dy={15} tickFormatter={(value) => String(value).toUpperCase()} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} allowDecimals={false} />
-                      <Tooltip
-                        contentStyle={{ borderRadius: '0', border: `1px solid ${chartColor}`, fontSize: '12px', fontFamily: 'monospace', backgroundColor: tooltipBg, textTransform: 'uppercase' }}
-                        cursor={{ fill: gridColor, opacity: 0.2 }}
-                      />
-                      <Bar dataKey="open" name="Open Tasks" fill={chartColor} radius={[0, 0, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* Needs Attention Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-50px" }}
-        transition={{ duration: 0.8 }}
-      >
-        <Card className="shadow-none border-border rounded-none bg-background">
-          <CardHeader className="border-b border-border pb-6">
-            <CardTitle className="text-sm font-mono uppercase tracking-widest text-foreground flex items-center gap-3">
-              <AlertTriangle className="w-4 h-4 text-foreground" />
-              Priority_Overrides
-            </CardTitle>
+        
+        {/* Delivery Trend */}
+        <Card className="shadow-none border-border rounded-none bg-background h-full flex flex-col">
+          <CardHeader className="border-b border-border pb-4 mb-4">
+            <CardTitle className="text-xs font-mono uppercase tracking-widest text-foreground">Delivery_Trend</CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              {overview && overview.priorityItems.length === 0 ? (
-                <div className="px-6 py-10 text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  Nothing requires a priority override — no blocked or overdue tasks and no open incidents.
-                </div>
-              ) : (
-                <table className="w-full min-w-[640px] text-sm text-left border-collapse">
-                  <thead className="text-[10px] text-muted-foreground bg-surface-hover uppercase tracking-widest font-mono border-b border-border">
-                    <tr>
-                      <th className="px-6 py-4 font-bold">Identifier</th>
-                      <th className="px-6 py-4 font-bold">Class</th>
-                      <th className="px-6 py-4 font-bold">Project</th>
-                      <th className="px-6 py-4 font-bold">State</th>
-                      <th className="px-6 py-4 font-bold">Owner</th>
+          <CardContent className="flex-1 min-h-[300px]">
+            {velocity.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-6 py-12">
+                No completed sprint data is available yet.<br/>Create and complete a sprint to view delivery trend.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={velocity} margin={{ top: 10, right: 10, bottom: 10, left: -20 }}>
+                  <CartesianGrid strokeDasharray="2 2" vertical={false} stroke={gridColor} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} dy={15} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: '0', border: `1px solid ${chartColor}`, fontSize: '12px', fontFamily: 'monospace', backgroundColor: tooltipBg, textTransform: 'uppercase' }}
+                    cursor={{ stroke: gridColor, strokeWidth: 1, strokeDasharray: '4 4' }}
+                  />
+                  <Line type="step" dataKey="points" stroke={chartColor} strokeWidth={2} dot={{ r: 4, fill: tooltipBg, stroke: chartColor, strokeWidth: 2 }} activeDot={{ r: 6, fill: chartColor }} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Work by Project */}
+        <Card className="shadow-none border-border rounded-none bg-background h-full flex flex-col">
+          <CardHeader className="border-b border-border pb-4 mb-4">
+            <CardTitle className="text-xs font-mono uppercase tracking-widest text-foreground">Work_By_Project</CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 min-h-[300px]">
+            {workload.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-6 py-12">
+                No active work found for accessible projects.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={workload} margin={{ top: 10, right: 10, bottom: 10, left: -20 }}>
+                  <CartesianGrid strokeDasharray="2 2" vertical={false} stroke={gridColor} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} dy={15} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} />
+                  <Tooltip
+                    cursor={{ fill: gridColor, opacity: 0.5 }}
+                    contentStyle={{ borderRadius: '0', border: `1px solid ${chartColor}`, fontSize: '12px', fontFamily: 'monospace', backgroundColor: tooltipBg, textTransform: 'uppercase' }}
+                  />
+                  <Bar dataKey="open" fill={chartColor} maxBarSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Attention Queue */}
+        <Card className="shadow-none border-border rounded-none bg-background h-full flex flex-col lg:col-span-2">
+          <CardHeader className="border-b border-border pb-4 bg-surface sticky top-0 z-10">
+            <CardTitle className="text-xs font-mono uppercase tracking-widest text-foreground">Attention_Queue</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 overflow-x-auto">
+            {attentionQueue.length === 0 ? (
+              <div className="flex items-center justify-center text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-6 py-12">
+                No items require immediate attention.
+              </div>
+            ) : (
+              <div className="min-w-[800px]">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-border bg-surface-hover text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                      <th className="p-4 font-normal">Identifier</th>
+                      <th className="p-4 font-normal">Item Type</th>
+                      <th className="p-4 font-normal">Project</th>
+                      <th className="p-4 font-normal">Severity/Priority</th>
+                      <th className="p-4 font-normal">Status</th>
+                      <th className="p-4 font-normal">Owner</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {(overview?.priorityItems ?? []).map((row, i) => (
-                      <tr key={i} className="hover:bg-foreground hover:text-background transition-colors group cursor-pointer"
-                        onClick={() => { window.location.href = row.href; }}>
-                        <td className="px-6 py-4 font-mono font-bold text-xs">{row.identifier}</td>
-                        <td className="px-6 py-4 font-mono text-[10px] uppercase tracking-wider group-hover:text-background/80 text-muted-foreground">{row.cls}</td>
-                        <td className="px-6 py-4 font-mono text-xs">{row.project}</td>
-                        <td className="px-6 py-4">
-                          <Badge variant="outline" className="font-bold font-mono text-[10px] uppercase tracking-widest border-border group-hover:border-background/30 rounded-none group-hover:text-background text-foreground">
-                            {row.state}
-                          </Badge>
+                    {attentionQueue.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-surface-hover transition-colors group">
+                        <td className="p-4">
+                          <Link href={item.href} className="font-mono text-xs border border-border px-1.5 py-0.5 bg-background group-hover:border-foreground transition-colors">
+                            {item.identifier}
+                          </Link>
                         </td>
-                        <td className="px-6 py-4 font-mono text-[10px] uppercase tracking-wider group-hover:text-background/80 text-muted-foreground">{row.owner}</td>
+                        <td className="p-4 text-xs font-mono uppercase text-muted-foreground">{item.entityType}</td>
+                        <td className="p-4 text-sm">{item.projectName || '—'}</td>
+                        <td className="p-4">
+                          <span className={`text-[10px] font-mono uppercase px-1.5 py-0.5 border ${
+                            ['CRITICAL','SEV1'].includes(item.priorityOrSeverity) ? 'border-destructive/40 text-destructive bg-destructive/10' :
+                            ['HIGH','SEV2'].includes(item.priorityOrSeverity) ? 'border-orange-500/40 text-orange-500 bg-orange-500/10' :
+                            'border-border text-muted-foreground bg-surface'
+                          }`}>
+                            {item.priorityOrSeverity}
+                          </span>
+                        </td>
+                        <td className="p-4 text-xs font-mono uppercase text-muted-foreground">{item.status}</td>
+                        <td className="p-4 text-sm truncate max-w-[150px]">{item.ownerName}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              )}
-            </div>
+              </div>
+            )}
           </CardContent>
         </Card>
-      </motion.div>
+
+        {/* Upcoming Deadlines */}
+        <Card className="shadow-none border-border rounded-none bg-background h-full flex flex-col lg:col-span-2">
+          <CardHeader className="border-b border-border pb-4">
+            <CardTitle className="text-xs font-mono uppercase tracking-widest text-foreground">Upcoming_Deadlines</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {upcomingDeadlines.length === 0 ? (
+              <div className="flex items-center justify-center text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-6 py-8">
+                No upcoming authorized deadlines.
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {upcomingDeadlines.map((t, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-4 hover:bg-surface-hover transition-colors">
+                    <div className="flex items-center gap-4">
+                      <span className="font-mono text-xs border border-border px-1.5 py-0.5 bg-background">{t.task_key}</span>
+                      <span className="text-sm">{t.title}</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs font-mono uppercase tracking-widest text-muted-foreground">
+                      <span>{t.status}</span>
+                      <span className="text-foreground">{t.due_date}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+      </div>
+
+      {/* RECENT ACTIVITY */}
+      <Card className="shadow-none border-border rounded-none bg-background">
+        <CardHeader className="border-b border-border pb-4">
+          <CardTitle className="text-xs font-mono uppercase tracking-widest text-foreground">Recent_Authorized_Activity</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {recentActivity.length === 0 ? (
+            <div className="flex items-center justify-center text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-6 py-12">
+              No recent authorized workspace activity.
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {recentActivity.map((act) => (
+                <div key={act.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-surface-hover transition-colors gap-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-bold">{act.actor}</span>
+                    <span className="text-muted-foreground">{act.action}</span>
+                    <Link href={act.href} className="font-mono text-xs border border-border px-1 py-0.5 ml-1 hover:border-foreground transition-colors">
+                      {act.entityId}
+                    </Link>
+                    <span className="truncate max-w-[200px] md:max-w-[300px] text-muted-foreground hidden md:inline-block">— {act.targetName}</span>
+                  </div>
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                    {new Date(act.timestamp).toLocaleString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {isProjectModalOpen && (
+        <CreateProjectModal 
+          onClose={() => setIsProjectModalOpen(false)} 
+          onCreated={() => { setIsProjectModalOpen(false); load(); }} 
+        />
+      )}
+
+      {isTaskModalOpen && (
+        <CreateTaskModal 
+          onClose={() => setIsTaskModalOpen(false)} 
+          onCreated={() => { setIsTaskModalOpen(false); load(); }} 
+        />
+      )}
+
+      {isInviteModalOpen && (
+        <InviteMemberModal 
+          onClose={() => setIsInviteModalOpen(false)} 
+          onInvited={() => { setIsInviteModalOpen(false); load(); }} 
+        />
+      )}
     </div>
   );
 }

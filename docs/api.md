@@ -83,7 +83,7 @@ audit log (and notifications where relevant).
 - `POST /api/v1/integrations/sync` — mock "Sync Now" (creates a pipeline + commit)
 
 ### Analytics
-- `GET /api/v1/analytics/overview` (dashboard counters)
+- `GET /api/v1/dashboard/overview` (dashboard counters)
 - `GET /api/v1/analytics/projects` · `/teams` · `/releases` · `/incidents`
 
 ### AI (real Gemini, server-side streaming)

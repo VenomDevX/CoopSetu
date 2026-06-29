@@ -50,7 +50,6 @@ async function fetchMyOpenTasks(supabase: SupabaseClient, m: Membership) {
     .from('tasks')
     .select('id, task_key, title, status, due_date, is_blocked')
     .eq('organization_id', m.organizationId)
-    .eq('primary_assignee_member_id', m.memberId)
     .is('archived_at', null)
     .not('status', 'in', '(DONE,CANCELLED)')
     .limit(300);
@@ -59,7 +58,7 @@ async function fetchMyOpenTasks(supabase: SupabaseClient, m: Membership) {
 
 export const buildMyFocus: ContextBuilder = async (supabase, m) => {
   const rows = await fetchMyOpenTasks(supabase, m);
-  if (rows.length === 0) return empty('You have no open assigned tasks right now.');
+  if (rows.length === 0) return empty('You have no open visible tasks right now.');
 
   const d = today();
   const blocked = rows.filter((t) => t.status === 'BLOCKED' || t.is_blocked);
@@ -80,7 +79,7 @@ export const buildMyFocus: ContextBuilder = async (supabase, m) => {
       `- ${t.task_key}: ${t.title} [status=${t.status}${t.due_date ? `, due=${t.due_date}` : ''}${t.is_blocked ? ', blocked' : ''}]`,
   );
   const facts =
-    `Assigned open tasks: ${rows.length} total — ${blocked.length} blocked, ${overdue.length} overdue, ${dueSoon.length} due within 3 days.\n` +
+    `Visible open tasks: ${rows.length} total — ${blocked.length} blocked, ${overdue.length} overdue, ${dueSoon.length} due within 3 days.\n` +
     `Highest-priority items:\n${lines.join('\n')}`;
 
   return {
@@ -103,7 +102,7 @@ export const buildDailyBrief: ContextBuilder = async (supabase, m, params) => {
   const pending = approvals ?? [];
 
   if (focus.isEmpty && pending.length === 0) {
-    return empty('You have no open assigned tasks or pending approvals right now.');
+    return empty('You have no open visible tasks or pending approvals right now.');
   }
 
   const apprFacts = pending.length
@@ -114,7 +113,7 @@ export const buildDailyBrief: ContextBuilder = async (supabase, m, params) => {
     .map((a) => src('approval_request', a.id, `${a.approval_type} approval`));
 
   return {
-    facts: (focus.facts || 'No open assigned tasks.') + apprFacts,
+    facts: (focus.facts || 'No open visible tasks.') + apprFacts,
     candidates: [...focus.candidates, ...apprSources],
     isEmpty: false,
     emptyMessage: '',
@@ -512,6 +511,30 @@ export const buildIncidentSummary: ContextBuilder = async (supabase, m, params) 
   };
 };
 
+export const buildEngineering: ContextBuilder = async (supabase, m) => {
+  const [
+    { data: repos },
+    { data: deps },
+    { data: releases }
+  ] = await Promise.all([
+    supabase.from('repositories').select('id, name, status, provider, created_at').eq('organization_id', m.organizationId).limit(20),
+    supabase.from('deployments').select('id, status, started_at, version').eq('organization_id', m.organizationId).order('started_at', { ascending: false }).limit(20),
+    supabase.from('releases').select('id, name, version, status').eq('organization_id', m.organizationId).limit(20),
+  ]);
+
+  const facts = [
+    `Repositories: ${repos?.length || 0} visible.`,
+    ...(repos || []).map(r => `- ${r.name} (${r.provider}, ${r.status})`),
+    `Deployments: ${deps?.length || 0} visible.`,
+    ...(deps || []).map(d => `- [${d.status}] ${d.version || 'unknown'} started at ${d.started_at}`),
+    `Releases: ${releases?.length || 0} visible.`,
+    ...(releases || []).map(r => `- ${r.name} (${r.version}, ${r.status})`)
+  ].join('\n');
+
+  const candidates: AiSource[] = [];
+  return { facts, candidates, isEmpty: false, emptyMessage: '' };
+};
+
 export const buildReleaseSummary: ContextBuilder = async (supabase, m, params) => {
   if (!params.releaseId) return empty('No release specified.');
   const { data: rel } = await supabase
@@ -546,5 +569,33 @@ export const buildReleaseSummary: ContextBuilder = async (supabase, m, params) =
     ],
     isEmpty: false,
     emptyMessage: '',
+  };
+};
+
+export const buildIncidents: ContextBuilder = async (supabase, m) => {
+  const { data: incidents } = await supabase
+    .from('incidents')
+    .select('id, title, severity, status, created_at, customer_impact')
+    .eq('organization_id', m.organizationId)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (!incidents || incidents.length === 0) {
+    return empty('No incidents recorded in this organization.');
+  }
+
+  const activeCount = incidents.filter(i => i.status !== 'RESOLVED' && i.status !== 'CLOSED').length;
+
+  const facts = [
+    `Total Recent Incidents: ${incidents.length}`,
+    `Active Incidents: ${activeCount}`,
+    ...incidents.map(i => `- ${i.title} [${i.severity}] (${i.status}) - Impact: ${i.customer_impact || 'None reported'}`)
+  ].join('\n');
+
+  return {
+    facts,
+    candidates: incidents.slice(0, 5).map(i => src('incident', i.id, i.title)),
+    isEmpty: false,
+    emptyMessage: ''
   };
 };

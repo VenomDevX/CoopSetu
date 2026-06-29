@@ -6,6 +6,10 @@ const PUBLIC_PATHS = [
   '/pricing', '/product', '/solutions', '/enterprise', '/ai', '/security',
 ];
 
+const MULTIPART_API_PATHS = new Set([
+  '/api/v1/projects/imports/preview',
+]);
+
 function isPublic(pathname: string) {
   if (PUBLIC_PATHS.includes(pathname)) return true;
   return (
@@ -48,7 +52,8 @@ export async function updateSession(request: NextRequest) {
   // 1. CSRF Mitigation for API routes (enforce application/json for state-changing requests)
   if (pathname.startsWith('/api/v1/') && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
     const contentType = request.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
+    const allowedMultipart = MULTIPART_API_PATHS.has(pathname) && contentType.includes('multipart/form-data');
+    if (!contentType.includes('application/json') && !allowedMultipart) {
       return NextResponse.json({ error: 'Unsupported Media Type: Must be application/json' }, { status: 415 });
     }
   }

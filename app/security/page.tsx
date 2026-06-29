@@ -3,6 +3,7 @@ import { Logo } from '@/components/logo';
 
 import React from 'react';
 import Link from 'next/link';
+import { PublicFooter } from '@/components/layout/public-footer';
 import { Button } from '@/components/ui/button';
 import { 
   ArrowRight, 
@@ -34,6 +35,28 @@ export default function SecurityPage() {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = React.useState(false);
   const [navType, setNavType] = React.useState<string | null>(null);
+  
+  // Mock interactive states
+  const [isReviewed, setIsReviewed] = React.useState(false);
+  const [exportState, setExportState] = React.useState<'idle' | 'exporting' | 'done'>('idle');
+
+  const handleExportCSV = () => {
+    setExportState('exporting');
+    setTimeout(() => {
+      // Create a mock CSV download
+      const csvContent = "data:text/csv;charset=utf-8,Timestamp,Actor,EventType,Resource,IPAddress\n2026-06-28T10:00:00Z,admin@handoff.dev,LOGIN,System,192.168.1.1\n";
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "handoff_audit_log.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      setExportState('done');
+      setTimeout(() => setExportState('idle'), 3000);
+    }, 1500);
+  };
 
   const handleNavigate = (path: string, type: string) => {
     setNavType(type);
@@ -189,8 +212,13 @@ export default function SecurityPage() {
                       <div className="text-xs font-bold">Compliance Approval</div>
                       <div className="text-[10px] font-mono text-muted-foreground">Awaiting Director Sign-off</div>
                     </div>
-                    <Button size="sm" className="h-6 rounded-none text-[10px] font-mono uppercase tracking-widest bg-foreground text-background">
-                      Review
+                    <Button 
+                      size="sm" 
+                      onClick={() => setIsReviewed(true)}
+                      disabled={isReviewed}
+                      className={`h-6 rounded-none text-[10px] font-mono uppercase tracking-widest ${isReviewed ? 'bg-background text-foreground border border-border' : 'bg-foreground text-background'}`}
+                    >
+                      {isReviewed ? <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Approved</span> : 'Review'}
                     </Button>
                   </div>
                 </div>
@@ -334,7 +362,15 @@ export default function SecurityPage() {
           <div className="border border-border bg-background shadow-xl overflow-x-auto">
             <div className="p-4 bg-surface border-b border-border flex justify-between items-center">
               <span className="font-mono text-xs uppercase tracking-widest font-bold">System Audit Log</span>
-              <Button variant="outline" size="sm" className="h-7 text-[10px] font-mono rounded-none border-border">Export CSV</Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleExportCSV}
+                disabled={exportState !== 'idle'}
+                className="h-7 text-[10px] font-mono rounded-none border-border"
+              >
+                {exportState === 'idle' ? 'Export CSV' : exportState === 'exporting' ? <span className="flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin"/> Exporting...</span> : <span className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3"/> Downloaded</span>}
+              </Button>
             </div>
             <table className="w-full text-left text-[10px] font-mono whitespace-nowrap">
               <thead className="bg-surface text-muted-foreground uppercase border-b border-border">
@@ -497,17 +533,7 @@ export default function SecurityPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-surface-hover py-12 px-6 md:px-12 mt-auto">
-        <div className="container mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-          <div className="flex items-center gap-4">
-            <Logo width={20} height={20} />
-            <span className="font-bold text-foreground">HANDOFF // 2026</span>
-          </div>
-          <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
-            Designed for teams shipping high-impact software.
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
 
       {/* Loading Overlay */}
       {isNavigating && (

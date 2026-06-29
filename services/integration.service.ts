@@ -1,11 +1,35 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { Errors } from '@/lib/api/errors';
 import { createAuditLog } from '@/lib/audit/create-audit-log';
+import { z } from 'zod';
+import { connectRepositorySchema } from '@/lib/validation/integration';
 
 export async function listRepositories(supabase: SupabaseClient, orgId: string) {
   const { data, error } = await supabase.from('repositories')
     .select('*, pull_requests(count), ci_pipelines(count)').eq('organization_id', orgId);
   if (error) throw Errors.internal(error.message);
+  return data;
+}
+
+export async function createRepository(supabase: SupabaseClient, orgId: string, input: z.infer<typeof connectRepositorySchema>) {
+  const { data, error } = await supabase.from('repositories').insert({
+    organization_id: orgId,
+    integration_id: input.integration_id,
+    name: input.name,
+    provider: input.provider,
+    default_branch: input.default_branch,
+    url: input.url,
+    status: 'ACTIVE',
+  }).select('*').single();
+  if (error) throw Errors.internal(error.message);
+  
+  await createAuditLog(supabase, {
+    organizationId: orgId,
+    action: 'integration.repository_connected',
+    resourceType: 'integration',
+    resourceId: data.id,
+    newValue: { name: input.name, provider: input.provider }
+  });
   return data;
 }
 

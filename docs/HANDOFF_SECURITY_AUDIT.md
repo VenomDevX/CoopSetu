@@ -88,3 +88,47 @@ Results from `npm audit` and `npm audit --omit=dev`.
 
 ### 5. API Secrets
 - **Finding:** Re-verified environment variables. Only `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`, and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are exposed to the client. Highly sensitive keys like `GEMINI_API_KEY` and `SUPABASE_SECRET_KEY` remain server-side only.
+
+## Audit C: Public Endpoints & Abuse Protection (Contact Requests)
+
+**Status:** COMPLETED
+
+### 1. Direct Database Access Controls
+- **Audit:** Checked RLS policies for `public.contact_requests` table.
+- **Findings:** `contact_requests` has RLS enabled. No insert/select/update/delete policies are defined. Direct interaction from any client (authenticated or anonymous) via Supabase Client SDK is completely blocked by default (returns 403 / RLS error).
+- **Enforcement:** Ingestion is restricted to the backend API route `POST /api/v1/contact` using the server-side Supabase Admin client (`createAdminClient()`).
+
+### 2. Contact Request Rate Limiting
+- **IP-Based Limit:** Gated at 5 requests per 15 minutes. Checked using the Supabase RPC rate limiter `check_rate_limit()` inside the route. Returns a `429 Too Many Requests` status code and a `Retry-After: 900` header when triggered.
+- **Email-Based Limit:** Gated at 3 requests per 24 hours. The route queries the `contact_requests` table to count submissions for the normalized lowercase email in the last 24 hours. Returns `429 Too Many Requests` and a `Retry-After: 86400` header when triggered.
+- **Header Trust:** IP resolution does not rely on arbitrary client-supplied headers. It extracts headers from trusted reverse proxy variables (`x-forwarded-for`, `x-real-ip`) or NextRequest ip variables with safe local defaults.
+
+### 3. Honeypot and Max Message Constraints
+- **Honeypot:** A hidden field (`honeypot`) is rendered on the client. If populated, the API marks the submission as `honeypot_triggered = true` and saves it, but responds with a generic success response to keep the bot un-alerted. Filtered out from normal user visibility.
+- **Constraints:** Max message length is restricted to 3000 characters. All inputs are validated via Zod schemas both on the client and server.
+
+### 4. PII Protection (Hashes)
+- **Findings:** Raw Client IP addresses and User-Agent strings are NOT stored in the database. Instead, the SHA-256 hashes (`ip_hash` and `user_agent_hash`) are computed and stored, protecting submitter anonymity.
+- **Escaped rendering:** When rendering contact requests in the database dashboard (for future platform admins), all fields must be rendered as escaped text. `dangerouslySetInnerHTML` is not used.
+
+## Audit D: Private Task Visibility
+
+**Status:** IMPLEMENTED / INTEGRATION BLOCKED
+
+### 1. Project Membership No Longer Implies Private Task Access
+- **Finding fixed:** `tasks_select` and task-adjacent policies previously used `handoff.can_view_project(project_id)`, so any user with project visibility could read private task rows, comments, activity, assignment rows, and attachments.
+- **Fix:** `supabase/migrations/0047_private_task_visibility.sql` adds `handoff.can_view_task(task_id)` and rewires task, assignment, comment, mention, attachment, activity, checklist, label, dependency, watcher, and time-entry policies to use it.
+- **Result:** Private tasks are visible only by direct task relationship, explicit grant, responsible manager/admin authority, or managed-assignee authority.
+
+### 2. Assignment History Integrity
+- **Finding fixed:** `task_assignees` used a single unique row per task/member and application code used upsert, losing reassignment history.
+- **Fix:** `task_assignees` now stores `assignment_type`, `assigned_by_member_id`, `removed_at`, and `removed_by_member_id`, with a partial unique index only for active rows.
+- **Result:** Reassignment preserves old rows and revokes old assignee visibility when no other rule applies.
+
+### 3. Explicit Visibility Grants
+- **Fix:** New `task_visibility_members` table with tenant guard and RLS.
+- **Result:** Reviewers/observers can be granted access without changing project membership or broadening the task to the full project.
+
+### 4. Regression Coverage
+- `tests/integration/private-task-visibility.test.ts` covers hidden private tasks, hidden adjacent rows, manager/admin visibility, reviewer/explicit grants, My Work inclusion, and reassignment history.
+- Verification passed for DB reset, lint, typecheck, and unit tests. The focused integration suite is currently blocked by local Supabase HTTP timeouts and a Docker Desktop Linux engine 500 after reset.

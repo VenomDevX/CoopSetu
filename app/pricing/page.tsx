@@ -3,6 +3,7 @@ import { Logo } from '@/components/logo';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { PublicFooter } from '@/components/layout/public-footer';
 import { Button } from '@/components/ui/button';
 import { 
   CheckCircle2, 
@@ -583,17 +584,7 @@ export default function PricingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-surface-hover py-12 px-6 md:px-12 mt-auto">
-        <div className="container mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-          <div className="flex items-center gap-4">
-            <Logo width={20} height={20} />
-            <span className="font-bold text-foreground">HANDOFF // 2026</span>
-          </div>
-          <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
-            Designed for teams shipping high-impact software.
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
 
       {/* Loading Overlay */}
       {isNavigating && (

@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { CreateProjectModal } from '@/components/dashboard/create-project-modal';
+import { ExportReportModal } from '@/components/dashboard/export-report-modal';
+import { ImportProjectsModal } from '@/components/dashboard/import-projects-modal';
 import { usePermission } from '@/lib/permissions/context';
 import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
 import { DataViewport } from '@/components/layout/data-viewport';
@@ -10,21 +12,17 @@ import {
   Search,
   Filter,
   Plus,
-  Bot,
   Download,
   LayoutGrid,
   List,
   Layers,
-  Clock,
   AlertTriangle,
-  CheckCircle2,
-  Rocket,
-  Flag,
   MoreVertical,
   Upload,
   ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AskAiButton } from '@/components/ai/ask-ai-button';
 import Link from 'next/link';
 
 type Project = {
@@ -96,12 +94,16 @@ const getPriorityColor = (priority: string) => {
 export default function ProjectsPage() {
   const [view, setView] = useState<'table' | 'grid'>('table');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [healthFilter, setHealthFilter] = useState<'ALL' | Project['health']>('ALL');
   const { has } = usePermission();
   const canCreate = has('project:create');
+  const canImport = has('project:import');
+  const canExport = has('report:export');
 
   // Reusable refresh (used after create). Kept out of the effect so the
   // setState calls aren't flagged as synchronous-in-effect.
@@ -161,24 +163,25 @@ export default function ProjectsPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
-            <Upload className="w-4 h-4" />
-            Import
-          </Button>
-          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
-            <Download className="w-4 h-4" />
-            Export Report
-          </Button>
+          {canImport && (
+            <Button data-testid="project-import-button" onClick={() => setIsImportModalOpen(true)} variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest gap-2">
+              <Upload className="w-4 h-4" />
+              Import
+            </Button>
+          )}
+          {canExport && (
+            <Button data-testid="project-export-report-button" onClick={() => setIsExportModalOpen(true)} variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest gap-2">
+              <Download className="w-4 h-4" />
+              Export Report
+            </Button>
+          )}
           {canCreate && (
             <Button data-testid="create-project-button" onClick={() => setIsCreateModalOpen(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
               <Plus className="w-4 h-4" />
               Create Project
             </Button>
           )}
-          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent gap-2 disabled:opacity-40">
-            <Bot className="w-4 h-4" />
-            Ask Handoff AI
-          </Button>
+          <AskAiButton intent="summarize-projects" label="Ask Handoff AI" title="Projects Digest" />
         </div>
       </div>
 
@@ -381,6 +384,20 @@ export default function ProjectsPage() {
         <CreateProjectModal
           onClose={() => setIsCreateModalOpen(false)}
           onCreated={load}
+        />
+      )}
+      {isImportModalOpen && (
+        <ImportProjectsModal
+          onClose={() => setIsImportModalOpen(false)}
+          onImported={load}
+        />
+      )}
+      {isExportModalOpen && (
+        <ExportReportModal
+          title="Export Project Report"
+          endpoint="/api/v1/projects/export"
+          filters={{ q: query, health: healthFilter }}
+          onClose={() => setIsExportModalOpen(false)}
         />
       )}
 

@@ -3,6 +3,7 @@ import { Logo } from '@/components/logo';
 
 import React from 'react';
 import Link from 'next/link';
+import { PublicFooter } from '@/components/layout/public-footer';
 import { Button } from '@/components/ui/button';
 import { 
   ArrowRight, 
@@ -31,6 +32,33 @@ export default function AIPage() {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = React.useState(false);
   const [navType, setNavType] = React.useState<string | null>(null);
+  
+  // Mock feature states
+  const [chatInput, setChatInput] = React.useState('');
+  const [isChatting, setIsChatting] = React.useState(false);
+  const [chatResponse, setChatResponse] = React.useState<string | null>(null);
+  
+  const [convertState, setConvertState] = React.useState<'idle'|'converting'|'done'>('idle');
+
+  const handleSendChat = (prompt?: string) => {
+    if (!prompt && !chatInput) return;
+    setIsChatting(true);
+    setChatInput(prompt || chatInput);
+    setChatResponse(null);
+    setTimeout(() => {
+      setChatResponse("Based on the data, the project is on track but requires API specifications before Friday to prevent delays.");
+      setIsChatting(false);
+      setChatInput('');
+    }, 1500);
+  };
+
+  const handleConvertToTasks = () => {
+    setConvertState('converting');
+    setTimeout(() => {
+      setConvertState('done');
+      setTimeout(() => setConvertState('idle'), 3000);
+    }, 1500);
+  };
 
   const handleNavigate = (path: string, type: string) => {
     setNavType(type);
@@ -182,24 +210,40 @@ export default function AIPage() {
               </div>
 
               {/* Input Area */}
-              <div className="mt-4 border border-border bg-background flex items-center p-2">
+              <div className="mt-4 border border-border bg-background flex items-center p-2 relative">
                 <Search className="w-4 h-4 text-muted-foreground ml-2" />
                 <input 
                   type="text" 
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
                   placeholder="Ask Handoff..." 
                   className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-sm px-3 font-mono"
-                  disabled
+                  disabled={isChatting}
                 />
-                <Button className="h-8 rounded-none bg-foreground text-background font-mono text-[10px] uppercase tracking-widest px-4">
-                  Send
+                <Button 
+                  onClick={() => handleSendChat()}
+                  disabled={isChatting || !chatInput}
+                  className="h-8 rounded-none bg-foreground text-background font-mono text-[10px] uppercase tracking-widest px-4"
+                >
+                  {isChatting ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Send'}
                 </Button>
+                {chatResponse && (
+                  <div className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border p-3 text-sm animate-in fade-in slide-in-from-bottom-2">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="font-mono text-[10px] uppercase text-accent font-bold">AI Response</span>
+                      <button onClick={() => setChatResponse(null)}><X className="w-3 h-3 text-muted-foreground hover:text-foreground"/></button>
+                    </div>
+                    {chatResponse}
+                  </div>
+                )}
               </div>
               
               {/* Suggested Prompts */}
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                <span className="text-[10px] font-mono uppercase text-muted-foreground px-3 py-1 border border-border bg-surface whitespace-nowrap cursor-pointer hover:bg-surface-hover">Summarize Sprint 14</span>
-                <span className="text-[10px] font-mono uppercase text-muted-foreground px-3 py-1 border border-border bg-surface whitespace-nowrap cursor-pointer hover:bg-surface-hover">Project risks this week</span>
-                <span className="text-[10px] font-mono uppercase text-muted-foreground px-3 py-1 border border-border bg-surface whitespace-nowrap cursor-pointer hover:bg-surface-hover">Draft PRD for new billing</span>
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide mt-2">
+                <span onClick={() => handleSendChat('Summarize Sprint 14')} className="text-[10px] font-mono uppercase text-muted-foreground px-3 py-1 border border-border bg-surface whitespace-nowrap cursor-pointer hover:bg-surface-hover transition-colors">Summarize Sprint 14</span>
+                <span onClick={() => handleSendChat('Project risks this week')} className="text-[10px] font-mono uppercase text-muted-foreground px-3 py-1 border border-border bg-surface whitespace-nowrap cursor-pointer hover:bg-surface-hover transition-colors">Project risks this week</span>
+                <span onClick={() => handleSendChat('Draft PRD for new billing')} className="text-[10px] font-mono uppercase text-muted-foreground px-3 py-1 border border-border bg-surface whitespace-nowrap cursor-pointer hover:bg-surface-hover transition-colors">Draft PRD for new billing</span>
               </div>
             </div>
           </div>
@@ -336,9 +380,13 @@ export default function AIPage() {
                    <li>Evaluate cost impact of switching to DocumentDB</li>
                    <li>Schedule follow-up with Security on encryption at rest</li>
                  </ul>
-                 <Button className="w-full mt-4 h-8 rounded-none bg-surface border border-border text-xs font-mono uppercase tracking-widest hover:bg-surface-hover text-foreground">
-                   Convert to Tasks
-                 </Button>
+                  <Button 
+                    onClick={handleConvertToTasks}
+                    disabled={convertState !== 'idle'}
+                    className="w-full mt-4 h-8 rounded-none bg-surface border border-border text-xs font-mono uppercase tracking-widest hover:bg-surface-hover text-foreground"
+                  >
+                    {convertState === 'idle' ? 'Convert to Tasks' : convertState === 'converting' ? <span className="flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin"/> Converting...</span> : <span className="flex items-center gap-2 text-accent"><CheckCircle2 className="w-3 h-3"/> 3 Tasks Created</span>}
+                  </Button>
                </div>
             </div>
 
@@ -517,17 +565,7 @@ export default function AIPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-surface-hover py-12 px-6 md:px-12 mt-auto">
-        <div className="container mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-          <div className="flex items-center gap-4">
-            <Logo width={20} height={20} />
-            <span className="font-bold text-foreground">HANDOFF // 2026</span>
-          </div>
-          <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
-            Designed for teams shipping high-impact software.
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
 
       {/* Loading Overlay */}
       {isNavigating && (
