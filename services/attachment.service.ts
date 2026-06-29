@@ -23,7 +23,7 @@ export async function registerAttachment(
 
   const { data: task } = await supabase
     .from('tasks').select('project_id').eq('id', input.task_id).maybeSingle();
-  if (!task) throw Errors.notFound('Task not found.');
+  if (!task) throw Errors.forbidden('You do not have permission to attach files to this task.');
 
   const { data, error } = await supabase
     .from('attachments')

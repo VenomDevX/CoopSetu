@@ -11,6 +11,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ taskId:
     const m = await requireOrganization();
     requirePermission(m, 'task:assign');
     const body = addAssigneeSchema.parse(await req.json());
-    return ok(await addAssignee(supabase, m.organizationId, taskId, body.organization_member_id, body.assignment_role), undefined, 201);
+    return ok(
+      await addAssignee(
+        supabase,
+        m.organizationId,
+        taskId,
+        body.organization_member_id,
+        m.memberId,
+        body.assignment_role,
+        body.assignment_type,
+      ),
+      undefined,
+      201,
+    );
   });
 }

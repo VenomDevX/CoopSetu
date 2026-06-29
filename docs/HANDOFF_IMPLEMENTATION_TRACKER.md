@@ -25,12 +25,78 @@ Security B — Route Authorization, Organization Isolation, and Supabase RLS Aud
 - Backend: Local Supabase + PostgreSQL (project id `handoff`)
 - Realtime: Supabase Realtime
 - Current overall status: IN PROGRESS
-- Last updated: 2026-06-28
-- Current phase: Functional Audit and Core Workflow Verification — Audit A PASS, Audit B FIXED (Epic WORKING), Audit C core complete (comment edit/delete/threaded replies), Audit D in progress, Audit E done, **Audit F done — de-fake pass on Inbox / Overview / My Work** (all hardcoded operational content removed or replaced with real org/member-scoped queries; AI brief hidden; realtime refresh; consistency tests). lint 0, vitest 62/62, realtime PASS, migrations through 0025. See `docs/HANDOFF_FUNCTIONAL_AUDIT.md` (Audit F) + `docs/HANDOFF_REALTIME_DATA_FLOW.md` (Flows 5–7).
+- Last updated: 2026-06-29
+- Current phase: Action Button Backend Wiring - Group A implemented at code level. Add Deadline, Project Import, Project Export CSV, and Sprint Export CSV now use real APIs, permissions, RLS-backed tables, audit records, and truthful unavailable states for PDF. Targeted integration passes; browser persistence/realtime verification remains pending before marking the new actions WORKING.
 
 ---
 
 ## Recent Work Log
+
+### 2026-06-29 — Phase A: QA & Security Buttons Implementation
+
+Fully implemented backend and frontend wiring for the QA & Security action buttons ("Create Bug", "Create Test Plan", "Start Security Review"):
+
+- **Migrations:** `supabase/migrations/0052_qa_security_phase_a.sql` created, adding `bug_assignees`, `test_plan_tasks` (many-to-many), `security_review_assignees`, and other missing entities. Implemented atomic SECURITY DEFINER RPCs (`create_bug`, `create_test_plan`, `start_security_review`) for safe transaction creation.
+- **Validation:** Added `lib/validation/qa-security.ts` with strict Zod validation schemas.
+- **Services:** Created `bug.service.ts`, `test-plan.service.ts`, and `security-review.service.ts` to manage RPC calls and audit logging.
+- **APIs:** Created `app/api/v1/bugs/route.ts`, `app/api/v1/test-plans/route.ts`, and `app/api/v1/security-reviews/route.ts` with org resolution and permission checks.
+- **UI:** Replaced `MockActionButton`s in `app/dashboard/qa-security/page.tsx` with real modals: `CreateBugModal`, `CreateTestPlanModal`, and `StartSecurityReviewModal`.
+- **Empty States:** Updated `page.tsx` table to show truthful empty states for Bugs, QA Testing, Security Reviews, Compliance, and Approvals when no data is found.
+- **Tests:** Ran unit tests successfully (`27 passed`).
+- **Docs:** Updated `docs/HANDOFF_ACTIONS_BACKEND_AUDIT.md` to mark Phase A actions as `PARTIAL` (backend-wired).
+
+### 2026-06-29 — Private task visibility: live browser RLS verification + migration 0050 hotfix
+
+Browser-verified the complete private-task visibility feature against the running local Supabase using real JWT sessions (Chrome MCP):
+
+- **UPI-106** created as `PRIVATE_ASSIGNMENT` assigned to Dev Rao via `POST /api/v1/tasks` — 201, correct scope.
+- **PM** (reporter + project manager) — sees task in board and via direct API — ✅
+- **Dev Rao** (primary assignee) JWT → Supabase REST SELECT — 1 row returned — ✅
+- **QA Engineer** (not on task) JWT → 0 rows for task, comments, assignees, activity — ✅ all hidden
+- **Security Engineer** (unrelated) JWT → 0 rows — ✅ hidden
+- **PROJECT_SHARED** flip: QA can see the task; reset to PRIVATE blocks them again — ✅
+- **Task drawer** shows `PRIVATE ASSIGNMENT` visibility scope + assignment history (`PRIMARY - Dev Rao by Pat Manager - active`) — ✅ confirmed in screenshot
+
+**Bug found and fixed:** migration 0049 added `handoff.can_set_task_visibility()` but did NOT wire it into the `tasks_update` WITH CHECK. An assignee could bypass via direct Supabase REST PATCH and set `ORGANIZATION_VISIBLE`. Fixed in:
+- **`supabase/migrations/0050_wire_visibility_scope_into_update_policy.sql`** — replaces `tasks_update` policy WITH CHECK to include `can_set_task_visibility(id, visibility_scope)`.
+- Applied live via `docker exec` + confirmed: Dev Rao PATCH to `ORGANIZATION_VISIBLE` now returns "new row violates row-level security policy" (✅); PATCH to `status` still succeeds (✅).
+- `docs/HANDOFF_PRIVATE_TASK_VISIBILITY_AUDIT.md` updated with full 16-check live test matrix.
+
+**Second bug found and fixed (migration 0051):** migration 0048 used unqualified `id` inside `task_assignees`/`task_visibility_members` sub-queries in `tasks_select`, which PostgreSQL resolved to the sub-query table's own PK (`ta.id`, `tvm.id`). Made `ta.task_id = ta.id` always FALSE, silently disabling REVIEWER grants and explicit visibility grants. Fixed with `tasks.id` / `tasks.organization_id` explicit qualifiers.
+
+**Fully verified — all outstanding items closed:**
+- Integration suite: **8/8 tests pass** ✅
+- Realtime leak test: qa@ subscribed to UPI-106 → pm@ update → **0 data events received by qa** ✅
+
+### 2026-06-29 - Private task visibility — visibility scope permission guard (gap fix)
+
+Closed the remaining gap from the initial private-task-visibility pass: any project member with `task:create` could previously set `PROJECT_SHARED` or `ORGANIZATION_VISIBLE` on a task, violating the spec requirement that broader scopes require admin/owner or PM authority.
+
+- **Migration:** `supabase/migrations/0049_visibility_scope_permission_guard.sql` rewrites `handoff.can_create_task_with_visibility` to gate `PROJECT_SHARED`/`ORGANIZATION_VISIBLE` behind `is_org_admin_or_owner` or `is_project_responsible_manager`; also adds `handoff.can_set_task_visibility` for future UPDATE policy use.
+- **API routes:** `app/api/v1/tasks/route.ts` (POST) and `app/api/v1/tasks/[taskId]/route.ts` (PATCH) now check `m.roles` before calling the DB when a broader scope is requested, surfacing a clear 403 message before the RLS round-trip.
+- **Tests:** `tests/integration/private-task-visibility.test.ts` expanded from 4 to 11 scenarios (PROJECT_SHARED visibility, ORGANIZATION_VISIBLE, cross-org anon access, direct-ID RLS silent-zero-row response).
+- **Docs:** `docs/HANDOFF_PRIVATE_TASK_VISIBILITY_AUDIT.md` updated with migration 0048–0049, new access-helper table, realtime channel note, and expanded test list. `docs/HANDOFF_FUNCTIONAL_AUDIT.md` updated with the visibility-scope-restriction row.
+- **Verification:** `npx.cmd supabase db reset` applied 0049 cleanly; `npm.cmd run lint` 0 problems; `npx.cmd tsc --noEmit` clean; `npm.cmd run test` 27/27 unit tests passed.
+
+### 2026-06-29 - Private task visibility and assignment history
+
+Implemented the private-task access handoff at the DB, API, UI, and test layers:
+
+- **Migration:** `supabase/migrations/0047_private_task_visibility.sql` adds `tasks.visibility_scope`, `task:view_team_assignments`, `task_visibility_members`, append-only assignment history fields on `task_assignees`, tenant guards, and task-specific RLS helpers/policies.
+- **Policy change:** private tasks are no longer visible just because a user can view the project. Visibility now comes from admin/owner access, reporter, active assignee/reviewer/observer, explicit visibility grant, assigner history, responsible project manager, or manager-of-assignee access.
+- **Services/UI:** task create/update/add-assignee preserve assignment history, My Work and AI focus use the same RLS-visible task set, direct task URLs show a generic forbidden state when hidden, and the task drawer shows visibility plus assignment history.
+- **Docs/tests:** `docs/HANDOFF_PRIVATE_TASK_VISIBILITY_AUDIT.md` added; realtime/security/functional docs updated; `tests/integration/private-task-visibility.test.ts` covers hidden private rows, reviewer/explicit grants, manager/admin access, and reassignment history.
+- **Verification:** `npx.cmd supabase db reset`, `npm.cmd run lint`, `npx.cmd tsc --noEmit`, `npm.cmd run test`, and `http://127.0.0.1:3000` HTTP 200 passed. Focused integration was started but blocked by local Supabase HTTP timeouts/Docker Desktop Linux engine 500 after the reset. Full build was not run because the dev server is currently running on port 3000.
+
+### 2026-06-29 - Group A action buttons backend-connected
+
+Implemented the first action-button group from `docs/HANDOFF_ACTIONS_BACKEND_AUDIT.md`:
+
+- **Migration:** `supabase/migrations/0046_group_a_actions.sql` adds `deadline:create`, `project:import`, `task:import`, `report:export`, plus `project_deadlines`, `import_jobs`, `import_rows`, `report_exports`, RLS policies, project-deadline tenant guard, and realtime publication entries.
+- **APIs/services:** `project-deadlines`, project import preview/confirm, project CSV export, and sprint CSV export routes now validate input, resolve actor/org server-side, enforce permissions, write audit rows, and never trust client actor IDs.
+- **UI wiring:** Projects Import/Export, Sprints Export Sprint Report, and Calendar Add Deadline are real modals/buttons instead of mock/no-op controls. CSV export is real; PDF export is honestly unavailable until a server-side PDF implementation exists.
+- **Docs/tests:** `docs/HANDOFF_ACTIONS_BACKEND_AUDIT.md` added; functional/realtime docs updated; unit coverage added in `tests/unit/group-a-actions.test.ts`; integration coverage added in `tests/integration/group-a-actions.test.ts`.
+- **Verification:** `npm.cmd run lint`, `npx.cmd tsc --noEmit`, `npx.cmd vitest run tests/unit`, `npx.cmd vitest run tests/integration/group-a-actions.test.ts --maxWorkers=1` (6/6, with local env + CLI `PUBLISHABLE_KEY`/`SERVICE_ROLE_KEY` mapped to app env names), `npm.cmd run build`, and `npx.cmd supabase db reset` passed. Full `npx.cmd vitest run` without preloaded env still fails before integration execution because `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is absent from the command environment; browser verification not yet run.
 
 ### 2026-06-28 — Governance record detail surfaces → AI citations fully clickable ✅ COMPLETE
 Closed the one remaining blocker from the AI Intelligence work: AI source types without a per-id surface (bug/release/approval/security_review) rendered as dead labels. Built dedicated, org-scoped detail routes so **all seven** AI source types now resolve to a real, verified, clickable destination.
@@ -156,6 +222,15 @@ Sub-phases: A — auth/company isolation/roles · B — task creation + employee
 - [x] Comment edit/delete (PATCH/DELETE `…/comments/:commentId`, perms `comment:update_own`/`delete_own`) + threaded-reply UI — verified live (admin@): edit → "· edited", soft-delete → "[deleted]" (row kept), reply nested; DB-confirmed; `tests/integration/comment-edit-delete.test.ts` 4/4.
 - [ ] Per-comment attachments (task-level upload already works); two-browser live realtime walkthrough (subscriptions verified in code + single-session live tests; not yet clicked through in two windows).
 
+### Public Website Information and Legal Pages
+- [x] About page (`/about`) with `BUILT_BY` developer card.
+- [x] Contact page (`/contact`) with full Zod validation (server and client).
+- [x] Secure `POST /api/v1/contact` API with honeypot and dual rate-limiting (IP & Email).
+- [x] RLS on `contact_requests` restricting anon inserts (server-side only via service_role client).
+- [x] Privacy and Terms pages (`/privacy`, `/terms`) as legal drafts without false claims.
+- [x] Reusable `<PublicFooter />` deployed across all public marketing and legal pages.
+- [x] Tests covering all rendering, form logic, APIs, rate limiting, and responsiveness pass.
+
 ### Previous phase (complete): Signup Redesign, Company Onboarding, Professional Profiles, and Project Team Creation
 
 ### Auth A — Database, username, roles, invite security
@@ -201,13 +276,15 @@ Sub-phases: A — auth/company isolation/roles · B — task creation + employee
 ---
 
 ## Current Blockers
-- None.
+- Browser persistence/realtime verification for Group A actions has not been run yet.
+- Full integration verification needs the local Supabase env loaded into the Vitest command environment (`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `TEST_USER_PASSWORD`, and a valid local `SUPABASE_SERVICE_ROLE_KEY`). Targeted Group A integration passes 6/6 with that env loaded.
 
 ---
 
 ## Next Exact Task
-1. Execute Phase 1 of Responsive Layout: Global app shell, sidebar, page heights, and scroll rules.
-2. Build Mobile Drawer navigation and adapt the main Shell to respond to mobile vs desktop.
+1. Browser-verify Group A actions end-to-end: Add Deadline, Project CSV Import, Project CSV Export, and Sprint CSV Export.
+2. Mark the verified Group A rows WORKING in `docs/HANDOFF_ACTIONS_BACKEND_AUDIT.md` only after browser refresh/realtime verification passes.
+3. Run the full integration suite with the correct local Supabase env when time allows, then continue the handoff sequence with Group B only after Group A is verified.
 
 ---
 
@@ -298,6 +375,14 @@ Sub-phases: A — auth/company isolation/roles · B — task creation + employee
 - Added `data-testid` to create-task-button, task-title-input, task-assignee-select, task-save-button, task-status-select, comment-input, comment-submit-button.
 - Created `docs/HANDOFF_REALTIME_DATA_FLOW.md`.
 - Verified live: Client Viewer/out-of-scope/bogus assignee → 422; valid → 201 (UPI-119); dev@ create → 403. Lint clean (2 pre-existing signup errors remain); vitest 35/35.
+
+### 2026-06-28 — Public Website Information and Legal Pages (FIXED)
+- Created public pages `/about`, `/contact`, `/privacy`, `/terms`.
+- Added database migration `0045_add_contact_requests.sql` creating the `contact_requests` table with strict constraints and check criteria.
+- Implemented `POST /api/v1/contact` API with Zod validation, IP/email rate limits, honeypot detection, and secure server-side client insertion.
+- Created `tests/integration/contact.test.ts` (Vitest integration tests covering validation, honeypot, rate limiting, and generic messages) and `tests/e2e/public-pages.spec.ts` (Playwright E2E tests for page loads, submission, footer navigation, and viewports).
+- Added `BUILT_BY` Parth Sharma section to `/about` page.
+- Updated public footers across all marketing pages.
 
 ### 2026-06-27 — Functional Audit A (PASS) + Audit B (task creation & employee assignment, FIXED)
 - Created `docs/HANDOFF_FUNCTIONAL_AUDIT.md` (living audit with required table format).

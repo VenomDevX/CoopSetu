@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { Errors } from '@/lib/api/errors';
 import { createAuditLog } from '@/lib/audit/create-audit-log';
 import { z } from 'zod';
@@ -70,7 +71,7 @@ export async function decideReleaseApproval(
   const { data: release } = await supabase.from('releases').select('project_id').eq('id', releaseId).maybeSingle();
 
   // If all gates approved, mark approved for deployment.
-  const { data: canDeploy } = await supabase.rpc('release_can_deploy', { p_release: releaseId });
+  const { data: canDeploy } = await createAdminClient().rpc('release_can_deploy', { p_release: releaseId });
   if (canDeploy) await supabase.from('releases').update({ status: 'APPROVED_FOR_DEPLOYMENT' }).eq('id', releaseId).eq('organization_id', orgId);
   else if (input.decision === 'REJECTED') await supabase.from('releases').update({ status: 'BLOCKED' }).eq('id', releaseId).eq('organization_id', orgId);
 
@@ -85,7 +86,7 @@ export async function decideReleaseApproval(
 export async function deployRelease(
   supabase: SupabaseClient, orgId: string, memberId: string, releaseId: string, environmentId?: string,
 ) {
-  const { data: canDeploy } = await supabase.rpc('release_can_deploy', { p_release: releaseId });
+  const { data: canDeploy } = await createAdminClient().rpc('release_can_deploy', { p_release: releaseId });
   if (!canDeploy) throw Errors.forbidden('Release is not approved for deployment. All required approvals must pass.');
 
   const { data: release } = await supabase.from('releases').select('*').eq('id', releaseId).maybeSingle();

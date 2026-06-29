@@ -2,12 +2,13 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CreateOrganizationInput, UpdateOrganizationInput } from '@/lib/validation/organization';
 import { createAuditLog } from '@/lib/audit/create-audit-log';
 import { Errors } from '@/lib/api/errors';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function createOrganization(
   supabase: SupabaseClient,
   input: CreateOrganizationInput,
 ) {
-  const { data, error } = await supabase.rpc('create_organization', {
+  const { data, error } = await createAdminClient().rpc('create_organization', {
     p_name: input.name,
     p_slug: input.slug ?? null,
     p_industry: input.industry ?? null,

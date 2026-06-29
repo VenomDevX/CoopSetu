@@ -1,15 +1,18 @@
 'use client';
 import { Logo } from '@/components/logo';
 import { WORLD_LAND_PATH } from '@/lib/world-map-path';
-import { EnterpriseCapabilities } from '@/components/EnterpriseCapabilities';
+import { EnterpriseCapabilities } from '@/components/marketing/enterprise-capabilities';
 import { GlobalScalePanel } from '@/components/sections/global-scale-panel';
 import { RealTimeSyncPanel } from '@/components/sections/real-time-sync-panel';
 import { DataIntegrityPanel } from '@/components/sections/data-integrity-panel';
 import { MobileNavDrawer } from '@/components/layout/mobile-nav-drawer';
+import BlurText from '@/components/ui/blur-text';
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import SplitText from '@/components/ui/split-text';
+import { PublicFooter } from '@/components/layout/public-footer';
 import { ArrowRight, BarChart3, CheckCircle2, GitPullRequest, Layers, Lock, Shield, Terminal, Zap, Activity, Cpu, Loader2, ChevronDown } from 'lucide-react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
 import { useState, useRef } from 'react';
@@ -203,25 +206,18 @@ export default function LandingPage() {
               </div>
 
               <h1 className="text-5xl md:text-7xl lg:text-[96px] font-bold tracking-tighter mb-6 leading-[0.9] uppercase relative">
-                {['Ship.', 'Control.', 'Dominate.'].map((word, i) => (
-                  <motion.span
-                    key={word}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.7, delay: 0.3 + i * 0.12, ease: [0.16, 1, 0.3, 1] }}
-                    className={`block ${i === 1 ? 'text-muted-foreground' : ''}`}
-                  >
-                    {word.slice(0, -1)}
-                    <span className={i === 2 ? 'text-accent' : ''}>.</span>
-                    {i === 2 && (
-                      <motion.span
-                        animate={{ opacity: [1, 0, 1] }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        className="inline-block w-3 h-12 md:w-5 md:h-20 bg-accent ml-4 align-baseline translate-y-1"
-                      />
-                    )}
-                  </motion.span>
-                ))}
+                <div className="flex flex-col text-left">
+                  <SplitText text="Ship." className="block" textAlign="left" delay={50} splitType="chars" />
+                  <SplitText text="Control." className="block text-muted-foreground" textAlign="left" delay={50} splitType="chars" />
+                  <div className="flex items-center">
+                    <SplitText text="Dominate." className="block" textAlign="left" delay={50} splitType="chars" />
+                    <motion.span
+                      animate={{ opacity: [1, 0, 1] }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="inline-block w-3 h-12 md:w-5 md:h-20 bg-accent ml-4 align-baseline translate-y-1"
+                    />
+                  </div>
+                </div>
                 <div className="absolute -left-8 top-4 bottom-4 w-1 bg-gradient-to-b from-accent via-foreground/20 to-transparent hidden md:block" />
               </h1>
 
@@ -650,7 +646,7 @@ export default function LandingPage() {
         </section>
 
         {/* Features Minimalist Grid */}
-        <section className="py-28 md:py-32 bg-background border-b border-border relative overflow-hidden" id="explore">
+        <section className="py-28 md:py-32 bg-background border-b border-white/5 relative overflow-hidden" id="explore">
           <div className="absolute -top-32 right-0 w-[600px] h-[600px] rounded-full blur-[160px] bg-accent/10 pointer-events-none z-0" />
 
           <div className="container mx-auto px-6 md:px-12 relative z-10">
@@ -674,14 +670,14 @@ export default function LandingPage() {
                 <p className="text-muted-foreground text-base leading-relaxed mb-6">
                   One platform to plan, ship, secure, and analyze — engineered for teams that can&apos;t afford to slow down.
                 </p>
-                <Link href="#" className="inline-flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-foreground border-b border-accent pb-1 group w-fit">
+                <Link href="/product" className="inline-flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-foreground border-b border-accent pb-1 group w-fit">
                   Explore all modules <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </div>
             </motion.div>
 
             {/* Social-proof metrics strip */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-[1px] bg-border border border-border mb-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-[1px] bg-white/5 border border-white/5 mb-3">
               {[
                 { v: '10x', l: 'Faster Delivery' },
                 { v: '99.9%', l: 'Platform Uptime' },
@@ -696,7 +692,7 @@ export default function LandingPage() {
             </div>
 
             {/* Bento feature grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px] bg-border border border-border">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px] bg-white/5 border border-white/5">
               {/* A — Enterprise Visibility */}
               <div className="md:col-span-2 bg-background p-8 md:p-12 relative overflow-hidden group hover:bg-surface transition-colors duration-500 flex flex-col justify-between min-h-[440px]">
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
@@ -704,7 +700,7 @@ export default function LandingPage() {
                 </div>
                 <div className="relative z-10">
                   <div className="flex items-start justify-between mb-8">
-                    <div className="w-12 h-12 border border-border flex items-center justify-center bg-background group-hover:border-accent transition-colors">
+                    <div className="w-12 h-12 border border-white/5 flex items-center justify-center bg-background group-hover:border-accent transition-colors">
                       <BarChart3 className="w-5 h-5 text-accent" />
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_01</span>
@@ -739,7 +735,7 @@ export default function LandingPage() {
               <div className="bg-background p-8 relative overflow-hidden group hover:bg-surface transition-colors duration-500 flex flex-col justify-between min-h-[440px]">
                 <div>
                   <div className="flex items-start justify-between mb-8">
-                    <div className="w-12 h-12 border border-border flex items-center justify-center group-hover:border-accent transition-colors">
+                    <div className="w-12 h-12 border border-white/5 flex items-center justify-center group-hover:border-accent transition-colors">
                       <Zap className="w-5 h-5 text-accent" />
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_02</span>
@@ -771,7 +767,7 @@ export default function LandingPage() {
               <div className="bg-background p-8 relative overflow-hidden group hover:bg-surface transition-colors duration-500 flex flex-col justify-between min-h-[380px]">
                 <div>
                   <div className="flex items-start justify-between mb-8">
-                    <div className="w-12 h-12 border border-border flex items-center justify-center group-hover:border-accent transition-colors">
+                    <div className="w-12 h-12 border border-white/5 flex items-center justify-center group-hover:border-accent transition-colors">
                       <Shield className="w-5 h-5 text-accent" />
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_03</span>
@@ -793,7 +789,7 @@ export default function LandingPage() {
               <div className="bg-background p-8 relative overflow-hidden group hover:bg-surface transition-colors duration-500 flex flex-col justify-between min-h-[380px]">
                 <div>
                   <div className="flex items-start justify-between mb-8">
-                    <div className="w-12 h-12 border border-border flex items-center justify-center group-hover:border-accent transition-colors">
+                    <div className="w-12 h-12 border border-white/5 flex items-center justify-center group-hover:border-accent transition-colors">
                       <GitPullRequest className="w-5 h-5 text-accent" />
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_04</span>
@@ -818,7 +814,7 @@ export default function LandingPage() {
               <div className="bg-background p-8 relative overflow-hidden group hover:bg-surface transition-colors duration-500 flex flex-col justify-between min-h-[380px]">
                 <div>
                   <div className="flex items-start justify-between mb-8">
-                    <div className="w-12 h-12 border border-border flex items-center justify-center group-hover:border-accent transition-colors">
+                    <div className="w-12 h-12 border border-white/5 flex items-center justify-center group-hover:border-accent transition-colors">
                       <Cpu className="w-5 h-5 text-accent" />
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_05</span>
@@ -898,7 +894,7 @@ export default function LandingPage() {
         </section>
 
         {/* Architecture Grid Section */}
-        <section className="bg-black text-white border-b border-border/30 py-24 px-6 md:px-12 relative overflow-hidden">
+        <section id="explore" className="bg-black text-white border-b border-white/10 py-24 px-6 md:px-12 relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(124,92,252,0.1)_0%,transparent_70%)] pointer-events-none" />
           <div className="container mx-auto max-w-7xl relative z-10">
             <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 relative">
@@ -1052,22 +1048,60 @@ export default function LandingPage() {
         </section>
 
         {/* Global Network / Infrastructure Section */}
-        <section className="section-inverse min-h-screen flex flex-col justify-center py-16 md:py-20 bg-black text-background border-b border-border overflow-hidden relative">
+        <section className="section-inverse min-h-screen flex flex-col justify-center py-16 md:py-20 bg-black text-background border-b border-white/5 overflow-hidden relative">
           <div className="container mx-auto px-6 md:px-12 relative z-10">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 md:mb-10 gap-8">
+            <motion.div 
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: {
+                    staggerChildren: 0.1,
+                    delayChildren: 0.2
+                  }
+                }
+              }}
+              className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 md:mb-10 gap-8"
+            >
               <div>
-                <div className="font-mono text-xs uppercase tracking-widest text-background/50 mb-4 flex items-center gap-3">
+                <motion.div 
+                  variants={{
+                    hidden: { opacity: 0, y: 10 },
+                    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }
+                  }}
+                  className="font-mono text-xs uppercase tracking-widest text-background/50 mb-4 flex items-center gap-3"
+                >
                   <span className="w-2 h-2 bg-accent animate-pulse" /> Infrastructure // Global Network
-                </div>
-                <h2 className="text-5xl md:text-7xl font-bold tracking-tighter uppercase leading-[0.9]">
-                  Deployed<br />Everywhere.
-                </h2>
+                </motion.div>
+                <motion.h2 
+                  variants={{
+                    hidden: { opacity: 0, y: 10 },
+                    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }
+                  }}
+                  className="text-5xl md:text-7xl font-bold tracking-tighter uppercase leading-[0.9]"
+                >
+                  <BlurText
+                    text="Deployed Everywhere."
+                    delay={150}
+                    animateBy="words"
+                    direction="top"
+                  />
+                </motion.h2>
               </div>
-              <p className="text-background/60 font-mono text-sm uppercase tracking-widest max-w-md md:text-right leading-relaxed">
+              <motion.p 
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }
+                }}
+                className="text-background/60 font-mono text-sm uppercase tracking-widest max-w-md md:text-right leading-relaxed"
+              >
                 Operating across 24 regions with military-grade redundancy and automated failover.
-              </p>
-            </div>
+              </motion.p>
+            </motion.div>
 
             {/* Global network visualization */}
             <div className="mt-24 md:mt-32">
@@ -1143,47 +1177,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* CTA Section - Inverse high contrast */}
-        <section className="section-inverse py-40 bg-foreground text-background overflow-hidden relative">
-          {/* Dense Abstract CTA Graphic */}
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[90vw] max-w-[800px] aspect-square border border-background/20 rounded-full opacity-30 pointer-events-none flex items-center justify-center">
-            <div className="w-[70vw] max-w-[600px] aspect-square border border-background/40 rounded-full" />
-            <div className="absolute w-[50vw] max-w-[400px] aspect-square border border-background/60 rounded-full" />
-            <div className="absolute w-[30vw] max-w-[200px] aspect-square border border-background border-dashed rounded-full animate-spin-slow" />
-          </div>
 
-          <div className="container mx-auto px-6 md:px-12 relative z-10 flex flex-col md:flex-row items-center justify-between">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="max-w-4xl"
-            >
-              <h2 className="text-5xl md:text-8xl font-bold tracking-tighter mb-8 uppercase leading-[0.9]">
-                Execution<br />Without<br />Compromise.
-              </h2>
-              <div className="w-full h-px bg-background/20 my-12" />
-              <div className="flex flex-col sm:flex-row items-center gap-6">
-                <Button
-                  size="lg"
-                  onClick={() => handleNavigate('/dashboard', 'terminal')}
-                  disabled={isNavigating}
-                  className="h-16 px-12 text-sm font-mono uppercase tracking-widest bg-background text-foreground hover:bg-background/90 rounded-none group min-w-[300px]"
-                >
-                  {isNavigating && navType === 'terminal' ? (
-                    <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> AUTHENTICATING...</span>
-                  ) : (
-                    <>Access Terminal <ArrowRight className="ml-3 w-4 h-4 group-hover:translate-x-2 transition-transform" /></>
-                  )}
-                </Button>
-                <span className="font-mono text-xs uppercase tracking-widest text-background/60">
-                  System requires authorization.
-                </span>
-              </div>
-            </motion.div>
-          </div>
-        </section>
         {/* Enterprise Capabilities Section */}
         <EnterpriseCapabilities />
 
@@ -1215,20 +1209,7 @@ export default function LandingPage() {
 
       </main>
 
-      <footer className="border-t border-border py-12 bg-background text-xs text-muted-foreground font-mono uppercase tracking-widest">
-        <div className="container mx-auto px-6 md:px-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-          <div className="flex items-center gap-4">
-            <Logo width={20} height={20} />
-            <span className="font-bold text-foreground">HANDOFF // 2026</span>
-          </div>
-          <div className="flex flex-wrap gap-8">
-            <Link href="#" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link href="#" className="hover:text-foreground transition-colors">Terms</Link>
-            <Link href="#" className="hover:text-foreground transition-colors">Security</Link>
-            <Link href="#" className="hover:text-foreground transition-colors">Status</Link>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

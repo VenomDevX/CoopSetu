@@ -23,15 +23,16 @@ function fullName(v: unknown): string {
 export async function getMyWork(
   supabase: SupabaseClient, orgId: string, memberId: string,
 ) {
+  void memberId;
   const today = new Date().toISOString().slice(0, 10);
   const in7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
 
-  // 1. The member's assigned tasks (single source of truth for KPIs + table).
+  // 1. Tasks visible to this member under task RLS. Private tasks only appear
+  //    when the DB helper grants direct, explicit, manager, or admin access.
   const { data: taskRows, error } = await supabase
     .from('tasks')
     .select(MY_TASK_SELECT)
     .eq('organization_id', orgId)
-    .eq('primary_assignee_member_id', memberId)
     .is('archived_at', null)
     .order('due_date', { ascending: true, nullsFirst: false })
     .limit(500);

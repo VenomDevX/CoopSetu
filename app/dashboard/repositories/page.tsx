@@ -31,6 +31,10 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
 import { DataViewport } from '@/components/layout/data-viewport';
+import { AskAiButton } from '@/components/ai/ask-ai-button';
+import { ConnectRepositoryModal } from '@/components/repositories/connect-repository-modal';
+import { CreateReleaseModal } from '@/components/repositories/create-release-modal';
+import { DeploymentLogsModal } from '@/components/repositories/deployment-logs-modal';
 
 const tabs = [
   'Repositories',
@@ -127,12 +131,30 @@ const getRiskColor = (risk: string) => {
 
 export default function RepositoriesPage() {
   const [activeTab, setActiveTab] = useState('Repositories');
-  const [mockRepositories, setRepos] = useState<ReturnType<typeof mapRepo>[]>([]);
-  const [mockPRs, setPRs] = useState<ReturnType<typeof mapPR>[]>([]);
-  const [mockCommits, setCommits] = useState<ReturnType<typeof mapCommit>[]>([]);
-  const [mockPipelines, setPipelines] = useState<ReturnType<typeof mapPipeline>[]>([]);
-  const [mockEnvironments, setEnvironments] = useState<ReturnType<typeof mapEnv>[]>([]);
-  const [mockDeployments, setDeployments] = useState<ReturnType<typeof mapDeployment>[]>([]);
+  const [repositories, setRepos] = useState<ReturnType<typeof mapRepo>[]>([]);
+  const [prs, setPRs] = useState<ReturnType<typeof mapPR>[]>([]);
+  const [commits, setCommits] = useState<ReturnType<typeof mapCommit>[]>([]);
+  const [pipelines, setPipelines] = useState<any[]>([]);
+  const [environments, setEnvironments] = useState<any[]>([]);
+  const [deployments, setDeployments] = useState<any[]>([]);
+
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [showReleaseModal, setShowReleaseModal] = useState(false);
+  const [showLogsModal, setShowLogsModal] = useState(false);
+  const [rawDeployments, setRawDeployments] = useState<any[]>([]);
+
+  const fetchData = () => {
+    fetch('/api/v1/repositories').then(r => r.json()).then(j => {
+      const d = j?.data ?? {};
+      setRepos((d.repositories ?? []).map(mapRepo));
+      setPRs((d.pullRequests ?? []).map(mapPR));
+      setCommits((d.commits ?? []).map(mapCommit));
+      setPipelines((d.pipelines ?? []).map(mapPipeline));
+      setEnvironments((d.environments ?? []).map(mapEnv));
+      setDeployments((d.deployments ?? []).map(mapDeployment));
+      setRawDeployments(d.deployments ?? []);
+    }).catch(() => { });
+  };
 
   useEffect(() => {
     let active = true;
@@ -145,12 +167,14 @@ export default function RepositoriesPage() {
       setPipelines((d.pipelines ?? []).map(mapPipeline));
       setEnvironments((d.environments ?? []).map(mapEnv));
       setDeployments((d.deployments ?? []).map(mapDeployment));
+      setRawDeployments(d.deployments ?? []);
     }).catch(() => { });
     return () => { active = false; };
   }, []);
 
   return (
     <WorkspaceDataLayout className="space-y-6 animate-in fade-in duration-500 flex flex-col">
+
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 flex-shrink-0">
         <div>
@@ -168,22 +192,19 @@ export default function RepositoriesPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+          <Button variant="outline" onClick={() => setShowLogsModal(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
             <TerminalSquare className="w-4 h-4" />
             Deployment Logs
           </Button>
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+          <Button variant="outline" onClick={() => setShowReleaseModal(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
             <Rocket className="w-4 h-4" />
             Create Release
           </Button>
-          <Button className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
+          <Button onClick={() => setShowConnectModal(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
             <Link2 className="w-4 h-4" />
             Connect Repository
           </Button>
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2">
-            <Bot className="w-4 h-4" />
-            Ask Handoff AI
-          </Button>
+          <AskAiButton intent="summarize-engineering" title="Ask Handoff AI" />
         </div>
       </div>
 
@@ -294,7 +315,7 @@ export default function RepositoriesPage() {
                 )}
               </thead>
               <tbody className="divide-y divide-border">
-                {activeTab === 'Repositories' && mockRepositories.map((repo) => (
+                {activeTab === 'Repositories' && repositories.map((repo) => (
                   <tr key={repo.id} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
@@ -329,7 +350,7 @@ export default function RepositoriesPage() {
                   </tr>
                 ))}
 
-                {activeTab === 'Pull Requests' && mockPRs.map((pr) => (
+                {activeTab === 'Pull Requests' && prs.map((pr) => (
                   <tr key={pr.key} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2 mb-1">
@@ -364,7 +385,7 @@ export default function RepositoriesPage() {
                   </tr>
                 ))}
 
-                {activeTab === 'Commits' && mockCommits.map((commit) => (
+                {activeTab === 'Commits' && commits.map((commit) => (
                   <tr key={commit.key} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-1 text-[10px] bg-surface border border-border px-1.5 py-0.5 inline-flex text-muted-foreground group-hover:text-foreground">
@@ -387,20 +408,20 @@ export default function RepositoriesPage() {
                   </tr>
                 ))}
 
-                {activeTab === 'CI/CD' && mockPipelines.map((pl) => (
+                {activeTab === 'CI/CD' && pipelines.map((pl) => (
                   <tr key={pl.key} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="font-sans text-sm font-bold">{pl.pipeline}</div>
-                      <div className="text-[10px] text-muted-foreground">{pl.id}</div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
+                        <GitBranch className="w-3 h-3" /> {pl.branch}
+                      </div>
                     </td>
+                    <td className="p-3 text-sm text-muted-foreground">{pl.trigger}</td>
                     <td className="p-3">
-                      <span className={`text-[10px] px-2 py-0.5 border ${getStatusColor(pl.status)} uppercase tracking-widest`}>
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-sm text-xs font-mono uppercase tracking-widest ${getStatusColor(pl.status)}`}>
+                        {pl.status === 'Success' ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
                         {pl.status}
                       </span>
-                    </td>
-                    <td className="p-3">
-                      <div className="text-xs">{pl.branch}</div>
-                      <div className="text-[10px] text-muted-foreground uppercase">{pl.trigger}</div>
                     </td>
                     <td className="p-3 text-xs">{pl.duration}</td>
                     <td className="p-3 text-xs">
@@ -420,7 +441,7 @@ export default function RepositoriesPage() {
                   </tr>
                 ))}
 
-                {activeTab === 'Environments' && mockEnvironments.map((env) => (
+                {activeTab === 'Environments' && environments.map((env) => (
                   <tr key={env.name} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
@@ -449,7 +470,7 @@ export default function RepositoriesPage() {
                   </tr>
                 ))}
 
-                {activeTab === 'Deployments' && mockDeployments.map((dep) => (
+                {activeTab === 'Deployments' && deployments.map((dep) => (
                   <tr key={dep.key} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="font-sans text-sm font-bold">{dep.id}</div>
@@ -479,6 +500,31 @@ export default function RepositoriesPage() {
           </div>
         </div>
       </div>
+
+      {showConnectModal && (
+        <ConnectRepositoryModal
+          onClose={() => setShowConnectModal(false)}
+          onSuccess={() => {
+            setShowConnectModal(false);
+            fetchData();
+          }}
+        />
+      )}
+      {showReleaseModal && (
+        <CreateReleaseModal
+          onClose={() => setShowReleaseModal(false)}
+          onSuccess={() => {
+            setShowReleaseModal(false);
+            fetchData();
+          }}
+        />
+      )}
+      {showLogsModal && (
+        <DeploymentLogsModal
+          deployments={rawDeployments}
+          onClose={() => setShowLogsModal(false)}
+        />
+      )}
     </WorkspaceDataLayout>
   );
 }

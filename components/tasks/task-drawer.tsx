@@ -7,7 +7,7 @@ import { usePresence } from '@/hooks/use-presence';
 import { channels } from '@/lib/realtime/channels';
 import { createClient } from '@/lib/supabase/client';
 import { usePermission } from '@/lib/permissions/context';
-import { TASK_STATUSES } from '@/lib/constants/task-statuses';
+import { TASK_STATUSES, TASK_VISIBILITY_SCOPES } from '@/lib/constants/task-statuses';
 import { AskAiButton } from '@/components/ai/ask-ai-button';
 
 interface Comment {
@@ -35,6 +35,22 @@ interface Attachment {
   size_bytes: number | null;
   url: string | null;
 }
+interface AssignmentMember {
+  id: string;
+  profile?: { full_name: string | null; email: string | null; job_title?: string | null }
+    | { full_name: string | null; email: string | null; job_title?: string | null }[] | null;
+}
+interface TaskAssignment {
+  id: string;
+  organization_member_id: string;
+  assignment_role: string | null;
+  assignment_type: string | null;
+  assigned_at: string;
+  removed_at: string | null;
+  assigned_member?: AssignmentMember | AssignmentMember[] | null;
+  assigned_by_member?: AssignmentMember | AssignmentMember[] | null;
+  removed_by_member?: AssignmentMember | AssignmentMember[] | null;
+}
 interface TaskDetail {
   id: string;
   task_key: string;
@@ -42,9 +58,11 @@ interface TaskDetail {
   description: string | null;
   status: string;
   priority: string;
+  visibility_scope: string;
   organization_id: string;
   project_id: string | null;
   primary_assignee_member_id: string | null;
+  task_assignees?: TaskAssignment[] | null;
 }
 interface AssignableMember {
   member_id: string;
@@ -129,6 +147,19 @@ export function TaskDrawer({ taskId, onClose }: { taskId: string; onClose: () =>
     const p = c.author?.profile;
     const prof = Array.isArray(p) ? p[0] : p;
     return prof?.job_title ?? directory.find((d) => d.id === c.author_member_id)?.job_title ?? null;
+  }
+  function memberName(member?: AssignmentMember | AssignmentMember[] | null): string {
+    const m = Array.isArray(member) ? member[0] : member;
+    const p = m?.profile;
+    const prof = Array.isArray(p) ? p[0] : p;
+    return prof?.full_name ?? prof?.email ?? 'Member';
+  }
+  function assignmentLine(a: TaskAssignment): string {
+    const assignedBy = a.assigned_by_member ? ` by ${memberName(a.assigned_by_member)}` : '';
+    const removedBy = a.removed_at
+      ? ` - removed${a.removed_by_member ? ` by ${memberName(a.removed_by_member)}` : ''}`
+      : ' - active';
+    return `${a.assignment_type ?? a.assignment_role ?? 'ASSIGNEE'} - ${memberName(a.assigned_member)}${assignedBy}${removedBy}`;
   }
   function addMention(id: string) {
     const m = directory.find((d) => d.id === id);
@@ -350,7 +381,38 @@ export function TaskDrawer({ taskId, onClose }: { taskId: string; onClose: () =>
               </select>
             </div>
           )}
+          {canEdit && (
+            <div>
+              <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1 block">Visibility</label>
+              <select
+                value={task?.visibility_scope ?? 'PRIVATE_ASSIGNMENT'}
+                disabled={savingField === 'visibility'}
+                onChange={(e) => patchTask({ visibility_scope: e.target.value }, 'visibility')}
+                className="w-full h-9 px-2 bg-background border border-border text-xs font-mono uppercase"
+              >
+                {TASK_VISIBILITY_SCOPES.map((scope) => <option key={scope} value={scope}>{scope.replace(/_/g, ' ')}</option>)}
+              </select>
+            </div>
+          )}
           {task?.description && <p className="text-sm text-muted-foreground whitespace-pre-wrap">{task.description}</p>}
+
+          <div className="pt-4 border-t border-border">
+            <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
+              Assignments ({task?.task_assignees?.length ?? 0})
+            </div>
+            <div className="space-y-2">
+              {(task?.task_assignees ?? []).map((a) => (
+                <div key={a.id} className="border border-border p-2 bg-surface">
+                  <div className="text-xs">{assignmentLine(a)}</div>
+                  <div className="font-mono text-[10px] text-muted-foreground mt-1">
+                    {new Date(a.assigned_at).toLocaleString()}
+                    {a.removed_at ? ` -> ${new Date(a.removed_at).toLocaleString()}` : ''}
+                  </div>
+                </div>
+              ))}
+              {(task?.task_assignees ?? []).length === 0 && <p className="text-xs text-muted-foreground font-mono">No assignment history.</p>}
+            </div>
+          </div>
 
           <div className="pt-4 border-t border-border">
             <div className="flex items-center justify-between mb-3">

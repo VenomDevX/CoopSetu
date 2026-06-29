@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { Errors } from '@/lib/api/errors';
 import { handle, ok } from '@/lib/api/response';
 import { requireUser } from '@/lib/auth/require-user';
 import { requireOrganization, requirePermission } from '@/lib/auth/require-organization';
@@ -24,17 +25,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ taskId:
       .select('id, project_id')
       .eq('id', taskId)
       .eq('organization_id', m.organizationId)
-      .single();
+      .maybeSingle();
 
-    if (!task) throw new Error('Task not found');
+    if (!task) throw Errors.forbidden('You cannot update this task.');
 
     // 2. Create the checklist
     const { data: checklist, error: clErr } = await supabase
       .from('task_checklists')
       .insert({
         task_id: taskId,
-        name: 'AI Generated Plan',
-        created_by_member_id: m.memberId,
+        title: 'AI Generated Plan',
       })
       .select('id')
       .single();
@@ -47,7 +47,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ taskId:
       .insert(
         body.items.map((item, index) => ({
           checklist_id: checklist.id,
-          content: item,
+          title: item,
           position: index,
         }))
       );

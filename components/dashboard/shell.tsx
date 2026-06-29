@@ -92,16 +92,10 @@ export function DashboardShell({ children, displayName, initials, membership }: 
       { name: 'Settings', href: '/dashboard/settings', icon: Settings },
     ]},
     { title: 'Legal & Info', items: [
-      { name: 'About', href: '/dashboard/about', icon: Info },
-      { name: 'Contact', href: '/dashboard/contact', icon: Mail },
-      { name: 'Privacy', href: '/dashboard/privacy', icon: Shield },
-      { name: 'Terms', href: '/dashboard/terms', icon: FileSignature },
-    ]},
-    { title: 'Legal & Info', items: [
-      { name: 'About', href: '/dashboard/about', icon: Info },
-      { name: 'Contact', href: '/dashboard/contact', icon: Mail },
-      { name: 'Privacy', href: '/dashboard/privacy', icon: Shield },
-      { name: 'Terms', href: '/dashboard/terms', icon: FileSignature },
+      { name: 'About', href: '/about', icon: Info },
+      { name: 'Contact', href: '/contact', icon: Mail },
+      { name: 'Privacy', href: '/privacy', icon: Shield },
+      { name: 'Terms', href: '/terms', icon: FileSignature },
     ]},
   ].map((g) => ({ ...g, items: g.items.filter((it) => can((it as { perm?: string }).perm)) }))
    .filter((g) => g.items.length > 0);

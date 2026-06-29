@@ -29,6 +29,9 @@ import { Button } from '@/components/ui/button';
 import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
 import { AskAiButton } from '@/components/ai/ask-ai-button';
 import { DataViewport } from '@/components/layout/data-viewport';
+import { CreateBugModal } from '@/components/qa-security/create-bug-modal';
+import { CreateTestPlanModal } from '@/components/qa-security/create-test-plan-modal';
+import { StartSecurityReviewModal } from '@/components/qa-security/start-security-review-modal';
 
 const tabs = [
   'QA Testing',
@@ -118,9 +121,13 @@ export default function QaSecurityPage() {
   const [mockQA, setMockQA] = useState<{ plan: string; project: string; automated: string; manual: string; ratio: string; regression: string; uat: string; owner: string; release: string }[]>([]);
   const [mockSecurity, setMockSecurity] = useState<ReturnType<typeof mapReview>[]>([]);
   const [mockCompliance, setMockCompliance] = useState<ReturnType<typeof mapCompliance>[]>([]);
+  const [showCreateBug, setShowCreateBug] = useState(false);
+  const [showCreateTestPlan, setShowCreateTestPlan] = useState(false);
+  const [showSecurityReview, setShowSecurityReview] = useState(false);
+
   const [mockApprovals, setMockApprovals] = useState<ReturnType<typeof mapApproval>[]>([]);
 
-  useEffect(() => {
+  const fetchQAData = () => {
     let active = true;
     fetch('/api/v1/qa').then((r) => r.json()).then((j) => {
       if (!active) return;
@@ -140,7 +147,9 @@ export default function QaSecurityPage() {
       if (active) setMockApprovals((Array.isArray(j?.data) ? j.data : []).map(mapApproval));
     }).catch(() => { });
     return () => { active = false; };
-  }, []);
+  };
+
+  useEffect(() => fetchQAData(), []);
 
   // Client-side search over the active tab's primary text column.
   const q = query.trim().toLowerCase();
@@ -177,15 +186,15 @@ export default function QaSecurityPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
+          <Button onClick={() => setShowSecurityReview(true)} variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2">
             <ShieldCheck className="w-4 h-4" />
             Start Security Review
           </Button>
-          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
+          <Button onClick={() => setShowCreateTestPlan(true)} variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2">
             <FileCheck className="w-4 h-4" />
             Create Test Plan
           </Button>
-          <Button disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background gap-2 disabled:opacity-40">
+          <Button onClick={() => setShowCreateBug(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background gap-2">
             <Plus className="w-4 h-4" />
             Create Bug
           </Button>
@@ -485,6 +494,9 @@ export default function QaSecurityPage() {
         </div>
 
       </div>
+      {showCreateBug && <CreateBugModal onClose={() => setShowCreateBug(false)} onCreated={() => { setShowCreateBug(false); fetchQAData(); }} />}
+      {showCreateTestPlan && <CreateTestPlanModal onClose={() => setShowCreateTestPlan(false)} onCreated={() => { setShowCreateTestPlan(false); fetchQAData(); }} />}
+      {showSecurityReview && <StartSecurityReviewModal onClose={() => setShowSecurityReview(false)} onCreated={() => { setShowSecurityReview(false); fetchQAData(); }} />}
     </WorkspaceDataLayout>
   );
 }

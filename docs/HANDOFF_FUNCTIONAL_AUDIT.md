@@ -12,6 +12,47 @@ Living record of every interactive item checked, its real (backend-connected) st
 
 ---
 
+## Private Task Visibility & Assignment History (2026-06-29)
+
+| Surface | Expected Behavior | Current Status | Backend / DB | Permission | Notes |
+|---------|-------------------|----------------|--------------|------------|-------|
+| Tasks RLS | Private tasks do not appear to unrelated project members | IMPLEMENTED / INTEGRATION BLOCKED | `handoff.can_view_task`, `tasks.visibility_scope` | `task:view` plus record grant | Migration applied via DB reset; focused integration blocked by local Supabase HTTP timeout after reset. |
+| Task detail URL | Hidden task ID shows generic forbidden state | IMPLEMENTED | RLS-backed task query | `task:view` | Avoids helpful record-existence signals for inaccessible tasks. |
+| Create task | Private by default, optional broader visibility | IMPLEMENTED | `visibility_scope` persisted | `task:create`; `task:assign` when assigning | UI selector added; DB default is `PRIVATE_ASSIGNMENT`. |
+| Broader visibility scope | Only admin/owner/PM may set PROJECT_SHARED or ORGANIZATION_VISIBLE | IMPLEMENTED | `handoff.can_create_task_with_visibility` (0049), API route guard | role check in POST and PATCH routes | Regular employees get 403 before hitting RLS. |
+| Reassign task | Preserve old assignment row and add/promote new primary row | IMPLEMENTED | `task_assignees.removed_at`, `assignment_type` | `task:update` + `task:assign` | Bulk reassignment disabled to prevent history bypass. |
+| My Work / AI focus | Use the same RLS-visible private-task set | IMPLEMENTED | Supabase RLS on `tasks` | caller permissions | Includes additional/reviewer/explicit/manager/admin-visible work. |
+| Task drawer | Show visibility and assignment history | IMPLEMENTED | `task_assignees` embed | `task:view` | Hidden by RLS when caller cannot view the task. |
+
+Focused coverage added in `tests/integration/private-task-visibility.test.ts` (11 scenarios); see `docs/HANDOFF_PRIVATE_TASK_VISIBILITY_AUDIT.md` for the rule matrix and current verification blocker.
+
+---
+
+## Action Buttons Group A - Backend Wiring (2026-06-29)
+
+This pass started the action-button backlog from `docs/HANDOFF_ACTIONS_BACKEND_AUDIT.md`. Scope was limited to Group A: project/sprint/calendar operational actions that already had UI affordances but were either disabled, mocked, or missing backend persistence.
+
+| Page | Action | Status | Backend / DB | Permission | Notes |
+|------|--------|--------|--------------|------------|-------|
+| Calendar | Add Deadline | PARTIAL | `POST /api/v1/project-deadlines`, `project_deadlines`, `project_activity`, `audit_logs`, optional `notifications` | `deadline:create` or `project:update` | Real modal writes project deadlines and subscribes Calendar to `project_deadlines`; browser persistence pass still pending. |
+| Projects | Import | PARTIAL | CSV preview/confirm APIs, `import_jobs`, `import_rows`, `projects`, `audit_logs` | `project:import` | Real CSV upload, mapping, validation, valid-row insert summary; browser persistence pass still pending. |
+| Projects | Export Report | PARTIAL | `GET /api/v1/projects/export`, `report_exports`, `audit_logs` | `report:export` | Real CSV download. PDF export is truthfully unavailable, not fake. |
+| Sprints | Export Sprint Report | PARTIAL | `GET /api/v1/sprints/export`, `report_exports`, `audit_logs` | `report:export` or `sprint:view` | Real CSV download. PDF export is truthfully unavailable, not fake. |
+| Projects | Create Project | WORKING | Existing `POST /api/v1/projects`, `projects`, `project_activity`, `audit_logs` | `project:create` | Already working from Audit D; remains permission-gated. |
+| Sprints | Create Sprint | WORKING | Existing `POST /api/v1/sprints`, `sprints`, `audit_logs` | `sprint:create` | Already working from Audit D; remains permission-gated. |
+
+Verification in this pass:
+
+- `npm.cmd run lint` passed.
+- `npx.cmd tsc --noEmit` passed.
+- `npx.cmd vitest run tests/unit` passed (27 tests).
+- `npx.cmd vitest run tests/integration/group-a-actions.test.ts --maxWorkers=1` passed (6 tests) when the command environment loaded `.env.local` and mapped local CLI keys to `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_SERVICE_ROLE_KEY`.
+- `npm.cmd run build` passed.
+- `npx.cmd supabase db reset` passed and applied `supabase/migrations/0046_group_a_actions.sql`.
+- Full `npx.cmd vitest run` without preloaded env still fails before integration execution because `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is absent from the command environment.
+
+---
+
 ## Audit A — Authentication, Company Isolation, Roles
 
 | Page | Feature / Button | Expected Behavior | Current Status | Backend Connected | Role Tested | Fix Needed | Test Result |
@@ -232,15 +273,15 @@ Three pages still surfaced hardcoded operational content. This pass removed **ev
 | `velocityData` constant (`Sprint_10..14: 120/135/128/142/110`) | `velocity[]` = real `completed_story_points` of `status='COMPLETED'` sprints; honest empty state when no sprint completed. | WORKING |
 | `workloadData` constant (`Payments 85/100 … Mobile 110/100`) — fake "Capacity_Load" | Replaced chart with **Open_Tasks_By_Project** (`workload[]`): real open-task counts grouped by project code. | WORKING |
 | Priority_Overrides fake rows ("Implement 2FA flow / Sarah_J", "CVE-2024-1234 / Alex_M", "Release v2.4.0 / David_L"…) | `priorityItems[]`: real **blocked + overdue tasks** (task_key, project code, status, real assignee name) and **open incidents** (title, severity, status, real commander name). Empty state when nothing qualifies. | WORKING |
-| Static overview (no live refresh) | `useTablesRealtime(['tasks','incidents','approval_requests','bugs'])` re-fetches `/api/v1/analytics/overview`. | WORKING |
+| Static overview (no live refresh) | `useTablesRealtime(['tasks','incidents','approval_requests','bugs'])` re-fetches `/api/v1/dashboard/overview`. | WORKING |
 
 ### F3 — My Work rebuild (`app/dashboard/my-work/page.tsx`, `services/my-work.service.ts` + `GET /api/v1/my-work`)
 New member-scoped endpoint returns `{ tasks, kpis, blockers, upcoming, recentActivity, sprint, approvals }` — one source of truth so KPI totals and the table agree.
 | Fake source removed | Real query / API that replaced it | Status |
 |---------------------|-----------------------------------|--------|
 | `Showing 1-5 of 14 tasks` / `1 / 3` (hardcoded, contradicted the rendered rows) | Client pagination over the filtered task array; `Showing {rangeStart}-{rangeEnd} of {filtered.length}` + `{page}/{pageCount}` all computed from the same array. | WORKING |
-| KPI strip computed client-side from a separate fetch | KPIs (`active/dueToday/overdue/blocked/points/donePoints/total`) computed server-side in `getMyWork` from the member's assigned tasks — same set the table pages. | WORKING |
-| Recent Activity (fake: "S. Chen approved your PR #4921", "M. Johnson mentioned you APX-4899"…) | Real `task_activity` rows on the member's tasks (actor name + activity type + task_key + relative time); empty state otherwise. | WORKING |
+| KPI strip computed client-side from a separate fetch | KPIs (`active/dueToday/overdue/blocked/points/donePoints/total`) computed server-side in `getMyWork` from the member's RLS-visible task set — same set the table pages. | WORKING |
+| Recent Activity (fake: "S. Chen approved your PR #4921", "M. Johnson mentioned you APX-4899"…) | Real `task_activity` rows on RLS-visible tasks (actor name + activity type + task_key + relative time); empty state otherwise. | WORKING |
 | "Sprint 42: Ledger Finalization" with hardcoded `32/45`, `13` remaining, `8` at risk | Member's most-active sprint (the active sprint holding most of their open tasks) with real `planned/completed_story_points`, my-open-items, my-points; empty state when none. | WORKING |
 | Fabricated AI Daily Brief ("7 active tasks", "Node.js Update blocked by Platform Eng", "Sarah approved your PR", "Sources: Jira (3), GitHub (1), Slack (2)") | **Hidden** until it can summarize authorized real data with verifiable source links (per requirement). | HIDDEN |
 | Blockers (fake "APX-4899: Update Node.js · Blocked by ARC-102 · Owner D. Smith") | Real blocked tasks assigned to the member (`status='BLOCKED'`). | WORKING |
@@ -253,7 +294,7 @@ New member-scoped endpoint returns `{ tasks, kpis, blockers, upcoming, recentAct
 - **Empty workspace + cross-company isolation:** org-less user sees 0 notifications/tasks/projects; a member's notifications all carry `organization_id = ORG`.
 - **Inbox Zero:** with no notifications every count (all/unread/each category) is 0 — no contradictions.
 - **Count consistency:** `all == row count`, `unread == unread rows`, and category counts sum to `all`; still consistent after inserting one mention (all/unread/mentions each +1, sum invariant holds).
-- **My Work pagination consistency:** the table source, the "of Z" total, and KPI `active` are one array; paging covers exactly Z rows; every assigned task is member+org scoped.
+- **My Work pagination consistency:** the table source, the "of Z" total, and KPI `active` are one array; paging covers exactly Z rows; every visible task is org scoped.
 - **Realtime:** `scripts/verify-realtime.mjs` extended — verifies dev receives a live **notification** INSERT (Inbox counts/badge/My Work) in addition to the live task event. Both PASS.
 
 **Audit F verdict:** Inbox, Overview, and My Work now show only real, org/member-scoped Supabase data; counts are internally consistent and refresh live; the AI brief is hidden until truthful. lint 0; vitest 47/47; realtime PASS.

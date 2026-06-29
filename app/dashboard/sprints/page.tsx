@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { CreateSprintModal } from '@/components/dashboard/create-sprint-modal';
+import { ExportReportModal } from '@/components/dashboard/export-report-modal';
 import { usePermission } from '@/lib/permissions/context';
 import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
 import { DataViewport } from '@/components/layout/data-viewport';
@@ -10,19 +11,13 @@ import {
   Search,
   Filter,
   Plus,
-  Bot,
   Download,
-  Play,
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
   Activity,
-  Users,
-  Flag,
-  MoreVertical,
-  ArrowRight
-, KanbanSquare} from 'lucide-react';
+  ArrowRight,
+  KanbanSquare,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AskAiButton } from '@/components/ai/ask-ai-button';
 import Link from 'next/link';
 
 type Sprint = {
@@ -87,10 +82,12 @@ const getRiskColor = (risk: string) => {
 export default function SprintsPage() {
   const [mockSprints, setMockSprints] = useState<Sprint[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | Sprint['status']>('ALL');
   const { has } = usePermission();
   const canCreate = has('sprint:create');
+  const canExport = has('report:export') || has('sprint:view');
 
   const load = useCallback(async () => {
     const r = await fetch('/api/v1/sprints').catch(() => null);
@@ -149,20 +146,19 @@ export default function SprintsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
-            <Download className="w-4 h-4" />
-            Export Sprint Report
-          </Button>
+          {canExport && (
+            <Button data-testid="sprint-export-report-button" onClick={() => setIsExportOpen(true)} variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest gap-2">
+              <Download className="w-4 h-4" />
+              Export Sprint Report
+            </Button>
+          )}
           {canCreate && (
             <Button data-testid="create-sprint-button" onClick={() => setIsCreateOpen(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
               <Plus className="w-4 h-4" />
               Create Sprint
             </Button>
           )}
-          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent gap-2 disabled:opacity-40">
-            <Bot className="w-4 h-4" />
-            Ask Handoff AI
-          </Button>
+          <AskAiButton intent="summarize-sprints" label="Ask Handoff AI" title="Sprints Digest" />
         </div>
       </div>
 
@@ -298,6 +294,14 @@ export default function SprintsPage() {
 
       {isCreateOpen && (
         <CreateSprintModal onClose={() => setIsCreateOpen(false)} onCreated={load} />
+      )}
+      {isExportOpen && (
+        <ExportReportModal
+          title="Export Sprint Report"
+          endpoint="/api/v1/sprints/export"
+          filters={{ q: query, status: statusFilter }}
+          onClose={() => setIsExportOpen(false)}
+        />
       )}
     </WorkspaceDataLayout>
   );

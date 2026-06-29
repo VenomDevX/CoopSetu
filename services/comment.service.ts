@@ -80,6 +80,7 @@ export async function createComment(
 
   const { data: task } = await supabase
     .from('tasks').select('project_id, task_key, title').eq('id', taskId).maybeSingle();
+  if (!task) throw Errors.forbidden('You do not have permission to comment on this task.');
 
   const { data, error } = await supabase
     .from('task_comments')

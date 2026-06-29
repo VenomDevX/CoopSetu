@@ -48,7 +48,7 @@ export async function getCurrentMembership(
   // roles
   const { data: roleRows } = await supabase
     .from('member_roles')
-    .select('roles(code)')
+    .select('role_id, roles(code)')
     .eq('organization_member_id', member.id);
 
   const roles = (roleRows ?? [])
@@ -57,15 +57,23 @@ export async function getCurrentMembership(
     )
     .filter(Boolean) as string[];
 
-  // permissions (via RPC-free join handled in DB helper has_permission; here we
-  // resolve the flat list for UI gating)
-  const { data: permRows } = await supabase.rpc('member_permissions', {
-    p_member: member.id,
-  });
+  const roleIds = (roleRows ?? [])
+    .map((r: { role_id?: string | null }) => r.role_id)
+    .filter(Boolean) as string[];
 
-  const permissions = Array.isArray(permRows)
-    ? (permRows as { permission_code: string }[]).map((p) => p.permission_code)
-    : [];
+  // Resolve the flat list for UI/API gating through normal authenticated RLS.
+  // The SECURITY DEFINER member_permissions RPC is intentionally not callable
+  // by authenticated users after the hardening migrations.
+  const { data: permRows } = roleIds.length
+    ? await supabase
+      .from('role_permissions')
+      .select('permission_code')
+      .in('role_id', roleIds)
+    : { data: [] };
+
+  const permissions = Array.from(new Set(
+    ((permRows ?? []) as { permission_code: string }[]).map((p) => p.permission_code),
+  ));
 
   return {
     memberId: member.id,

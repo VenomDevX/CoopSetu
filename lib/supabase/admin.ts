@@ -8,8 +8,8 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
  * server client so RLS applies.
  */
 export function createAdminClient() {
-  const secret = process.env.SUPABASE_SECRET_KEY;
-  if (!secret) throw new Error('SUPABASE_SECRET_KEY is not set');
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY;
+  if (!secret) throw new Error('SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SECRET_KEY is not set');
 
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

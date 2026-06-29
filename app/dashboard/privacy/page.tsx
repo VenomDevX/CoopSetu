@@ -46,7 +46,7 @@ export default function PrivacyPage() {
       </div>
 
       <p className="text-sm leading-relaxed text-muted-foreground">
-        This Privacy Policy describes how Handoff ("we", "us", or "our") collects, uses, and protects information about you when you use the Handoff enterprise platform.
+        This Privacy Policy describes how Handoff (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) collects, uses, and protects information about you when you use the Handoff enterprise platform.
       </p>
 
       <div className="space-y-6">

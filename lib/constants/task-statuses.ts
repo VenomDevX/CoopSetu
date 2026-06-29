@@ -16,5 +16,11 @@ export type Priority = (typeof PRIORITIES)[number];
 export const SECURITY_CLASSIFICATIONS = ['PUBLIC','INTERNAL','CONFIDENTIAL','RESTRICTED'] as const;
 export type SecurityClassification = (typeof SECURITY_CLASSIFICATIONS)[number];
 
+export const TASK_VISIBILITY_SCOPES = ['PRIVATE_ASSIGNMENT','PROJECT_SHARED','ORGANIZATION_VISIBLE'] as const;
+export type TaskVisibilityScope = (typeof TASK_VISIBILITY_SCOPES)[number];
+
+export const TASK_ASSIGNMENT_TYPES = ['PRIMARY','ADDITIONAL','REVIEWER','OBSERVER'] as const;
+export type TaskAssignmentType = (typeof TASK_ASSIGNMENT_TYPES)[number];
+
 /** Statuses considered "done" for completion/overdue calculations. */
 export const CLOSED_TASK_STATUSES: TaskStatus[] = ['DONE', 'CANCELLED'];

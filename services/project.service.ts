@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { Errors } from '@/lib/api/errors';
 import { createAuditLog } from '@/lib/audit/create-audit-log';
+import { createAdminClient } from '@/lib/supabase/admin';
 import type {
   CreateProjectInput, UpdateProjectInput,
 } from '@/lib/validation/project';
@@ -64,7 +65,7 @@ export async function createProject(supabase: SupabaseClient, orgId: string, inp
   // Insert via SECURITY DEFINER RPC (see migration 0025): a plain PostgREST
   // INSERT...RETURNING is rejected because the RETURNING row is re-checked
   // against projects_select before it is visible to that policy's snapshot.
-  const { data, error } = await supabase
+  const { data, error } = await createAdminClient()
     .rpc('create_project', { p_org: orgId, p_payload: input })
     .single<{ id: string; name: string; code: string }>();
   if (error) {

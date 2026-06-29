@@ -44,7 +44,7 @@ export default function ContactPage() {
           <CheckCircle className="w-10 h-10 text-foreground" />
           <div>
             <div className="font-mono text-sm font-bold uppercase tracking-widest">Message Sent</div>
-            <p className="text-xs text-muted-foreground mt-1">We'll be in touch shortly.</p>
+            <p className="text-xs text-muted-foreground mt-1">We&apos;ll be in touch shortly.</p>
           </div>
         </div>
       ) : (

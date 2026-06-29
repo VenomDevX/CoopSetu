@@ -1,5 +1,12 @@
 import { z } from 'zod';
-import { TASK_STATUSES, TASK_TYPES, PRIORITIES, SECURITY_CLASSIFICATIONS } from '@/lib/constants/task-statuses';
+import {
+  TASK_ASSIGNMENT_TYPES,
+  TASK_STATUSES,
+  TASK_TYPES,
+  TASK_VISIBILITY_SCOPES,
+  PRIORITIES,
+  SECURITY_CLASSIFICATIONS,
+} from '@/lib/constants/task-statuses';
 
 export const createTaskSchema = z.object({
   project_id: z.string().uuid(),
@@ -9,6 +16,7 @@ export const createTaskSchema = z.object({
   status: z.enum(TASK_STATUSES).optional(),
   priority: z.enum(PRIORITIES).optional(),
   security_classification: z.enum(SECURITY_CLASSIFICATIONS).optional(),
+  visibility_scope: z.enum(TASK_VISIBILITY_SCOPES).optional(),
   epic_id: z.string().uuid().optional(),
   sprint_id: z.string().uuid().optional(),
   primary_assignee_member_id: z.string().uuid().optional(),
@@ -26,6 +34,7 @@ export const updateTaskSchema = z.object({
   status: z.enum(TASK_STATUSES).optional(),
   priority: z.enum(PRIORITIES).optional(),
   security_classification: z.enum(SECURITY_CLASSIFICATIONS).optional(),
+  visibility_scope: z.enum(TASK_VISIBILITY_SCOPES).optional(),
   epic_id: z.string().uuid().nullable().optional(),
   sprint_id: z.string().uuid().nullable().optional(),
   primary_assignee_member_id: z.string().uuid().nullable().optional(),
@@ -48,6 +57,7 @@ export const bulkUpdateSchema = z.object({
 export const addAssigneeSchema = z.object({
   organization_member_id: z.string().uuid(),
   assignment_role: z.string().max(40).optional(),
+  assignment_type: z.enum(TASK_ASSIGNMENT_TYPES).optional(),
 });
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;

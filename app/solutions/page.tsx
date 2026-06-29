@@ -3,6 +3,7 @@ import { Logo } from '@/components/logo';
 
 import React from 'react';
 import Link from 'next/link';
+import { PublicFooter } from '@/components/layout/public-footer';
 import { Button } from '@/components/ui/button';
 import { 
   ArrowRight, 
@@ -35,6 +36,9 @@ export default function SolutionsPage() {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = React.useState(false);
   const [navType, setNavType] = React.useState<string | null>(null);
+  
+  // Mock feature state
+  const [isApproved, setIsApproved] = React.useState(false);
 
   const handleNavigate = (path: string, type: string) => {
     setNavType(type);
@@ -102,6 +106,7 @@ export default function SolutionsPage() {
                 Explore Solutions
               </Button>
               <Button 
+                onClick={() => handleNavigate('/contact', 'demo')}
                 variant="outline"
                 className="border-border text-foreground hover:bg-surface-hover rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
@@ -370,8 +375,12 @@ export default function SolutionsPage() {
                      </div>
                    </div>
                  </div>
-                 <Button className="w-full h-8 rounded-none bg-foreground text-background font-mono text-[10px] uppercase tracking-widest">
-                   Approve & Sign
+                 <Button 
+                   onClick={() => setIsApproved(true)}
+                   disabled={isApproved}
+                   className={`w-full h-8 rounded-none font-mono text-[10px] uppercase tracking-widest ${isApproved ? 'bg-background text-foreground border border-border' : 'bg-foreground text-background'}`}
+                 >
+                   {isApproved ? <span className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-emerald-500" /> Approved</span> : 'Approve & Sign'}
                  </Button>
               </div>
             </div>
@@ -481,6 +490,7 @@ export default function SolutionsPage() {
               Request Demo
             </Button>
             <Button 
+              onClick={() => handleNavigate('/contact', 'sales')}
               variant="outline"
               className="border-border text-foreground hover:bg-surface-hover rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
             >
@@ -491,17 +501,7 @@ export default function SolutionsPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-surface-hover py-12 px-6 md:px-12 mt-auto">
-        <div className="container mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-          <div className="flex items-center gap-4">
-            <Logo width={20} height={20} />
-            <span className="font-bold text-foreground">HANDOFF // 2026</span>
-          </div>
-          <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
-            Designed for teams shipping high-impact software.
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
 
       {/* Loading Overlay */}
       {isNavigating && (

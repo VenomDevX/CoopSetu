@@ -13,6 +13,8 @@ import {
   buildCommentSummary,
   buildIncidentSummary,
   buildReleaseSummary,
+  buildEngineering,
+  buildIncidents,
 } from '@/lib/ai/ai-context-builder';
 
 /** Definition of one AI intent: who may run it, how its grounded context is built, and its persona. */
@@ -114,6 +116,13 @@ const DEFS: IntentDef[] = [
     defaultPrompt: 'Summarize the discussion on this task.',
   },
   {
+    intent: 'summarize-engineering',
+    permissions: ['integration:view', 'release:view'],
+    build: buildEngineering,
+    persona: 'Summarize the engineering health, including CI/CD metrics, deployment frequency, and environment status.',
+    defaultPrompt: 'Summarize engineering health.',
+  },
+  {
     intent: 'summarize-incident',
     permissions: [], // incidents are org-member-visible via RLS; ai:use suffices
     build: buildIncidentSummary,
@@ -133,6 +142,13 @@ const DEFS: IntentDef[] = [
     build: buildQaSecurity,
     persona: 'Summarize the current QA and security posture, highlighting the riskiest items.',
     defaultPrompt: 'Summarize QA and security.',
+  },
+  {
+    intent: 'summarize-incidents',
+    permissions: [],
+    build: buildIncidents,
+    persona: 'Summarize the current incident landscape, including active incidents, severities, and their statuses.',
+    defaultPrompt: 'Summarize the active incidents.',
   },
   {
     intent: 'task-plan',

@@ -10,6 +10,9 @@ export async function POST(req: Request) {
     const m = await requireOrganization();
     requirePermission(m, 'task:bulk_update');
     const body = bulkUpdateSchema.parse(await req.json());
+    if (Object.prototype.hasOwnProperty.call(body.patch, 'primary_assignee_member_id')) {
+      requirePermission(m, 'task:assign');
+    }
     return ok(await bulkUpdateTasks(supabase, m.organizationId, body.task_ids, body.patch));
   });
 }

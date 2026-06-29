@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
-import { TASK_TYPES, PRIORITIES, SECURITY_CLASSIFICATIONS } from '@/lib/constants/task-statuses';
+import { TASK_TYPES, TASK_VISIBILITY_SCOPES, PRIORITIES, SECURITY_CLASSIFICATIONS } from '@/lib/constants/task-statuses';
 
 interface AssignableMember {
   member_id: string;
@@ -26,11 +26,13 @@ function memberLabel(m: AssignableMember) {
 export function CreateTaskModal({
   projectId, projectLabel, onClose, onCreated,
 }: {
-  projectId: string;
+  projectId?: string;
   projectLabel?: string;
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const [selectedProject, setSelectedProject] = useState(projectId || '');
+  const [availableProjects, setAvailableProjects] = useState<{id: string, name: string}[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [taskType, setTaskType] = useState<string>('TASK');
@@ -41,6 +43,7 @@ export function CreateTaskModal({
   const [startDate, setStartDate] = useState('');
   const [assignee, setAssignee] = useState('');
   const [additional, setAdditional] = useState<string[]>([]);
+  const [visibilityScope, setVisibilityScope] = useState<string>('PRIVATE_ASSIGNMENT');
   const [estimatedHours, setEstimatedHours] = useState('');
   const [storyPoints, setStoryPoints] = useState('');
   const [securityClass, setSecurityClass] = useState('');
@@ -53,32 +56,50 @@ export function CreateTaskModal({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (projectId) return; // Only fetch projects if none was provided
     let active = true;
-    fetch(`/api/v1/projects/${projectId}/assignable-members`)
+    fetch('/api/v1/projects')
       .then((r) => r.json())
-      .then((j) => { if (active) setMembers(Array.isArray(j?.data) ? j.data : []); })
-      .catch(() => {});
-    fetch(`/api/v1/sprints?projectId=${projectId}`)
-      .then((r) => r.json())
-      .then((j) => { if (active) setSprints(Array.isArray(j?.data) ? j.data : []); })
-      .catch(() => {});
-    fetch(`/api/v1/projects/${projectId}/epics`)
-      .then((r) => r.json())
-      .then((j) => { if (active) setEpics(Array.isArray(j?.data) ? j.data : []); })
+      .then((j) => { if (active) setAvailableProjects(Array.isArray(j?.data) ? j.data : []); })
       .catch(() => {});
     return () => { active = false; };
   }, [projectId]);
 
+  useEffect(() => {
+    if (!selectedProject) {
+      setMembers([]);
+      setSprints([]);
+      setEpics([]);
+      return;
+    }
+    let active = true;
+    fetch(`/api/v1/projects/${selectedProject}/assignable-members`)
+      .then((r) => r.json())
+      .then((j) => { if (active) setMembers(Array.isArray(j?.data) ? j.data : []); })
+      .catch(() => {});
+    fetch(`/api/v1/sprints?projectId=${selectedProject}`)
+      .then((r) => r.json())
+      .then((j) => { if (active) setSprints(Array.isArray(j?.data) ? j.data : []); })
+      .catch(() => {});
+    fetch(`/api/v1/projects/${selectedProject}/epics`)
+      .then((r) => r.json())
+      .then((j) => { if (active) setEpics(Array.isArray(j?.data) ? j.data : []); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [selectedProject]);
+
   async function submit() {
+    if (!selectedProject) { setError('A project must be selected.'); return; }
     if (!title.trim()) { setError('Title is required.'); return; }
     setSubmitting(true);
     setError(null);
     const payload: Record<string, unknown> = {
-      project_id: projectId,
+      project_id: selectedProject,
       title: title.trim(),
       task_type: taskType,
       priority,
       status: 'BACKLOG',
+      visibility_scope: visibilityScope,
     };
     if (description.trim()) payload.description = description.trim();
     if (sprintId) payload.sprint_id = sprintId;
@@ -110,7 +131,7 @@ export function CreateTaskModal({
       await Promise.all(extras.map((id) =>
         fetch(`/api/v1/tasks/${newId}/assignees`, {
           method: 'POST', headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ organization_member_id: id }),
+          body: JSON.stringify({ organization_member_id: id, assignment_type: 'ADDITIONAL' }),
         }).catch(() => {}),
       ));
     }
@@ -137,9 +158,24 @@ export function CreateTaskModal({
         </div>
 
         <div className="p-6 space-y-4 overflow-y-auto flex-1">
+          {!projectId && (
+            <div>
+              <label className={labelCls}>Project *</label>
+              <select 
+                value={selectedProject} 
+                onChange={(e) => setSelectedProject(e.target.value)} 
+                className={fieldCls}
+                autoFocus
+              >
+                <option value="">— Select Project —</option>
+                {availableProjects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+          )}
+
           <div>
             <label className={labelCls}>Title *</label>
-            <input data-testid="task-title-input" autoFocus value={title} onChange={(e) => setTitle(e.target.value)}
+            <input data-testid="task-title-input" autoFocus={!!projectId} value={title} onChange={(e) => setTitle(e.target.value)}
               placeholder="What needs to be done?" className={fieldCls} />
           </div>
 
@@ -218,6 +254,15 @@ export function CreateTaskModal({
               <p className="font-mono text-[10px] text-muted-foreground mt-1">Ctrl/Cmd-click to select multiple.</p>
             </div>
           )}
+
+          <div>
+            <label className={labelCls}>Visibility</label>
+            <select value={visibilityScope} onChange={(e) => setVisibilityScope(e.target.value)} className={fieldCls}>
+              {TASK_VISIBILITY_SCOPES.map((scope) => (
+                <option key={scope} value={scope}>{scope.replace(/_/g, ' ')}</option>
+              ))}
+            </select>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
