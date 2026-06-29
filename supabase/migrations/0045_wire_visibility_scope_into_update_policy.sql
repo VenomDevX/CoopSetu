@@ -1,8 +1,8 @@
 -- ============================================================================
--- Handoff — 0050 Wire can_set_task_visibility into tasks UPDATE policy
+-- Handoff — 0045 Wire can_set_task_visibility into tasks UPDATE policy
 -- ============================================================================
 -- Bug found via live browser test (2026-06-29):
--- Migration 0049 added handoff.can_set_task_visibility() but did not wire it
+-- Migration 0044 added handoff.can_set_task_visibility() but did not wire it
 -- into the tasks UPDATE RLS policy. A task assignee (DEVELOPER role) could
 -- bypass the admin/PM restriction and set visibility_scope to
 -- ORGANIZATION_VISIBLE or PROJECT_SHARED via the Supabase REST API directly.

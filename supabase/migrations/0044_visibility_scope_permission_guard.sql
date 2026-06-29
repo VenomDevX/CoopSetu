@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0049 Visibility scope permission guard
+-- Handoff — 0044 Visibility scope permission guard
 -- ============================================================================
 -- Tightens task visibility-scope creation/mutation to ensure that only
 -- org admins/owners and responsible project managers may set

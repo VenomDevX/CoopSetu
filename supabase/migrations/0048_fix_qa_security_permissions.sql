@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0053 Fix QA/Security Phase A permissions & RPCs
+-- Handoff — 0048 Fix QA/Security Phase A permissions & RPCs
 -- ============================================================================
 -- Adds missing permissions, grants them to appropriate roles, and rewrites
 -- the Phase A RPCs to accept the actor member ID as a parameter instead of
@@ -18,7 +18,7 @@ INSERT INTO public.permissions (code, description) VALUES
   ('security_review:update', 'Update security reviews')
 ON CONFLICT (code) DO NOTHING;
 
--- 2. Grant to roles (same pattern as 0046)
+-- 2. Grant to roles (same pattern as 0041)
 DO $$
 DECLARE r RECORD;
 BEGIN
