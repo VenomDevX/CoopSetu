@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Logo } from '@/components/logo';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -63,6 +64,16 @@ export function DashboardShell({ children, displayName, initials, membership }: 
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const [demoAlertVisible, setDemoAlertVisible] = useState(false);
+  useEffect(() => {
+    const onDemoAlert = () => {
+      setDemoAlertVisible(true);
+      setTimeout(() => setDemoAlertVisible(false), 4000);
+    };
+    window.addEventListener('demo-alert', onDemoAlert);
+    return () => window.removeEventListener('demo-alert', onDemoAlert);
   }, []);
 
   // `perm` gates visibility of each nav item (admins see all).
@@ -249,6 +260,26 @@ export function DashboardShell({ children, displayName, initials, membership }: 
             </div>
           </main>
         </div>
+        
+        <AnimatePresence>
+          {demoAlertVisible && (
+            <motion.div
+              initial={{ opacity: 0, y: 50, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4 bg-background border border-border shadow-2xl px-6 py-4 min-w-[320px] rounded-none border-l-4 border-l-red-500"
+            >
+              <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-bold uppercase tracking-widest font-mono text-foreground">Demo Limitation</p>
+                <p className="text-xs text-muted-foreground mt-1">This feature is not available for demo users. Please login or sign up to use.</p>
+              </div>
+              <button onClick={() => setDemoAlertVisible(false)} className="p-1 hover:bg-surface-hover text-muted-foreground hover:text-foreground">
+                <X className="w-4 h-4" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </MembershipProvider>
   );

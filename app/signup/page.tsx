@@ -332,6 +332,13 @@ export default function SignupPage() {
               <button type="submit" disabled={!isStep1Valid} className="w-full h-11 bg-foreground text-background text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-50">
                 Continue <ChevronRight className="w-4 h-4" />
               </button>
+
+              <div className="pt-4 pb-2 text-center flex flex-col items-center">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">NOT READY TO CREATE A WORKSPACE?</span>
+                <Link href="/demo" className="w-full h-11 bg-black border border-zinc-800 text-white text-xs font-mono uppercase tracking-widest hover:border-zinc-500 flex items-center justify-center gap-2 transition-colors">
+                  EXPLORE DEMO
+                </Link>
+              </div>
             </form>
           )}
 

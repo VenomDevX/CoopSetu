@@ -8,6 +8,7 @@ export interface Membership {
   organizationId: string;
   roles: string[];
   permissions: string[];
+  isDemo?: boolean;
 }
 
 /**
@@ -34,7 +35,7 @@ export async function getCurrentMembership(
   async function resolve(orgId?: string) {
     let q = supabase
       .from('organization_members')
-      .select('id, organization_id, is_active')
+      .select('id, organization_id, is_active, organizations(is_demo)')
       .eq('user_id', user!.id)
       .eq('is_active', true);
     if (orgId) q = q.eq('organization_id', orgId);
@@ -80,5 +81,6 @@ export async function getCurrentMembership(
     organizationId: member.organization_id,
     roles,
     permissions,
+    isDemo: !!(member.organizations as any)?.is_demo,
   };
 }

@@ -33,6 +33,7 @@ export async function POST(req: Request) {
   return handle(async () => {
     const { supabase } = await requireUser();
     const m = await requireOrganization();
+    if (m.isDemo) throw Errors.forbidden('Invitations are disabled in the public demo.');
     requirePermission(m, 'member:invite');
     const body = schema.parse(await req.json());
 

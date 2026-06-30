@@ -176,6 +176,13 @@ function LoginInner() {
               {loading && <Loader2 className="w-3 h-3 animate-spin" />}
               {loading ? 'Authenticating...' : 'Sign in'}
             </button>
+            
+            <div className="pt-4 pb-2 text-center flex flex-col items-center">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">No account required</span>
+              <Link href="/demo" className="w-full h-10 bg-black border border-zinc-800 text-white text-xs font-mono uppercase tracking-widest hover:border-zinc-500 flex items-center justify-center gap-2 transition-colors">
+                EXPLORE DEMO
+              </Link>
+            </div>
           </form>
 
           <div className="pt-6 border-t border-border space-y-3">

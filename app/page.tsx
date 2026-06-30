@@ -1,5 +1,6 @@
 'use client';
 import { Logo } from '@/components/logo';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { WORLD_LAND_PATH } from '@/lib/world-map-path';
 import { EnterpriseCapabilities } from '@/components/marketing/enterprise-capabilities';
 import { GlobalScalePanel } from '@/components/sections/global-scale-panel';
@@ -7,15 +8,16 @@ import { RealTimeSyncPanel } from '@/components/sections/real-time-sync-panel';
 import { DataIntegrityPanel } from '@/components/sections/data-integrity-panel';
 import { MobileNavDrawer } from '@/components/layout/mobile-nav-drawer';
 import BlurText from '@/components/ui/blur-text';
+import { createClient } from '@/lib/supabase/client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import SplitText from '@/components/ui/split-text';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { ArrowRight, BarChart3, CheckCircle2, GitPullRequest, Layers, Lock, Shield, Terminal, Zap, Activity, Cpu, Loader2, ChevronDown } from 'lucide-react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 type SprintBoardCard = {
   id: string;
@@ -36,10 +38,48 @@ type SprintBoardColumn = {
 
 export default function LandingPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isNavigating, setIsNavigating] = useState(false);
   const [navType, setNavType] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
   const [expandedPanel, setExpandedPanel] = useState<number | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkDemoAndLogout = () => {
+      setIsNavigating(false);
+      const isDemo = document.cookie.includes('handoff_demo_session=true');
+      if (isDemo) {
+        fetch('/api/v1/demo/exit', { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        }).then(() => {
+          setIsLoggedIn(false);
+          setUserName(null);
+          router.refresh();
+        });
+      } else {
+        const supabase = createClient();
+        supabase.auth.getSession().then(({ data }) => {
+          if (data.session) {
+            setIsLoggedIn(true);
+            supabase.from('profiles').select('full_name, email').eq('id', data.session.user.id).single().then(({ data: profile }) => {
+              const name = profile?.full_name || profile?.email || data.session?.user?.email || 'User';
+              setUserName(name);
+            });
+          } else {
+            setIsLoggedIn(false);
+            setUserName(null);
+          }
+        });
+      }
+    };
+
+    checkDemoAndLogout();
+    window.addEventListener('pageshow', checkDemoAndLogout);
+    return () => window.removeEventListener('pageshow', checkDemoAndLogout);
+  }, [pathname, router]);
 
   const toggleArchPanel = (index: number | null) => {
     setExpandedPanel(prev => prev === index ? null : index);
@@ -124,26 +164,50 @@ export default function LandingPage() {
             </nav>
           </div>
           <div className="flex items-center gap-4 md:gap-6">
-            <button
-              onClick={() => handleNavigate('/dashboard', 'signin')}
-              disabled={isNavigating}
-              className="hidden md:flex text-xs font-mono uppercase tracking-widest hover:text-foreground text-muted-foreground transition-colors disabled:opacity-50 items-center gap-2"
-            >
-              {isNavigating && navType === 'signin' ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-              Sign In
-            </button>
-            <Button
-              onClick={() => handleNavigate('/dashboard', 'demo')}
-              disabled={isNavigating}
-              className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-8 px-4 md:px-6 text-xs font-mono uppercase tracking-widest transition-all w-auto md:w-40"
-            >
-              {isNavigating && navType === 'demo' ? (
-                <span className="flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> PROVISIONING</span>
-              ) : (
-                <span className="hidden sm:inline">Request Demo</span>
-              )}
-              {!(isNavigating && navType === 'demo') && <span className="sm:hidden">Demo</span>}
-            </Button>
+            <ThemeToggle />
+            {isLoggedIn ? (
+              <div className="flex items-center gap-4">
+                {userName && (
+                  <span className="hidden md:block text-[10px] font-mono text-muted-foreground uppercase tracking-widest truncate max-w-[120px]">
+                    Hi, {userName.split(' ')[0]}
+                  </span>
+                )}
+                <Button
+                  onClick={() => handleNavigate('/dashboard', 'dashboard')}
+                  disabled={isNavigating}
+                  className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-8 px-4 md:px-6 text-xs font-mono uppercase tracking-widest transition-all"
+                >
+                  {isNavigating && navType === 'dashboard' ? (
+                    <span className="flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> LOADING</span>
+                  ) : (
+                    <span>Dashboard</span>
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => handleNavigate('/login', 'signin')}
+                  disabled={isNavigating}
+                  className="hidden md:flex text-xs font-mono uppercase tracking-widest hover:text-foreground text-muted-foreground transition-colors disabled:opacity-50 items-center gap-2"
+                >
+                  {isNavigating && navType === 'signin' ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                  Sign In
+                </button>
+                <Button
+                  onClick={() => handleNavigate('/demo', 'demo')}
+                  disabled={isNavigating}
+                  className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-8 px-4 md:px-6 text-xs font-mono uppercase tracking-widest transition-all w-auto md:w-40"
+                >
+                  {isNavigating && navType === 'demo' ? (
+                    <span className="flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> LOADING...</span>
+                  ) : (
+                    <span className="hidden sm:inline">Request Demo</span>
+                  )}
+                  {!(isNavigating && navType === 'demo') && <span className="sm:hidden">Demo</span>}
+                </Button>
+              </>
+            )}
 
             <MobileNavDrawer
               links={[
@@ -646,7 +710,7 @@ export default function LandingPage() {
         </section>
 
         {/* Features Minimalist Grid */}
-        <section className="py-28 md:py-32 bg-background border-b border-white/5 relative overflow-hidden" id="explore">
+        <section className="py-28 md:py-32 bg-background border-b border-border relative overflow-hidden" id="explore">
           <div className="absolute -top-32 right-0 w-[600px] h-[600px] rounded-full blur-[160px] bg-accent/10 pointer-events-none z-0" />
 
           <div className="container mx-auto px-6 md:px-12 relative z-10">
@@ -677,7 +741,7 @@ export default function LandingPage() {
             </motion.div>
 
             {/* Social-proof metrics strip */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-[1px] bg-white/5 border border-white/5 mb-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-[1px] bg-border border border-border mb-3">
               {[
                 { v: '10x', l: 'Faster Delivery' },
                 { v: '99.9%', l: 'Platform Uptime' },
@@ -692,7 +756,7 @@ export default function LandingPage() {
             </div>
 
             {/* Bento feature grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px] bg-white/5 border border-white/5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px] bg-border border border-border">
               {/* A — Enterprise Visibility */}
               <div className="md:col-span-2 bg-background p-8 md:p-12 relative overflow-hidden group hover:bg-surface transition-colors duration-500 flex flex-col justify-between min-h-[440px]">
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
@@ -700,7 +764,7 @@ export default function LandingPage() {
                 </div>
                 <div className="relative z-10">
                   <div className="flex items-start justify-between mb-8">
-                    <div className="w-12 h-12 border border-white/5 flex items-center justify-center bg-background group-hover:border-accent transition-colors">
+                    <div className="w-12 h-12 border border-border flex items-center justify-center bg-background group-hover:border-accent transition-colors">
                       <BarChart3 className="w-5 h-5 text-accent" />
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_01</span>
@@ -735,7 +799,7 @@ export default function LandingPage() {
               <div className="bg-background p-8 relative overflow-hidden group hover:bg-surface transition-colors duration-500 flex flex-col justify-between min-h-[440px]">
                 <div>
                   <div className="flex items-start justify-between mb-8">
-                    <div className="w-12 h-12 border border-white/5 flex items-center justify-center group-hover:border-accent transition-colors">
+                    <div className="w-12 h-12 border border-border flex items-center justify-center group-hover:border-accent transition-colors">
                       <Zap className="w-5 h-5 text-accent" />
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_02</span>
@@ -767,7 +831,7 @@ export default function LandingPage() {
               <div className="bg-background p-8 relative overflow-hidden group hover:bg-surface transition-colors duration-500 flex flex-col justify-between min-h-[380px]">
                 <div>
                   <div className="flex items-start justify-between mb-8">
-                    <div className="w-12 h-12 border border-white/5 flex items-center justify-center group-hover:border-accent transition-colors">
+                    <div className="w-12 h-12 border border-border flex items-center justify-center group-hover:border-accent transition-colors">
                       <Shield className="w-5 h-5 text-accent" />
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_03</span>
@@ -789,7 +853,7 @@ export default function LandingPage() {
               <div className="bg-background p-8 relative overflow-hidden group hover:bg-surface transition-colors duration-500 flex flex-col justify-between min-h-[380px]">
                 <div>
                   <div className="flex items-start justify-between mb-8">
-                    <div className="w-12 h-12 border border-white/5 flex items-center justify-center group-hover:border-accent transition-colors">
+                    <div className="w-12 h-12 border border-border flex items-center justify-center group-hover:border-accent transition-colors">
                       <GitPullRequest className="w-5 h-5 text-accent" />
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_04</span>
@@ -814,7 +878,7 @@ export default function LandingPage() {
               <div className="bg-background p-8 relative overflow-hidden group hover:bg-surface transition-colors duration-500 flex flex-col justify-between min-h-[380px]">
                 <div>
                   <div className="flex items-start justify-between mb-8">
-                    <div className="w-12 h-12 border border-white/5 flex items-center justify-center group-hover:border-accent transition-colors">
+                    <div className="w-12 h-12 border border-border flex items-center justify-center group-hover:border-accent transition-colors">
                       <Cpu className="w-5 h-5 text-accent" />
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_05</span>
@@ -894,13 +958,13 @@ export default function LandingPage() {
         </section>
 
         {/* Architecture Grid Section */}
-        <section id="explore" className="bg-black text-white border-b border-white/10 py-24 px-6 md:px-12 relative overflow-hidden">
+        <section id="explore" className="bg-background text-foreground border-b border-border py-24 px-6 md:px-12 relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(124,92,252,0.1)_0%,transparent_70%)] pointer-events-none" />
           <div className="container mx-auto max-w-7xl relative z-10">
             <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 relative">
               {/* Overlay Backdrop */}
               <div
-                className={`fixed inset-0 bg-black/60 transition-all duration-700 ease-in-out ${expandedPanel !== null ? 'opacity-100 z-40' : 'opacity-0 -z-10 pointer-events-none'
+                className={`fixed inset-0 bg-background/80 transition-all duration-700 ease-in-out ${expandedPanel !== null ? 'opacity-100 z-40' : 'opacity-0 -z-10 pointer-events-none'
                   }`}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -913,47 +977,47 @@ export default function LandingPage() {
                 <div
                   onClick={() => toggleArchPanel(1)}
                   className={`flex-1 relative flex flex-col lg:flex-row bg-surface border transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer h-full ${expandedPanel === 1
-                      ? 'w-full lg:w-[calc(200%+2.5rem)] lg:ml-0 z-50 shadow-2xl border-border/20 group hover:border-white/30'
+                      ? 'w-full lg:w-[calc(200%+2.5rem)] lg:ml-0 z-50 shadow-2xl border-border group hover:border-foreground/30'
                       : expandedPanel === 2
-                        ? 'w-full lg:ml-0 z-30 border-border/20 origin-left scale-[0.95] opacity-100'
+                        ? 'w-full lg:ml-0 z-30 border-border/50 origin-left scale-[0.95] opacity-100'
                         : expandedPanel === 3
-                          ? 'w-full lg:ml-0 z-20 border-border/20 origin-left scale-[0.90] opacity-100'
-                          : 'w-full lg:ml-0 z-10 border-border/20 group hover:border-white/30'
+                          ? 'w-full lg:ml-0 z-20 border-border/50 origin-left scale-[0.90] opacity-100'
+                          : 'w-full lg:ml-0 z-10 border-border/50 group hover:border-foreground/30'
                     }`}
                 >
                   {/* Render the new standalone Data Integrity component */}
                   <DataIntegrityPanel expanded={expandedPanel === 1} />
 
                   {/* Extra Extracted Data */}
-                  <div className={`hidden lg:flex flex-col justify-center transition-all duration-[800ms] overflow-hidden bg-black/40 ${expandedPanel === 1 ? 'w-[calc(50%+1.25rem)] opacity-100 border-l border-white/10 p-12' : 'w-0 opacity-0 border-transparent p-0'
+                  <div className={`hidden lg:flex flex-col justify-center transition-all duration-[800ms] overflow-hidden bg-muted/40 ${expandedPanel === 1 ? 'w-[calc(50%+1.25rem)] opacity-100 border-l border-border p-12' : 'w-0 opacity-0 border-transparent p-0'
                     }`}>
                     <div className="w-full min-w-[220px]">
                       <div className="font-mono text-[10px] uppercase tracking-widest text-accent mb-6 whitespace-nowrap">Extraction Complete // 100%</div>
                       <h3 className="text-3xl font-bold mb-6">Cryptographic Ledger</h3>
-                      <p className="text-white/70 text-sm leading-relaxed mb-8">
+                      <p className="text-muted-foreground text-sm leading-relaxed mb-8">
                         Our proprietary consensus algorithm ensures zero data loss even during severe network partitions. Every byte is checksummed, encrypted at rest using AES-256-GCM, and replicated synchronously.
                       </p>
                       <div className="space-y-6">
                         <div>
-                          <div className="flex justify-between text-[10px] font-mono text-white/50 mb-2">
+                          <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-2">
                             <span>Validation Node A</span>
                             <span className="text-green-400">SYNCED</span>
                           </div>
-                          <div className="w-full h-1 bg-white/10 overflow-hidden"><div className="w-full h-full bg-green-400" /></div>
+                          <div className="w-full h-1 bg-border overflow-hidden"><div className="w-full h-full bg-green-500" /></div>
                         </div>
                         <div>
-                          <div className="flex justify-between text-[10px] font-mono text-white/50 mb-2">
+                          <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-2">
                             <span>Validation Node B</span>
                             <span className="text-green-400">SYNCED</span>
                           </div>
-                          <div className="w-full h-1 bg-white/10 overflow-hidden"><div className="w-[98%] h-full bg-green-400" /></div>
+                          <div className="w-full h-1 bg-border overflow-hidden"><div className="w-[98%] h-full bg-green-500" /></div>
                         </div>
                         <div>
-                          <div className="flex justify-between text-[10px] font-mono text-white/50 mb-2">
+                          <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-2">
                             <span>Failover Node C</span>
                             <span className="text-amber-400">STANDBY</span>
                           </div>
-                          <div className="w-full h-1 bg-white/10 overflow-hidden"><div className="w-[45%] h-full bg-amber-400" /></div>
+                          <div className="w-full h-1 bg-border overflow-hidden"><div className="w-[45%] h-full bg-amber-500" /></div>
                         </div>
                       </div>
                     </div>
@@ -966,32 +1030,32 @@ export default function LandingPage() {
                 <div
                   onClick={() => toggleArchPanel(2)}
                   className={`flex-1 relative flex flex-col lg:flex-row bg-surface border transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer h-full ${expandedPanel === 2
-                      ? 'w-full lg:w-[calc(200%+2.5rem)] lg:-ml-[calc(50%+1.25rem)] z-50 shadow-2xl border-border/20 group hover:border-white/30'
+                      ? 'w-full lg:w-[calc(200%+2.5rem)] lg:-ml-[calc(50%+1.25rem)] z-50 shadow-2xl border-border group hover:border-foreground/30'
                       : expandedPanel === 1
-                        ? 'w-full lg:ml-0 z-30 border-border/20 translate-x-[calc(55%+1.25rem)] scale-[0.95] opacity-100'
+                        ? 'w-full lg:ml-0 z-30 border-border/50 translate-x-[calc(55%+1.25rem)] scale-[0.95] opacity-100'
                         : expandedPanel === 3
-                          ? 'w-full lg:ml-0 z-30 border-border/20 -translate-x-[calc(55%+1.25rem)] scale-[0.95] opacity-100'
-                          : 'w-full lg:ml-0 z-10 border-border/20 group hover:border-white/30'
+                          ? 'w-full lg:ml-0 z-30 border-border/50 -translate-x-[calc(55%+1.25rem)] scale-[0.95] opacity-100'
+                          : 'w-full lg:ml-0 z-10 border-border/50 group hover:border-foreground/30'
                     }`}
                 >
                   {/* Render the new standalone Global Scale component */}
                   <GlobalScalePanel expanded={expandedPanel === 2} />
 
                   {/* Extra Extracted Data */}
-                  <div className={`hidden lg:flex flex-col justify-center transition-all duration-[800ms] overflow-hidden bg-black/40 ${expandedPanel === 2 ? 'w-[calc(50%+1.25rem)] opacity-100 border-l border-white/10 p-12' : 'w-0 opacity-0 border-transparent p-0'
+                  <div className={`hidden lg:flex flex-col justify-center transition-all duration-[800ms] overflow-hidden bg-muted/40 ${expandedPanel === 2 ? 'w-[calc(50%+1.25rem)] opacity-100 border-l border-border p-12' : 'w-0 opacity-0 border-transparent p-0'
                     }`}>
                     <div className="w-full min-w-[220px]">
                       <div className="font-mono text-[10px] uppercase tracking-widest text-accent mb-6 whitespace-nowrap">Extraction Complete // 100%</div>
                       <h3 className="text-3xl font-bold mb-6">Global Anycast Network</h3>
-                      <p className="text-white/70 text-sm leading-relaxed mb-8">
+                      <p className="text-muted-foreground text-sm leading-relaxed mb-8">
                         We utilize a globally distributed edge network with smart routing. Our active-active architecture automatically shifts traffic during regional outages without manual intervention.
                       </p>
                       <div className="grid grid-cols-2 gap-4">
                         {['us-east', 'eu-west', 'ap-south', 'sa-east'].map(region => (
-                          <div key={region} className="bg-black/40 border border-white/10 p-4">
-                            <div className="text-[10px] font-mono uppercase text-white/50 mb-2">Region</div>
-                            <div className="text-sm font-bold text-white mb-2">{region}</div>
-                            <div className="text-[10px] font-mono text-green-400 animate-pulse">Online // 99.999%</div>
+                          <div key={region} className="bg-surface border border-border p-4">
+                            <div className="text-[10px] font-mono uppercase text-muted-foreground mb-2">Region</div>
+                            <div className="text-sm font-bold text-foreground mb-2">{region}</div>
+                            <div className="text-[10px] font-mono text-green-500 animate-pulse">Online // 99.999%</div>
                           </div>
                         ))}
                       </div>
@@ -1005,32 +1069,32 @@ export default function LandingPage() {
                 <div
                   onClick={() => toggleArchPanel(3)}
                   className={`flex-1 relative flex flex-col lg:flex-row bg-surface border transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer h-full ${expandedPanel === 3
-                      ? 'w-full lg:w-[calc(200%+2.5rem)] lg:-ml-[calc(100%+2.5rem)] z-50 shadow-2xl border-border/20 group hover:border-white/30'
+                      ? 'w-full lg:w-[calc(200%+2.5rem)] lg:-ml-[calc(100%+2.5rem)] z-50 shadow-2xl border-border group hover:border-foreground/30'
                       : expandedPanel === 2
-                        ? 'w-full lg:ml-0 z-20 border-border/20 origin-right scale-[0.95] opacity-100'
+                        ? 'w-full lg:ml-0 z-20 border-border/50 origin-right scale-[0.95] opacity-100'
                         : expandedPanel === 1
-                          ? 'w-full lg:ml-0 z-20 border-border/20 origin-right scale-[0.90] opacity-100'
-                          : 'w-full lg:ml-0 z-10 border-border/20 group hover:border-white/30'
+                          ? 'w-full lg:ml-0 z-20 border-border/50 origin-right scale-[0.90] opacity-100'
+                          : 'w-full lg:ml-0 z-10 border-border/50 group hover:border-foreground/30'
                     }`}
                 >
                   {/* Render the new standalone Real-Time Sync component */}
                   <RealTimeSyncPanel expanded={expandedPanel === 3} />
 
                   {/* Extra Extracted Data */}
-                  <div className={`hidden lg:flex flex-col justify-center transition-all duration-[800ms] overflow-hidden bg-black/40 ${expandedPanel === 3 ? 'w-[calc(50%+1.25rem)] opacity-100 border-l border-white/10 p-12' : 'w-0 opacity-0 border-transparent p-0'
+                  <div className={`hidden lg:flex flex-col justify-center transition-all duration-[800ms] overflow-hidden bg-muted/40 ${expandedPanel === 3 ? 'w-[calc(50%+1.25rem)] opacity-100 border-l border-border p-12' : 'w-0 opacity-0 border-transparent p-0'
                     }`}>
                     <div className="w-full min-w-[220px]">
                       <div className="font-mono text-[10px] uppercase tracking-widest text-accent mb-6 whitespace-nowrap">Extraction Complete // 100%</div>
                       <h3 className="text-3xl font-bold mb-6">CRDT Sync Engine</h3>
-                      <p className="text-white/70 text-sm leading-relaxed mb-8">
+                      <p className="text-muted-foreground text-sm leading-relaxed mb-8">
                         Our custom Conflict-Free Replicated Data Type engine resolves simultaneous edits deterministically without locking. Delta state is pushed over secure WebSockets in sub-10ms.
                       </p>
-                      <div className="bg-black/80 border border-white/10 p-6 font-mono text-[10px] text-white/50 space-y-3 relative overflow-hidden h-64">
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black pointer-events-none z-10" />
+                      <div className="bg-surface border border-border p-6 font-mono text-[10px] text-muted-foreground space-y-3 relative overflow-hidden h-64">
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-surface pointer-events-none z-10" />
                         <motion.div animate={{ y: [0, -40] }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }}>
                           <div>[SYNC] Client A mutation applied</div>
                           <div>[CRDT] Merging concurrent vector clock...</div>
-                          <div className="text-green-400">[RESOLVED] No conflict detected</div>
+                          <div className="text-green-500">[RESOLVED] No conflict detected</div>
                           <div>[ACK] Pushing state to edges</div>
                           <div>[SYNC] Client B received Delta</div>
                           <div>[CRDT] Applying local transformation</div>
@@ -1048,7 +1112,7 @@ export default function LandingPage() {
         </section>
 
         {/* Global Network / Infrastructure Section */}
-        <section className="section-inverse min-h-screen flex flex-col justify-center py-16 md:py-20 bg-black text-background border-b border-white/5 overflow-hidden relative">
+        <section className="section-inverse min-h-screen flex flex-col justify-center py-16 md:py-20 bg-zinc-950 text-white border-b border-white/5 overflow-hidden relative">
           <div className="container mx-auto px-6 md:px-12 relative z-10">
             {/* Header */}
             <motion.div 
