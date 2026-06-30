@@ -127,6 +127,16 @@ npx supabase stop
 
 Local data is preserved in a Docker volume between stops; `db reset` wipes it.
 
+## 1.12 Public Demo Workspace
+
+Handoff includes a zero-friction public demo workspace. Visitors can explore the app instantly via the **Explore Demo** button on the sign-in/up pages.
+
+- **Authentication**: Uses Supabase Anonymous Auth. Visitors do not need an email or password.
+- **Data Isolation**: A real organization is created behind the scenes with `is_demo = true`. The anonymous user is added as a member. Existing RLS policies enforce isolation automatically.
+- **Role Switching**: Demo users can switch between personas (Admin, Manager, Developer, QA, Security) to experience different UI states and permissions.
+- **Restrictions**: In demo organizations, AI (Gemini), external integrations, webhooks, exports, and real file uploads are disabled or hidden in the UI.
+- **Cleanup**: Demo sessions expire automatically (e.g. 4 hours). A Vercel cron job calls `GET /api/v1/demo/cleanup` to permanently delete expired demo organizations and their anonymous auth users.
+
 ---
 
 # 2. Architecture

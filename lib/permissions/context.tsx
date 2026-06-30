@@ -8,6 +8,7 @@ export interface MembershipContextValue {
   organizationName: string;
   roles: string[];
   permissions: string[];
+  isDemo?: boolean;
 }
 
 const MembershipContext = createContext<MembershipContextValue | null>(null);
@@ -39,6 +40,7 @@ export function usePermission(): {
   hasRole: (...codes: string[]) => boolean;
   isAdmin: boolean;
   roles: string[];
+  isDemo: boolean;
 } {
   const m = useContext(MembershipContext);
   const roles = m?.roles ?? [];
@@ -48,5 +50,6 @@ export function usePermission(): {
     hasRole: (...codes: string[]) => codes.some((c) => roles.includes(c)),
     isAdmin,
     roles,
+    isDemo: !!m?.isDemo,
   };
 }

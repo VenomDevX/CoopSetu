@@ -36,6 +36,10 @@ export async function POST(req: NextRequest) {
     const def = getIntent(body.intent);
     if (!def) return fail('VALIDATION_ERROR', 'Unknown AI intent.', 422);
 
+    if (m.isDemo) {
+      return fail('DEMO_AI_DISABLED', 'AI is unavailable in the public demo workspace.', 403);
+    }
+
     checkIntentPermissions(m, def.permissions);
 
     const stream = buildAiStream({

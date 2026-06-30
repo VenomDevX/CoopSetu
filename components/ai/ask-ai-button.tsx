@@ -44,21 +44,31 @@ export function AskAiButton({
   label = 'Ask Handoff AI',
   className,
 }: Props) {
-  const { has } = usePermission();
+  const { has, isDemo } = usePermission();
   const featureOk =
     (permission ? has(permission) : true) &&
     (permissions && permissions.length ? permissions.some((p) => has(p)) : true);
   const allowed = has('ai:use') && featureOk;
   const [open, setOpen] = useState(false);
 
+  const handleClick = () => {
+    if (isDemo) {
+      window.dispatchEvent(new CustomEvent('demo-alert'));
+      return;
+    }
+    if (allowed) {
+      setOpen(true);
+    }
+  };
+
   return (
     <>
       <Button
         variant="outline"
-        onClick={() => allowed && setOpen(true)}
-        disabled={!allowed}
-        title={allowed ? undefined : 'Requires AI access'}
-        className={`${className ?? DEFAULT_CLASS} disabled:opacity-40`}
+        onClick={handleClick}
+        disabled={!allowed && !isDemo}
+        title={!allowed && !isDemo ? 'Requires AI access' : undefined}
+        className={`${className ?? DEFAULT_CLASS} ${(!allowed && !isDemo) ? 'opacity-40' : ''}`}
       >
         <Bot className="w-4 h-4" />
         {label}

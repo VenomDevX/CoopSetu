@@ -115,14 +115,14 @@ export function KanbanBoard() {
       const rows: Project[] = Array.isArray(j?.data) ? j.data : [];
       setProjects(rows);
       if (rows[0]) setProjectId(rows[0].id);
-    });
+    }).catch(() => { /* network error – ignore, user can reload */ });
   }, []);
 
   const loadTasks = useCallback(() => {
     if (!projectId) return;
     fetch(`/api/v1/tasks?projectId=${projectId}`).then((r) => r.json()).then((j) => {
       setTasks(Array.isArray(j?.data) ? j.data : []);
-    });
+    }).catch(() => { /* network error – ignore, user can reload */ });
   }, [projectId]);
 
   useEffect(() => { loadTasks(); }, [loadTasks]);

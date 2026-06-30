@@ -13,7 +13,7 @@ import { createPortal } from 'react-dom';
 type Tab = 'chat' | 'brief' | 'insights';
 
 export function GlobalAiHub() {
-  const { has } = usePermission();
+  const { has, isDemo } = usePermission();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [insightIntent, setInsightIntent] = useState<AiInsightIntent | null>(null);
@@ -119,7 +119,13 @@ export function GlobalAiHub() {
         type="button"
         variant="outline"
         size="sm"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          if (isDemo) {
+            window.dispatchEvent(new CustomEvent('demo-alert'));
+            return;
+          }
+          setOpen(true);
+        }}
         className="h-9 px-3 sm:px-4 gap-2 border-border text-xs font-mono uppercase tracking-widest text-foreground rounded-none hover:bg-surface-hover hover:text-foreground"
       >
         <Bot className="w-4 h-4 text-accent" />
