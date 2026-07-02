@@ -39,7 +39,7 @@ test.describe('Incidents', () => {
     await page.getByRole('button', { name: 'Create Postmortem' }).click();
     await expect(page.getByRole('heading', { name: 'Create Postmortem' })).toBeVisible();
 
-    await page.locator('select[name="incident_id"]').selectOption({ label: new RegExp(title) });
+    await page.locator('select[name="incident_id"]').selectOption({ label: title });
     await page.locator('textarea[name="summary"]').fill('This was an E2E test incident.');
     await page.locator('textarea[name="root_cause"]').fill('Playwright test runner.');
 

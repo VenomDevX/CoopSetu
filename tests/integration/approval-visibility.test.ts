@@ -31,9 +31,9 @@ describe('Approval Request Visibility', () => {
     orgId2 = org2!.id;
 
     // Add users to orgs
-    const { data: m1 } = await adminClient.from('organization_members').insert({ organization_id: orgId1, user_id: user1!.user.id }).select('id').single();
-    const { data: m2 } = await adminClient.from('organization_members').insert({ organization_id: orgId1, user_id: user2!.user.id }).select('id').single();
-    const { data: m3 } = await adminClient.from('organization_members').insert({ organization_id: orgId2, user_id: user3!.user.id }).select('id').single();
+    const { data: m1 } = await adminClient.from('organization_members').insert({ organization_id: orgId1, user_id: user1!.user!.id }).select('id').single();
+    const { data: m2 } = await adminClient.from('organization_members').insert({ organization_id: orgId1, user_id: user2!.user!.id }).select('id').single();
+    const { data: m3 } = await adminClient.from('organization_members').insert({ organization_id: orgId2, user_id: user3!.user!.id }).select('id').single();
 
     // Assign roles
     const { data: ownerRole } = await adminClient.from('roles').select('id').eq('code', 'ORG_OWNER').is('organization_id', null).single();

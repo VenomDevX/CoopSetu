@@ -18,7 +18,7 @@ describe('Encryption Utility', () => {
   });
 
   it('should encrypt and decrypt a plaintext string successfully', () => {
-    const plaintext = JSON.stringify({ token: 'ghp_secret123', client_id: 'client_xyz' });
+    const plaintext = JSON.stringify({ token: 'test-token-123', client_id: 'client_xyz' });
     const encrypted = encrypt(plaintext);
     
     expect(encrypted).not.toBe(plaintext);
