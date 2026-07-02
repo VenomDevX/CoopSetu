@@ -26,8 +26,8 @@ export async function createBug(
     .insert({ ...input, organization_id: orgId, reporter_member_id: memberId }).select('*').single();
   if (error) throw Errors.internal(error.message);
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'bug.created', resourceType: 'bug',
-    resourceId: data.id, projectId: input.project_id,
+    organizationId: orgId, action: 'bug.created', entityType: 'bug',
+    entityId: data.id, projectId: input.project_id,
   });
   return data;
 }

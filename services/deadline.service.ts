@@ -46,10 +46,10 @@ export async function createProjectDeadline(
     organizationId: orgId,
     actorMemberId,
     action: 'deadline.created',
-    resourceType: 'project_deadline',
-    resourceId: data.id,
+    entityType: 'project_deadline',
+    entityId: data.id,
     projectId: input.project_id,
-    newValue: data,
+    afterState: data,
   });
 
   if (data.owner_member_id && data.owner_member_id !== actorMemberId) {

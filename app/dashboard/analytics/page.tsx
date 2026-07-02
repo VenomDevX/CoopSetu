@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiGet } from '@/lib/api/client';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ChevronRight,
@@ -20,7 +22,10 @@ import {
   Share2,
   Printer
 } from 'lucide-react';
+import { AskAiButton } from '@/components/ai/ask-ai-button';
 import { Button } from '@/components/ui/button';
+import { CreateReportModal } from '@/components/reports/create-report-modal';
+import { ScheduleReportModal } from '@/components/reports/schedule-report-modal';
 import {
   BarChart,
   Bar,
@@ -49,45 +54,52 @@ const tabs = [
 
 export default function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState('Delivery Analytics');
-  const [velocityData, setVelocityData] = useState<{ sprint: string; planned: number; completed: number }[]>([]);
-  const [projectHealthData, setProjectHealthData] = useState<{ name: string; value: number; color: string }[]>([]);
-  const [workStatusData, setWorkStatusData] = useState<{ name: string; value: number }[]>([]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [scheduleReportId, setScheduleReportId] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    fetch('/api/v1/sprints').then((r) => r.json()).then((j) => {
-      if (!active) return;
-
-      setVelocityData((Array.isArray(j?.data) ? j.data : []).slice(0, 8).map((s: any) => ({
+  const { data: velocityData = [], isPending: velocityLoading, isError: velocityError, refetch: refetchVelocity } = useQuery({
+    queryKey: ['analytics', 'velocity'],
+    queryFn: async () => {
+      const rows = await apiGet<any[]>('/api/v1/sprints');
+      return (Array.isArray(rows) ? rows : []).slice(0, 8).map((s: any) => ({
         sprint: s.name, planned: Number(s.planned_story_points) || 0, completed: Number(s.completed_story_points) || 0,
-      })));
-    }).catch(() => { });
+      }));
+    },
+  });
 
-    fetch('/api/v1/analytics/projects').then((r) => r.json()).then((j) => {
-      if (!active) return;
-      const rows = Array.isArray(j?.data) ? j.data : [];
-      const by = (h: string) => rows.filter((p: { health: string }) => p.health === h).length;
-      setProjectHealthData([
+  const { data: projectHealthData = [], isPending: healthLoading, isError: healthError, refetch: refetchHealth } = useQuery({
+    queryKey: ['analytics', 'project-health'],
+    queryFn: async () => {
+      const rows = await apiGet<any[]>('/api/v1/analytics/projects');
+      const list = Array.isArray(rows) ? rows : [];
+      const by = (h: string) => list.filter((p: { health: string }) => p.health === h).length;
+      return [
         { name: 'On Track', value: by('ON_TRACK'), color: 'var(--foreground)' },
         { name: 'At Risk', value: by('AT_RISK'), color: 'var(--muted-foreground)' },
         { name: 'Off Track', value: by('OFF_TRACK'), color: 'var(--border)' },
-      ]);
-    }).catch(() => { });
+      ];
+    },
+  });
 
-    fetch('/api/v1/tasks').then((r) => r.json()).then((j) => {
-      if (!active) return;
-      const rows = Array.isArray(j?.data) ? j.data : [];
+  const { data: workStatusData = [], isPending: statusLoading, isError: statusError, refetch: refetchStatus } = useQuery({
+    queryKey: ['analytics', 'work-status'],
+    queryFn: async () => {
+      const rows = await apiGet<any[]>('/api/v1/tasks');
+      const list = Array.isArray(rows) ? rows : [];
       const grp = { 'To Do': 0, 'In Progress': 0, 'In Review': 0, Done: 0 };
       const map: Record<string, keyof typeof grp> = {
         BACKLOG: 'To Do', READY: 'To Do', IN_PROGRESS: 'In Progress', BLOCKED: 'In Progress',
         CODE_REVIEW: 'In Review', QA_TESTING: 'In Review', SECURITY_REVIEW: 'In Review',
         READY_FOR_RELEASE: 'In Review', DONE: 'Done', CANCELLED: 'Done',
       };
-      rows.forEach((t: { status: string }) => { const k = map[t.status]; if (k) grp[k]++; });
-      setWorkStatusData(Object.entries(grp).map(([name, value]) => ({ name, value })));
-    }).catch(() => { });
-    return () => { active = false; };
-  }, []);
+      list.forEach((t: { status: string }) => { const k = map[t.status]; if (k) grp[k]++; });
+      return Object.entries(grp).map(([name, value]) => ({ name, value }));
+    },
+  });
+
+  const loading = velocityLoading || healthLoading || statusLoading;
+  const hasError = velocityError || healthError || statusError;
+  const retryAll = () => { refetchVelocity(); refetchHealth(); refetchStatus(); };
 
   // Real, derived delivery metrics (no fabricated baselines).
   const totalPlanned = velocityData.reduce((s, v) => s + v.planned, 0);
@@ -118,26 +130,23 @@ export default function AnalyticsPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
+          <Button variant="outline" onClick={() => window.open('/api/v1/analytics/export?format=pdf', '_blank')} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 hover:bg-surface-hover">
             <Printer className="w-4 h-4" />
             Export PDF
           </Button>
-          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
+          <Button variant="outline" onClick={() => window.open('/api/v1/analytics/export?format=csv', '_blank')} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 hover:bg-surface-hover">
             <Download className="w-4 h-4" />
             Export CSV
           </Button>
-          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 disabled:opacity-40">
+          <Button variant="outline" onClick={() => setShowCreateModal(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 hover:bg-surface-hover">
             <Calendar className="w-4 h-4" />
             Schedule
           </Button>
-          <Button disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background gap-2 disabled:opacity-40">
+          <Button onClick={() => setShowCreateModal(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background gap-2 hover:bg-foreground/90">
             <Plus className="w-4 h-4" />
             Create Report
           </Button>
-          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent gap-2 disabled:opacity-40">
-            <Bot className="w-4 h-4" />
-            Ask Handoff AI
-          </Button>
+          <AskAiButton intent="summarize-analytics" title="Analytics Digest" />
         </div>
       </div>
 
@@ -182,7 +191,20 @@ export default function AnalyticsPage() {
 
       {/* Tab Content */}
       <div className="space-y-6 pb-12">
-        {activeTab === 'Delivery Analytics' && (
+        {activeTab === 'Delivery Analytics' && loading && (
+          <div className="p-8 text-center text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+            Loading analytics...
+          </div>
+        )}
+        {activeTab === 'Delivery Analytics' && !loading && hasError && (
+          <div className="p-8 text-center">
+            <div className="text-[10px] font-mono uppercase tracking-widest text-destructive mb-3">Failed to load analytics.</div>
+            <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={retryAll}>
+              Retry
+            </Button>
+          </div>
+        )}
+        {activeTab === 'Delivery Analytics' && !loading && !hasError && (
           <div className="space-y-6 animate-in fade-in">
 
             {/* Top KPIs — derived from real sprint/project data */}
@@ -325,6 +347,23 @@ export default function AnalyticsPage() {
         )}
       </div>
 
+      {showCreateModal && (
+        <CreateReportModal 
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={(id) => {
+            setShowCreateModal(false);
+            setScheduleReportId(id); // immediately prompt to schedule
+          }}
+        />
+      )}
+
+      {scheduleReportId && (
+        <ScheduleReportModal
+          reportId={scheduleReportId}
+          onClose={() => setScheduleReportId(null)}
+          onSuccess={() => setScheduleReportId(null)}
+        />
+      )}
     </div>
   );
 }

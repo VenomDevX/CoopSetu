@@ -1,7 +1,8 @@
 'use client';
 
-import { X, TerminalSquare, AlertCircle, CheckCircle2, Clock, RotateCcw } from 'lucide-react';
+import { TerminalSquare, AlertCircle, CheckCircle2, Clock, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog } from '@/components/ui/dialog';
 
 const fmtRel = (iso?: string | null) => {
   if (!iso) return '—';
@@ -37,19 +38,21 @@ export function DeploymentLogsModal({ deployments, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-background border border-border w-full max-w-4xl shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col max-h-[85vh]">
-        <div className="flex items-center justify-between p-4 border-b border-border bg-surface-hover flex-shrink-0">
-          <h2 className="text-sm font-mono uppercase tracking-widest font-bold flex items-center gap-2">
-            <TerminalSquare className="w-4 h-4 text-primary" />
-            Deployment Logs
-          </h2>
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-none hover:bg-background">
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-
-        <div className="flex-1 overflow-auto p-4 space-y-4">
+    <Dialog
+      title={<><TerminalSquare className="w-4 h-4 text-primary" /> Deployment Logs</>}
+      onClose={onClose}
+      className="max-w-4xl sm:max-h-[85vh]"
+      bodyClassName="p-4 space-y-4"
+      footer={
+        <Button
+          variant="outline"
+          onClick={onClose}
+          className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest"
+        >
+          Close
+        </Button>
+      }
+    >
           {deployments.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground font-mono text-xs uppercase">
               No deployments found.
@@ -84,18 +87,6 @@ export function DeploymentLogsModal({ deployments, onClose }: Props) {
               ))}
             </div>
           )}
-        </div>
-
-        <div className="p-4 border-t border-border flex justify-end bg-background flex-shrink-0">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest"
-          >
-            Close
-          </Button>
-        </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }

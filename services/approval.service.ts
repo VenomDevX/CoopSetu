@@ -3,6 +3,8 @@ import { Errors } from '@/lib/api/errors';
 import { createAuditLog } from '@/lib/audit/create-audit-log';
 import { z } from 'zod';
 import { createApprovalRequestSchema, decideApprovalSchema } from '@/lib/validation/delivery';
+import { notifyMemberByEmail } from '@/lib/notifications/notify';
+import { escapeHtml } from '@/lib/email/send-email';
 
 export async function listApprovals(supabase: SupabaseClient, orgId: string, status?: string) {
   let q = supabase.from('approval_requests').select('*, approvals(*)').eq('organization_id', orgId)
@@ -20,8 +22,8 @@ export async function createApprovalRequest(
     .insert({ ...input, organization_id: orgId, requested_by_member_id: memberId }).select('*').single();
   if (error) throw Errors.internal(error.message);
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'approval.requested', resourceType: 'approval_request',
-    resourceId: data.id, projectId: input.project_id ?? null,
+    organizationId: orgId, action: 'approval.requested', entityType: 'approval_request',
+    entityId: data.id, projectId: input.project_id ?? null,
   });
   return data;
 }
@@ -50,11 +52,16 @@ export async function decideApproval(
       p_title: `Approval ${input.decision.toLowerCase()}`, p_body: req.approval_type,
       p_entity_type: 'approval_request', p_entity_id: approvalId, p_project_id: req.project_id ?? null, p_metadata: {},
     }).then(() => {}, () => {});
+    notifyMemberByEmail(
+      supabase, req.requested_by_member_id,
+      `Approval ${input.decision.toLowerCase()}: ${req.approval_type}`,
+      `<p>Your approval request <strong>${escapeHtml(req.approval_type)}</strong> was <strong>${escapeHtml(input.decision)}</strong>${input.comment ? ` with comment: "${escapeHtml(input.comment)}"` : ''}.</p>`,
+    ).then(() => {}, () => {});
   }
 
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'approval.decided', resourceType: 'approval_request',
-    resourceId: approvalId, projectId: req.project_id ?? null, newValue: input,
+    organizationId: orgId, action: 'approval.decided', entityType: 'approval_request',
+    entityId: approvalId, projectId: req.project_id ?? null, afterState: input,
   });
   return data;
 }

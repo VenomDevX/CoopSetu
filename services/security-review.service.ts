@@ -11,11 +11,10 @@ export async function createSecurityReview(
   memberId: string,
   input: z.infer<typeof createSecurityReviewSchema>,
 ) {
-  const { data, error } = await createAdminClient()
+  const { data, error } = await supabase
     .rpc('start_security_review', {
       p_organization_id: orgId,
       p_project_id: input.project_id,
-      p_actor_member_id: memberId,
       p_payload: input,
     })
     .single<{ id: string; title: string; project_id: string }>();
@@ -29,10 +28,10 @@ export async function createSecurityReview(
   await createAuditLog(supabase, {
     organizationId: orgId,
     action: 'security_review.started',
-    resourceType: 'security_review',
-    resourceId: data.id,
+    entityType: 'security_review',
+    entityId: data.id,
     projectId: data.project_id,
-    newValue: { title: input.title, risk_level: input.risk_level },
+    afterState: { title: input.title, risk_level: input.risk_level },
   });
 
   return data;

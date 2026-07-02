@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
 import { hasPermission } from '@/lib/auth/require-organization';
 import { EntityForbidden } from '@/components/dashboard/entity-detail-layout';
+import { ClientReleasesActions } from '@/components/releases/client-releases-actions';
 
 interface ReleaseRow {
   id: string; name: string; version: string | null; status: string; planned_release_at: string | null;
@@ -40,9 +41,12 @@ export default async function ReleasesListPage() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div>
         <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Delivery</div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight uppercase flex items-center gap-3">
-          <Rocket className="w-5 h-5" /> Releases
-        </h1>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight uppercase flex items-center gap-3">
+            <Rocket className="w-5 h-5" /> Releases
+          </h1>
+          <ClientReleasesActions />
+        </div>
       </div>
 
       <div className="border border-border bg-background">

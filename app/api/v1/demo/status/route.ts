@@ -3,6 +3,8 @@ import { handle, ok } from '@/lib/api/response';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   return handle(async () => {
     const supabase = await createClient();

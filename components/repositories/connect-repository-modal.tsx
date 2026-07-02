@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Loader2, Link2 } from 'lucide-react';
+import { Loader2, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 
 interface Props {
@@ -46,19 +47,13 @@ export function ConnectRepositoryModal({ onClose, onSuccess }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-background border border-border w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-200">
-        <div className="flex items-center justify-between p-4 border-b border-border bg-surface-hover">
-          <h2 className="text-sm font-mono uppercase tracking-widest font-bold flex items-center gap-2">
-            <Link2 className="w-4 h-4 text-primary" />
-            Connect Repository
-          </h2>
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-none hover:bg-background">
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+    <Dialog
+      title={<><Link2 className="w-4 h-4 text-primary" /> Connect Repository</>}
+      onClose={onClose}
+      className="max-w-lg sm:h-auto h-auto"
+      bodyClassName="p-4 space-y-4"
+    >
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="p-3 text-xs font-mono text-destructive border border-destructive/20 bg-destructive/5 uppercase tracking-wide">
               {error}
@@ -73,7 +68,7 @@ export function ConnectRepositoryModal({ onClose, onSuccess }: Props) {
               <Input
                 name="name"
                 required
-                placeholder="e.g., devpilot-core"
+                placeholder="e.g., handoff-core"
                 className="font-mono text-xs rounded-none h-9"
               />
             </div>
@@ -140,7 +135,6 @@ export function ConnectRepositoryModal({ onClose, onSuccess }: Props) {
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </Dialog>
   );
 }

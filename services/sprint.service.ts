@@ -17,7 +17,7 @@ export async function createSprint(supabase: SupabaseClient, orgId: string, inpu
   const { data, error } = await supabase.from('sprints')
     .insert({ ...input, organization_id: orgId }).select('*').single();
   if (error) throw Errors.internal(error.message);
-  await createAuditLog(supabase, { organizationId: orgId, action: 'sprint.created', resourceType: 'sprint', resourceId: data.id, projectId: input.project_id });
+  await createAuditLog(supabase, { organizationId: orgId, action: 'sprint.created', entityType: 'sprint', entityId: data.id, projectId: input.project_id });
   return data;
 }
 
@@ -41,8 +41,8 @@ export async function setSprintStatus(supabase: SupabaseClient, orgId: string, s
   if (error) throw Errors.internal(error.message);
   if (!data) throw Errors.forbidden();
   await createAuditLog(supabase, {
-    organizationId: orgId, action: `sprint.${status.toLowerCase()}`, resourceType: 'sprint',
-    resourceId: sprintId, projectId: data.project_id,
+    organizationId: orgId, action: `sprint.${status.toLowerCase()}`, entityType: 'sprint',
+    entityId: sprintId, projectId: data.project_id,
   });
   return data;
 }

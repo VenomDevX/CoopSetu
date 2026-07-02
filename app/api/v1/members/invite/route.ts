@@ -53,8 +53,8 @@ export async function POST(req: Request) {
     }
 
     await createAuditLog(supabase, {
-      organizationId: m.organizationId, action: 'member.invited', resourceType: 'organization_invite',
-      resourceId: data.id, metadata: { email: body.email, role: body.role_code },
+      organizationId: m.organizationId, action: 'member.invited', entityType: 'organization_invite',
+      entityId: data.id, metadata: { email: body.email, role: body.role_code },
     });
 
     // Local dev: no email provider — return the accept link for manual sharing.

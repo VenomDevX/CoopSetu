@@ -58,9 +58,9 @@ async function recordExport(
     organizationId: orgId,
     actorMemberId,
     action: 'report.exported',
-    resourceType: 'report_export',
-    resourceId: data.id,
-    newValue: { exportType, fileName, rowCount, filters },
+    entityType: 'report_export',
+    entityId: data.id,
+    afterState: { exportType, fileName, rowCount, filters },
   });
 }
 
@@ -194,3 +194,68 @@ export async function exportSprintsCsv(
   await recordExport(supabase, orgId, actorMemberId, 'SPRINT_REPORT', fileName, filters, rows.length);
   return { csv: toCsv(headers, rows), fileName, rowCount: rows.length };
 }
+
+export async function exportGlobalAnalytics(
+  supabase: SupabaseClient,
+  orgId: string,
+  actorMemberId: string,
+  format: 'csv' | 'pdf'
+) {
+  // 1. Gather high-level metrics
+  const [projRes, sprintRes, taskRes] = await Promise.all([
+    supabase.from('projects').select('id, status').eq('organization_id', orgId),
+    supabase.from('sprints').select('id, status').eq('organization_id', orgId),
+    supabase.from('tasks').select('id, status').eq('organization_id', orgId)
+  ]);
+
+  if (projRes.error) throw Errors.internal(projRes.error.message);
+  if (sprintRes.error) throw Errors.internal(sprintRes.error.message);
+  if (taskRes.error) throw Errors.internal(taskRes.error.message);
+
+  const projects = projRes.data || [];
+  const sprints = sprintRes.data || [];
+  const tasks = taskRes.data || [];
+
+  const metrics = [
+    { Metric: 'Total Projects', Value: projects.length },
+    { Metric: 'Active Projects', Value: projects.filter(p => p.status === 'ACTIVE').length },
+    { Metric: 'Total Sprints', Value: sprints.length },
+    { Metric: 'Total Tasks', Value: tasks.length },
+    { Metric: 'Completed Tasks', Value: tasks.filter(t => t.status === 'DONE').length },
+  ];
+
+  const fileName = `handoff-global-analytics-${nowStamp()}.${format}`;
+  await recordExport(supabase, orgId, actorMemberId, 'GLOBAL_ANALYTICS', fileName, {}, metrics.length);
+
+  if (format === 'csv') {
+    const csv = toCsv(['Metric', 'Value'], metrics);
+    return { data: Buffer.from(csv), fileName, contentType: 'text/csv; charset=utf-8' };
+  } else {
+    // Import pdfkit dynamically to avoid server-side issues if not strictly needed
+    const PDFDocument = (await import('pdfkit')).default;
+    const doc = new PDFDocument({ margin: 50 });
+    const buffers: Buffer[] = [];
+    doc.on('data', buffers.push.bind(buffers));
+    const p = new Promise<Buffer>((resolve) => {
+      doc.on('end', () => resolve(Buffer.concat(buffers)));
+    });
+
+    doc.fontSize(24).text('HANDOFF Global Analytics Report', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(12).text(`Generated at: ${new Date().toISOString()}`, { align: 'center' });
+    doc.moveDown(3);
+
+    doc.fontSize(16).text('Key Metrics:', { underline: true });
+    doc.moveDown();
+
+    metrics.forEach(m => {
+      doc.fontSize(14).font('Helvetica').text(`${m.Metric}: `, { continued: true }).font('Helvetica-Bold').text(`${m.Value}`);
+      doc.moveDown(0.5);
+    });
+
+    doc.end();
+    const pdfBuffer = await p;
+    return { data: pdfBuffer, fileName, contentType: 'application/pdf' };
+  }
+}
+

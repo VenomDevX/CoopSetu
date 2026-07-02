@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
+import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -71,19 +72,13 @@ export function DeclareIncidentModal({ onClose, onSuccess }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-surface border border-border shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between p-4 border-b border-border bg-destructive/10">
-          <div className="flex items-center gap-2 text-destructive">
-            <AlertTriangle className="w-5 h-5" />
-            <h2 className="font-sans font-bold">Declare Incident</h2>
-          </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+    <Dialog
+      title={<span className="flex items-center gap-2 text-destructive"><AlertTriangle className="w-4 h-4" /> Declare Incident</span>}
+      onClose={onClose}
+      className="max-w-md sm:h-auto h-auto"
+      bodyClassName="p-4 space-y-4"
+    >
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 font-mono">
               {error}
@@ -157,7 +152,6 @@ export function DeclareIncidentModal({ onClose, onSuccess }: Props) {
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </Dialog>
   );
 }

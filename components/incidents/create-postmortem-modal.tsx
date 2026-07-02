@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Loader2, FileText } from 'lucide-react';
+import { Loader2, FileText } from 'lucide-react';
+import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
 interface Incident {
@@ -77,19 +78,12 @@ export function CreatePostmortemModal({ onClose, onSuccess }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="w-full max-w-2xl bg-surface border border-border shadow-2xl animate-in fade-in zoom-in-95 duration-200 my-auto">
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-muted-foreground" />
-            <h2 className="font-sans font-bold">Create Postmortem</h2>
-          </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-4 space-y-4 max-h-[80vh] overflow-y-auto">
+    <Dialog
+      title={<><FileText className="w-4 h-4 text-muted-foreground" /> Create Postmortem</>}
+      onClose={onClose}
+      bodyClassName="p-4 space-y-4"
+    >
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 font-mono">
               {error}
@@ -193,7 +187,6 @@ export function CreatePostmortemModal({ onClose, onSuccess }: Props) {
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </Dialog>
   );
 }

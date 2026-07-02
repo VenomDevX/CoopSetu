@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiGet, apiSend } from '@/lib/api/client';
 import { useParams } from 'next/navigation';
 import {
   ChevronRight,
@@ -57,42 +59,55 @@ export default function SprintDetailPage() {
   const { has } = usePermission();
   const [activeTab, setActiveTab] = useState('Board');
   const [updating, setUpdating] = useState(false);
-  const [data, setData] = useState<{
-    sprint: { id: string; name: string; goal: string | null; status: string; start_date: string | null; end_date: string | null; capacity_hours: number | null };
-    plannedPoints: number; completedPoints: number; remainingPoints: number; capacityHours: number | null;
-    tasks: RawTask[];
-  } | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
 
-  const load = useCallback(async () => {
-    const r = await fetch(`/api/v1/sprints/${sprintId}`).catch(() => null);
-    if (!r) return;
-    const j = await r.json().catch(() => null);
-    if (j?.data?.sprint) setData(j.data);
-  }, [sprintId]);
+  const {
+    data,
+    isPending: loading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ['sprints', sprintId],
+    queryFn: () => apiGet<{
+      sprint: { id: string; name: string; goal: string | null; status: string; start_date: string | null; end_date: string | null; capacity_hours: number | null };
+      plannedPoints: number; completedPoints: number; remainingPoints: number; capacityHours: number | null;
+      tasks: RawTask[];
+    }>(`/api/v1/sprints/${sprintId}`),
+    enabled: !!sprintId,
+  });
+  const error = isError ? 'Failed to load sprint.' : null;
+  const load = () => refetch();
 
-  useEffect(() => {
-    let active = true;
-    fetch(`/api/v1/sprints/${sprintId}`).then((r) => r.json()).then((j) => { if (active && j?.data?.sprint) setData(j.data); }).catch(() => { });
-    fetch('/api/v1/employees').then((r) => r.json()).then((j) => {
-      if (!active || !Array.isArray(j?.data)) return;
-      setMembers(j.data.map((m: { id: string; profile: { full_name?: string; email?: string } | { full_name?: string; email?: string }[] | null }) => {
+  const { data: members = [] } = useQuery({
+    queryKey: ['employees', 'directory'],
+    queryFn: async () => {
+      const rows = await apiGet<any[]>('/api/v1/employees');
+      return (Array.isArray(rows) ? rows : []).map((m: { id: string; profile: { full_name?: string; email?: string } | { full_name?: string; email?: string }[] | null }) => {
         const p = Array.isArray(m.profile) ? m.profile[0] : m.profile;
-        return { id: m.id, name: p?.full_name ?? p?.email ?? 'Member' };
-      }));
-    }).catch(() => { });
-    return () => { active = false; };
-  }, [sprintId]);
+        return { id: m.id, name: p?.full_name ?? p?.email ?? 'Member' } as Member;
+      });
+    },
+  });
 
   async function completeSprint() {
     setUpdating(true);
-    await fetch(`/api/v1/sprints/${sprintId}/complete`, { method: 'POST' }).catch(() => { });
+    await apiSend(`/api/v1/sprints/${sprintId}/complete`, 'POST').catch(() => { });
     setUpdating(false);
     load();
   }
 
-  if (!data) {
+  if (loading) {
     return <div className="p-8 font-mono text-xs uppercase tracking-widest animate-pulse">Loading sprint…</div>;
+  }
+
+  if (error || !data) {
+    return (
+      <div className="p-8 text-center">
+        <div className="text-[10px] font-mono uppercase tracking-widest text-destructive mb-3">{error ?? 'Sprint not found.'}</div>
+        <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={load}>
+          Retry
+        </Button>
+      </div>
+    );
   }
 
   const s = data.sprint;

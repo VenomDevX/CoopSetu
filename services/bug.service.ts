@@ -11,11 +11,10 @@ export async function createBug(
   memberId: string,
   input: z.infer<typeof createBugSchema>,
 ) {
-  const { data, error } = await createAdminClient()
+  const { data, error } = await supabase
     .rpc('create_bug', {
       p_organization_id: orgId,
       p_project_id: input.project_id,
-      p_actor_member_id: memberId,
       p_payload: input,
     })
     .single<{ id: string; title: string; project_id: string; task_id?: string; release_id?: string }>();
@@ -29,10 +28,10 @@ export async function createBug(
   await createAuditLog(supabase, {
     organizationId: orgId,
     action: 'bug.created',
-    resourceType: 'bug',
-    resourceId: data.id,
+    entityType: 'bug',
+    entityId: data.id,
     projectId: data.project_id,
-    newValue: { title: input.title, severity: input.severity, priority: input.priority },
+    afterState: { title: input.title, severity: input.severity, priority: input.priority },
   });
 
   return data;

@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { Errors } from '@/lib/api/errors';
 import { createAuditLog } from '@/lib/audit/create-audit-log';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { encrypt, decrypt } from '@/lib/security/encryption';
 import { z } from 'zod';
 import { connectRepositorySchema } from '@/lib/validation/integration';
 
@@ -26,17 +28,64 @@ export async function createRepository(supabase: SupabaseClient, orgId: string, 
   await createAuditLog(supabase, {
     organizationId: orgId,
     action: 'integration.repository_connected',
-    resourceType: 'integration',
-    resourceId: data.id,
-    newValue: { name: input.name, provider: input.provider }
+    entityType: 'integration',
+    entityId: data.id,
+    afterState: { name: input.name, provider: input.provider }
   });
   return data;
 }
 
 export async function listIntegrations(supabase: SupabaseClient, orgId: string) {
-  const { data, error } = await supabase.from('integrations').select('*').eq('organization_id', orgId);
+  // Explicitly do not select encrypted_secrets so it never leaks to the UI
+  const { data, error } = await supabase.from('integrations')
+    .select('id, organization_id, provider, display_name, status, config, created_at, updated_at')
+    .eq('organization_id', orgId);
   if (error) throw Errors.internal(error.message);
   return data;
+}
+
+export async function updateIntegrationSecrets(supabase: SupabaseClient, orgId: string, integrationId: string, secrets: Record<string, string>) {
+  const secretsJson = JSON.stringify(secrets);
+  const encryptedPayload = encrypt(secretsJson);
+  
+  const { data, error } = await supabase.from('integrations')
+    .update({ encrypted_secrets: encryptedPayload, status: 'ACTIVE' })
+    .eq('id', integrationId)
+    .eq('organization_id', orgId)
+    .select('id').single();
+    
+  if (error) throw Errors.internal(error.message);
+  
+  await createAuditLog(supabase, {
+    organizationId: orgId,
+    action: 'integration.secrets_updated',
+    entityType: 'integration',
+    entityId: integrationId,
+  });
+  
+  return data;
+}
+
+/**
+ * Reads and decrypts stored integration secrets. This deliberately uses the
+ * admin client rather than the caller's RLS-scoped client: `encrypted_secrets`
+ * is REVOKEd from `authenticated` at the column level (see migration 0062),
+ * so decrypting is inherently a privileged, server-only operation — callers
+ * must independently enforce authz (e.g. `integration:manage`) before calling.
+ */
+export async function getDecryptedIntegrationSecrets(orgId: string, integrationId: string) {
+  const admin = createAdminClient();
+  const { data, error } = await admin.from('integrations')
+    .select('encrypted_secrets')
+    .eq('id', integrationId)
+    .eq('organization_id', orgId)
+    .single();
+    
+  if (error || !data) throw Errors.notFound('Integration not found.');
+  if (!data.encrypted_secrets) return null;
+  
+  const decryptedJson = decrypt(data.encrypted_secrets);
+  return JSON.parse(decryptedJson) as Record<string, string>;
 }
 
 export async function listPullRequests(supabase: SupabaseClient, orgId: string) {
@@ -99,7 +148,7 @@ export async function mockSync(supabase: SupabaseClient, orgId: string, memberId
   });
 
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'integration.synced', resourceType: 'integration',
+    organizationId: orgId, action: 'integration.synced', entityType: 'integration',
     metadata: { mode: 'mock' },
   });
   return { ok: true, pipelineId: pipeline?.id };

@@ -65,7 +65,7 @@ export async function createProject(supabase: SupabaseClient, orgId: string, inp
   // Insert via SECURITY DEFINER RPC (see migration 0025): a plain PostgREST
   // INSERT...RETURNING is rejected because the RETURNING row is re-checked
   // against projects_select before it is visible to that policy's snapshot.
-  const { data, error } = await createAdminClient()
+  const { data, error } = await supabase
     .rpc('create_project', { p_org: orgId, p_payload: input })
     .single<{ id: string; name: string; code: string }>();
   if (error) {
@@ -75,8 +75,8 @@ export async function createProject(supabase: SupabaseClient, orgId: string, inp
   }
   await logActivity(supabase, data.id, 'project.created', 'project', data.id);
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'project.created', resourceType: 'project',
-    resourceId: data.id, projectId: data.id, newValue: { name: data.name, code: data.code },
+    organizationId: orgId, action: 'project.created', entityType: 'project',
+    entityId: data.id, projectId: data.id, afterState: { name: data.name, code: data.code },
   });
   return data;
 }
@@ -88,8 +88,8 @@ export async function updateProject(supabase: SupabaseClient, orgId: string, pro
   if (!data) throw Errors.forbidden('Cannot update this project.');
   await logActivity(supabase, projectId, 'project.updated', 'project', projectId);
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'project.updated', resourceType: 'project',
-    resourceId: projectId, projectId, newValue: input,
+    organizationId: orgId, action: 'project.updated', entityType: 'project',
+    entityId: projectId, projectId, afterState: input,
   });
   return data;
 }
@@ -105,8 +105,8 @@ export async function addProjectMember(
   if (error) throw Errors.internal(error.message);
   await logActivity(supabase, projectId, 'project.member_added', 'project_member', data.id);
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'project.member_added', resourceType: 'project_member',
-    resourceId: data.id, projectId,
+    organizationId: orgId, action: 'project.member_added', entityType: 'project_member',
+    entityId: data.id, projectId,
   });
   return data;
 }
@@ -120,8 +120,8 @@ export async function createMilestone(
   if (error) throw Errors.internal(error.message);
   await logActivity(supabase, projectId, 'milestone.created', 'milestone', data.id);
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'milestone.created', resourceType: 'milestone',
-    resourceId: data.id, projectId,
+    organizationId: orgId, action: 'milestone.created', entityType: 'milestone',
+    entityId: data.id, projectId,
   });
   return data;
 }
@@ -135,8 +135,8 @@ export async function createRisk(
   if (error) throw Errors.internal(error.message);
   await logActivity(supabase, projectId, 'risk.created', 'project_risk', data.id);
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'risk.created', resourceType: 'project_risk',
-    resourceId: data.id, projectId,
+    organizationId: orgId, action: 'risk.created', entityType: 'project_risk',
+    entityId: data.id, projectId,
   });
   return data;
 }

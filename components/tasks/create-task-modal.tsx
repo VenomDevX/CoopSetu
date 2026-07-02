@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { Dialog } from '@/components/ui/dialog';
 import { TASK_TYPES, TASK_VISIBILITY_SCOPES, PRIORITIES, SECURITY_CLASSIFICATIONS } from '@/lib/constants/task-statuses';
 
 interface AssignableMember {
@@ -144,20 +144,22 @@ export function CreateTaskModal({
   const fieldCls = 'w-full h-9 px-3 bg-background border border-border text-sm';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4" onClick={onClose}>
-      <div
-        data-testid="create-task-modal"
-        className="w-full max-w-lg bg-background sm:border sm:border-border h-[100dvh] sm:h-auto sm:max-h-[90vh] flex flex-col animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:fade-in duration-300"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="h-14 flex items-center justify-between px-6 border-b border-border shrink-0">
-          <div className="font-mono text-[10px] uppercase tracking-widest">
-            New Task{projectLabel ? ` · ${projectLabel}` : ''}
-          </div>
-          <button onClick={onClose} className="p-2 -mr-2 text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
-        </div>
-
-        <div className="p-6 space-y-4 overflow-y-auto flex-1">
+    <Dialog
+      title={`New Task${projectLabel ? ` · ${projectLabel}` : ''}`}
+      onClose={onClose}
+      testId="create-task-modal"
+      className="max-w-lg"
+      bodyClassName="space-y-4"
+      footer={
+        <>
+          <button onClick={onClose} className="h-9 px-4 border border-border text-xs font-mono uppercase">Cancel</button>
+          <button data-testid="task-save-button" onClick={submit} disabled={submitting}
+            className="h-9 px-4 bg-foreground text-background text-xs font-mono uppercase tracking-widest disabled:opacity-50">
+            {submitting ? 'Creating…' : 'Create Task'}
+          </button>
+        </>
+      }
+    >
           {!projectId && (
             <div>
               <label className={labelCls}>Project *</label>
@@ -302,16 +304,6 @@ export function CreateTaskModal({
               {error}
             </div>
           )}
-        </div>
-
-        <div className="p-4 border-t border-border flex justify-end gap-2">
-          <button onClick={onClose} className="h-9 px-4 border border-border text-xs font-mono uppercase">Cancel</button>
-          <button data-testid="task-save-button" onClick={submit} disabled={submitting}
-            className="h-9 px-4 bg-foreground text-background text-xs font-mono uppercase tracking-widest disabled:opacity-50">
-            {submitting ? 'Creating…' : 'Create Task'}
-          </button>
-        </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }

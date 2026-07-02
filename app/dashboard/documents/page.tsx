@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiGet } from '@/lib/api/client';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ChevronRight,
@@ -28,10 +30,12 @@ import {
   ArrowRight,
   X
 } from 'lucide-react';
+import { AskAiButton } from '@/components/ai/ask-ai-button';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
 import { DataViewport } from '@/components/layout/data-viewport';
+import { TableRowsSkeleton } from '@/components/ui/skeleton';
 
 const categories = [
   'Product Requirements',
@@ -104,16 +108,19 @@ export default function DocumentsPage() {
   const [activeFilter, setActiveFilter] = useState('All Documents');
   const [query, setQuery] = useState('');
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
-  const [mockDocuments, setMockDocuments] = useState<ReturnType<typeof mapDocument>[]>([]);
-
-  useEffect(() => {
-    let active = true;
-    fetch('/api/v1/documents')
-      .then((r) => r.json())
-      .then((j) => { if (active) setMockDocuments((Array.isArray(j?.data) ? j.data : []).map(mapDocument)); })
-      .catch(() => { });
-    return () => { active = false; };
-  }, []);
+  const {
+    data: mockDocuments = [],
+    isPending: loading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ['documents'],
+    queryFn: async () => {
+      const rows = await apiGet<unknown[]>('/api/v1/documents');
+      return (Array.isArray(rows) ? rows : []).map(mapDocument);
+    },
+  });
+  const error = isError ? 'Failed to load documents.' : null;
 
   const selectedDoc = mockDocuments.find(d => d.id === selectedDocId);
   const draftCount = mockDocuments.filter((d) => d.status === 'Draft').length;
@@ -168,10 +175,7 @@ export default function DocumentsPage() {
               New Document
             </Button>
           </Link>
-          <Button variant="outline" disabled title="Not available yet" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent gap-2 disabled:opacity-40">
-            <Bot className="w-4 h-4" />
-            Ask Handoff AI
-          </Button>
+          <AskAiButton intent="summarize-documents" title="Knowledge Digest" />
         </div>
       </div>
 
@@ -251,10 +255,21 @@ export default function DocumentsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filteredDocs.length === 0 && (
+                {loading && <TableRowsSkeleton rows={6} cols={8} />}
+                {!loading && error && (
+                  <tr>
+                    <td colSpan={8} className="p-8 text-center">
+                      <div className="text-[10px] uppercase tracking-widest text-destructive mb-3">{error}</div>
+                      <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={() => refetch()}>
+                        Retry
+                      </Button>
+                    </td>
+                  </tr>
+                )}
+                {!loading && !error && filteredDocs.length === 0 && (
                   <tr><td colSpan={8} className="p-6 text-center text-xs font-mono text-muted-foreground">No documents.</td></tr>
                 )}
-                {filteredDocs.map((doc) => (
+                {!loading && !error && filteredDocs.map((doc) => (
                   <tr
                     key={doc.id}
                     className="hover:bg-surface-hover group cursor-pointer transition-colors"

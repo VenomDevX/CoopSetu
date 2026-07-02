@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Download, X } from 'lucide-react';
+import { Download } from 'lucide-react';
+import { Dialog } from '@/components/ui/dialog';
 
 function filenameFromDisposition(value: string | null, fallback: string) {
   const match = value?.match(/filename="([^"]+)"/i);
@@ -51,19 +52,24 @@ export function ExportReportModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:p-4" onClick={onClose}>
-      <div
-        className="relative w-full max-w-lg bg-background sm:border sm:border-border sm:shadow-2xl flex flex-col h-auto max-h-[90vh] animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:fade-in duration-300"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-4 border-b border-border bg-surface-hover flex items-center justify-between shrink-0">
-          <h2 className="font-mono text-sm uppercase tracking-widest font-bold flex items-center gap-2">
-            <Download className="w-4 h-4" /> {title}
-          </h2>
-          <button onClick={onClose} className="p-2 -mr-2 text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
-        </div>
-
-        <div className="p-6 space-y-5">
+    <Dialog
+      title={<><Download className="w-4 h-4" /> {title}</>}
+      onClose={onClose}
+      className="max-w-lg sm:h-auto h-auto"
+      footer={
+        <>
+          <button onClick={onClose} className="h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest">Close</button>
+          <button
+            data-testid="export-report-confirm"
+            onClick={exportReport}
+            disabled={busy || format === 'pdf'}
+            className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest disabled:opacity-50"
+          >
+            {busy ? 'Exporting...' : 'Download'}
+          </button>
+        </>
+      }
+    >
           <div>
             <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1 block">Format</label>
             <div className="grid grid-cols-2 border border-border">
@@ -103,20 +109,6 @@ export function ExportReportModal({
 
           {error && <div className="border border-red-500/50 bg-red-500/10 text-red-500 text-xs px-3 py-2 font-mono">{error}</div>}
           {lastExport && <div className="border border-emerald-500/50 bg-emerald-500/10 text-emerald-500 text-xs px-3 py-2 font-mono">Downloaded {lastExport}</div>}
-        </div>
-
-        <div className="p-4 border-t border-border bg-surface flex justify-end gap-3">
-          <button onClick={onClose} className="h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest">Close</button>
-          <button
-            data-testid="export-report-confirm"
-            onClick={exportReport}
-            disabled={busy || format === 'pdf'}
-            className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest disabled:opacity-50"
-          >
-            {busy ? 'Exporting...' : 'Download'}
-          </button>
-        </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }

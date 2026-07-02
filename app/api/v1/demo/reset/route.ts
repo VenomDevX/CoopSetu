@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/auth/rate-limit';
 import { resetDemoWorkspace } from '@/lib/demo/reset-demo-workspace';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   return handle(async () => {
     const supabase = await createClient();

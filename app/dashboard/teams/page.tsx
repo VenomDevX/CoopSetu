@@ -26,7 +26,9 @@ import {
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
+import { AskAiButton } from '@/components/ai/ask-ai-button';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 // --- MOCK DATA ---
 
@@ -190,10 +192,7 @@ export default function TeamsPage() {
               </Button>
             </>
           )}
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2">
-            <Bot className="w-4 h-4" />
-            Ask Handoff AI
-          </Button>
+          <AskAiButton intent="summarize-teams" title="Team Health Digest" />
         </div>
       </div>
 

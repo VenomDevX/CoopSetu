@@ -11,11 +11,10 @@ export async function createTestPlan(
   memberId: string,
   input: z.infer<typeof createTestPlanSchema>,
 ) {
-  const { data, error } = await createAdminClient()
+  const { data, error } = await supabase
     .rpc('create_test_plan', {
       p_organization_id: orgId,
       p_project_id: input.project_id,
-      p_actor_member_id: memberId,
       p_payload: input,
     })
     .single<{ id: string; title: string; project_id: string }>();
@@ -29,10 +28,10 @@ export async function createTestPlan(
   await createAuditLog(supabase, {
     organizationId: orgId,
     action: 'test_plan.created',
-    resourceType: 'test_plan',
-    resourceId: data.id,
+    entityType: 'test_plan',
+    entityId: data.id,
     projectId: data.project_id,
-    newValue: { title: input.title },
+    afterState: { title: input.title },
   });
 
   return data;

@@ -19,9 +19,9 @@ export async function createOrganization(
   await createAuditLog(supabase, {
     organizationId: data.id,
     action: 'organization.created',
-    resourceType: 'organization',
-    resourceId: data.id,
-    newValue: { name: data.name },
+    entityType: 'organization',
+    entityId: data.id,
+    afterState: { name: data.name },
   });
   return data;
 }
@@ -57,9 +57,9 @@ export async function updateOrganization(
   await createAuditLog(supabase, {
     organizationId,
     action: 'organization.updated',
-    resourceType: 'organization',
-    resourceId: organizationId,
-    newValue: input,
+    entityType: 'organization',
+    entityId: organizationId,
+    afterState: input,
   });
   return data;
 }

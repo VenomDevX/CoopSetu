@@ -4,7 +4,7 @@ import { handle, ok } from '@/lib/api/response';
 import { Errors } from '@/lib/api/errors';
 import { requireUser } from '@/lib/auth/require-user';
 import { ACTIVE_ORG_COOKIE } from '@/lib/auth/get-current-membership';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 
 const schema = z.object({ token: z.string().min(1) });
 
@@ -21,8 +21,8 @@ export async function GET(req: Request) {
     const token = new URL(req.url).searchParams.get('token');
     if (!token) throw Errors.validation('Missing token.');
     await requireUser();
-    const admin = createAdminClient();
-    const { data, error } = await admin.rpc('get_invite', { p_token: token });
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc('get_invite', { p_token: token });
     if (error) throw Errors.internal(error.message);
     const invite = Array.isArray(data) ? data[0] : data;
     if (!invite) throw Errors.notFound('Invite not found.');
@@ -34,9 +34,9 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   return handle(async () => {
     await requireUser();
-    const admin = createAdminClient();
+    const supabase = await createClient();
     const { token } = schema.parse(await req.json());
-    const { data, error } = await admin.rpc('accept_invite', { p_token: token });
+    const { data, error } = await supabase.rpc('accept_invite', { p_token: token });
     if (error) {
       const key = Object.keys(MESSAGES).find((k) => error.message.includes(k));
       throw key ? Errors.validation(MESSAGES[key]) : Errors.internal(error.message);

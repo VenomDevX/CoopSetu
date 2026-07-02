@@ -21,8 +21,8 @@ export async function createTeam(supabase: SupabaseClient, orgId: string, input:
     .single();
   if (error) throw Errors.internal(error.message);
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'team.created', resourceType: 'team',
-    resourceId: data.id, newValue: { name: data.name },
+    organizationId: orgId, action: 'team.created', entityType: 'team',
+    entityId: data.id, afterState: { name: data.name },
   });
   return data;
 }
@@ -34,8 +34,8 @@ export async function updateTeam(supabase: SupabaseClient, orgId: string, teamId
   if (error) throw Errors.internal(error.message);
   if (!data) throw Errors.notFound('Team not found.');
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'team.updated', resourceType: 'team',
-    resourceId: teamId, newValue: input,
+    organizationId: orgId, action: 'team.updated', entityType: 'team',
+    entityId: teamId, afterState: input,
   });
   return data;
 }
@@ -52,8 +52,8 @@ export async function createDepartment(supabase: SupabaseClient, orgId: string, 
     .from('departments').insert({ ...input, organization_id: orgId }).select('*').single();
   if (error) throw Errors.internal(error.message);
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'department.created', resourceType: 'department',
-    resourceId: data.id, newValue: { name: data.name },
+    organizationId: orgId, action: 'department.created', entityType: 'department',
+    entityId: data.id, afterState: { name: data.name },
   });
   return data;
 }

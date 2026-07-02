@@ -41,8 +41,8 @@ export async function createRole(
     if (pErr) throw Errors.internal(pErr.message);
   }
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'role.created', resourceType: 'role',
-    resourceId: role.id, newValue: { code: input.code, permissions: input.permissions },
+    organizationId: orgId, action: 'role.created', entityType: 'role',
+    entityId: role.id, afterState: { code: input.code, permissions: input.permissions },
   });
   return role;
 }
@@ -63,8 +63,8 @@ export async function updateRolePermissions(
     if (error) throw Errors.internal(error.message);
   }
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'role.permissions_updated', resourceType: 'role',
-    resourceId: roleId, newValue: { permissions },
+    organizationId: orgId, action: 'role.permissions_updated', entityType: 'role',
+    entityId: roleId, afterState: { permissions },
   });
   return { ok: true };
 }
