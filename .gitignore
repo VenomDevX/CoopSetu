@@ -12,3 +12,4 @@ coverage/
 app/page.tsx.restored
 tsconfig.tsbuildinfo
 metadata.json
+.next-dev-*.log

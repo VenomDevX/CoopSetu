@@ -4,6 +4,7 @@ export type ApiErrorCode =
   | 'NOT_FOUND'
   | 'VALIDATION_ERROR'
   | 'CONFLICT'
+  | 'BAD_REQUEST'
   | 'RATE_LIMITED'
   | 'INTERNAL';
 
@@ -29,5 +30,6 @@ export const Errors = {
   validation: (msg = 'Invalid request.', details?: unknown) =>
     new ApiError('VALIDATION_ERROR', msg, 422, details),
   conflict: (msg = 'Conflict.') => new ApiError('CONFLICT', msg, 409),
+  badRequest: (msg = 'Bad request.') => new ApiError('BAD_REQUEST', msg, 400),
   internal: (msg = 'Something went wrong.') => new ApiError('INTERNAL', msg, 500),
 };

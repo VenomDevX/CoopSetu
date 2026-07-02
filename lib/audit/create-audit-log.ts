@@ -1,70 +1,69 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getRequestContext } from '@/lib/security/request-context';
+import { getAuthContext } from '@/lib/auth/require-user';
 
 export interface AuditInput {
-  organizationId: string;
+  organizationId: string | null;
   actorMemberId?: string | null;
   action: string;
-  resourceType: string;
-  resourceId?: string | null;
+  entityType: string;
+  entityId?: string | null;
   projectId?: string | null;
-  oldValue?: unknown;
-  newValue?: unknown;
+  beforeState?: unknown;
+  afterState?: unknown;
   metadata?: Record<string, unknown>;
+  outcome?: string; // SUCCESS, DENIED, FAILED
 }
 
-/** Write an audit-log entry via the SECURITY DEFINER DB helper. */
+/** Write an audit-log entry securely. */
 export async function createAuditLog(
   supabase: SupabaseClient,
   input: AuditInput,
 ): Promise<void> {
-  const { error } = await supabase.rpc('write_audit_log', {
-    p_org: input.organizationId,
-    p_action: input.action,
-    p_resource_type: input.resourceType,
-    p_resource_id: input.resourceId ?? null,
-    p_project_id: input.projectId ?? null,
-    p_old: input.oldValue ?? null,
-    p_new: input.newValue ?? null,
-    p_metadata: input.metadata ?? {},
-  });
-  if (!error) return;
-
-  // Newer hardening migrations revoke direct authenticated execution of
-  // write_audit_log. API routes still need audit rows, so fall back to a
-  // trusted server-side insert while deriving the actor from the request
-  // session. This keeps the browser from choosing audit actors.
   try {
     const admin = createAdminClient();
+    const context = await getRequestContext();
+
+    // Reuses the per-request cached auth lookup (see lib/auth/require-user.ts)
+    // instead of issuing another supabase.auth.getUser() round-trip.
+    const { user } = await getAuthContext();
+    const userId = user?.id;
+    
     let actorMemberId = input.actorMemberId ?? null;
-    if (!actorMemberId) {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
-      if (userId) {
-        const { data: member } = await admin
-          .from('organization_members')
-          .select('id')
-          .eq('organization_id', input.organizationId)
-          .eq('user_id', userId)
-          .eq('is_active', true)
-          .maybeSingle();
-        actorMemberId = member?.id ?? null;
-      }
+    if (!actorMemberId && userId && input.organizationId) {
+      const { data: member } = await admin
+        .from('organization_members')
+        .select('id')
+        .eq('organization_id', input.organizationId)
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .maybeSingle();
+      actorMemberId = member?.id ?? null;
     }
 
     const { error: insertError } = await admin.from('audit_logs').insert({
       organization_id: input.organizationId,
+      actor_user_id: userId ?? null,
       actor_member_id: actorMemberId,
+      actor_type: userId ? 'USER' : 'SYSTEM',
+      request_id: context.request_id,
+      ip_hash: context.ip_hash,
+      user_agent_hash: context.user_agent_hash,
       action: input.action,
-      resource_type: input.resourceType,
-      resource_id: input.resourceId ?? null,
+      entity_type: input.entityType,
+      entity_id: input.entityId ?? null,
       project_id: input.projectId ?? null,
-      old_value: input.oldValue ?? null,
-      new_value: input.newValue ?? null,
+      outcome: input.outcome ?? 'SUCCESS',
+      before_state: input.beforeState ?? null,
+      after_state: input.afterState ?? null,
       metadata: input.metadata ?? {},
     });
-    if (insertError) console.error('[audit] failed to write log', insertError.message);
-  } catch (fallbackError) {
-    console.error('[audit] failed to write log', error.message, fallbackError);
+    
+    if (insertError) {
+      console.error('[audit] failed to write log', insertError.message);
+    }
+  } catch (error: any) {
+    console.error('[audit] failed to write log', error.message);
   }
 }

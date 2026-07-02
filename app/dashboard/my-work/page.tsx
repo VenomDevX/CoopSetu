@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiGet } from '@/lib/api/client';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Clock,
@@ -77,20 +79,18 @@ function relTime(iso: string) {
 
 export default function MyWorkPage() {
   const membership = useCurrentMembership();
-  const [data, setData] = useState<MyWork | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [tabIndex, setTabIndex] = useState(0);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
 
-  const load = useCallback(() => {
-    fetch('/api/v1/my-work')
-      .then((r) => r.json())
-      .then((j) => { if (j?.data) setData(j.data); })
-      .catch(() => { });
-  }, []);
+  const { data, isPending: loading, isError, refetch } = useQuery({
+    queryKey: ['my-work'],
+    queryFn: () => apiGet<MyWork>('/api/v1/my-work'),
+  });
+  const error = isError ? 'Failed to load your work.' : null;
+  const load = () => refetch();
 
-  useEffect(() => { load(); }, [load]);
   useTablesRealtime(['tasks', 'task_assignees', 'task_activity', 'notifications'], load);
 
   const tasks = useMemo(() => data?.tasks ?? [], [data]);
@@ -145,6 +145,20 @@ export default function MyWorkPage() {
           </Link>
         </div>
       </div>
+
+      {error && (
+        <div className="p-3 border border-destructive/50 bg-destructive/10 flex items-center justify-between">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-destructive">{error}</span>
+          <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={load}>
+            Retry
+          </Button>
+        </div>
+      )}
+      {loading && (
+        <div className="p-3 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+          Loading your work...
+        </div>
+      )}
 
       {/* Top KPI Strip — every value derived from the same /my-work payload. */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">

@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiGet, apiSend } from '@/lib/api/client';
 import { CreateSprintModal } from '@/components/dashboard/create-sprint-modal';
 import { ExportReportModal } from '@/components/dashboard/export-report-modal';
 import { usePermission } from '@/lib/permissions/context';
@@ -18,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AskAiButton } from '@/components/ai/ask-ai-button';
+import { TableRowsSkeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 
 type Sprint = {
@@ -80,7 +83,6 @@ const getRiskColor = (risk: string) => {
 };
 
 export default function SprintsPage() {
-  const [mockSprints, setMockSprints] = useState<Sprint[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -89,21 +91,20 @@ export default function SprintsPage() {
   const canCreate = has('sprint:create');
   const canExport = has('report:export') || has('sprint:view');
 
-  const load = useCallback(async () => {
-    const r = await fetch('/api/v1/sprints').catch(() => null);
-    if (!r) return;
-    const j = await r.json().catch(() => null);
-    setMockSprints((Array.isArray(j?.data) ? j.data : []).map(mapSprint));
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    fetch('/api/v1/sprints')
-      .then((r) => r.json())
-      .then((j) => { if (active) setMockSprints((Array.isArray(j?.data) ? j.data : []).map(mapSprint)); })
-      .catch(() => { });
-    return () => { active = false; };
-  }, []);
+  const {
+    data: mockSprints = [],
+    isPending: loading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ['sprints'],
+    queryFn: async () => {
+      const rows = await apiGet<unknown[]>('/api/v1/sprints');
+      return (Array.isArray(rows) ? rows : []).map(mapSprint);
+    },
+  });
+  const error = isError ? 'Failed to load sprints.' : null;
+  const load = () => refetch();
 
   // Client-side search (name/goal) + status filter over the loaded rows.
   const q = query.trim().toLowerCase();
@@ -122,7 +123,7 @@ export default function SprintsPage() {
 
   async function act(id: string, action: 'start' | 'complete') {
     setBusyId(id);
-    await fetch(`/api/v1/sprints/${id}/${action}`, { method: 'POST' }).catch(() => { });
+    await apiSend(`/api/v1/sprints/${id}/${action}`, 'POST').catch(() => { });
     setBusyId(null);
     load();
   }
@@ -209,7 +210,25 @@ export default function SprintsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filteredSprints.map((sprint) => (
+              {loading && <TableRowsSkeleton rows={6} cols={9} />}
+              {!loading && error && (
+                <tr>
+                  <td colSpan={9} className="p-8 text-center">
+                    <div className="text-[10px] uppercase tracking-widest text-destructive mb-3">{error}</div>
+                    <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={load}>
+                      Retry
+                    </Button>
+                  </td>
+                </tr>
+              )}
+              {!loading && !error && filteredSprints.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="p-8 text-center text-[10px] uppercase tracking-widest text-muted-foreground">
+                    No sprints found
+                  </td>
+                </tr>
+              )}
+              {!loading && !error && filteredSprints.map((sprint) => (
                 <tr key={sprint.id} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                   <td className="p-3">
                     <Link href={`/dashboard/sprints/${sprint.id}`} className="block">

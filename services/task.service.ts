@@ -7,6 +7,41 @@ import type { TaskAssignmentType } from '@/lib/constants/task-statuses';
 
 type TaskRow = Record<string, any>;
 
+/**
+ * Defense-in-depth: `project_id`/`epic_id`/`sprint_id` are client-supplied
+ * UUIDs. RLS restricts what a member can *select*, but an INSERT/UPDATE FK
+ * only requires the referenced row to exist somewhere — not that it belongs
+ * to the caller's org. Without this, an org member could link a task to
+ * another organization's epic/sprint (or create it under a foreign
+ * project_id) by guessing/leaking a UUID. Verify each reference resolves
+ * inside orgId (and, for epic/sprint, inside the task's own project) before
+ * writing.
+ */
+async function assertOrgScopedTaskRefs(
+  supabase: SupabaseClient,
+  orgId: string,
+  projectId: string | null | undefined,
+  epicId: string | null | undefined,
+  sprintId: string | null | undefined,
+): Promise<void> {
+  if (projectId) {
+    const { data } = await supabase.from('projects').select('id').eq('id', projectId).eq('organization_id', orgId).maybeSingle();
+    if (!data) throw Errors.validation('Selected project does not belong to this organization.');
+  }
+  if (epicId) {
+    let q = supabase.from('epics').select('id').eq('id', epicId).eq('organization_id', orgId);
+    if (projectId) q = q.eq('project_id', projectId);
+    const { data } = await q.maybeSingle();
+    if (!data) throw Errors.validation('Selected epic does not belong to this project.');
+  }
+  if (sprintId) {
+    let q = supabase.from('sprints').select('id').eq('id', sprintId).eq('organization_id', orgId);
+    if (projectId) q = q.eq('project_id', projectId);
+    const { data } = await q.maybeSingle();
+    if (!data) throw Errors.validation('Selected sprint does not belong to this project.');
+  }
+}
+
 const TASK_SELECT =
   '*, assignee:primary_assignee_member_id(id, user_id, profile:profiles!org_members_profile_fk(full_name, email, job_title)), ' +
   'task_assignees(id, organization_member_id, assignment_role, assignment_type, assigned_at, assigned_by, assigned_by_member_id, removed_at, removed_by_member_id, created_at, updated_at, ' +
@@ -67,6 +102,8 @@ export async function getTask(supabase: SupabaseClient, taskId: string) {
 export async function createTask(
   supabase: SupabaseClient, orgId: string, reporterMemberId: string, input: CreateTaskInput,
 ): Promise<TaskRow> {
+  await assertOrgScopedTaskRefs(supabase, orgId, input.project_id, input.epic_id, input.sprint_id);
+
   // Never trust the frontend assignee: verify eligibility for the project.
   if (input.primary_assignee_member_id) {
     await assertAssignable(supabase, orgId, input.project_id, input.primary_assignee_member_id);
@@ -100,8 +137,8 @@ export async function createTask(
   }).then(() => {}, () => {});
 
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'task.created', resourceType: 'task',
-    resourceId: task.id, projectId: input.project_id, newValue: { title: task.title, key: task.task_key },
+    organizationId: orgId, action: 'task.created', entityType: 'task',
+    entityId: task.id, projectId: input.project_id, afterState: { title: task.title, key: task.task_key },
   });
   return task;
 }
@@ -124,6 +161,10 @@ export async function updateTask(
     input.primary_assignee_member_id !== before?.primary_assignee_member_id
   ) {
     await assertAssignable(supabase, orgId, before?.project_id, input.primary_assignee_member_id);
+  }
+
+  if (input.epic_id || input.sprint_id) {
+    await assertOrgScopedTaskRefs(supabase, orgId, before?.project_id, input.epic_id, input.sprint_id);
   }
 
   const { data, error } = await supabase
@@ -163,9 +204,9 @@ export async function updateTask(
   }
 
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'task.updated', resourceType: 'task',
-    resourceId: taskId, projectId: task.project_id,
-    oldValue: before, newValue: input,
+    organizationId: orgId, action: 'task.updated', entityType: 'task',
+    entityId: taskId, projectId: task.project_id,
+    beforeState: before, afterState: input,
   });
   return task;
 }
@@ -178,8 +219,8 @@ export async function archiveTask(supabase: SupabaseClient, orgId: string, taskI
   if (error) throw Errors.internal(error.message);
   if (!data) throw Errors.forbidden();
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'task.archived', resourceType: 'task',
-    resourceId: taskId, projectId: data.project_id,
+    organizationId: orgId, action: 'task.archived', entityType: 'task',
+    entityId: taskId, projectId: data.project_id,
   });
   return data;
 }
@@ -190,11 +231,18 @@ export async function bulkUpdateTasks(
   if (Object.prototype.hasOwnProperty.call(patch, 'primary_assignee_member_id')) {
     throw Errors.validation('Bulk reassignment is disabled so assignment history stays complete.');
   }
+  // Same cross-tenant defense-in-depth as createTask/updateTask: without this,
+  // a member could bulk-repoint tasks at another organization's epic/sprint.
+  // No single projectId applies across a bulk patch, so epic/sprint are
+  // validated against orgId only (not per-task project consistency).
+  if (patch.epic_id || patch.sprint_id) {
+    await assertOrgScopedTaskRefs(supabase, orgId, undefined, patch.epic_id, patch.sprint_id);
+  }
   const { data, error } = await supabase
     .from('tasks').update(patch).in('id', taskIds).eq('organization_id', orgId).select('id');
   if (error) throw Errors.internal(error.message);
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'task.bulk_updated', resourceType: 'task',
+    organizationId: orgId, action: 'task.bulk_updated', entityType: 'task',
     metadata: { count: data?.length ?? 0, patch },
   });
   return data;
@@ -216,8 +264,8 @@ export async function addAssignee(
   const type = assignmentType ?? roleToAssignmentType(role);
   const data = await upsertActiveAssignment(supabase, taskId, memberId, actorMemberId, type, role);
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'task.assignee_added', resourceType: 'task',
-    resourceId: taskId, metadata: { memberId, assignmentType: type },
+    organizationId: orgId, action: 'task.assignee_added', entityType: 'task',
+    entityId: taskId, metadata: { memberId, assignmentType: type },
   });
   return data;
 }

@@ -1,34 +1,58 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiGet } from '@/lib/api/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  Building2, Users, Shield, Key, Webhook, Activity, CreditCard
+  Building2, Users, Shield, Key, Webhook, Activity, CreditCard, MonitorSmartphone
 } from 'lucide-react';
 
 interface AuditRow { id: string; action: string; resource_type: string; created_at: string; ip_address: string | null; }
+interface SessionRow { id: string; ip: string | null; user_agent: string | null; created_at: string; updated_at: string; }
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('org');
   const [orgName, setOrgName] = useState('');
   const [orgSlug, setOrgSlug] = useState('');
-  const [auditLogs, setAuditLogs] = useState<AuditRow[]>([]);
+  const [ipAllowlist, setIpAllowlist] = useState('');
+
+  const { data: org } = useQuery({
+    queryKey: ['organizations', 'current'],
+    queryFn: () => apiGet<{ name?: string; slug?: string; ip_allowlist?: string[] }>('/api/v1/organizations/current'),
+  });
 
   useEffect(() => {
-    fetch('/api/v1/organizations/current').then((r) => r.json()).then((j) => {
-      if (j?.data) { setOrgName(j.data.name ?? ''); setOrgSlug(j.data.slug ?? ''); }
-    }).catch(() => { });
-  }, []);
+    if (!org) return;
+    setOrgName(org.name ?? '');
+    setOrgSlug(org.slug ?? '');
+    setIpAllowlist(Array.isArray(org.ip_allowlist) ? org.ip_allowlist.join(', ') : '');
+  }, [org]);
 
-  useEffect(() => {
-    if (activeTab !== 'audit') return;
-    fetch('/api/v1/audit-logs').then((r) => r.json()).then((j) => {
-      setAuditLogs(Array.isArray(j?.data) ? j.data : []);
-    }).catch(() => { });
-  }, [activeTab]);
+  const {
+    data: auditLogs = [],
+    isPending: auditLoading,
+    isError: auditError,
+    refetch: refetchAudit,
+  } = useQuery({
+    queryKey: ['audit-logs'],
+    queryFn: () => apiGet<AuditRow[]>('/api/v1/audit-logs'),
+    enabled: activeTab === 'audit',
+  });
+
+  const {
+    data: sessions = [],
+    isPending: sessionsLoading,
+    isError: sessionsError,
+    refetch: refetchSessions,
+  } = useQuery({
+    queryKey: ['sessions'],
+    queryFn: () => apiGet<SessionRow[]>('/api/v1/sessions'),
+    enabled: activeTab === 'sessions',
+  });
 
   const handleSaveSettings = async () => {
     try {
@@ -41,6 +65,46 @@ export default function SettingsPage() {
       else alert('Failed to save settings');
     } catch (e) {
       alert('Error saving settings');
+    }
+  };
+
+  const handleSaveIPAllowlist = async () => {
+    // Parse comma-separated list into an array
+    const allowlistArray = ipAllowlist.split(',')
+      .map(ip => ip.trim())
+      .filter(ip => ip.length > 0);
+
+    try {
+      // First try to fetch the client's current IP to implement a basic safe harbor warning
+      let currentIp = 'Unknown';
+      try {
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        if (ipRes.ok) {
+          const { ip } = await ipRes.json();
+          currentIp = ip;
+        }
+      } catch (e) {
+        // Ignore ipify errors
+      }
+
+      if (allowlistArray.length > 0 && currentIp !== 'Unknown' && !allowlistArray.some(allowed => currentIp === allowed || allowed.includes('/'))) {
+        if (!confirm(`WARNING: Your current IP (${currentIp}) does not appear to be in the allowlist. You may lock yourself out immediately upon saving. Are you sure you want to proceed?`)) {
+          return;
+        }
+      }
+
+      const res = await fetch('/api/v1/organizations/current', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ip_allowlist: allowlistArray })
+      });
+      if (res.ok) alert('IP Allowlist updated successfully.');
+      else {
+        const data = await res.json();
+        alert(`Failed to update IP Allowlist: ${data.error?.message || 'Unknown error'}`);
+      }
+    } catch (e) {
+      alert('Error saving IP Allowlist');
     }
   };
 
@@ -73,13 +137,38 @@ export default function SettingsPage() {
     a.href = url;
     a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+    a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleRevokeSession = async (sessionId: string) => {
+    if (!confirm('Are you sure you want to log out of this device?')) return;
+    try {
+      const res = await fetch(`/api/v1/sessions/${sessionId}`, { method: 'DELETE' });
+      if (res.ok) {
+        refetchSessions();
+      } else {
+        alert('Failed to revoke session');
+      }
+    } catch {
+      alert('Error revoking session');
+    }
+  };
+
+  const parseUserAgent = (ua: string | null) => {
+    if (!ua) return 'Unknown Device';
+    if (ua.includes('Edg/')) return 'Edge (' + (ua.includes('Windows') ? 'Windows' : 'Mac') + ')';
+    if (ua.includes('Chrome/')) return 'Chrome (' + (ua.includes('Windows') ? 'Windows' : ua.includes('Mac') ? 'Mac' : 'Linux') + ')';
+    if (ua.includes('Safari/') && !ua.includes('Chrome')) return 'Safari (Mac/iOS)';
+    if (ua.includes('Firefox/')) return 'Firefox';
+    return 'Other Device';
   };
 
   const tabs = [
     { id: 'org', label: 'Organization', icon: Building2 },
     { id: 'users', label: 'Users & Roles', icon: Users },
     { id: 'security', label: 'Security & SSO', icon: Shield },
+    { id: 'sessions', label: 'Active Sessions', icon: MonitorSmartphone },
     { id: 'audit', label: 'Audit Logs', icon: Activity },
     { id: 'integrations', label: 'Integrations', icon: Webhook },
     { id: 'billing', label: 'Billing', icon: CreditCard },
@@ -170,6 +259,23 @@ export default function SettingsPage() {
                     </div>
                     <input type="checkbox" defaultChecked className="w-4 h-4 rounded-sm border-border text-primary bg-surface focus:ring-primary" />
                   </div>
+                  
+                  <div className="pt-6 border-t border-border mt-6">
+                    <div className="font-medium text-sm text-foreground mb-1">Organization IP Allowlisting</div>
+                    <div className="text-xs text-muted-foreground mb-4">
+                      Restrict access to the platform to specific IP addresses or CIDR blocks. Leave empty to allow all IPs. Enter values separated by commas (e.g., <code>192.168.1.1, 10.0.0.0/24</code>).
+                    </div>
+                    <div className="flex gap-4">
+                      <Input 
+                        placeholder="e.g., 203.0.113.5, 198.51.100.0/24" 
+                        value={ipAllowlist}
+                        onChange={(e) => setIpAllowlist(e.target.value)}
+                        className="bg-surface text-foreground"
+                      />
+                      <Button onClick={handleSaveIPAllowlist}>Save</Button>
+                    </div>
+                  </div>
+
                   <div className="border-t border-border pt-4 flex items-center justify-between">
                     <div>
                       <div className="font-medium text-sm text-foreground">Session Timeout</div>
@@ -181,6 +287,56 @@ export default function SettingsPage() {
                       <option>7 days</option>
                     </select>
                   </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'sessions' && (
+            <div className="space-y-6">
+              <Card className="shadow-sm border-border bg-surface-elevated">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Active Sessions</CardTitle>
+                  <CardDescription className="text-muted-foreground">Manage your signed-in devices and revoke unrecognized sessions.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {sessionsLoading ? (
+                    <div className="text-sm text-muted-foreground py-4 text-center font-mono uppercase tracking-widest text-xs">Loading sessions...</div>
+                  ) : sessionsError ? (
+                    <div className="py-4 text-center">
+                      <div className="text-xs text-destructive mb-3">Failed to load sessions.</div>
+                      <Button variant="outline" size="sm" onClick={() => refetchSessions()}>Retry</Button>
+                    </div>
+                  ) : sessions.length === 0 ? (
+                    <div className="text-sm text-muted-foreground py-4 text-center">No active sessions found.</div>
+                  ) : (
+                    <div className="space-y-4">
+                      {sessions.map((session, index) => (
+                        <div key={session.id} className="flex items-center justify-between p-4 border border-border rounded-sm bg-surface">
+                          <div className="flex items-center gap-4">
+                            <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
+                            <div>
+                              <div className="font-medium text-foreground flex items-center gap-2">
+                                {parseUserAgent(session.user_agent)}
+                                {index === 0 && <Badge className="bg-primary/20 text-primary border-none font-mono text-[10px] uppercase rounded-sm">Current</Badge>}
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                IP: {session.ip || 'Unknown'} • Last active: {new Date(session.updated_at).toLocaleString()}
+                              </div>
+                            </div>
+                          </div>
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            className="rounded-sm"
+                            onClick={() => handleRevokeSession(session.id)}
+                          >
+                            Revoke
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -208,10 +364,21 @@ export default function SettingsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {auditLogs.length === 0 && (
+                    {auditLoading && (
+                      <tr><td colSpan={4} className="px-4 py-6 text-center text-muted-foreground font-mono text-xs">Loading audit logs...</td></tr>
+                    )}
+                    {!auditLoading && auditError && (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-6 text-center">
+                          <div className="text-xs text-destructive mb-3">Failed to load audit logs.</div>
+                          <Button variant="outline" size="sm" onClick={() => refetchAudit()}>Retry</Button>
+                        </td>
+                      </tr>
+                    )}
+                    {!auditLoading && !auditError && auditLogs.length === 0 && (
                       <tr><td colSpan={4} className="px-4 py-6 text-center text-muted-foreground font-mono text-xs">No audit events.</td></tr>
                     )}
-                    {auditLogs.map((log) => (
+                    {!auditLoading && !auditError && auditLogs.map((log) => (
                       <tr key={log.id} className="hover:bg-surface-hover transition-colors">
                         <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString()}</td>
                         <td className="px-4 py-3 font-medium text-foreground">{log.resource_type}</td>

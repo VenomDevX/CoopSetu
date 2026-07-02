@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { Dialog, dialogLabelCls as labelCls, dialogFieldCls as fieldCls } from '@/components/ui/dialog';
 
 const ROLES = [
   { code: 'ADMIN', label: 'Admin (Organization)' },
@@ -56,23 +56,25 @@ export function InviteMemberModal({
     }
   }
 
-  const labelCls = 'text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1 block';
-  const fieldCls = 'w-full h-9 px-3 bg-background border border-border text-sm focus:outline-none focus:border-foreground transition-colors';
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:p-4" onClick={onClose}>
-      <div
-        className="relative w-full max-w-lg bg-background sm:border sm:border-border sm:shadow-2xl flex flex-col h-[100dvh] sm:h-auto sm:max-h-[90vh] animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:fade-in duration-300"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-4 border-b border-border bg-surface-hover flex items-center justify-between shrink-0">
-          <h2 className="font-mono text-sm uppercase tracking-widest font-bold flex items-center gap-2">
-            <div className="w-2 h-2 bg-foreground" /> Invite Member
-          </h2>
-          <button onClick={onClose} className="p-2 -mr-2 text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
-        </div>
-
-        <div className="p-6 overflow-y-auto flex-1 space-y-5">
+    <Dialog
+      title="Invite Member"
+      onClose={onClose}
+      className="max-w-lg"
+      footer={
+        successLink ? (
+          <button onClick={() => { onInvited(); onClose(); }} className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest">Done</button>
+        ) : (
+          <>
+            <button onClick={onClose} className="h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest">Cancel</button>
+            <button onClick={submit} disabled={submitting}
+              className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest disabled:opacity-50">
+              {submitting ? 'Sending…' : 'Send Invite'}
+            </button>
+          </>
+        )
+      }
+    >
           {successLink ? (
             <div className="space-y-4">
               <div className="border border-green-500/50 bg-green-500/10 text-green-500 text-sm px-4 py-3 font-mono">
@@ -106,22 +108,6 @@ export function InviteMemberModal({
               )}
             </>
           )}
-        </div>
-
-        <div className="p-4 border-t border-border bg-surface flex justify-end gap-3">
-          {successLink ? (
-            <button onClick={() => { onInvited(); onClose(); }} className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest">Done</button>
-          ) : (
-            <>
-              <button onClick={onClose} className="h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest">Cancel</button>
-              <button onClick={submit} disabled={submitting}
-                className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest disabled:opacity-50">
-                {submitting ? 'Sending…' : 'Send Invite'}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }

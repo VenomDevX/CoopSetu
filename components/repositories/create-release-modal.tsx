@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Loader2, Rocket } from 'lucide-react';
+import { Loader2, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 
 interface Project {
@@ -69,19 +70,13 @@ export function CreateReleaseModal({ onClose, onSuccess }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-background border border-border w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-200">
-        <div className="flex items-center justify-between p-4 border-b border-border bg-surface-hover">
-          <h2 className="text-sm font-mono uppercase tracking-widest font-bold flex items-center gap-2">
-            <Rocket className="w-4 h-4 text-primary" />
-            Create Release
-          </h2>
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-none hover:bg-background">
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-4 space-y-4 max-h-[80vh] overflow-y-auto">
+    <Dialog
+      title={<><Rocket className="w-4 h-4 text-primary" /> Create Release</>}
+      onClose={onClose}
+      className="max-w-lg"
+      bodyClassName="p-4 space-y-4"
+    >
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="p-3 text-xs font-mono text-destructive border border-destructive/20 bg-destructive/5 uppercase tracking-wide">
               {error}
@@ -198,7 +193,6 @@ export function CreateReleaseModal({ onClose, onSuccess }: Props) {
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </Dialog>
   );
 }

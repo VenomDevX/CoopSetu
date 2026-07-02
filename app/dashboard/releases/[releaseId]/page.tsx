@@ -3,6 +3,7 @@ import {
 } from '@/components/dashboard/entity-detail-layout';
 import { loadDetail, resolveMemberNames, linkProject } from '@/lib/dashboard/load-detail';
 import { AskAiButton } from '@/components/ai/ask-ai-button';
+import { DeploymentLogsViewer } from '@/components/releases/deployment-logs-viewer';
 
 const LIST = { href: '/dashboard/releases', label: 'Releases' };
 
@@ -11,6 +12,7 @@ interface Release {
   description: string | null; status: string; release_manager_member_id: string | null;
   planned_release_at: string | null; released_at: string | null; requires_compliance_approval: boolean;
   rollback_plan: string | null; release_notes: string | null; created_at: string; updated_at: string;
+  deployments?: { id: string }[];
 }
 
 const statusTone = (s: string): BadgeTone =>
@@ -22,7 +24,7 @@ export default async function ReleaseDetailPage({ params }: { params: Promise<{ 
   const { releaseId } = await params;
   const res = await loadDetail<Release>({
     table: 'releases', id: releaseId, permission: 'release:view',
-    select: 'id, organization_id, project_id, name, version, description, status, release_manager_member_id, planned_release_at, released_at, requires_compliance_approval, rollback_plan, release_notes, created_at, updated_at',
+    select: 'id, organization_id, project_id, name, version, description, status, release_manager_member_id, planned_release_at, released_at, requires_compliance_approval, rollback_plan, release_notes, created_at, updated_at, deployments(id)',
   });
   if (res.state === 'forbidden') return <EntityForbidden backHref={LIST.href} backLabel={`Back to ${LIST.label}`} />;
   if (res.state === 'notfound') return <EntityNotFound backHref={LIST.href} backLabel={`Back to ${LIST.label}`} />;
@@ -65,6 +67,12 @@ export default async function ReleaseDetailPage({ params }: { params: Promise<{ 
         { label: 'Rollback plan', body: rel.rollback_plan },
       ]}
       timeline={timeline}
-    />
+    >
+      {rel.deployments && rel.deployments.length > 0 && (
+        <div className="mt-8">
+          <DeploymentLogsViewer deploymentId={rel.deployments[0].id} />
+        </div>
+      )}
+    </EntityDetailLayout>
   );
 }

@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiGet } from '@/lib/api/client';
 import { CreateProjectModal } from '@/components/dashboard/create-project-modal';
 import { ExportReportModal } from '@/components/dashboard/export-report-modal';
 import { ImportProjectsModal } from '@/components/dashboard/import-projects-modal';
@@ -22,6 +24,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton, TableRowsSkeleton } from '@/components/ui/skeleton';
 import { AskAiButton } from '@/components/ai/ask-ai-button';
 import Link from 'next/link';
 
@@ -96,8 +99,20 @@ export default function ProjectsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: projects = [],
+    isPending: loading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ['projects'],
+    queryFn: async () => {
+      const rows = await apiGet<unknown[]>('/api/v1/projects');
+      return (Array.isArray(rows) ? rows : []).map(mapProject);
+    },
+  });
+  const error = isError ? 'Failed to load projects.' : null;
+  const load = () => refetch();
   const [query, setQuery] = useState('');
   const [healthFilter, setHealthFilter] = useState<'ALL' | Project['health']>('ALL');
   const { has } = usePermission();
@@ -107,29 +122,6 @@ export default function ProjectsPage() {
 
   // Reusable refresh (used after create). Kept out of the effect so the
   // setState calls aren't flagged as synchronous-in-effect.
-  const load = useCallback(async () => {
-    const r = await fetch('/api/v1/projects').catch(() => null);
-    if (!r) return;
-    const json = await r.json().catch(() => null);
-    const rows = Array.isArray(json?.data) ? json.data : [];
-    setProjects(rows.map(mapProject));
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    fetch('/api/v1/projects')
-      .then((r) => r.json())
-      .then((json) => {
-        if (!active) return;
-        const rows = Array.isArray(json?.data) ? json.data : [];
-        setProjects(rows.map(mapProject));
-      })
-      .catch(() => { })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, []);
-
-  void loading;
 
   // Client-side search (name/code) + health filter over the loaded rows.
   const q = query.trim().toLowerCase();
@@ -248,7 +240,25 @@ export default function ProjectsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filtered.map((project) => (
+                {loading && <TableRowsSkeleton rows={6} cols={9} />}
+                {!loading && error && (
+                  <tr>
+                    <td colSpan={9} className="p-8 text-center">
+                      <div className="text-[10px] uppercase tracking-widest text-destructive mb-3">{error}</div>
+                      <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={load}>
+                        Retry
+                      </Button>
+                    </td>
+                  </tr>
+                )}
+                {!loading && !error && filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="p-8 text-center text-[10px] uppercase tracking-widest text-muted-foreground">
+                      No projects found
+                    </td>
+                  </tr>
+                )}
+                {!loading && !error && filtered.map((project) => (
                   <tr key={project.id} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <Link href={`/dashboard/projects/${project.id}`} className="block">
@@ -311,8 +321,28 @@ export default function ProjectsPage() {
           </DataViewport>
         ) : (
           <DataViewport className="border-0 p-4">
+            {loading && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-48" />
+                ))}
+              </div>
+            )}
+            {!loading && error && (
+              <div className="p-8 text-center">
+                <div className="text-[10px] font-mono uppercase tracking-widest text-destructive mb-3">{error}</div>
+                <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={load}>
+                  Retry
+                </Button>
+              </div>
+            )}
+            {!loading && !error && filtered.length === 0 && (
+              <div className="p-8 text-center text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                No projects found
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filtered.map((project) => (
+              {!loading && !error && filtered.map((project) => (
                 <Link href={`/dashboard/projects/${project.id}`} key={project.id} className="border border-border bg-background p-4 hover:border-foreground transition-colors group flex flex-col">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-2 flex-wrap">

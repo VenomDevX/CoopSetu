@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiGet } from '@/lib/api/client';
 import { useParams } from 'next/navigation';
 import {
   ChevronRight,
@@ -80,57 +82,67 @@ export default function ProjectDetailPage() {
   const projectId = params?.projectId as string;
   const { has } = usePermission();
   const [activeTab, setActiveTab] = useState('Overview');
-  const [project, setProject] = useState<ProjectDetail | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [progress, setProgress] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
-  const [sprints, setSprints] = useState<Sprint[] | null>(null);
-  const [releases, setReleases] = useState<Release[] | null>(null);
-  const [activity, setActivity] = useState<Activity[] | null>(null);
 
-  const loadProject = useCallback(async () => {
-    const r = await fetch(`/api/v1/projects/${projectId}`).catch(() => null);
-    if (!r) return;
-    const j = await r.json().catch(() => null);
-    if (j?.data) setProject(j.data);
-  }, [projectId]);
+  const {
+    data: project,
+    isPending: projectLoading,
+    isError: projectError,
+    refetch: loadProject,
+  } = useQuery({
+    queryKey: ['projects', projectId],
+    queryFn: () => apiGet<ProjectDetail>(`/api/v1/projects/${projectId}`),
+    enabled: !!projectId,
+  });
 
-  useEffect(() => {
-    let active = true;
-    fetch(`/api/v1/projects/${projectId}`).then((r) => r.json()).then((j) => { if (active && j?.data) setProject(j.data); }).catch(() => { });
-    fetch('/api/v1/employees').then((r) => r.json()).then((j) => {
-      if (!active || !Array.isArray(j?.data)) return;
-      setMembers(j.data.map((m: { id: string; profile: { full_name?: string; email?: string; job_title?: string } | { full_name?: string; email?: string; job_title?: string }[] | null }) => {
+  const { data: members = [] } = useQuery({
+    queryKey: ['employees', 'directory'],
+    queryFn: async () => {
+      const rows = await apiGet<any[]>('/api/v1/employees');
+      return (Array.isArray(rows) ? rows : []).map((m: { id: string; profile: { full_name?: string; email?: string; job_title?: string } | { full_name?: string; email?: string; job_title?: string }[] | null }) => {
         const p = Array.isArray(m.profile) ? m.profile[0] : m.profile;
-        return { id: m.id, name: p?.full_name ?? p?.email ?? 'Member', job_title: p?.job_title ?? null };
-      }));
-    }).catch(() => { });
-    // Real progress from this project's tasks (done / total).
-    fetch(`/api/v1/tasks?projectId=${projectId}`).then((r) => r.json()).then((j) => {
-      if (!active || !Array.isArray(j?.data)) return;
-      const tasks = j.data as { status: string }[];
-      if (tasks.length === 0) { setProgress(0); return; }
-      const done = tasks.filter((t) => t.status === 'DONE' || t.status === 'READY_FOR_RELEASE').length;
-      setProgress(Math.round((done / tasks.length) * 100));
-    }).catch(() => { });
-    return () => { active = false; };
-  }, [projectId]);
+        return { id: m.id, name: p?.full_name ?? p?.email ?? 'Member', job_title: p?.job_title ?? null } as Member;
+      });
+    },
+  });
+
+  const { data: progress = null } = useQuery({
+    queryKey: ['projects', projectId, 'progress'],
+    queryFn: async () => {
+      const tasks = await apiGet<{ status: string }[]>(`/api/v1/tasks?projectId=${projectId}`);
+      const list = Array.isArray(tasks) ? tasks : [];
+      if (list.length === 0) return 0;
+      const done = list.filter((t) => t.status === 'DONE' || t.status === 'READY_FOR_RELEASE').length;
+      return Math.round((done / list.length) * 100);
+    },
+    enabled: !!projectId,
+  });
 
   // Lazily load tab data the first time a data-backed tab is opened.
-  useEffect(() => {
-    if (activeTab === 'Sprints' && sprints === null) {
-      fetch(`/api/v1/sprints?projectId=${projectId}`).then((r) => r.json())
-        .then((j) => setSprints(Array.isArray(j?.data) ? j.data : [])).catch(() => setSprints([]));
-    }
-    if (activeTab === 'Releases' && releases === null) {
-      fetch(`/api/v1/releases?projectId=${projectId}`).then((r) => r.json())
-        .then((j) => setReleases(Array.isArray(j?.data) ? j.data : [])).catch(() => setReleases([]));
-    }
-    if (activeTab === 'Activity' && activity === null) {
-      fetch(`/api/v1/projects/${projectId}/activity`).then((r) => r.json())
-        .then((j) => setActivity(Array.isArray(j?.data) ? j.data : [])).catch(() => setActivity([]));
-    }
-  }, [activeTab, projectId, sprints, releases, activity]);
+  const { data: sprints = null } = useQuery({
+    queryKey: ['sprints', 'byProject', projectId],
+    queryFn: async () => {
+      const rows = await apiGet<Sprint[]>(`/api/v1/sprints?projectId=${projectId}`);
+      return Array.isArray(rows) ? rows : [];
+    },
+    enabled: activeTab === 'Sprints' && !!projectId,
+  });
+  const { data: releases = null } = useQuery({
+    queryKey: ['releases', 'byProject', projectId],
+    queryFn: async () => {
+      const rows = await apiGet<Release[]>(`/api/v1/releases?projectId=${projectId}`);
+      return Array.isArray(rows) ? rows : [];
+    },
+    enabled: activeTab === 'Releases' && !!projectId,
+  });
+  const { data: activity = null } = useQuery({
+    queryKey: ['projects', projectId, 'activity'],
+    queryFn: async () => {
+      const rows = await apiGet<Activity[]>(`/api/v1/projects/${projectId}/activity`);
+      return Array.isArray(rows) ? rows : [];
+    },
+    enabled: activeTab === 'Activity' && !!projectId,
+  });
 
   const memberName = (id: string | null) => (id ? (members.find((m) => m.id === id)?.name ?? 'Assigned') : 'Unassigned');
   const initials = (name: string) => name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
@@ -141,10 +153,21 @@ export default function ProjectDetailPage() {
   const teamNames = (project?.project_teams ?? []).map((t) => t.team?.name).filter(Boolean) as string[];
   const projectMemberIds = (project?.project_members ?? []).map((m) => m.organization_member_id);
 
-  if (!project) {
+  if (projectLoading) {
     return (
       <div className="h-[calc(100vh-80px)] flex items-center justify-center text-xs font-mono text-muted-foreground">
         Loading project…
+      </div>
+    );
+  }
+
+  if (projectError || !project) {
+    return (
+      <div className="h-[calc(100vh-80px)] flex flex-col items-center justify-center gap-3">
+        <div className="text-[10px] font-mono uppercase tracking-widest text-destructive">Failed to load project.</div>
+        <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={() => loadProject()}>
+          Retry
+        </Button>
       </div>
     );
   }

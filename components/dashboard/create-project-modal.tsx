@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { Dialog, dialogLabelCls as labelCls, dialogFieldCls as fieldCls } from '@/components/ui/dialog';
 
 interface Employee {
   id: string;
@@ -85,23 +85,20 @@ export function CreateProjectModal({
     onClose();
   }
 
-  const labelCls = 'text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1 block';
-  const fieldCls = 'w-full h-9 px-3 bg-background border border-border text-sm focus:outline-none focus:border-foreground transition-colors';
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:p-4" onClick={onClose}>
-      <div
-        className="relative w-full max-w-2xl bg-background sm:border sm:border-border sm:shadow-2xl flex flex-col h-[100dvh] sm:h-auto sm:max-h-[90vh] animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:fade-in duration-300"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-4 border-b border-border bg-surface-hover flex items-center justify-between shrink-0">
-          <h2 className="font-mono text-sm uppercase tracking-widest font-bold flex items-center gap-2">
-            <div className="w-2 h-2 bg-foreground" /> Create Project
-          </h2>
-          <button onClick={onClose} className="p-2 -mr-2 text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
-        </div>
-
-        <div className="p-6 overflow-y-auto flex-1 space-y-5">
+    <Dialog
+      title="Create Project"
+      onClose={onClose}
+      footer={
+        <>
+          <button onClick={onClose} className="h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest">Cancel</button>
+          <button data-testid="project-save-button" onClick={submit} disabled={submitting}
+            className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest disabled:opacity-50">
+            {submitting ? 'Creating…' : 'Initialize Project'}
+          </button>
+        </>
+      }
+    >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Project Name *</label>
@@ -166,16 +163,6 @@ export function CreateProjectModal({
           {error && (
             <div className="border border-red-500/50 bg-red-500/10 text-red-500 text-xs px-3 py-2 font-mono">{error}</div>
           )}
-        </div>
-
-        <div className="p-4 border-t border-border bg-surface flex justify-end gap-3">
-          <button onClick={onClose} className="h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest">Cancel</button>
-          <button data-testid="project-save-button" onClick={submit} disabled={submitting}
-            className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest disabled:opacity-50">
-            {submitting ? 'Creating…' : 'Initialize Project'}
-          </button>
-        </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }

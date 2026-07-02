@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiGet } from '@/lib/api/client';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ChevronRight,
@@ -35,6 +37,7 @@ import { AskAiButton } from '@/components/ai/ask-ai-button';
 import { ConnectRepositoryModal } from '@/components/repositories/connect-repository-modal';
 import { CreateReleaseModal } from '@/components/repositories/create-release-modal';
 import { DeploymentLogsModal } from '@/components/repositories/deployment-logs-modal';
+import { TableRowsSkeleton } from '@/components/ui/skeleton';
 
 const tabs = [
   'Repositories',
@@ -131,46 +134,30 @@ const getRiskColor = (risk: string) => {
 
 export default function RepositoriesPage() {
   const [activeTab, setActiveTab] = useState('Repositories');
-  const [repositories, setRepos] = useState<ReturnType<typeof mapRepo>[]>([]);
-  const [prs, setPRs] = useState<ReturnType<typeof mapPR>[]>([]);
-  const [commits, setCommits] = useState<ReturnType<typeof mapCommit>[]>([]);
-  const [pipelines, setPipelines] = useState<any[]>([]);
-  const [environments, setEnvironments] = useState<any[]>([]);
-  const [deployments, setDeployments] = useState<any[]>([]);
-
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [showReleaseModal, setShowReleaseModal] = useState(false);
   const [showLogsModal, setShowLogsModal] = useState(false);
-  const [rawDeployments, setRawDeployments] = useState<any[]>([]);
 
-  const fetchData = () => {
-    fetch('/api/v1/repositories').then(r => r.json()).then(j => {
-      const d = j?.data ?? {};
-      setRepos((d.repositories ?? []).map(mapRepo));
-      setPRs((d.pullRequests ?? []).map(mapPR));
-      setCommits((d.commits ?? []).map(mapCommit));
-      setPipelines((d.pipelines ?? []).map(mapPipeline));
-      setEnvironments((d.environments ?? []).map(mapEnv));
-      setDeployments((d.deployments ?? []).map(mapDeployment));
-      setRawDeployments(d.deployments ?? []);
-    }).catch(() => { });
-  };
+  const {
+    data: engData,
+    isPending: loading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ['repositories'],
+    queryFn: () => apiGet<Record<string, any[]>>('/api/v1/repositories'),
+  });
+  const error = isError ? 'Failed to load engineering data.' : null;
+  const fetchData = () => refetch();
 
-  useEffect(() => {
-    let active = true;
-    fetch('/api/v1/repositories').then((r) => r.json()).then((j) => {
-      if (!active) return;
-      const d = j?.data ?? {};
-      setRepos((d.repositories ?? []).map(mapRepo));
-      setPRs((d.pullRequests ?? []).map(mapPR));
-      setCommits((d.commits ?? []).map(mapCommit));
-      setPipelines((d.pipelines ?? []).map(mapPipeline));
-      setEnvironments((d.environments ?? []).map(mapEnv));
-      setDeployments((d.deployments ?? []).map(mapDeployment));
-      setRawDeployments(d.deployments ?? []);
-    }).catch(() => { });
-    return () => { active = false; };
-  }, []);
+  const d = engData ?? {};
+  const repositories = (d.repositories ?? []).map(mapRepo);
+  const prs = (d.pullRequests ?? []).map(mapPR);
+  const commits = (d.commits ?? []).map(mapCommit);
+  const pipelines = (d.pipelines ?? []).map(mapPipeline);
+  const environments = (d.environments ?? []).map(mapEnv);
+  const deployments = (d.deployments ?? []).map(mapDeployment);
+  const rawDeployments = d.deployments ?? [];
 
   return (
     <WorkspaceDataLayout className="space-y-6 animate-in fade-in duration-500 flex flex-col">
@@ -315,7 +302,18 @@ export default function RepositoriesPage() {
                 )}
               </thead>
               <tbody className="divide-y divide-border">
-                {activeTab === 'Repositories' && repositories.map((repo) => (
+                {loading && <TableRowsSkeleton rows={6} cols={9} />}
+                {!loading && error && (
+                  <tr>
+                    <td colSpan={9} className="p-8 text-center">
+                      <div className="text-[10px] uppercase tracking-widest text-destructive mb-3">{error}</div>
+                      <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={fetchData}>
+                        Retry
+                      </Button>
+                    </td>
+                  </tr>
+                )}
+                {!loading && !error && activeTab === 'Repositories' && repositories.map((repo) => (
                   <tr key={repo.id} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
@@ -350,7 +348,7 @@ export default function RepositoriesPage() {
                   </tr>
                 ))}
 
-                {activeTab === 'Pull Requests' && prs.map((pr) => (
+                {!loading && !error && activeTab === 'Pull Requests' && prs.map((pr) => (
                   <tr key={pr.key} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2 mb-1">
@@ -385,7 +383,7 @@ export default function RepositoriesPage() {
                   </tr>
                 ))}
 
-                {activeTab === 'Commits' && commits.map((commit) => (
+                {!loading && !error && activeTab === 'Commits' && commits.map((commit) => (
                   <tr key={commit.key} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-1 text-[10px] bg-surface border border-border px-1.5 py-0.5 inline-flex text-muted-foreground group-hover:text-foreground">
@@ -408,7 +406,7 @@ export default function RepositoriesPage() {
                   </tr>
                 ))}
 
-                {activeTab === 'CI/CD' && pipelines.map((pl) => (
+                {!loading && !error && activeTab === 'CI/CD' && pipelines.map((pl) => (
                   <tr key={pl.key} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="font-sans text-sm font-bold">{pl.pipeline}</div>
@@ -441,7 +439,7 @@ export default function RepositoriesPage() {
                   </tr>
                 ))}
 
-                {activeTab === 'Environments' && environments.map((env) => (
+                {!loading && !error && activeTab === 'Environments' && environments.map((env) => (
                   <tr key={env.name} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
@@ -470,7 +468,7 @@ export default function RepositoriesPage() {
                   </tr>
                 ))}
 
-                {activeTab === 'Deployments' && deployments.map((dep) => (
+                {!loading && !error && activeTab === 'Deployments' && deployments.map((dep) => (
                   <tr key={dep.key} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="font-sans text-sm font-bold">{dep.id}</div>

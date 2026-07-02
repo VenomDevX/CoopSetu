@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiGet } from '@/lib/api/client';
 import { motion, AnimatePresence } from 'motion/react';
 import { AddDeadlineModal } from '@/components/dashboard/add-deadline-modal';
 import { usePermission } from '@/lib/permissions/context';
@@ -134,8 +136,6 @@ export default function CalendarPage() {
   const [view, setView] = useState('Month');
   const [isDeadlineOpen, setIsDeadlineOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [members, setMembers] = useState<DirectoryMember[]>([]);
   const [activeLayers, setActiveLayers] = useState<string[]>(LAYERS.map((l) => l.name));
   const [search, setSearch] = useState('');
   // First day of the month currently displayed; defaults to the real current month.
@@ -146,41 +146,37 @@ export default function CalendarPage() {
   const { has } = usePermission();
   const canAddDeadline = has('deadline:create') || has('project:update');
 
-  const load = useCallback(async () => {
-    const [tasksRes, deadlinesRes] = await Promise.all([
-      fetch('/api/v1/tasks').catch(() => null),
-      fetch('/api/v1/project-deadlines').catch(() => null),
-    ]);
-    const [tasksJson, deadlinesJson] = await Promise.all([
-      tasksRes?.json().catch(() => null),
-      deadlinesRes?.json().catch(() => null),
-    ]);
-    setEvents([
-      ...buildTaskEvents(Array.isArray(tasksJson?.data) ? tasksJson.data : []),
-      ...buildDeadlineEvents(Array.isArray(deadlinesJson?.data) ? deadlinesJson.data : []),
-    ]);
-  }, []);
+  const {
+    data: events = [],
+    isPending: loading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ['calendar', 'events'],
+    queryFn: async () => {
+      const [tasks, deadlines] = await Promise.all([
+        apiGet<any[]>('/api/v1/tasks'),
+        apiGet<any[]>('/api/v1/project-deadlines'),
+      ]);
+      return [
+        ...buildTaskEvents(Array.isArray(tasks) ? tasks : []),
+        ...buildDeadlineEvents(Array.isArray(deadlines) ? deadlines : []),
+      ];
+    },
+  });
+  const error = isError ? 'Failed to load calendar events.' : null;
+  const load = () => refetch();
 
-  useEffect(() => {
-    let active = true;
-    const timer = window.setTimeout(() => {
-      if (active) void load();
-    }, 0);
-    fetch('/api/v1/employees')
-      .then((r) => r.json())
-      .then((j) => {
-        if (!active || !Array.isArray(j?.data)) return;
-        setMembers(j.data.map((m: { id: string; profile: { full_name?: string; email?: string; job_title?: string } | { full_name?: string; email?: string; job_title?: string }[] | null }) => {
-          const p = Array.isArray(m.profile) ? m.profile[0] : m.profile;
-          return { id: m.id, name: p?.full_name ?? p?.email ?? 'Member', job_title: p?.job_title ?? null };
-        }));
-      })
-      .catch(() => { });
-    return () => {
-      active = false;
-      window.clearTimeout(timer);
-    };
-  }, [load]);
+  const { data: members = [] } = useQuery({
+    queryKey: ['employees', 'directory'],
+    queryFn: async () => {
+      const rows = await apiGet<any[]>('/api/v1/employees');
+      return (Array.isArray(rows) ? rows : []).map((m: { id: string; profile: { full_name?: string; email?: string; job_title?: string } | { full_name?: string; email?: string; job_title?: string }[] | null }) => {
+        const p = Array.isArray(m.profile) ? m.profile[0] : m.profile;
+        return { id: m.id, name: p?.full_name ?? p?.email ?? 'Member', job_title: p?.job_title ?? null } as DirectoryMember;
+      });
+    },
+  });
 
   useTablesRealtime(['tasks', 'project_deadlines'], load);
 
@@ -302,6 +298,15 @@ export default function CalendarPage() {
           </Button>
         </div>
       </div>
+
+      {error && (
+        <div className="mb-6 p-3 border border-destructive/50 bg-destructive/10 flex items-center justify-between flex-shrink-0">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-destructive">{error}</span>
+          <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={load}>
+            Retry
+          </Button>
+        </div>
+      )}
 
       {/* Main Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 overflow-hidden">

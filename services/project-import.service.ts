@@ -194,10 +194,9 @@ export async function confirmProjectImport(
   const validRows = results.filter((row) => row.status === 'VALID');
   const invalidRows = results.filter((row) => row.status === 'INVALID');
 
-  const admin = createAdminClient();
   let created: { id: string; code: string; name: string }[] = [];
   if (validRows.length > 0) {
-    const { data: inserted, error: insertError } = await admin
+    const { data: inserted, error: insertError } = await supabase
       .from('projects')
       .insert(validRows.map((row) => ({
         organization_id: orgId,
@@ -250,9 +249,9 @@ export async function confirmProjectImport(
     organizationId: orgId,
     actorMemberId,
     action: 'project.imported',
-    resourceType: 'import_job',
-    resourceId: importId,
-    newValue: summary,
+    entityType: 'import_job',
+    entityId: importId,
+    afterState: summary,
     metadata: {
       created_project_ids: created.map((row) => row.id),
       skipped_rows: invalidRows.map((row) => ({ rowNumber: row.rowNumber, errors: row.errors })),

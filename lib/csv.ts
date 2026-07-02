@@ -67,7 +67,11 @@ export function parseCsv(text: string, maxRows = 500): CsvParseResult {
 }
 
 export function csvEscape(value: unknown): string {
-  const text = value == null ? '' : String(value);
+  let text = value == null ? '' : String(value);
+  // Formula/DDE injection guard: a cell starting with =, +, -, @, tab, or CR
+  // can be interpreted as a formula by Excel/Sheets when the CSV is opened.
+  // Prefixing with a leading apostrophe forces it to be read as plain text.
+  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
   if (/[",\r\n]/.test(text)) return `"${text.replaceAll('"', '""')}"`;
   return text;
 }

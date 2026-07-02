@@ -38,8 +38,8 @@ export async function registerAttachment(
   if (error) throw Errors.internal(error.message);
 
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'attachment.uploaded', resourceType: 'attachment',
-    resourceId: data.id, projectId: task.project_id, metadata: { taskId: input.task_id, file: input.file_name },
+    organizationId: orgId, action: 'attachment.uploaded', entityType: 'attachment',
+    entityId: data.id, projectId: task.project_id, metadata: { taskId: input.task_id, file: input.file_name },
   });
   return data;
 }

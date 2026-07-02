@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiGet } from '@/lib/api/client';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ChevronRight,
@@ -32,6 +34,7 @@ import { DataViewport } from '@/components/layout/data-viewport';
 import { CreateBugModal } from '@/components/qa-security/create-bug-modal';
 import { CreateTestPlanModal } from '@/components/qa-security/create-test-plan-modal';
 import { StartSecurityReviewModal } from '@/components/qa-security/start-security-review-modal';
+import { TableRowsSkeleton } from '@/components/ui/skeleton';
 
 const tabs = [
   'QA Testing',
@@ -117,39 +120,37 @@ const getSeverityColor = (severity: string) => {
 export default function QaSecurityPage() {
   const [activeTab, setActiveTab] = useState('Bugs');
   const [query, setQuery] = useState('');
-  const [mockBugs, setMockBugs] = useState<ReturnType<typeof mapBug>[]>([]);
-  const [mockQA, setMockQA] = useState<{ plan: string; project: string; automated: string; manual: string; ratio: string; regression: string; uat: string; owner: string; release: string }[]>([]);
-  const [mockSecurity, setMockSecurity] = useState<ReturnType<typeof mapReview>[]>([]);
-  const [mockCompliance, setMockCompliance] = useState<ReturnType<typeof mapCompliance>[]>([]);
   const [showCreateBug, setShowCreateBug] = useState(false);
   const [showCreateTestPlan, setShowCreateTestPlan] = useState(false);
   const [showSecurityReview, setShowSecurityReview] = useState(false);
 
-  const [mockApprovals, setMockApprovals] = useState<ReturnType<typeof mapApproval>[]>([]);
+  const {
+    data: qaData,
+    isPending: loading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ['qa-security'],
+    queryFn: async () => {
+      const [qa, security, approvals] = await Promise.all([
+        apiGet<{ bugs?: any[]; testPlans?: any[] }>('/api/v1/qa'),
+        apiGet<{ reviews?: any[]; compliance?: any[] }>('/api/v1/security'),
+        apiGet<any[]>('/api/v1/approvals'),
+      ]);
+      return { qa, security, approvals };
+    },
+  });
+  const error = isError ? 'Failed to load QA & security data.' : null;
+  const fetchQAData = () => refetch();
 
-  const fetchQAData = () => {
-    let active = true;
-    fetch('/api/v1/qa').then((r) => r.json()).then((j) => {
-      if (!active) return;
-      setMockBugs((j?.data?.bugs ?? []).map(mapBug));
-
-      setMockQA((j?.data?.testPlans ?? []).map((p: any) => ({
-        plan: p.title, project: '—', automated: '—', manual: '—', ratio: '—',
-        regression: p.status ?? '—', uat: '—', owner: p.owner_member_id ? 'Assigned' : '—', release: '—',
-      })));
-    }).catch(() => { });
-    fetch('/api/v1/security').then((r) => r.json()).then((j) => {
-      if (!active) return;
-      setMockSecurity((j?.data?.reviews ?? []).map(mapReview));
-      setMockCompliance((j?.data?.compliance ?? []).map(mapCompliance));
-    }).catch(() => { });
-    fetch('/api/v1/approvals').then((r) => r.json()).then((j) => {
-      if (active) setMockApprovals((Array.isArray(j?.data) ? j.data : []).map(mapApproval));
-    }).catch(() => { });
-    return () => { active = false; };
-  };
-
-  useEffect(() => fetchQAData(), []);
+  const mockBugs = (qaData?.qa?.bugs ?? []).map(mapBug);
+  const mockQA = (qaData?.qa?.testPlans ?? []).map((p: any) => ({
+    plan: p.title, project: '—', automated: '—', manual: '—', ratio: '—',
+    regression: p.status ?? '—', uat: '—', owner: p.owner_member_id ? 'Assigned' : '—', release: '—',
+  }));
+  const mockSecurity = (qaData?.security?.reviews ?? []).map(mapReview);
+  const mockCompliance = (qaData?.security?.compliance ?? []).map(mapCompliance);
+  const mockApprovals = (Array.isArray(qaData?.approvals) ? qaData.approvals : []).map(mapApproval);
 
   // Client-side search over the active tab's primary text column.
   const q = query.trim().toLowerCase();
@@ -299,7 +300,18 @@ export default function QaSecurityPage() {
                 )}
               </thead>
               <tbody className="divide-y divide-border">
-                {activeTab === 'Bugs' && fBugs.map((bug) => (
+                {loading && <TableRowsSkeleton rows={6} cols={9} />}
+                {!loading && error && (
+                  <tr>
+                    <td colSpan={9} className="p-8 text-center">
+                      <div className="text-[10px] uppercase tracking-widest text-destructive mb-3">{error}</div>
+                      <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={fetchQAData}>
+                        Retry
+                      </Button>
+                    </td>
+                  </tr>
+                )}
+                {!loading && !error && activeTab === 'Bugs' && fBugs.map((bug) => (
                   <tr key={bug.id} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="text-[10px] bg-surface border border-border px-1.5 py-0.5 inline-flex text-muted-foreground">
@@ -340,7 +352,7 @@ export default function QaSecurityPage() {
                   </tr>
                 ))}
 
-                {activeTab === 'QA Testing' && fQA.map((qa, i) => (
+                {!loading && !error && activeTab === 'QA Testing' && fQA.map((qa, i) => (
                   <tr key={i} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
@@ -371,7 +383,7 @@ export default function QaSecurityPage() {
                   </tr>
                 ))}
 
-                {activeTab === 'Security Reviews' && fSecurity.map((sec, i) => (
+                {!loading && !error && activeTab === 'Security Reviews' && fSecurity.map((sec, i) => (
                   <tr key={i} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
@@ -393,7 +405,7 @@ export default function QaSecurityPage() {
                   </tr>
                 ))}
 
-                {activeTab === 'Compliance' && fCompliance.map((comp, i) => (
+                {!loading && !error && activeTab === 'Compliance' && fCompliance.map((comp, i) => (
                   <tr key={i} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="text-[10px] bg-surface border border-border px-1.5 py-0.5 inline-flex font-bold">
@@ -417,7 +429,7 @@ export default function QaSecurityPage() {
                   </tr>
                 ))}
 
-                {activeTab === 'Approvals' && fApprovals.map((app, i) => (
+                {!loading && !error && activeTab === 'Approvals' && fApprovals.map((app, i) => (
                   <tr key={i} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <div className="font-sans font-bold text-sm">{app.chain}</div>

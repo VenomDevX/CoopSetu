@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { X, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -83,13 +84,21 @@ export function CreateTestPlanModal({ onClose, onCreated }: { onClose: () => voi
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-background border border-border w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-        <div className="flex items-center justify-between p-4 border-b border-border bg-surface-hover shrink-0">
-          <h2 className="text-sm font-mono uppercase tracking-widest font-bold">Create Test Plan</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-1"><X className="w-4 h-4" /></button>
-        </div>
-        <div className="p-6 overflow-y-auto space-y-6 text-sm font-mono flex-1">
+    <Dialog
+      title="Create Test Plan"
+      onClose={onClose}
+      className="max-w-3xl"
+      bodyClassName="space-y-6 text-sm font-mono"
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose} disabled={submitting} className="rounded-none font-mono uppercase tracking-widest text-[10px]">Cancel</Button>
+          <Button onClick={submit} disabled={submitting} className="rounded-none bg-foreground text-background font-mono uppercase tracking-widest text-[10px]">
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Create Test Plan
+          </Button>
+        </>
+      }
+    >
           {error && <div className="p-3 border border-red-500/20 bg-red-500/10 text-red-400 uppercase tracking-widest text-[10px]">{error}</div>}
           
           <div className="space-y-4">
@@ -179,15 +188,6 @@ export function CreateTestPlanModal({ onClose, onCreated }: { onClose: () => voi
             </div>
 
           </div>
-        </div>
-        <div className="p-4 border-t border-border bg-surface-hover flex justify-end gap-3 shrink-0">
-          <Button variant="outline" onClick={onClose} disabled={submitting} className="rounded-none font-mono uppercase tracking-widest text-[10px]">Cancel</Button>
-          <Button onClick={submit} disabled={submitting} className="rounded-none bg-foreground text-background font-mono uppercase tracking-widest text-[10px]">
-            {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Create Test Plan
-          </Button>
-        </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }

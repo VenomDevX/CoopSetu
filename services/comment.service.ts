@@ -41,8 +41,8 @@ export async function updateComment(
   if (error) throw Errors.internal(error.message);
 
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'comment.updated', resourceType: 'task_comment',
-    resourceId: commentId, metadata: { taskId: existing.task_id },
+    organizationId: orgId, action: 'comment.updated', entityType: 'task_comment',
+    entityId: commentId, metadata: { taskId: existing.task_id },
   });
   return data;
 }
@@ -66,8 +66,8 @@ export async function deleteComment(
   }
 
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'comment.deleted', resourceType: 'task_comment',
-    resourceId: commentId, metadata: { taskId: existing.task_id },
+    organizationId: orgId, action: 'comment.deleted', entityType: 'task_comment',
+    entityId: commentId, metadata: { taskId: existing.task_id },
   });
   return { id: commentId, deleted: true };
 }
@@ -98,19 +98,22 @@ export async function createComment(
     await supabase.from('comment_mentions').insert(
       mentions.map((m) => ({ comment_id: data.id, mentioned_member_id: m })),
     ).then(() => {}, () => {});
-    for (const m of mentions) {
-      await supabase.rpc('create_notification', {
+    // Fire mention notifications concurrently instead of one round-trip per
+    // mention — the RPC has no batch variant, so this is N parallel calls
+    // rather than N sequential ones.
+    await Promise.allSettled(mentions.map((m) =>
+      supabase.rpc('create_notification', {
         p_org: orgId, p_recipient: m, p_type: 'TASK_MENTIONED',
         p_title: `You were mentioned on ${task?.task_key ?? 'a task'}`,
         p_body: body.slice(0, 280), p_entity_type: 'task', p_entity_id: taskId,
         p_project_id: task?.project_id ?? null, p_metadata: { comment_id: data.id },
-      }).then(() => {}, () => {});
-    }
+      }),
+    ));
   }
 
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'comment.created', resourceType: 'task_comment',
-    resourceId: data.id, projectId: task?.project_id, metadata: { taskId },
+    organizationId: orgId, action: 'comment.created', entityType: 'task_comment',
+    entityId: data.id, projectId: task?.project_id, metadata: { taskId },
   });
   return data;
 }

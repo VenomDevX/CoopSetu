@@ -1,5 +1,8 @@
-import { cookies } from 'next/headers';
-import { createClient } from '@/lib/supabase/server';
+import { cache } from 'react';
+import { cookies, headers } from 'next/headers';
+import { isIpAllowed } from '@/lib/security/ip-utils';
+import { Errors } from '@/lib/api/errors';
+import { getAuthContext } from './require-user';
 
 export const ACTIVE_ORG_COOKIE = 'handoff_active_org';
 
@@ -21,11 +24,10 @@ export interface Membership {
  * this query), so a forged cookie cannot grant access to an org the user isn't
  * an active member of.
  */
-export async function getCurrentMembership(
+export const getCurrentMembership = cache(async (
   organizationId?: string,
-): Promise<Membership | null> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+): Promise<Membership | null> => {
+  const { user, supabase } = await getAuthContext();
   if (!user) return null;
 
   const cookieStore = await cookies();
@@ -35,7 +37,7 @@ export async function getCurrentMembership(
   async function resolve(orgId?: string) {
     let q = supabase
       .from('organization_members')
-      .select('id, organization_id, is_active, organizations(is_demo)')
+      .select('id, organization_id, is_active, organizations(is_demo, ip_allowlist)')
       .eq('user_id', user!.id)
       .eq('is_active', true);
     if (orgId) q = q.eq('organization_id', orgId);
@@ -45,6 +47,19 @@ export async function getCurrentMembership(
   let member = preferredOrg ? await resolve(preferredOrg) : null;
   if (!member) member = await resolve(); // cookie stale/invalid → default
   if (!member) return null;
+
+  // Verify IP Allowlist
+  const orgData = member.organizations as any; // Type workaround for join
+  const ipAllowlist = orgData?.ip_allowlist as string[] | undefined;
+  
+  if (ipAllowlist && ipAllowlist.length > 0) {
+    const headersList = await headers();
+    const clientIp = headersList.get('x-forwarded-for')?.split(',')[0].trim() || headersList.get('x-real-ip') || '127.0.0.1';
+    
+    if (!isIpAllowed(clientIp, ipAllowlist)) {
+      throw Errors.forbidden('IP Address Denied by Organization Policy');
+    }
+  }
 
   // roles
   const { data: roleRows } = await supabase
@@ -80,7 +95,7 @@ export async function getCurrentMembership(
     memberId: member.id,
     organizationId: member.organization_id,
     roles,
-    permissions,
-    isDemo: !!(member.organizations as any)?.is_demo,
+    permissions: Array.from(permissions),
+    isDemo: orgData?.is_demo,
   };
-}
+});

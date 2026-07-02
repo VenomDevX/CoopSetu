@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiGet } from '@/lib/api/client';
 import { motion } from 'motion/react';
 import {
   ChevronRight,
@@ -21,6 +23,7 @@ import { DataViewport } from '@/components/layout/data-viewport';
 import { AskAiButton } from '@/components/ai/ask-ai-button';
 import { DeclareIncidentModal } from '@/components/incidents/declare-incident-modal';
 import { CreatePostmortemModal } from '@/components/incidents/create-postmortem-modal';
+import { TableRowsSkeleton } from '@/components/ui/skeleton';
 
 const SEV_LABEL: Record<string, string> = { SEV1: 'SEV-1', SEV2: 'SEV-2', SEV3: 'SEV-3', SEV4: 'SEV-4' };
 const STATUS_LABEL: Record<string, string> = {
@@ -70,20 +73,22 @@ const getStatusColor = (status: string) => {
 };
 
 export default function IncidentsPage() {
-  const [incidents, setIncidents] = useState<ReturnType<typeof mapIncident>[]>([]);
   const [showDeclareModal, setShowDeclareModal] = useState(false);
   const [showPostmortemModal, setShowPostmortemModal] = useState(false);
 
-  const fetchIncidents = () => {
-    fetch('/api/v1/incidents')
-      .then((r) => r.json())
-      .then((j) => { setIncidents((Array.isArray(j?.data || j) ? (j.data || j) : []).map(mapIncident)); })
-      .catch(() => { });
-  };
-
-  useEffect(() => {
-    fetchIncidents();
-  }, []);
+  const {
+    data: incidents = [],
+    isPending: loading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ['incidents'],
+    queryFn: async () => {
+      const rows = await apiGet<unknown[]>('/api/v1/incidents');
+      return (Array.isArray(rows) ? rows : []).map(mapIncident);
+    },
+  });
+  const error = isError ? 'Failed to load incidents.' : null;
 
   return (
     <>
@@ -160,7 +165,25 @@ export default function IncidentsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {incidents.map((inc) => (
+                {loading && <TableRowsSkeleton rows={6} cols={10} />}
+                {!loading && error && (
+                  <tr>
+                    <td colSpan={10} className="p-8 text-center">
+                      <div className="text-[10px] uppercase tracking-widest text-destructive mb-3">{error}</div>
+                      <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={() => refetch()}>
+                        Retry
+                      </Button>
+                    </td>
+                  </tr>
+                )}
+                {!loading && !error && incidents.length === 0 && (
+                  <tr>
+                    <td colSpan={10} className="p-8 text-center text-[10px] uppercase tracking-widest text-muted-foreground">
+                      No incidents found
+                    </td>
+                  </tr>
+                )}
+                {!loading && !error && incidents.map((inc) => (
                   <tr key={inc.id} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
                       <Link href={`/dashboard/incidents/${inc.id}`} className="text-[10px] bg-surface border border-border px-1.5 py-0.5 inline-flex text-muted-foreground group-hover:text-foreground">
@@ -208,13 +231,13 @@ export default function IncidentsPage() {
           </DataViewport>
 
           <div className="p-3 border-t border-border bg-surface-hover flex justify-between items-center text-[10px] font-mono text-muted-foreground flex-shrink-0">
-            <span>Showing 5 incidents</span>
+            <span>Showing {incidents.length} incident{incidents.length === 1 ? '' : 's'}</span>
           </div>
         </div>
       </div>
     </WorkspaceDataLayout>
-    {showDeclareModal && <DeclareIncidentModal onClose={() => setShowDeclareModal(false)} onSuccess={() => { setShowDeclareModal(false); fetchIncidents(); }} />}
-    {showPostmortemModal && <CreatePostmortemModal onClose={() => setShowPostmortemModal(false)} onSuccess={() => { setShowPostmortemModal(false); fetchIncidents(); }} />}
+    {showDeclareModal && <DeclareIncidentModal onClose={() => setShowDeclareModal(false)} onSuccess={() => { setShowDeclareModal(false); refetch(); }} />}
+    {showPostmortemModal && <CreatePostmortemModal onClose={() => setShowPostmortemModal(false)} onSuccess={() => { setShowPostmortemModal(false); refetch(); }} />}
     </>
   );
 }

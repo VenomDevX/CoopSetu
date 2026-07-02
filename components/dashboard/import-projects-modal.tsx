@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Upload } from 'lucide-react';
+import { Upload } from 'lucide-react';
+import { Dialog, dialogLabelCls as labelCls, dialogFieldCls as fieldCls } from '@/components/ui/dialog';
 
 type Mapping = {
   name: string;
@@ -91,25 +92,33 @@ export function ImportProjectsModal({
 
   const setMap = (key: keyof Mapping, value: string) =>
     setMapping((current) => ({ ...(current ?? {} as Mapping), [key]: value }));
-  const labelCls = 'text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1 block';
-  const fieldCls = 'w-full h-9 px-3 bg-background border border-border text-sm focus:outline-none focus:border-foreground transition-colors';
   const headers = preview?.headers ?? [];
   const shownRows = result?.rows.slice(0, 20) ?? preview?.rows ?? [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:p-4" onClick={onClose}>
-      <div
-        className="relative w-full max-w-4xl bg-background sm:border sm:border-border sm:shadow-2xl flex flex-col h-[100dvh] sm:h-auto sm:max-h-[92vh] animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:fade-in duration-300"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-4 border-b border-border bg-surface-hover flex items-center justify-between shrink-0">
-          <h2 className="font-mono text-sm uppercase tracking-widest font-bold flex items-center gap-2">
-            <Upload className="w-4 h-4" /> Import Projects
-          </h2>
-          <button onClick={onClose} className="p-2 -mr-2 text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
-        </div>
-
-        <div className="p-6 overflow-y-auto flex-1 space-y-6">
+    <Dialog
+      title={<><Upload className="w-4 h-4" /> Import Projects</>}
+      onClose={onClose}
+      className="max-w-4xl sm:max-h-[92vh]"
+      bodyClassName="space-y-6"
+      footer={
+        <>
+          <button onClick={onClose} className="h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest">
+            {result ? 'Close' : 'Cancel'}
+          </button>
+          {preview && !result && (
+            <button
+              data-testid="project-import-confirm"
+              onClick={confirmImport}
+              disabled={busy || !mapping?.name || !mapping?.code}
+              className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest disabled:opacity-50"
+            >
+              {busy ? 'Importing...' : 'Confirm Import'}
+            </button>
+          )}
+        </>
+      }
+    >
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
             <div>
               <label className={labelCls}>CSV File</label>
@@ -218,24 +227,6 @@ export function ImportProjectsModal({
           {error && (
             <div className="border border-red-500/50 bg-red-500/10 text-red-500 text-xs px-3 py-2 font-mono">{error}</div>
           )}
-        </div>
-
-        <div className="p-4 border-t border-border bg-surface flex justify-end gap-3">
-          <button onClick={onClose} className="h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest">
-            {result ? 'Close' : 'Cancel'}
-          </button>
-          {preview && !result && (
-            <button
-              data-testid="project-import-confirm"
-              onClick={confirmImport}
-              disabled={busy || !mapping?.name || !mapping?.code}
-              className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest disabled:opacity-50"
-            >
-              {busy ? 'Importing...' : 'Confirm Import'}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }

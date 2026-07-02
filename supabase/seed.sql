@@ -250,6 +250,9 @@ begin
     (v_org,'Production','PRODUCTION',true)
   on conflict do nothing;
 
+  insert into approval_requests (organization_id, project_id, approval_type, requested_by_member_id, status)
+  values (v_org, (select id from projects where organization_id=v_org limit 1), 'QA_REVIEW', v_pm, 'PENDING');
+
   -- ai settings
   insert into ai_settings (organization_id) values (v_org) on conflict do nothing;
 

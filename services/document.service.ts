@@ -23,6 +23,14 @@ export async function createDocument(
   supabase: SupabaseClient, orgId: string, memberId: string,
   input: { title: string; content_markdown?: string; document_type?: string; project_id?: string; classification?: string },
 ) {
+  // Defense-in-depth: project_id is a client-supplied UUID. Without this, a
+  // member could file a document under another organization's project_id
+  // (the FK only requires the project to exist, not belong to this org).
+  if (input.project_id) {
+    const { data: project } = await supabase.from('projects').select('id').eq('id', input.project_id).eq('organization_id', orgId).maybeSingle();
+    if (!project) throw Errors.validation('Selected project does not belong to this organization.');
+  }
+
   const { data, error } = await supabase.from('documents').insert({
     ...input, organization_id: orgId, owner_member_id: memberId,
     content_markdown: input.content_markdown ?? '', current_version: 1,
@@ -33,8 +41,8 @@ export async function createDocument(
     created_by_member_id: memberId, change_summary: 'Initial version',
   });
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'document.created', resourceType: 'document',
-    resourceId: data.id, projectId: input.project_id ?? null,
+    organizationId: orgId, action: 'document.created', entityType: 'document',
+    entityId: data.id, projectId: input.project_id ?? null,
   });
   return data;
 }
@@ -65,8 +73,8 @@ export async function updateDocument(
   if (error) throw Errors.internal(error.message);
   if (!data) throw Errors.forbidden();
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'document.updated', resourceType: 'document',
-    resourceId: documentId, projectId: current.project_id,
+    organizationId: orgId, action: 'document.updated', entityType: 'document',
+    entityId: documentId, projectId: current.project_id,
   });
   return data;
 }
@@ -78,8 +86,8 @@ export async function approveDocument(supabase: SupabaseClient, orgId: string, m
   if (error) throw Errors.internal(error.message);
   if (!data) throw Errors.forbidden('You cannot approve this document.');
   await createAuditLog(supabase, {
-    organizationId: orgId, action: 'document.approved', resourceType: 'document',
-    resourceId: documentId, projectId: data.project_id,
+    organizationId: orgId, action: 'document.approved', entityType: 'document',
+    entityId: documentId, projectId: data.project_id,
   });
   return data;
 }
