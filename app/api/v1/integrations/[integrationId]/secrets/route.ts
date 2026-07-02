@@ -17,8 +17,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ integr
     requirePermission(m, 'integration:manage');
     
     const { integrationId } = await params;
-    if (!integrationId) throw Errors.badRequest('Integration ID is required');
-
+    if (!integrationId) {
+      throw Errors.validation('Integration ID is required');
+    }
     const body = await req.json();
     const secrets = secretsSchema.parse(body);
 

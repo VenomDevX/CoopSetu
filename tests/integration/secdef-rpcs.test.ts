@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:55001';
-const KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // It doesn't really matter for admin setup but needs to be valid format, we'll use actual service key
+const KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'fake_anon_key_for_testing'; // Doesn't need to be a real JWT for this placeholder comes from env in CI
 
 // The integration environment uses valid anon key from .env.local
 const anonClient = createClient(URL, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY!);
@@ -33,8 +33,8 @@ describe('Security Definer RPCs Hardening', () => {
     unauthOrgId = org2!.id;
 
     // Add users to orgs
-    const { data: m1 } = await adminClient.from('organization_members').insert({ organization_id: orgId, user_id: user1!.user.id }).select('id').single();
-    const { data: m2 } = await adminClient.from('organization_members').insert({ organization_id: unauthOrgId, user_id: user2!.user.id }).select('id').single();
+    const { data: m1 } = await adminClient.from('organization_members').insert({ organization_id: orgId, user_id: user1!.user!.id }).select('id').single();
+    const { data: m2 } = await adminClient.from('organization_members').insert({ organization_id: unauthOrgId, user_id: user2!.user!.id }).select('id').single();
     
     // Assign permissions
     const { data: role } = await adminClient.from('roles').select('id').eq('code', 'ORG_OWNER').is('organization_id', null).single();
