@@ -27,9 +27,11 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!org) return;
-    setOrgName(org.name ?? '');
-    setOrgSlug(org.slug ?? '');
-    setIpAllowlist(Array.isArray(org.ip_allowlist) ? org.ip_allowlist.join(', ') : '');
+    queueMicrotask(() => {
+      setOrgName(org.name ?? '');
+      setOrgSlug(org.slug ?? '');
+      setIpAllowlist(Array.isArray(org.ip_allowlist) ? org.ip_allowlist.join(', ') : '');
+    });
   }, [org]);
 
   const {

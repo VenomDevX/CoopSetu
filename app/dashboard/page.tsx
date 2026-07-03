@@ -60,7 +60,7 @@ export default function CommandCenter() {
   }, []);
 
   useEffect(() => {
-    setMounted(true);
+    queueMicrotask(() => setMounted(true));
     load();
   }, [load]);
 
@@ -97,7 +97,7 @@ export default function CommandCenter() {
         <div>
           <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono uppercase tracking-widest mb-3">
             <div className="w-2 h-2 bg-foreground animate-pulse rounded-none" />
-            WORKSPACE: {membership.organizationName} // SYNC: ACTIVE // UPDATED: {lastSync}
+            WORKSPACE: {membership.organizationName} {' // SYNC: ACTIVE // UPDATED: '}{lastSync}
           </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground mb-1">Command Center</h1>
           <div className="font-mono text-xs text-muted-foreground uppercase tracking-widest">

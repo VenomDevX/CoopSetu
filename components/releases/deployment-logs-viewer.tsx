@@ -30,7 +30,8 @@ export function DeploymentLogsViewer({ deploymentId }: { deploymentId: string })
   };
 
   useEffect(() => {
-    fetchLogs();
+    queueMicrotask(() => fetchLogs());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deploymentId]);
 
   return (
