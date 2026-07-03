@@ -13,8 +13,8 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
   
-  // Demo start: 5 requests per 15 minutes per IP
-  if (!(await checkRateLimit(ip, 5, 900))) {
+  // Demo start: 50 requests per 15 minutes per IP
+  if (!(await checkRateLimit(ip, 50, 900))) {
     return NextResponse.json({ data: null, error: { code: 'TOO_MANY_REQUESTS', message: 'Too many demo requests. Please try again later.' } }, { status: 429 });
   }
 
