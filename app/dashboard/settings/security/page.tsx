@@ -37,7 +37,7 @@ export default function SecuritySettingsPage() {
   }, [supabase]);
 
   useEffect(() => {
-    loadFactors();
+    queueMicrotask(() => loadFactors());
   }, [loadFactors]);
 
   async function startEnroll() {

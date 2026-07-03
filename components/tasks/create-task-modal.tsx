@@ -66,13 +66,18 @@ export function CreateTaskModal({
   }, [projectId]);
 
   useEffect(() => {
-    if (!selectedProject) {
-      setMembers([]);
-      setSprints([]);
-      setEpics([]);
-      return;
-    }
     let active = true;
+    if (!selectedProject) {
+      // Use queueMicrotask to avoid synchronous setState in effect
+      queueMicrotask(() => {
+        if (active) {
+          setMembers([]);
+          setSprints([]);
+          setEpics([]);
+        }
+      });
+      return () => { active = false; };
+    }
     fetch(`/api/v1/projects/${selectedProject}/assignable-members`)
       .then((r) => r.json())
       .then((j) => { if (active) setMembers(Array.isArray(j?.data) ? j.data : []); })

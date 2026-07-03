@@ -58,7 +58,7 @@ export default function DemoPage() {
       }
       
       if (json.data?.redirectUrl) {
-        window.location.href = json.data.redirectUrl;
+        window.location.assign(json.data.redirectUrl);
       } else {
         router.push('/dashboard');
       }
