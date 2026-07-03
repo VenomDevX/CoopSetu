@@ -70,15 +70,14 @@ export function rateLimit(identifier: string, limit: number, windowMs: number): 
  */
 export function getRateLimitConfig(pathname: string) {
   if (pathname.startsWith('/api/v1/auth') || pathname === '/login' || pathname === '/signup') {
-    // 5 requests per 5 minutes for auth endpoints
-    return { limit: 5, windowMs: 5 * 60 * 1000 }; 
+    // Increased for testing: 50 requests per 5 minutes
+    return { limit: 50, windowMs: 5 * 60 * 1000 }; 
   }
   
   if (pathname.startsWith('/api/v1/')) {
-    // 100 requests per minute for standard API routes
-    return { limit: 100, windowMs: 60 * 1000 };
+    // Increased for testing: 1000 requests per minute
+    return { limit: 1000, windowMs: 60 * 1000 };
   }
 
-  // 1000 requests per minute for static/page assets
   return { limit: 1000, windowMs: 60 * 1000 };
 }
