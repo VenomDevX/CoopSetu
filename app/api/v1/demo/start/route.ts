@@ -8,7 +8,6 @@ import { provisionDemoWorkspace } from '@/lib/demo/provision-demo-workspace';
 
 const schema = z.object({
   role: z.string(),
-  captchaToken: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -34,11 +33,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Sign in anonymously
-    const { data: authData, error: authError } = await supabase.auth.signInAnonymously({
-      options: {
-        captchaToken: body.captchaToken,
-      },
-    });
+    const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
     if (authError || !authData.user) {
       throw Errors.internal(`Failed to initialize anonymous session: ${authError?.message}`);
     }
