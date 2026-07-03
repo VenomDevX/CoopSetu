@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import HCaptcha from '@hcaptcha/react-hcaptcha';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bot, CheckCircle, ShieldCheck, Code2, TestTube2, AlertCircle } from 'lucide-react';
 
@@ -26,9 +25,7 @@ const ROLE_DESCRIPTIONS: Record<string, string> = {
 export default function DemoPage() {
   const router = useRouter();
   const [loadingRole, setLoadingRole] = useState<string | null>(null);
-  const [pendingRole, setPendingRole] = useState<string | null>(null);
   const [error, setError] = useState('');
-  const captchaRef = useRef<HCaptcha>(null);
 
   // Auto-logout if a demo user navigates back to the demo selection page
   useEffect(() => {
@@ -44,23 +41,10 @@ export default function DemoPage() {
   }, [router]);
 
   const startDemo = async (role: string) => {
-    // If no site key is configured, bypass captcha
-    if (!process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY) {
-      executeDemoStart(role, undefined);
-      return;
-    }
-    setPendingRole(role);
-    setLoadingRole(role);
-    captchaRef.current?.execute();
+    executeDemoStart(role);
   };
 
-  const onCaptchaVerify = (token: string) => {
-    if (pendingRole) {
-      executeDemoStart(pendingRole, token);
-    }
-  };
-
-  const executeDemoStart = async (role: string, captchaToken?: string) => {
+  const executeDemoStart = async (role: string) => {
     setLoadingRole(role);
     setError('');
     
@@ -68,7 +52,7 @@ export default function DemoPage() {
       const res = await fetch('/api/v1/demo/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role, captchaToken }),
+        body: JSON.stringify({ role }),
       });
       
       const json = await res.json();
@@ -139,16 +123,6 @@ export default function DemoPage() {
           })}
         </div>
         
-        {process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY && (
-          <HCaptcha
-            ref={captchaRef}
-            sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}
-            size="invisible"
-            onVerify={onCaptchaVerify}
-            onError={(err) => { setError('Captcha failed. Please try again.'); setLoadingRole(null); }}
-            onExpire={() => setLoadingRole(null)}
-          />
-        )}
       </div>
     </div>
   );
