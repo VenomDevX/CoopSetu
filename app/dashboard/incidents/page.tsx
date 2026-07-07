@@ -42,7 +42,7 @@ function mapIncident(r: any) {
     title: r.title,
     severity: SEV_LABEL[r.severity] ?? r.severity,
     status: STATUS_LABEL[r.status] ?? r.status,
-    commander: r.incident_commander_member_id ? 'Assigned' : '—',
+    commander: r.commander?.profile?.full_name ?? '—',
     service: '—',
     impact: r.customer_impact ?? '—',
     start: start ? start.toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—',

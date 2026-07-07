@@ -6,7 +6,10 @@ import type { CreateTeamInput, UpdateTeamInput, CreateDepartmentInput } from '@/
 export async function listTeams(supabase: SupabaseClient, orgId: string) {
   const { data, error } = await supabase
     .from('teams')
-    .select('*, team_members(count)')
+    .select('*, ' +
+      'team_lead:team_lead_member_id(id, profile:profiles!org_members_profile_fk(full_name)), ' +
+      'department:department_id(id, name), ' +
+      'team_members(count)')
     .eq('organization_id', orgId)
     .order('name');
   if (error) throw Errors.internal(error.message);

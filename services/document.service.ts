@@ -3,7 +3,9 @@ import { Errors } from '@/lib/api/errors';
 import { createAuditLog } from '@/lib/audit/create-audit-log';
 
 export async function listDocuments(supabase: SupabaseClient, orgId: string, projectId?: string) {
-  let q = supabase.from('documents').select('*').eq('organization_id', orgId).is('archived_at', null)
+  let q = supabase.from('documents')
+    .select('*, owner:owner_member_id(id, profile:profiles!org_members_profile_fk(full_name))')
+    .eq('organization_id', orgId).is('archived_at', null)
     .order('updated_at', { ascending: false });
   if (projectId) q = q.eq('project_id', projectId);
   const { data, error } = await q;

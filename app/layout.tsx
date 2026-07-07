@@ -22,6 +22,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange={false}
+          nonce={nonce}
         >
           <MotionConfig reducedMotion="user">
             <Providers>{children}</Providers>

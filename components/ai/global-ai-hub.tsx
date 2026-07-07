@@ -126,10 +126,9 @@ export function GlobalAiHub() {
           }
           setOpen(true);
         }}
-        className="h-9 px-3 sm:px-4 gap-2 border-border text-xs font-mono uppercase tracking-widest text-foreground rounded-none hover:bg-surface-hover hover:text-foreground"
+        className="relative w-9 h-9 flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-none transition-colors border border-transparent hover:border-border text-xs font-mono uppercase tracking-widest"
       >
         <Bot className="w-4 h-4 text-accent" />
-        <span className="hidden sm:inline">AI Hub</span>
       </Button>
 
       {panel}

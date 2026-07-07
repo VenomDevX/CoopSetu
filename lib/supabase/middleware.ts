@@ -71,6 +71,21 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  if (!user && pathname.startsWith('/invite/')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    url.searchParams.set('next', pathname);
+    const redirectRes = NextResponse.redirect(url);
+    redirectRes.cookies.set('invite_return_to', pathname, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 10,
+      path: '/',
+    });
+    return redirectRes;
+  }
+
   if (user && (pathname === '/login' || pathname === '/signup')) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';

@@ -5,7 +5,8 @@ import { notifyMemberByEmail } from '@/lib/notifications/notify';
 import { escapeHtml } from '@/lib/email/send-email';
 
 export async function listIncidents(supabase: SupabaseClient, orgId: string) {
-  const { data, error } = await supabase.from('incidents').select('*')
+  const { data, error } = await supabase.from('incidents')
+    .select('*, commander:incident_commander_member_id(id, profile:profiles!org_members_profile_fk(full_name))')
     .eq('organization_id', orgId).order('started_at', { ascending: false });
   if (error) throw Errors.internal(error.message);
   return data;

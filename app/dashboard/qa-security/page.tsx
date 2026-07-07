@@ -56,20 +56,20 @@ function mapBug(r: any) {
   return {
     id: r.id.slice(0, 8), title: r.title, severity: SEV_CAP[r.severity] ?? r.severity,
     priority: r.priority, project: '—', env: r.environment ?? '—', reporter: '—',
-    assignee: r.assignee_member_id ? 'Assigned' : 'Unassigned', task: '—', release: '—',
+    assignee: r.assignee?.profile?.full_name ?? 'Unassigned', task: '—', release: '—',
     status: BUG_STATUS[r.status] ?? r.status, rootCause: r.root_cause ?? '-', created: fmtDate(r.created_at)
   };
 }
 function mapReview(r: any) {
   return {
     review: r.title, project: '—', vulns: '—', score: r.risk_score != null ? String(r.risk_score) : '—',
-    owner: r.reviewer_member_id ? 'Assigned' : '—', due: fmtDate(r.due_date),
+    owner: r.reviewer?.profile?.full_name ?? '—', due: fmtDate(r.due_date),
     evidence: `${r.security_review_checks?.length ?? 0} checks`, status: REVIEW_STATUS[r.status] ?? r.status, tasks: '—'
   };
 }
 function mapCompliance(r: any) {
   return {
-    control: r.name, requirement: r.framework_name ?? '—', owner: r.owner_member_id ? 'Assigned' : '—',
+    control: r.name, requirement: r.framework_name ?? '—', owner: r.owner?.profile?.full_name ?? '—',
     evidence: '—', due: fmtDate(r.due_date), status: COMPLIANCE_STATUS[r.status] ?? r.status, project: '—',
     approval: r.status === 'COMPLIANT' ? 'Approved' : 'Pending'
   };
@@ -146,7 +146,7 @@ export default function QaSecurityPage() {
   const mockBugs = (qaData?.qa?.bugs ?? []).map(mapBug);
   const mockQA = (qaData?.qa?.testPlans ?? []).map((p: any) => ({
     plan: p.title, project: '—', automated: '—', manual: '—', ratio: '—',
-    regression: p.status ?? '—', uat: '—', owner: p.owner_member_id ? 'Assigned' : '—', release: '—',
+    regression: p.status ?? '—', uat: '—', owner: p.owner?.profile?.full_name ?? '—', release: '—',
   }));
   const mockSecurity = (qaData?.security?.reviews ?? []).map(mapReview);
   const mockCompliance = (qaData?.security?.compliance ?? []).map(mapCompliance);

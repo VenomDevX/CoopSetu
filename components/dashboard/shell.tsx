@@ -1,15 +1,15 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Logo } from '@/components/logo';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Search, Plus, LayoutDashboard, Briefcase, Inbox, Calendar,
   Layers, KanbanSquare, CheckSquare, GitBranch, ShieldCheck, FileText,
-  BarChart3, Settings, Users, AlertCircle, LogOut, Menu, X, Info, Mail, Shield, FileSignature
+  BarChart3, Settings, Users, AlertCircle, LogOut, Menu, X, Info, Mail, Shield, FileSignature,
+  ChevronDown, User
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NotificationBell } from '@/components/realtime/notification-bell';
 import { MembershipProvider, type MembershipContextValue } from '@/lib/permissions/context';
@@ -28,8 +28,11 @@ const ADMIN_ROLES = ['SUPER_ADMIN', 'ORG_OWNER', 'ORG_ADMIN'];
 
 export function DashboardShell({ children, displayName, initials, membership }: ShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
   const perms = membership.permissions;
   const isAdmin = membership.roles.some((r) => ADMIN_ROLES.includes(r));
   const can = (p?: string) => !p || isAdmin || perms.includes(p);
@@ -64,6 +67,17 @@ export function DashboardShell({ children, displayName, initials, membership }: 
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target as Node)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const [demoAlertVisible, setDemoAlertVisible] = useState(false);
@@ -152,21 +166,7 @@ export function DashboardShell({ children, displayName, initials, membership }: 
       </div>
 
       <div className="p-4 border-t border-border bg-surface-hover shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-background border border-border flex items-center justify-center text-foreground font-mono text-xs font-bold rounded-none shrink-0">
-            {initials}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-xs text-foreground font-bold uppercase tracking-widest truncate">{displayName}</div>
-            <div className="mt-1"><OrgSwitcher /></div>
-          </div>
-          <form action="/auth/signout" method="post">
-            <button type="submit" title="Sign out"
-              className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground border border-transparent hover:border-border shrink-0">
-              <LogOut className="w-4 h-4" />
-            </button>
-          </form>
-        </div>
+        <OrgSwitcher />
       </div>
     </>
   );
@@ -210,7 +210,7 @@ export function DashboardShell({ children, displayName, initials, membership }: 
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-          <header className="h-16 bg-background/80 backdrop-blur-xl border-b border-border flex items-center justify-between px-4 sm:px-8 flex-shrink-0 transition-colors duration-200 z-10">
+          <header className="h-16 bg-background/80 backdrop-blur-xl border-b border-border flex items-center justify-between px-4 sm:px-8 flex-shrink-0 transition-colors duration-200 z-40">
             <div className="flex items-center gap-3 sm:gap-4 flex-1">
               {/* Hamburger Menu for Mobile */}
               <button 
@@ -232,23 +232,88 @@ export function DashboardShell({ children, displayName, initials, membership }: 
               </button>
             </div>
             
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-1 sm:gap-2">
               <div className="hidden sm:block">
                 <ThemeToggle />
               </div>
               <GlobalAiHub />
-              <div className="hidden sm:block w-px h-5 bg-border mx-1 sm:mx-2" />
-              {can('task:create') && (
-                <Link href="/dashboard/tasks">
-                  <Button data-testid="init-task-button" size="sm" className="h-9 px-3 sm:px-6 gap-2 bg-foreground text-background text-xs font-mono uppercase tracking-widest hover:bg-foreground/90 rounded-none">
-                    <Plus className="w-4 h-4 shrink-0" />
-                    <span className="hidden sm:inline">Init_Task</span>
-                  </Button>
-                </Link>
-              )}
-              <NotificationBell />
+
+              <div className="hidden sm:block w-px h-5 bg-border/60 mx-1" />
+
+              {/* Profile Dropdown */}
+              <div className="relative" ref={profileDropdownRef}>
+                <button
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className="group flex items-center gap-2 py-1 transition-all duration-200 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground"
+                >
+                  <span className="w-5 h-5 rounded-full bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center text-[8px] font-bold text-white ring-2 ring-accent/20">
+                    {initials.charAt(0)}
+                  </span>
+                  <span className="hidden sm:block truncate max-w-[80px]">
+                    {displayName.split(' ')[0]}
+                  </span>
+                  <ChevronDown className={`w-3 h-3 shrink-0 text-muted-foreground group-hover:text-foreground transition-transform duration-200 ${profileDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                <AnimatePresence>
+                  {profileDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-2 w-52 bg-background border border-border shadow-2xl z-[90] overflow-hidden"
+                    >
+                      <div className="px-4 py-3 border-b border-border">
+                        <p className="text-xs font-mono uppercase tracking-widest text-foreground truncate">{displayName}</p>
+                        <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mt-0.5">Workspace</p>
+                      </div>
+                      <div className="py-1">
+                        {can('task:create') && (
+                          <button
+                            onClick={() => { setProfileDropdownOpen(false); router.push('/dashboard/tasks'); }}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+                          >
+                            <Plus className="w-3.5 h-3.5" /> Init Task
+                          </button>
+                        )}
+                        <button
+                          onClick={() => { setProfileDropdownOpen(false); router.push('/dashboard'); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+                        >
+                          <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
+                        </button>
+                        <button
+                          onClick={() => { setProfileDropdownOpen(false); router.push('/dashboard/settings?tab=profile'); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+                        >
+                          <User className="w-3.5 h-3.5" /> Profile
+                        </button>
+                        <button
+                          onClick={() => { setProfileDropdownOpen(false); router.push('/dashboard/settings?tab=org'); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+                        >
+                          <Settings className="w-3.5 h-3.5" /> Settings
+                        </button>
+                      </div>
+                      <div className="border-t border-border py-1">
+                        <form action="/auth/signout" method="post">
+                          <button
+                            type="submit"
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-red-400 hover:text-red-300 hover:bg-surface-hover transition-colors"
+                          >
+                            <LogOut className="w-3.5 h-3.5" /> Sign Out
+                          </button>
+                        </form>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </header>
+
+          <NotificationBell />
 
           <main className="flex-1 overflow-y-auto bg-background transition-colors duration-200 relative">
             <div className="absolute inset-0 pointer-events-none opacity-20 z-0">

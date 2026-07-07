@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
@@ -60,6 +60,106 @@ describe('RLS: task permissions', () => {
       .select().single();
     expect(error).toBeNull();
     expect(task?.task_key).toBeTruthy();
+  });
+});
+
+describe('RLS: student workspace isolation', () => {
+  const adminClient = createClient(URL, process.env.SUPABASE_SECRET_KEY!);
+  const createdOrgIds: string[] = [];
+  const createdUserIds: string[] = [];
+  let teamALeadClient: SupabaseClient;
+  let teamBLeadClient: SupabaseClient;
+  let teamAOrgId: string;
+  let teamBOrgId: string;
+  let teamALeadMemberId: string;
+
+  async function createStudentUser(email: string) {
+    const { data } = await adminClient.auth.admin.createUser({
+      email, password: 'password123', email_confirm: true,
+    });
+    createdUserIds.push(data!.user!.id);
+    const client = createClient(URL, KEY);
+    await client.auth.signInWithPassword({ email, password: 'password123' });
+    return { userId: data!.user!.id as string, client };
+  }
+
+  beforeAll(async () => {
+    const a = await createStudentUser(`rls-teamA-lead-${Date.now()}@example.com`);
+    const b = await createStudentUser(`rls-teamB-lead-${Date.now()}@example.com`);
+    teamALeadClient = a.client;
+    teamBLeadClient = b.client;
+
+    const { data: teamA } = await adminClient.rpc('create_student_team', {
+      p_user_id: a.userId, p_name: 'RLS Team A', p_max_team_size: 5,
+    });
+    const rowA = Array.isArray(teamA) ? teamA[0] : teamA;
+    teamAOrgId = rowA.out_organization_id;
+    createdOrgIds.push(teamAOrgId);
+    const { data: teamALead } = await adminClient
+      .from('organization_members').select('id').eq('organization_id', teamAOrgId).eq('user_id', a.userId).single();
+    teamALeadMemberId = teamALead!.id;
+    await adminClient.from('student_team_member_labels').insert({
+      organization_member_id: teamALeadMemberId, label: 'Backend', label_normalized: 'backend', assigned_by: teamALeadMemberId,
+    });
+
+    const { data: teamB } = await adminClient.rpc('create_student_team', {
+      p_user_id: b.userId, p_name: 'RLS Team B', p_max_team_size: 5,
+    });
+    const rowB = Array.isArray(teamB) ? teamB[0] : teamB;
+    teamBOrgId = rowB.out_organization_id;
+    createdOrgIds.push(teamBOrgId);
+  }, 30000);
+
+  afterAll(async () => {
+    if (createdOrgIds.length) await adminClient.from('organizations').delete().in('id', createdOrgIds);
+    for (const id of createdUserIds) await adminClient.auth.admin.deleteUser(id).catch(() => {});
+  });
+
+  it('a team member cannot select another team\'s student_team_settings row', async () => {
+    const { data } = await teamALeadClient.from('student_team_settings').select('*').eq('organization_id', teamBOrgId);
+    expect(data?.length ?? 0).toBe(0);
+  });
+
+  it('a team member can select their own team\'s student_team_settings row', async () => {
+    const { data } = await teamALeadClient.from('student_team_settings').select('*').eq('organization_id', teamAOrgId);
+    expect(data?.length ?? 0).toBe(1);
+  });
+
+  it('no authenticated client can select student_team_join_codes directly (all grants revoked)', async () => {
+    const { data } = await teamALeadClient.from('student_team_join_codes').select('*').eq('organization_id', teamAOrgId);
+    expect(data?.length ?? 0).toBe(0);
+  });
+
+  it('get_join_code_status never returns another team\'s join-code status', async () => {
+    const { data } = await teamALeadClient.rpc('get_join_code_status', { p_org: teamBOrgId });
+    const row = Array.isArray(data) ? data[0] : data;
+    expect(row).toBeFalsy();
+  });
+
+  it('get_join_code_status works for the caller\'s own team and never exposes code_hash', async () => {
+    const { data } = await teamALeadClient.rpc('get_join_code_status', { p_org: teamAOrgId });
+    const row = Array.isArray(data) ? data[0] : data;
+    expect(row).toBeTruthy();
+    expect(Object.keys(row)).not.toContain('code_hash');
+  });
+
+  it('a team member cannot select another team\'s member labels', async () => {
+    const { data } = await teamBLeadClient
+      .from('student_team_member_labels')
+      .select('*')
+      .eq('organization_member_id', teamALeadMemberId);
+    expect(data?.length ?? 0).toBe(0);
+  });
+
+  it('a STUDENT_SOLO member cannot see another org\'s rows at all', async () => {
+    const solo = await createStudentUser(`rls-solo-${Date.now()}@example.com`);
+    const { data: soloOrg } = await adminClient.rpc('create_student_solo_workspace', {
+      p_user_id: solo.userId, p_name: 'RLS Solo',
+    });
+    createdOrgIds.push(soloOrg.id);
+
+    const { data } = await solo.client.from('organizations').select('id').eq('id', teamAOrgId);
+    expect(data?.length ?? 0).toBe(0);
   });
 });
 

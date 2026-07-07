@@ -6,9 +6,11 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function createOrganization(
   supabase: SupabaseClient,
+  userId: string,
   input: CreateOrganizationInput,
 ) {
   const { data, error } = await createAdminClient().rpc('create_organization', {
+    p_user_id: userId,
     p_name: input.name,
     p_slug: input.slug ?? null,
     p_industry: input.industry ?? null,

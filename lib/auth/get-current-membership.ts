@@ -12,6 +12,7 @@ export interface Membership {
   roles: string[];
   permissions: string[];
   isDemo?: boolean;
+  workspaceType?: 'ENTERPRISE' | 'STUDENT_SOLO' | 'STUDENT_TEAM';
 }
 
 /**
@@ -37,7 +38,7 @@ export const getCurrentMembership = cache(async (
   async function resolve(orgId?: string) {
     let q = supabase
       .from('organization_members')
-      .select('id, organization_id, is_active, organizations(is_demo, ip_allowlist)')
+      .select('id, organization_id, is_active, organizations(is_demo, ip_allowlist, workspace_type)')
       .eq('user_id', user!.id)
       .eq('is_active', true);
     if (orgId) q = q.eq('organization_id', orgId);
@@ -97,5 +98,6 @@ export const getCurrentMembership = cache(async (
     roles,
     permissions: Array.from(permissions),
     isDemo: orgData?.is_demo,
+    workspaceType: orgData?.workspace_type ?? 'ENTERPRISE',
   };
 });

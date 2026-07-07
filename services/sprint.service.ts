@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { createSprintSchema, updateSprintSchema } from '@/lib/validation/delivery';
 
 export async function listSprints(supabase: SupabaseClient, orgId: string, projectId?: string) {
-  let q = supabase.from('sprints').select('*').eq('organization_id', orgId).order('start_date', { ascending: false });
+  let q = supabase.from('sprints').select('*, team:team_id(id, name)').eq('organization_id', orgId).order('start_date', { ascending: false });
   if (projectId) q = q.eq('project_id', projectId);
   const { data, error } = await q;
   if (error) throw Errors.internal(error.message);

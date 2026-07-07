@@ -3,7 +3,9 @@ import { Errors } from '@/lib/api/errors';
 import { createAuditLog } from '@/lib/audit/create-audit-log';
 
 export async function listBugs(supabase: SupabaseClient, orgId: string, projectId?: string) {
-  let q = supabase.from('bugs').select('*').eq('organization_id', orgId).order('created_at', { ascending: false });
+  let q = supabase.from('bugs')
+    .select('*, assignee:assignee_member_id(id, profile:profiles!org_members_profile_fk(full_name))')
+    .eq('organization_id', orgId).order('created_at', { ascending: false });
   if (projectId) q = q.eq('project_id', projectId);
   const { data, error } = await q;
   if (error) throw Errors.internal(error.message);
@@ -11,7 +13,9 @@ export async function listBugs(supabase: SupabaseClient, orgId: string, projectI
 }
 
 export async function listTestPlans(supabase: SupabaseClient, orgId: string, projectId?: string) {
-  let q = supabase.from('test_plans').select('*, test_cases(count)').eq('organization_id', orgId);
+  let q = supabase.from('test_plans')
+    .select('*, owner:owner_member_id(id, profile:profiles!org_members_profile_fk(full_name)), test_cases(count)')
+    .eq('organization_id', orgId);
   if (projectId) q = q.eq('project_id', projectId);
   const { data, error } = await q;
   if (error) throw Errors.internal(error.message);

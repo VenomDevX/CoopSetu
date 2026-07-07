@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { apiGet } from '@/lib/api/client';
+import { apiGet, apiSend } from '@/lib/api/client';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ChevronRight,
@@ -27,9 +27,14 @@ import {
   TerminalSquare,
   Box,
   Layers,
-  Shield
+  Shield,
+  Github,
+  RefreshCw,
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog } from '@/components/ui/dialog';
 import Link from 'next/link';
 import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
 import { DataViewport } from '@/components/layout/data-viewport';
@@ -37,6 +42,7 @@ import { AskAiButton } from '@/components/ai/ask-ai-button';
 import { ConnectRepositoryModal } from '@/components/repositories/connect-repository-modal';
 import { CreateReleaseModal } from '@/components/repositories/create-release-modal';
 import { DeploymentLogsModal } from '@/components/repositories/deployment-logs-modal';
+import { ImportGithubRepoModal } from '@/components/repositories/import-github-repo-modal';
 import { TableRowsSkeleton } from '@/components/ui/skeleton';
 
 const tabs = [
@@ -64,20 +70,21 @@ function mapRepo(r: any) {
   return {
     id: r.id, name: r.name, owner: '—', branch: r.default_branch, project: '—',
     prs: r.pull_requests?.[0]?.count ?? 0, commit: '—',
-    build: 'Passing', deploy: '—', health: r.status === 'ACTIVE' ? 'Healthy' : 'At Risk'
+    build: 'Passing', deploy: '—', health: r.status === 'ACTIVE' ? 'Healthy' : 'At Risk',
+    integration_id: r.integration_id as string | null,
   };
 }
 function mapPR(r: any) {
   return {
     key: r.id, id: r.external_id ?? r.id.slice(0, 8), title: r.title, repo: '—',
-    author: r.author_member_id ? 'Assigned' : '—', reviewers: [], task: r.linked_task_id ? 'Linked' : '—',
+    author: r.author?.profile?.full_name ?? '—', reviewers: [], task: r.linked_task_id ? 'Linked' : '—',
     build: cap(r.build_status), tests: r.test_status ?? '—', status: PR_STATUS[r.status] ?? r.status,
     files: 0, risk: r.risk_level ?? 'Low', created: fmtRel(r.opened_at)
   };
 }
 function mapCommit(r: any) {
   return {
-    key: r.id, hash: r.external_hash ?? r.id.slice(0, 7), author: r.author_member_id ? 'Assigned' : '—',
+    key: r.id, hash: r.external_hash ?? r.id.slice(0, 7), author: r.author?.profile?.full_name ?? '—',
     branch: r.branch ?? '—', message: r.message ?? '', task: r.linked_task_id ? 'Linked' : '—', date: fmtRel(r.committed_at)
   };
 }
@@ -135,8 +142,14 @@ const getRiskColor = (risk: string) => {
 export default function RepositoriesPage() {
   const [activeTab, setActiveTab] = useState('Repositories');
   const [showConnectModal, setShowConnectModal] = useState(false);
+  const [showImportGithubModal, setShowImportGithubModal] = useState(false);
   const [showReleaseModal, setShowReleaseModal] = useState(false);
   const [showLogsModal, setShowLogsModal] = useState(false);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const {
     data: engData,
@@ -149,6 +162,41 @@ export default function RepositoriesPage() {
   });
   const error = isError ? 'Failed to load engineering data.' : null;
   const fetchData = () => refetch();
+
+  const { data: integrations } = useQuery({
+    queryKey: ['integrations'],
+    queryFn: () => apiGet<{ id: string; provider: string; status: string }[]>('/api/v1/integrations'),
+  });
+  const githubIntegration = integrations?.find((i) => i.provider === 'github' && i.status === 'ACTIVE') ?? null;
+
+  async function handleSync(repositoryId: string) {
+    setSyncingId(repositoryId);
+    setSyncError(null);
+    try {
+      await apiSend('/api/v1/integrations/sync', 'POST', { repository_id: repositoryId });
+      await fetchData();
+    } catch (err: any) {
+      setSyncError(err.message ?? 'Failed to sync repository.');
+    } finally {
+      setSyncingId(null);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    const { id: repositoryId } = deleteTarget;
+    setDeletingId(repositoryId);
+    setDeleteError(null);
+    try {
+      await apiSend(`/api/v1/repositories/${repositoryId}`, 'DELETE');
+      setDeleteTarget(null);
+      await fetchData();
+    } catch (err: any) {
+      setDeleteError(err.message ?? 'Failed to delete repository.');
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   const d = engData ?? {};
   const repositories = (d.repositories ?? []).map(mapRepo);
@@ -191,9 +239,24 @@ export default function RepositoriesPage() {
             <Link2 className="w-4 h-4" />
             Connect Repository
           </Button>
+          <Button variant="outline" onClick={() => setShowImportGithubModal(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+            <Github className="w-4 h-4" />
+            Import From GitHub
+          </Button>
           <AskAiButton intent="summarize-engineering" title="Ask Handoff AI" />
         </div>
       </div>
+
+      {syncError && (
+        <div className="border border-red-500/50 bg-red-500/10 text-red-500 text-xs px-3 py-2 font-mono flex-shrink-0">
+          {syncError}
+        </div>
+      )}
+      {deleteError && (
+        <div className="border border-red-500/50 bg-red-500/10 text-red-500 text-xs px-3 py-2 font-mono flex-shrink-0">
+          {deleteError}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex border-b border-border overflow-x-auto scrollbar-none flex-shrink-0">
@@ -241,6 +304,8 @@ export default function RepositoriesPage() {
                     <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Build</th>
                     <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Deploy</th>
                     <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Health</th>
+                    <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Sync</th>
+                    <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal"></th>
                   </tr>
                 )}
                 {activeTab === 'Pull Requests' && (
@@ -302,10 +367,10 @@ export default function RepositoriesPage() {
                 )}
               </thead>
               <tbody className="divide-y divide-border">
-                {loading && <TableRowsSkeleton rows={6} cols={9} />}
+                {loading && <TableRowsSkeleton rows={6} cols={10} />}
                 {!loading && error && (
                   <tr>
-                    <td colSpan={9} className="p-8 text-center">
+                    <td colSpan={10} className="p-8 text-center">
                       <div className="text-[10px] uppercase tracking-widest text-destructive mb-3">{error}</div>
                       <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={fetchData}>
                         Retry
@@ -344,6 +409,30 @@ export default function RepositoriesPage() {
                       <span className={`text-[10px] px-2 py-0.5 border ${getStatusColor(repo.health)} uppercase tracking-widest`}>
                         {repo.health}
                       </span>
+                    </td>
+                    <td className="p-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title={repo.integration_id ? 'Sync from GitHub' : 'Only GitHub-linked repos can sync'}
+                        disabled={!repo.integration_id || syncingId === repo.id}
+                        onClick={(e) => { e.stopPropagation(); handleSync(repo.id); }}
+                        className="h-6 w-6 p-0 rounded-none disabled:opacity-30"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${syncingId === repo.id ? 'animate-spin' : ''}`} />
+                      </Button>
+                    </td>
+                    <td className="p-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Delete repository"
+                        disabled={deletingId === repo.id}
+                        onClick={(e) => { e.stopPropagation(); setDeleteError(null); setDeleteTarget({ id: repo.id, name: repo.name }); }}
+                        className="h-6 w-6 p-0 rounded-none text-muted-foreground hover:text-destructive disabled:opacity-30"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -508,6 +597,16 @@ export default function RepositoriesPage() {
           }}
         />
       )}
+      {showImportGithubModal && (
+        <ImportGithubRepoModal
+          githubIntegration={githubIntegration}
+          onClose={() => setShowImportGithubModal(false)}
+          onSuccess={() => {
+            setShowImportGithubModal(false);
+            fetchData();
+          }}
+        />
+      )}
       {showReleaseModal && (
         <CreateReleaseModal
           onClose={() => setShowReleaseModal(false)}
@@ -522,6 +621,42 @@ export default function RepositoriesPage() {
           deployments={rawDeployments}
           onClose={() => setShowLogsModal(false)}
         />
+      )}
+      {deleteTarget && (
+        <Dialog
+          title="Delete Repository"
+          onClose={() => { if (deletingId !== deleteTarget.id) setDeleteTarget(null); }}
+          className="max-w-md"
+          footer={
+            <>
+              <Button
+                variant="outline"
+                className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest"
+                disabled={deletingId === deleteTarget.id}
+                onClick={() => setDeleteTarget(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest gap-2"
+                disabled={deletingId === deleteTarget.id}
+                onClick={handleDelete}
+              >
+                {deletingId === deleteTarget.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                Delete
+              </Button>
+            </>
+          }
+        >
+          <div className="flex items-start gap-3 p-4 border border-red-500/20 bg-red-500/10">
+            <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+            <p className="text-sm text-foreground">
+              Delete <span className="font-bold">{deleteTarget.name}</span>? This also removes its synced pull requests,
+              commits, and pipelines. This cannot be undone.
+            </p>
+          </div>
+        </Dialog>
       )}
     </WorkspaceDataLayout>
   );

@@ -35,7 +35,7 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
   
-  if (!(await checkRateLimit(ip, 5, 3600))) {
+  if (!(await checkRateLimit(ip, 50, 3600))) {
     return Response.json({ data: null, error: { code: 'TOO_MANY_REQUESTS', message: 'Too many signup attempts. Please try again later.' } }, { status: 429 });
   }
 
@@ -115,6 +115,7 @@ export async function POST(req: NextRequest) {
 
     // 5. Call create_organization RPC via admin client (authenticated grant revoked)
     const { error: orgError, data: orgData } = await createAdminClient().rpc('create_organization', {
+      p_user_id: userId,
       p_name: body.companyName,
       p_slug: normalizedSlug,
       p_industry: body.industry || null,
