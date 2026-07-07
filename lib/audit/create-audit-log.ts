@@ -1,7 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getRequestContext } from '@/lib/security/request-context';
-import { getAuthContext } from '@/lib/auth/require-user';
 
 export interface AuditInput {
   organizationId: string | null;
@@ -25,9 +24,13 @@ export async function createAuditLog(
     const admin = createAdminClient();
     const context = await getRequestContext();
 
-    // Reuses the per-request cached auth lookup (see lib/auth/require-user.ts)
-    // instead of issuing another supabase.auth.getUser() round-trip.
-    const { user } = await getAuthContext();
+    // Resolve the actor from the caller's own client rather than re-deriving
+    // a cookie-based session (lib/auth/require-user.ts's getAuthContext()):
+    // the passed-in client is already the authenticated actor, and this also
+    // keeps audit logging working when a service is invoked outside an HTTP
+    // request (integration tests, background jobs) where cookies()/headers()
+    // are unavailable.
+    const { data: { user } } = await supabase.auth.getUser();
     const userId = user?.id;
     
     let actorMemberId = input.actorMemberId ?? null;
