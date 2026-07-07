@@ -72,13 +72,13 @@ jobs:
       - name: Run full unit + integration suite
         run: npm run test:all
         env:
-          TEST_USER_PASSWORD: "TestPassword123!@#"
+          TEST_USER_PASSWORD: "Password123!"
           ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 
       - name: Verify realtime (task + notification live delivery)
         run: node scripts/verify-realtime.mjs
         env:
-          TEST_USER_PASSWORD: "TestPassword123!@#"
+          TEST_USER_PASSWORD: "Password123!"
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
@@ -88,7 +88,7 @@ jobs:
       - name: Run full Playwright suite
         run: npx playwright test
         env:
-          TEST_USER_PASSWORD: "TestPassword123!@#"
+          TEST_USER_PASSWORD: "Password123!"
           ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 
       - name: Upload Playwright report
