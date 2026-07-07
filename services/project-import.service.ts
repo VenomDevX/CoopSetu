@@ -196,21 +196,28 @@ export async function confirmProjectImport(
 
   let created: { id: string; code: string; name: string }[] = [];
   if (validRows.length > 0) {
-    const { data: inserted, error: insertError } = await supabase
-      .from('projects')
-      .insert(validRows.map((row) => ({
-        organization_id: orgId,
-        name: row.mapped.name,
-        code: row.mapped.code,
-        description: row.mapped.description || null,
-        priority: row.mapped.priority || 'MEDIUM',
-        status: row.mapped.status || 'PLANNING',
-        start_date: row.mapped.start_date || null,
-        target_end_date: row.mapped.target_end_date || null,
-      })))
-      .select('id, code, name');
-    if (insertError) throw Errors.internal(insertError.message);
-    created = inserted ?? [];
+    // Insert via the create_project SECURITY DEFINER RPC (see migration 0025):
+    // a plain PostgREST INSERT...RETURNING on projects is rejected because the
+    // RETURNING row is re-checked against projects_select before it is visible
+    // to that policy's snapshot.
+    created = await Promise.all(validRows.map(async (row) => {
+      const { data, error } = await supabase
+        .rpc('create_project', {
+          p_org: orgId,
+          p_payload: {
+            name: row.mapped.name,
+            code: row.mapped.code,
+            description: row.mapped.description || null,
+            priority: row.mapped.priority || 'MEDIUM',
+            status: row.mapped.status || 'PLANNING',
+            start_date: row.mapped.start_date || null,
+            target_end_date: row.mapped.target_end_date || null,
+          },
+        })
+        .single<{ id: string; code: string; name: string }>();
+      if (error) throw Errors.internal(error.message);
+      return data;
+    }));
   }
 
   const createdByCode = new Map(created.map((row) => [row.code, row.id]));

@@ -63,11 +63,11 @@ describe('Group A action persistence and RLS', () => {
 
     const { data: audit } = await owner
       .from('audit_logs')
-      .select('id, action, resource_id')
+      .select('id, action, entity_id')
       .eq('action', 'deadline.created')
-      .eq('resource_id', deadline.id)
+      .eq('entity_id', deadline.id)
       .maybeSingle();
-    expect(audit?.resource_id).toBe(deadline.id);
+    expect(audit?.entity_id).toBe(deadline.id);
   });
 
   it('blocks deadlines for missing or foreign projects', async () => {
@@ -150,11 +150,11 @@ describe('Group A action persistence and RLS', () => {
 
     const { data: audit } = await owner
       .from('audit_logs')
-      .select('id, action, resource_id')
+      .select('id, action, entity_id')
       .eq('action', 'project.imported')
-      .eq('resource_id', preview.importId)
+      .eq('entity_id', preview.importId)
       .maybeSingle();
-    expect(audit?.resource_id).toBe(preview.importId);
+    expect(audit?.entity_id).toBe(preview.importId);
   });
 
   it('records project and sprint exports through the service', async () => {
