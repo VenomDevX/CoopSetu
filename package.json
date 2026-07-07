@@ -34,11 +34,11 @@
     "ipaddr.js": "^2.4.0",
     "lucide-react": "^0.553.0",
     "motion": "^12.23.24",
-    "next": "^15.4.9",
+    "next": "^15.5.20",
     "next-themes": "^0.4.6",
     "nodemailer": "^9.0.3",
     "pdfkit": "^0.19.1",
-    "postcss": "^8.5.6",
+    "postcss": "^8.5.10",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "recharts": "^3.9.0",
@@ -55,10 +55,19 @@
     "@vitest/coverage-v8": "^4.1.9",
     "eslint": "9.39.1",
     "eslint-config-next": "16.0.8",
-    "firebase-tools": "^15.0.0",
+    "firebase-tools": "^15.22.4",
     "supabase": "^2.108.0",
     "tailwindcss": "4.1.11",
     "typescript": "5.9.3",
     "vitest": "^4.1.9"
+  },
+  "overrides": {
+    "postcss": "^8.5.10",
+    "firebase-tools": {
+      "@opentelemetry/core": "^2.8.0",
+      "gaxios": {
+        "uuid": "^11.1.1"
+      }
+    }
   }
 }

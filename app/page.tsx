@@ -63,11 +63,11 @@ export default function LandingPage() {
         });
       } else {
         const supabase = createClient();
-        supabase.auth.getSession().then(({ data }) => {
-          if (data.session) {
+        supabase.auth.getUser().then(({ data }) => {
+          if (data.user) {
             setIsLoggedIn(true);
-            supabase.from('profiles').select('full_name, email').eq('id', data.session.user.id).single().then(({ data: profile }) => {
-              const name = profile?.full_name || profile?.email || data.session?.user?.email || 'User';
+            supabase.from('profiles').select('full_name, email').eq('id', data.user.id).single().then(({ data: profile }) => {
+              const name = profile?.full_name || profile?.email || data.user?.email || 'User';
               setUserName(name);
             });
           } else {
