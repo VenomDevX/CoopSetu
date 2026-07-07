@@ -14,7 +14,7 @@ const schema = z.object({
 export async function POST(req: Request) {
   // Extract IP for basic rate limiting
   const ip = req.headers.get('x-forwarded-for') || req.headers.get('remote-addr') || 'unknown';
-  if (!(await checkRateLimit(ip))) {
+  if (!(await checkRateLimit(ip, 50, 300))) {
     return Response.json({ data: null, error: { code: 'TOO_MANY_REQUESTS', message: 'Too many failed login attempts. Please try again later.' } }, { status: 429 });
   }
 

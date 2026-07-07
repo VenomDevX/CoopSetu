@@ -51,7 +51,7 @@ function mapSprint(r: any): Sprint {
   return {
     id: r.id,
     name: r.name,
-    team: r.team_id ? 'Team' : '—',
+    team: r.team?.name ?? '—',
     goal: r.goal ?? '',
     startDate: fmtDate(r.start_date),
     endDate: fmtDate(r.end_date),

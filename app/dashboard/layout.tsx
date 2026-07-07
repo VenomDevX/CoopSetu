@@ -34,6 +34,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             roles: membership.roles,
             permissions: membership.permissions,
             isDemo: membership.isDemo,
+            workspaceType: membership.workspaceType,
           }}
         >
           {children}

@@ -11,7 +11,10 @@ import { addProjectMemberSchema, createMilestoneSchema, createRiskSchema } from 
 export async function listProjects(supabase: SupabaseClient, orgId: string, opts?: { includeArchived?: boolean }) {
   let q = supabase
     .from('projects')
-    .select('*, project_manager:project_manager_member_id(id), milestones(count), project_risks(count)')
+    .select('*, ' +
+      'owner:owner_member_id(id, profile:profiles!org_members_profile_fk(full_name)), ' +
+      'project_manager:project_manager_member_id(id, profile:profiles!org_members_profile_fk(full_name)), ' +
+      'milestones(count), project_risks(count)')
     .eq('organization_id', orgId)
     .order('created_at', { ascending: false });
   if (!opts?.includeArchived) q = q.is('archived_at', null);

@@ -129,27 +129,51 @@
     font-family: var(--font-sans);
   }
 
-  /* Scrollbar styles to blend with background */
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-    background: transparent;
+  /* Make scrollbar overlay on top of content instead of reserving a gutter */
+  html {
+    overflow-y: overlay;
   }
 
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
+}
 
-  ::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 5px;
-    border: 2px solid var(--background);
-  }
+/* Scrollbar styles to blend with background.
+   Kept OUTSIDE @layer so they beat any layered/library styles.
+   Chrome/Edge/Safari use the ::-webkit-scrollbar rules; Firefox
+   (no webkit scrollbar support) gets scrollbar-color instead —
+   setting scrollbar-color in Chrome would disable the webkit rules. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background: transparent;
+}
 
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--border-strong);
-  }
+::-webkit-scrollbar-track {
+  background: transparent;
+}
 
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+@supports (not selector(::-webkit-scrollbar)) and (scrollbar-color: red blue) {
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;

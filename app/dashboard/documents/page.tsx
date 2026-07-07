@@ -70,7 +70,7 @@ const fmtRel = (iso?: string | null) => {
 function mapDocument(r: any) {
   return {
     id: r.id, name: r.title, category: DOC_CATEGORY[r.document_type] ?? 'Team Note',
-    owner: r.owner_member_id ? 'Owner' : '—', status: DOC_STATUS[r.status] ?? r.status,
+    owner: r.owner?.profile?.full_name ?? '—', status: DOC_STATUS[r.status] ?? r.status,
     version: `v${r.current_version ?? 1}`, updated: fmtRel(r.updated_at),
     access: 'Organization', starred: false, classification: DOC_CLASS[r.classification] ?? 'Internal',
     project: r.project_id ? 'Linked' : '-', contributors: [] as string[],

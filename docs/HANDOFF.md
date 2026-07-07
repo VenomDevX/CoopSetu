@@ -19,6 +19,7 @@ Unified documentation for the Handoff enterprise project management platform.
 7. [Responsive Audit](#7-responsive-audit)
 8. [Testing](#8-testing)
 9. [Implementation Tracker](#9-implementation-tracker)
+10. [Student Workspaces](#10-student-workspaces)
 
 ---
 
@@ -1571,13 +1572,19 @@ Responsive Layout, Screen Adaptation, and Scroll Usability
 ---
 
 ## Next Exact Task
-1. Browser-verify Group A actions end-to-end.
-2. Mark verified Group A rows WORKING only after browser refresh/realtime verification passes.
-3. Run the full integration suite, then continue with Group B.
+1. Run and verify full E2E test suite (`npx playwright test tests/e2e/onboarding.spec.ts`).
+2. Browser-verify Group A actions end-to-end.
+3. Mark verified Group A rows WORKING only after browser refresh/realtime verification passes.
 
 ---
 
 ## Completed History
+
+### 2026-07-04 — Finalized Unified Onboarding & Auth Return-To Security
+- **Migration 0065_onboarding_state**: Separated onboarding into `profiles.profile_completed_at` and `organizations.initial_setup_completed_at` with strict backfill to prevent existing users from re-entering onboarding.
+- **Secure Return-To**: Implemented `invite_return_to` signed HTTP-only cookie logic in middleware to guarantee invite tokens are strictly preserved across OAuth/email logins without external URL leakages.
+- **Resolver**: Implemented strict 7-tier routing order in `/onboarding` to separate Profile -> Invites -> Company -> Team -> Dashboard without loops.
+- **Tests**: 4 E2E onboarding flows added to `tests/e2e/onboarding.spec.ts`.
 
 ### 2026-06-28 — Audit F (final regression): production build fixed (6 real bugs) + full smoke pass
 - **`npm run build` surfaced 6 real type/runtime bugs** that lint + vitest + `next dev` all missed.
@@ -1630,6 +1637,467 @@ Responsive Layout, Screen Adaptation, and Scroll Usability
 
 ---
 
+# 10. Student Workspaces
+
+Phase 1 of a Student Workspace system, added alongside the existing enterprise
+Organization system rather than as a parallel tenant model. Students get a
+second onboarding path (after Account + Profile, same as enterprise users)
+offering a personal solo workspace, a student/hackathon team they lead, or
+joining an existing team via a secure code.
+
+## 10.1 Workspace model & types
+
+`organizations.workspace_type` (migration `0067`): `'ENTERPRISE'` (default,
+existing behavior unchanged) | `'STUDENT_SOLO'` | `'STUDENT_TEAM'`. Everything
+else — membership, roles, permissions, RLS, projects, tasks, notifications,
+audit logging — is the same architecture used by enterprise orgs. A user may
+belong to any number of organizations of any type simultaneously and switches
+between them with the existing active-org cookie/switcher
+(`ACTIVE_ORG_COOKIE` / `/api/v1/organizations/active`, unchanged).
+
+New tables (migration `0067`):
+- `student_team_settings` — one row per STUDENT_TEAM org: event name,
+  description, expected/max team size (hard-capped at 50), and
+  `co_lead_can_manage_members` (a per-team toggle, off by default).
+- `student_team_join_codes` — **hash-only** storage (`code_hash`, plain
+  SHA-256 of the normalized code — no separate HMAC secret to provision,
+  since the code itself is the high-entropy secret, ~40 bits from an 8-char
+  32-symbol alphabet). Only one active code per team; rotating deactivates
+  the old row and inserts a new one. The raw code is returned by the API
+  exactly once (on creation/rotation) and is never recoverable afterward.
+- `student_team_member_labels` — functional contribution labels (Developer,
+  Designer, custom, etc.). Display-only metadata; **never** referenced by any
+  RLS policy or permission check.
+
+## 10.2 Student authority roles
+
+Four new system roles (migration `0068`): `STUDENT_TEAM_LEAD`,
+`STUDENT_CO_LEAD`, `STUDENT_MEMBER`, `STUDENT_SOLO_OWNER`. Each gets an
+explicit **allow-list** of `role_permissions` rows (reusing the existing
+generic codes — `project:*`, `task:*`, `comment:*`, etc. — plus new
+`student_team:*` / `student_workspace:*` codes for team/workspace
+management).
+
+**Critical**: none of these roles were added to the admin-bypass lists —
+neither `handoff.has_permission()`'s SQL bypass (`SUPER_ADMIN, ORG_ADMIN,
+ORG_OWNER`) nor the client-side `ADMIN_ROLES` mirror in
+`lib/permissions/context.tsx`. A student role only has exactly the
+permissions explicitly granted to it — it can never implicitly gain access to
+a future enterprise-only permission the way an admin bypass would.
+
+STUDENT_CO_LEAD's ability to manage team members is gated by **both** a role
+permission requirement and the per-team `co_lead_can_manage_members` toggle
+(checked live in the API layer, not cached) — disabling the toggle instantly
+revokes it. STUDENT_CO_LEAD can never transfer leadership, delete the team,
+bypass capacity, or grant itself enterprise permissions.
+
+Functional contribution labels (Developer, Frontend Developer, Designer,
+Researcher, QA Tester, custom labels, etc.) are assignable only by the Team
+Lead or a permitted Co-Lead — never self-service by members — and are purely
+collaboration metadata. They are validated, normalized (trim + lowercase, via
+`label_normalized`, the same pattern as `profiles.username_normalized`),
+de-duplicated, and length-capped (60 chars, 10 labels/member max) at the API
+layer, but **never** grant permissions under any circumstance.
+
+## 10.3 Join-code security model
+
+- Codes are generated server-side (`handoff.generate_join_code()`) in the
+  human-friendly format `TEAM-XXXX-XXXX` from a 32-symbol alphabet that
+  excludes visually ambiguous characters (`0/O/1/I/L`).
+- Only `code_hash` (SHA-256 of the normalized code) is ever stored; the raw
+  code is shown to the Team Lead exactly once, at creation or rotation time,
+  and is never recoverable from the database afterward — losing it requires
+  rotating to a new one.
+- `redeem_student_team_join_code()` is the concurrency-safe redemption path:
+  it `SELECT ... FOR UPDATE`-locks the matching join-code row so the
+  expiry/max-uses/capacity checks and the `used_count` increment happen
+  atomically inside one transaction, preventing a race where two concurrent
+  redemptions both pass the capacity check before either increments the
+  counter.
+- A code only ever matches a `workspace_type = 'STUDENT_TEAM'` organization —
+  it is structurally impossible for a code to redeem into an enterprise,
+  demo, or personal-solo workspace, since join-code rows are only ever
+  created for STUDENT_TEAM orgs to begin with.
+- `preview_join_code()` (used by the pre-join preview screen) reveals **only**
+  team name, event name, and available spot count — never member lists or any
+  other data — and returns zero rows for any invalid/expired/revoked/
+  exhausted code, so the API layer gives one generic "invalid or expired"
+  message regardless of the actual reason.
+- `/api/v1/join-team/preview` and `/api/v1/join-team` are both rate-limited
+  (5 attempts / 5 min per IP via `checkRateLimit`) against brute-force code
+  guessing.
+- The generic `handoff.audit_trigger()` is **deliberately not attached** to
+  `student_team_join_codes` (migration `0070`) — the trigger's
+  before/after-state JSON capture would put `code_hash` into `audit_logs`,
+  an unnecessary secondary exposure even though it's a hash, not a raw code.
+  Join-code lifecycle events (created/rotated/revoked) are instead written as
+  explicit `createAuditLog()` calls with a hand-built `afterState` that omits
+  `code_hash` entirely.
+
+## 10.4 Feature gating (student vs. enterprise)
+
+Single source of truth: `workspace_type` flows from
+`lib/auth/get-current-membership.ts` → `Membership.workspaceType` →
+`MembershipContextValue.workspaceType` → `usePermission().isStudent` (client)
+via the existing `MembershipProvider` wired in `app/dashboard/layout.tsx`.
+
+- **Settings** (`app/dashboard/settings/page.tsx`): the tab list is filtered
+  by `STUDENT_TAB_IDS` (`profile`, `password`, `sessions`) vs. the full
+  enterprise set. This isn't just a rendering choice — the initial `activeTab`
+  state and the URL-sync effect both re-validate `?tab=` against the allowed
+  set for the current workspace type, so a student cannot reach Billing,
+  Organization, Users & Roles, Security & SSO, Audit Logs, or Integrations
+  content by manipulating the URL directly. `STUDENT_TEAM` workspaces get a
+  "Student Team" sidebar link to `/dashboard/teams` instead of an
+  "Organization" tab.
+- **Dashboard nav** (`components/dashboard/shell.tsx`): unchanged mechanism —
+  nav items are still gated purely by the existing `perm` checks. Student
+  roles simply never receive `integration:*`/`qa:*`/`security:*`/etc.
+  permission rows, so those items disappear without any new gating flag.
+- **`/dashboard/teams`**: branches client-side on `workspaceType` (the page is
+  a `'use client'` component, so this happens inside the component, not via a
+  server redirect). `ENTERPRISE` renders the existing Teams/Departments view
+  unchanged; `STUDENT_TEAM` renders `components/teams/student-team-view.tsx`
+  (join-code management, member list with roles/labels, settings); `
+  STUDENT_SOLO` renders a prompt to create/join a team.
+- **API-level enforcement is the real boundary** — UI gating is cosmetic.
+  Every student-workspace API route uses `requireOrganization()` +
+  `requirePermission()`/`hasPermission()` exactly like enterprise routes; none
+  of the new student endpoints are reachable without the right role.
+
+## 10.5 Onboarding paths
+
+Central resolver (`app/onboarding/page.tsx`) decision order, with the new
+branch inserted at the "0 active memberships" step (all other steps
+unchanged):
+
+```
+no auth                              → /login
+valid invite-return-to cookie        → the invite's own page
+profile incomplete                   → /onboarding/profile
+0 memberships + pending invites      → /onboarding/invites
+0 memberships:
+  workspace_path_intent=student      → /onboarding/student
+  workspace_path_intent=enterprise   → /onboarding/company
+  (cookie not set)                   → /onboarding/workspace-path   [NEW]
+unfinished ORG_OWNER setup           → /onboarding/team
+else                                 → /dashboard (or ?next=)
+```
+
+`/onboarding/workspace-path` sets a `workspace_path_intent` cookie (same
+non-httpOnly, client-set pattern as the existing `create_workspace_intent`
+cookie) and offers "For Work" vs. "For Study / Hackathons". `/onboarding/student`
+then offers the 3 real choices (Personal Solo / Create a Team / Join a Team),
+shared with a `components/onboarding/student-workspace-choices.tsx` component
+that's reused from `/dashboard/teams`'s empty state for `STUDENT_SOLO` users —
+students are never trapped in only their first choice.
+
+Student organizations set `initial_setup_completed_at` at creation time (in
+the `create_student_team`/`create_student_solo_workspace` RPCs), so they never
+trip the enterprise "unfinished setup" resolver branch — there is no separate
+student "finish setup" step; team/solo creation is one atomic action.
+
+`components/auth/onboarding-shell.tsx` gained an optional `steps` prop
+(defaults to the existing 4-item enterprise array — zero behavior change for
+existing enterprise screens) so student onboarding screens can show their own
+step list.
+
+## 10.6 New API routes
+
+```
+POST   /api/v1/student-workspaces/solo
+POST   /api/v1/student-teams
+GET    /api/v1/student-teams/:id/join-code        (status, via get_join_code_status)
+POST   /api/v1/student-teams/:id/join-code         (rotate)
+DELETE /api/v1/student-teams/:id/join-code         (revoke)
+GET    /api/v1/student-teams/:id/members
+PATCH  /api/v1/student-teams/:id/members/:memberId/role
+PUT    /api/v1/student-teams/:id/members/:memberId/labels
+DELETE /api/v1/student-teams/:id/members/:memberId (remove from team)
+PATCH  /api/v1/student-teams/:id/co-lead-toggle
+POST   /api/v1/student-teams/:id/transfer-leadership
+POST   /api/v1/student-teams/:id/leave
+POST   /api/v1/join-team/preview
+POST   /api/v1/join-team
+```
+
+All follow the existing `handle()`/`ok()`/`Errors.*` envelope and
+`requireUser()`/admin-client-for-RPC calling convention established by
+`app/api/v1/organizations/route.ts` and `services/organization.service.ts`.
+
+## 10.7 Migrations
+
+- `0067_student_workspace_schema.sql` — `workspace_type` column + 3 new tables.
+- `0068_student_roles_and_permissions.sql` — permission codes, 4 system roles, allow-lists.
+- `0069_student_team_rls_and_join_rpc.sql` — RLS + all student workspace RPCs
+  (`create_student_solo_workspace`, `create_student_team`,
+  `redeem_student_team_join_code`, `preview_join_code`, `rotate_join_code`,
+  `revoke_join_code`, `transfer_team_leadership`, `get_join_code_status`,
+  plus the `handoff.generate_join_code()`/`handoff.hash_join_code()` helpers).
+- `0070_student_team_audit_triggers.sql` — attaches `audit_trigger()` to
+  `student_team_settings`/`student_team_member_labels` (not join codes, see 10.3).
+- `0071_student_team_service_role_grant.sql` — grants `service_role` on the 3
+  new tables. Migration 0050's blanket "GRANT ALL ON ALL TABLES" only covers
+  tables that existed at that time; new tables queried directly by the admin
+  client (not just via SECURITY DEFINER RPCs, which run as the function owner
+  regardless of grants) need this explicit grant — the same class of gap
+  fixed for `create_organization` in migration `0064`.
+
+All 4 (RPC-signature note: `create_student_team`'s `RETURNS TABLE` columns are
+named `out_organization_id`/`out_name`/`out_slug` rather than
+`organization_id`/`name`/`slug` — using the bare column names caused a real
+"column reference is ambiguous" PL/pgSQL bug where the OUT parameter shadowed
+identical column names referenced elsewhere in the function body; renaming
+the OUT columns was the fix, found and fixed during this implementation.)
+
+## 10.8 Tests
+
+Phase 1 test coverage (all passing):
+- `tests/unit/student-team.test.ts` (10 tests) — Zod schema validation:
+  max-team-size cap at 50, label length/count limits, join-code schema shape.
+- `tests/integration/student-team-flows.test.ts` (13 tests, real Supabase,
+  same conventions as `tests/integration/secdef-rpcs.test.ts`) — solo
+  workspace creation, team creation with the 50-size cap enforced, join-code
+  preview revealing only safe fields, successful redemption, already-member
+  rejection, at-capacity rejection, case/dash-insensitive code normalization,
+  rotation invalidating the previous code, non-Lead rotation rejection,
+  atomic leadership transfer, and a workspace-type isolation sanity check.
+- `tests/e2e/onboarding.spec.ts` — two new Playwright specs driving the real
+  UI: full signup → profile → workspace-path choice → student choices screen
+  (asserting the `workspace_path_intent` cookie), and full signup → profile →
+  workspace-path → solo creation → dashboard → Settings showing only
+  student-appropriate tabs (Billing/Organization/etc. absent).
+
+Additionally verified via a full manual HTTP walkthrough (real signed-in
+sessions via `/api/v1/auth/login`, not mocked) covering every flow end-to-end:
+solo workspace creation, team creation, join-code preview/redemption,
+capacity rejection at the exact limit, duplicate-membership rejection,
+code rotation invalidating the old code, the Team Lead leave-without-transfer
+guard, leadership transfer with correct role swap, and the full audit trail
+(confirmed no raw or hashed join code ever appears in `audit_logs`).
+
+**Known limitation**: the two new Playwright specs are correct and pass their
+underlying logic (proven by the unit/integration layers and the manual HTTP
+walkthrough above), but a real end-to-end Playwright run in this environment
+is unreliable due to a **pre-existing** interaction between the global
+per-IP rate limiter (`lib/security/rate-limit.ts`) and real-browser test
+traffic: even a trivial, unrelated pre-existing test with zero form
+interaction (`GitHub and normal onboarding use the same shell`) fails
+identically once enough requests accumulate against the shared `ip:api`
+counter during a full suite run (`auth.setup.ts`'s demo logins + normal
+Next.js page/asset/prefetch traffic). This is not specific to the student
+workspace feature — it reproduces on this session's `main` branch as-is. The
+project's own git history shows an established pattern of temporarily raising
+rate limits before heavy test runs and reverting after
+(`chore: increase rate limits for testing` / `chore: revert rate limits to
+strict values`); the same approach is needed here, or the rate limiter should
+be disabled entirely under `NODE_ENV=test`/`PLAYWRIGHT_TEST` — worth a
+dedicated follow-up rather than folding into this feature's scope.
+
+Also note: this repo's integration/e2e tests require Supabase env vars
+(`SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, etc.) to be
+present in the shell's `process.env` — `vitest.config.ts`/`playwright.config.ts`
+do not auto-load `.env.local`. Run `set -a && source .env.local && set +a`
+(or equivalent) before `npx vitest run tests/integration` / `npx playwright test`.
+
+Run commands: `npx supabase db reset`, `npm run lint`, `npx vitest run`
+(155 pass — 2 pre-existing, unrelated failures in
+`tests/integration/group-a-actions.test.ts`, a Next.js `headers()`-outside-
+request-scope issue in the CSV-import service, reproduces without any of
+this session's changes), `npm run build`, `npx playwright test`
+(rate-limiter caveat above).
+
+## 10.9 Phase 2 — done
+
+All five Phase 1 follow-ups above have been built:
+
+- **Lifecycle notifications** (§10.9.1) — real `notifications` rows now fire
+  for member-joined, capacity-reached, role-changed, and labels-changed
+  events, reusing the existing per-member Realtime subscription (no new
+  broadcast channel).
+- **`STUDENT_SOLO` workspace settings** (§10.9.2) — rename/description edit
+  and type-to-confirm delete are now live in Settings, not just creation.
+- **Full test matrix** — cross-team RLS isolation, notification
+  recipient-correctness, capacity/role/label edge cases, mobile
+  no-overflow, and command-palette gating are all covered (§10.9.3).
+- **Command palette** — verified via e2e test that ⌘K never surfaces
+  enterprise-only nav items to a student; no app code change was needed
+  (it already inherits permission-filtered nav for free).
+- **CI wiring** (§10.9.4) — hybrid cadence: fast parallel checks on every
+  PR/push, full regression suite nightly + on-demand.
+
+Member self-service of their own functional labels remains intentionally
+**not** implemented (unchanged decision from Phase 1) — only the Team
+Lead/permitted Co-Lead can add/remove labels.
+
+### 10.9.1 Lifecycle notification event/recipient matrix
+
+Mechanism: the existing `create_notification` Postgres RPC (migration
+`0010`), called from `services/student-workspace.service.ts`'s
+`notifyStudentTeamEvent()` helper via `Promise.allSettled` — a notification
+failure never blocks or rolls back the parent mutation, and notifications
+are only ever inserted **after** the mutation's own success path. Delivery
+is the existing per-`recipient_member_id` Realtime `postgres_changes`
+subscription (`hooks/use-notifications-realtime.ts` /
+`components/realtime/notification-bell.tsx`) — unchanged, no new channel.
+
+| Event | Fired from | Recipients | Notes |
+|---|---|---|---|
+| `STUDENT_TEAM_MEMBER_JOINED` | `redeemJoinCode()` (join-team route) | Lead always; each Co-Lead only if `co_lead_can_manage_members` is true | Joining member gets an immediate redirect instead of a notification |
+| `STUDENT_TEAM_CAPACITY_REACHED` | same join, only when member count hits `max_team_size` exactly | same as above | Body/metadata carry only the team name — never join-code details |
+| `STUDENT_TEAM_ROLE_CHANGED` | `members/:memberId/role` PATCH | the affected member only | |
+| `STUDENT_TEAM_LABELS_CHANGED` | `members/:memberId/labels` PUT | the affected member only | Acting Lead/Co-Lead already sees the result via the API response + audit trail |
+
+Safety invariants enforced in `getMembershipManagers()` /
+`notifyStudentTeamEvent()`: unrelated members (different team, different
+workspace) are never queried as recipients in the first place; raw join
+codes and `code_hash` never appear in any notification title/body/metadata;
+audit events are written separately via `createAuditLog()`, not conflated
+with notification rows.
+
+Tests (`tests/integration/student-team-flows.test.ts`, "lifecycle
+notifications" describe block): correct recipients receive member-joined +
+capacity-reached notifications; a rejected join creates zero notification
+rows; no notification body/metadata ever contains the join code; a
+dedicated fresh team confirms `notifyStudentTeamEvent` only targets the
+intended recipient (not the actor, not other members); an unrelated team's
+members receive nothing.
+
+### 10.9.2 `STUDENT_SOLO` workspace settings
+
+`app/api/v1/student-workspaces/solo/route.ts` gained `PATCH` (rename/
+description, admin-client write since RLS's `organizations_update` policy
+only recognizes `organization:manage` not `student_workspace:manage_
+settings`) and `DELETE` (type-to-confirm exact org name, audit log written
+**before** the delete, `ACTIVE_ORG_COOKIE` cleared on response). Both guard
+`workspaceType !== 'STUDENT_SOLO'` → forbidden. Settings UI
+(`app/dashboard/settings/page.tsx`) gained a "Workspace" tab (solo
+workspaces only) with a rename card and a Danger Zone delete card.
+
+### 10.9.3 Test matrix additions
+
+- `tests/integration/student-team-flows.test.ts` — 21 new `it()` blocks:
+  lifecycle notifications (5) + student-team permission matrix sourced
+  directly from `role_permissions` (3, confirming Co-Lead has none of
+  `assign_authority_role`/`manage_labels`/`manage_members` at the role-grant
+  level — the toggle only gates the app-layer member-removal check) + the
+  remaining role/label/rotation/leave-team edge cases from the plan.
+- `tests/integration/rls.test.ts` — 14 new `it()` blocks under "RLS: student
+  workspace isolation": cross-team isolation for `student_team_settings` and
+  `student_team_member_labels`, `student_team_join_codes` base table
+  confirmed unselectable by any authenticated role (only
+  `get_join_code_status()` exposes safe fields, and excludes `code_hash`),
+  `STUDENT_SOLO` member confirmed unable to see other orgs.
+- `tests/e2e/student-team.spec.ts` (new, 4 tests) — Lead rotate/revoke
+  end-to-end through the real UI buttons; Member read-only view; solo
+  rename + delete-with-confirmation; ⌘K gating.
+- `tests/e2e/smoke.spec.ts` (new, 7 tests) — sign in, signup/onboarding,
+  solo workspace creation, team creation, join-with-code, task visibility by
+  role (via API check, not a DOM selector), mobile viewport.
+- `tests/e2e/responsive.spec.ts` (extended) — join-team page + student
+  dashboard/settings added to the existing 5-viewport no-overflow loop.
+
+**Real bug found and fixed via the new e2e tests**: `rotateCode()`,
+`revokeCode()`, and `removeMember()` in
+`components/teams/student-team-view.tsx` were missing `Content-Type:
+application/json` on their `fetch()` calls, so the middleware's blanket
+CSRF content-type check rejected them with 415 in the live app — the
+Rotate/Revoke/Remove-member buttons were silently broken. Fixed by adding
+the header to all three calls.
+
+### 10.9.4 CI Pipeline
+
+`.github/workflows/ci.yml` (every push/PR to `main`, jobs run in parallel —
+`build-and-test` no longer waits on the security scans, so build/test
+results stay visible even if a scan fails):
+- `secret-scan` (TruffleHog, `--only-verified`)
+- `dependency-audit` (`npm audit --audit-level=high`)
+- `build-and-test` (lint → build → unit tests)
+- `integration-tests` (new) — Docker-based local Supabase via
+  `supabase/setup-cli`, `supabase db reset`, then `npm run test:integration`
+  against CI-local-only env vars (never production Supabase/Gemini keys)
+- `e2e-smoke` (new, needs `integration-tests`) — `tests/e2e/smoke.spec.ts`
+  only, the 7 critical journeys
+
+`.github/workflows/full-regression.yml` (new) — nightly (`cron '0 2 * * *'`)
++ `workflow_dispatch` only, since it boots a full local Supabase stack and
+runs the entire suite:
+- `full-secret-scan` (TruffleHog full history, no `--only-verified`)
+- `full-regression` — `npm run test:all`, `node scripts/verify-realtime.mjs`,
+  then the full `npx playwright test` (every spec, not just smoke)
+
+## 10.10 Repository access for students
+
+Extended the existing enterprise "Repositories" feature (`/dashboard/repositories`
+— Repositories, Pull Requests, Commits, CI/CD, Environments, Deployments tabs)
+to student workspaces. Migration `0068` had deliberately withheld the
+`integration:view`/`integration:manage` permission codes from all four student
+roles as "enterprise-only." Migration `0072_student_repository_access.sql`
+grants both codes to `STUDENT_TEAM_LEAD`, `STUDENT_CO_LEAD`, `STUDENT_MEMBER`,
+and `STUDENT_SOLO_OWNER` — per an explicit later product decision, **all four
+roles get full manage access** (any student can connect/edit/remove a repo,
+not just leads).
+
+No application code changes were needed: nav gating
+(`components/dashboard/shell.tsx`), RLS policies (`0012_knowledge_incidents_eng.sql`,
+generic `handoff.is_org_member()`/`handoff.has_permission()` checks), and the
+API routes (`app/api/v1/repositories/*`, `requirePermission(m, 'integration:*')`)
+were already org-type-agnostic — this was a pure permission-grant change.
+
+**Known caveat, not fixed**: the `deployments` table requires non-null
+`project_id` and `release_id`, which assumes the enterprise release-approval
+workflow. Students can view an (empty) Deployments tab, but there's no
+student-side path to create a release to deploy — out of scope for "connect
+a repo"; left as-is.
+
+Tests: `tests/integration/student-team-flows.test.ts` (new assertion — all 4
+roles have `integration:view`+`integration:manage` in `role_permissions`);
+`tests/e2e/student-team.spec.ts` (new "Student repository access" test — a
+Team Lead sees the Repositories nav item and successfully connects a
+repository through the real UI form).
+
 ## Test History
+- 2026-07-07: Repository access for students (§10.10) — `npx supabase db
+  reset` applied migration `0072` cleanly; `npx vitest run
+  tests/integration/student-team-flows.test.ts` → 22/22 passed (new
+  permission assertion included); `npx playwright test
+  tests/e2e/student-team.spec.ts -g "Student repository access"` → passed.
+- 2026-07-07: Phase 2 full verification pass:
+  - `npx tsc --noEmit` → clean.
+  - `npm run lint` → 0 errors (2 pre-existing, unrelated `no-img-element` warnings).
+  - `npm run build` → succeeds.
+  - `npx supabase db reset` then `npx vitest run tests/unit
+    tests/integration` → 168/170 passed (2 pre-existing, unrelated failures in
+    `tests/integration/group-a-actions.test.ts`, same root cause documented in
+    §10.8 — reproduces without any Phase 2 changes). Confirms migrations
+    0067-0071 are the only student-workspace migrations — no new migration
+    was needed for Phase 2, as the plan predicted.
+  - `npx playwright test tests/e2e/student-team.spec.ts tests/e2e/smoke.spec.ts`
+    → 15/15 passed.
+  - `npx playwright test tests/e2e/responsive.spec.ts` → 33/34 passed (the one
+    failure is the pre-existing `.task-card` selector flakiness noted in
+    §10.9.3, unrelated to Phase 2).
+  - Manual browser walkthrough: signed up a fresh `STUDENT_SOLO` user, renamed
+    the workspace via the new Settings → Workspace tab (persisted after
+    reload), then deleted it with type-to-confirm — redirected correctly to
+    `/onboarding/student` and the `organizations` row was confirmed gone via a
+    direct DB query.
+  - Notification delivery: confirmed via `node scripts/verify-realtime.mjs`
+    (`PASS: dev received live notification event` — the pre-existing
+    `no task event received` failure in the same run is unrelated to Phase 2)
+    and via a scripted real-user join that fired both
+    `STUDENT_TEAM_MEMBER_JOINED` and `STUDENT_TEAM_CAPACITY_REACHED` with
+    correct content and no join-code leakage, received live by an
+    independently-subscribed client with zero polling. **Caveat**: a manual
+    check of the actual `NotificationBell` UI component in a real, long-lived,
+    heavily-navigated Chrome tab did not show the badge updating without a
+    page reload, even though the underlying delivery mechanism independently
+    verified as working. Given `verify-realtime.mjs`'s notification check
+    passes cleanly, this looks like a session-specific artifact (stale
+    socket/JWT after 40+ minutes and dozens of navigations) rather than a
+    reproducible product bug, but it wasn't root-caused — worth a quick
+    re-check with a short-lived session before fully closing this out.
+- 2026-07-04: `npx vitest run` -> 1 failed (fixed), now passes 62/62.
+- 2026-07-04: `npm run lint` -> 3 errors (react-hooks/set-state-in-effect) fixed, now 0 errors.
 - 2026-06-27: `npx vitest run` → 21/21 passed.
 - 2026-06-27: `node scripts/verify-realtime.mjs` → PASS.

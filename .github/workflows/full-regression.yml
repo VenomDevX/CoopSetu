@@ -1,0 +1,100 @@
+name: Full Regression Suite
+
+# Runs nightly and on-demand — NOT on every PR/push, since it boots a full
+# local Supabase stack plus the entire Playwright suite (every spec, not just
+# the smoke set in ci.yml) and takes meaningfully longer. ci.yml's PR-time
+# jobs (integration-tests, e2e-smoke) remain the fast safety net for every
+# push; this workflow catches anything they don't within a day, or on demand.
+on:
+  schedule:
+    - cron: '0 2 * * *' # 02:00 UTC daily
+  workflow_dispatch: {}
+
+permissions: read-all
+
+jobs:
+  full-secret-scan:
+    name: Full-History Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run TruffleHog (full history, not just verified)
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          extra_args: --debug
+
+  full-regression:
+    name: Full Playwright + Responsive + Role Matrices + Realtime + Reports
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase
+        run: supabase start
+
+      - name: Apply migrations and seed
+        run: supabase db reset
+
+      - name: Export local Supabase env vars
+        # -o env quotes every value; $GITHUB_ENV treats quotes as literal
+        # characters, so strip them before appending.
+        run: |
+          supabase status -o env \
+            --override-name api.url=NEXT_PUBLIC_SUPABASE_URL \
+            --override-name auth.anon_key=NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY \
+            --override-name auth.service_role_key=SUPABASE_SECRET_KEY \
+            | grep -E '^(NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY|SUPABASE_SECRET_KEY)=' \
+            | sed 's/="\(.*\)"$/=\1/' >> "$GITHUB_ENV"
+
+      # Covers cross-org isolation, private-task-visibility, student-team
+      # role/permission matrices, and export/report generation
+      # (tests/integration/group-a-actions.test.ts) in one command.
+      - name: Run full unit + integration suite
+        run: npm run test:all
+        env:
+          TEST_USER_PASSWORD: "TestPassword123!@#"
+          ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+
+      - name: Verify realtime (task + notification live delivery)
+        run: node scripts/verify-realtime.mjs
+        env:
+          TEST_USER_PASSWORD: "TestPassword123!@#"
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      # Every spec — onboarding, student-team, responsive (full 5-viewport
+      # matrix), smoke — not just the PR-time smoke subset.
+      - name: Run full Playwright suite
+        run: npx playwright test
+        env:
+          TEST_USER_PASSWORD: "TestPassword123!@#"
+          ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-full-report
+          path: playwright-report/
+          retention-days: 14

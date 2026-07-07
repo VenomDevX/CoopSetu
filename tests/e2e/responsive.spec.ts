@@ -150,4 +150,68 @@ test.describe('Responsive Workflows', () => {
     const sidebar = page.locator('aside').filter({ hasText: 'Ops_MGT' });
     await expect(sidebar).toBeVisible();
   });
+
+  // 13. /join-team is public and never overflows, at every viewport.
+  for (const [name, vp] of Object.entries(viewports)) {
+    test(`Join-team page no horizontal overflow on ${name}`, async ({ page }) => {
+      const ctx = await page.context().browser()!.newContext({ storageState: undefined });
+      const unauthPage = await ctx.newPage();
+      await unauthPage.setViewportSize(vp);
+      await unauthPage.goto('/join-team');
+      const noHorizontalScroll = await unauthPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+      expect(noHorizontalScroll).toBe(true);
+      await ctx.close();
+    });
+  }
+});
+
+test.describe('Student workspace responsive checks', () => {
+  test.use({ storageState: 'tests/e2e/.auth/responsive-student.json' });
+
+  test.beforeAll(async ({ browser }) => {
+    const ctx = await browser.newContext({ storageState: undefined });
+    const page = await ctx.newPage();
+    const email = `responsive-student-${Date.now()}@example.com`;
+
+    await page.goto('/signup');
+    await page.fill('input[type="text"]', 'Responsive Student');
+    await page.fill('input[type="email"]', email);
+    await page.fill('input[type="password"]', 'Password123!@#');
+    await page.locator('input[type="password"]').nth(1).fill('Password123!@#');
+    await page.click('button:has-text("Continue")');
+
+    await page.waitForURL('**/onboarding/profile', { timeout: 15000 });
+    await page.fill('input[placeholder="janedoe"]', `respstudent${Date.now()}`);
+    await page.selectOption('select >> nth=0', 'Engineering');
+    await page.selectOption('select >> nth=1', 'Software Engineer');
+    await page.selectOption('select >> nth=2', 'Backend');
+    await page.click('button:has-text("Continue")');
+
+    await page.waitForURL('**/onboarding/workspace-path', { timeout: 15000 });
+    await page.click('text=For Study / Hackathons');
+    await page.waitForURL('**/onboarding/student', { timeout: 15000 });
+    await page.click('text=Personal Solo Workspace');
+    await page.waitForURL('**/onboarding/student/solo', { timeout: 15000 });
+    await page.click('button:has-text("Create Workspace")');
+    await page.waitForURL('**/dashboard', { timeout: 15000 });
+
+    await ctx.storageState({ path: 'tests/e2e/.auth/responsive-student.json' });
+    await ctx.close();
+  });
+
+  for (const [name, vp] of Object.entries(viewports)) {
+    test(`Student dashboard no horizontal overflow on ${name}`, async ({ page }) => {
+      await page.setViewportSize(vp);
+      await page.goto('/dashboard');
+      const noHorizontalScroll = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+      expect(noHorizontalScroll).toBe(true);
+    });
+
+    test(`STUDENT_SOLO settings no horizontal overflow on ${name}`, async ({ page }) => {
+      await page.setViewportSize(vp);
+      await page.goto('/dashboard/settings');
+      const noHorizontalScroll = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+      expect(noHorizontalScroll).toBe(true);
+    });
+  }
 });

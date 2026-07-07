@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bot, CheckCircle, ShieldCheck, Code2, TestTube2, AlertCircle } from 'lucide-react';
+import { Bot, CheckCircle, ShieldCheck, Code2, TestTube2, AlertCircle, ArrowLeft } from 'lucide-react';
 
 import { DEMO_PERSONAS } from '@/lib/demo/provision-demo-workspace';
 
@@ -78,6 +78,16 @@ export default function DemoPage() {
         <div className="h-full w-full bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]"></div>
       </div>
       
+      {/* Back Button */}
+      <div className="absolute top-8 left-8 sm:top-12 sm:left-12 z-20">
+        <button 
+          onClick={() => router.push('/')}
+          className="text-zinc-500 hover:text-white transition-colors flex items-center gap-2 font-mono text-xs tracking-widest uppercase"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back
+        </button>
+      </div>
+
       <div className="max-w-5xl w-full z-10 space-y-12">
         <div className="text-center space-y-4">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tighter">

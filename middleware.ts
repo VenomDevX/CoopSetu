@@ -14,16 +14,26 @@ export async function middleware(request: NextRequest) {
   }
 
   // 1. Rate Limiting
+  // Disabled only under the dedicated e2e test flag (set exclusively by
+  // playwright.config.ts's webServer.env — never in dev/production). Real
+  // browser test traffic (page loads, prefetches, notification polling)
+  // shares one per-IP counter with everything else in the 'api' category, so
+  // a full Playwright run can trip the limit on unrelated pages well before
+  // any single endpoint's own request budget is exceeded. Rate limiting
+  // itself stays fully enforced in dev and prod.
+  const rateLimitDisabled = process.env.DISABLE_RATE_LIMIT === 'true';
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
   const { limit, windowMs } = getRateLimitConfig(request.nextUrl.pathname);
-  
+
   // Group paths loosely for rate limiting to avoid bypassing by slight path changes
   const category = request.nextUrl.pathname.startsWith('/api/v1/auth') ? 'auth' : 'api';
   const identifier = `${ip}:${category}`;
-  
-  const rl = rateLimit(identifier, limit, windowMs);
+
+  const rl = rateLimitDisabled
+    ? { success: true, limit, remaining: limit, reset: Date.now() + windowMs }
+    : rateLimit(identifier, limit, windowMs);
   if (!rl.success) {
-    return new NextResponse('Too Many Requests', { 
+    return new NextResponse('Too Many Requests', {
       status: 429,
       headers: {
         'X-RateLimit-Limit': rl.limit.toString(),

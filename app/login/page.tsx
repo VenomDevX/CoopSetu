@@ -3,8 +3,9 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Github } from 'lucide-react';
 import { Logo } from '@/components/logo';
+import { createClient } from '@/lib/supabase/client';
 
 const DEMO_ACCOUNTS = [
   { label: 'Org Admin', email: 'admin@apexfintech.test' },
@@ -29,10 +30,28 @@ function LoginInner() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() => params.get('error'));
   const [loading, setLoading] = useState(false);
+  const [githubLoading, setGithubLoading] = useState(false);
 
   const isDevelopment = process.env.NODE_ENV === 'development';
+
+  async function signInWithGithub() {
+    setError(null);
+    setGithubLoading(true);
+    const supabase = createClient();
+    const nextParam = params.get('next');
+    const safeNext = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '';
+    const redirectTo = `${window.location.origin}/auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`;
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: { redirectTo },
+    });
+    if (oauthError) {
+      setError('Could not start GitHub sign-in. Please try again.');
+      setGithubLoading(false);
+    }
+  }
 
   async function signIn(e: React.FormEvent, overrideIdentifier?: string) {
     if (e) e.preventDefault();
@@ -184,6 +203,22 @@ function LoginInner() {
               </Link>
             </div>
           </form>
+
+          <div className="flex items-center gap-3 py-2">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Or continue with</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          <button
+            type="button"
+            onClick={signInWithGithub}
+            disabled={githubLoading}
+            className="w-full h-10 bg-surface border border-border text-xs font-mono uppercase tracking-widest hover:bg-surface-hover disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+          >
+            {githubLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Github className="w-4 h-4" />}
+            Continue with GitHub
+          </button>
 
           <div className="pt-6 border-t border-border space-y-3">
             <Link href="/signup" className="flex items-center justify-between p-3 border border-border bg-surface hover:bg-surface-hover group transition-colors">

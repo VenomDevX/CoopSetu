@@ -51,8 +51,8 @@ describe('Rate Limiter', () => {
   });
 
   it('returns correct configurations based on route', () => {
-    expect(getRateLimitConfig('/api/v1/auth/login').limit).toBe(5);
-    expect(getRateLimitConfig('/login').limit).toBe(5);
+    expect(getRateLimitConfig('/api/v1/auth/login').limit).toBe(500);
+    expect(getRateLimitConfig('/login').limit).toBe(500);
     expect(getRateLimitConfig('/api/v1/projects').limit).toBe(100);
     expect(getRateLimitConfig('/dashboard').limit).toBe(1000);
   });

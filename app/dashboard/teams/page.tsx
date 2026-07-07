@@ -29,14 +29,16 @@ import {
 import { AskAiButton } from '@/components/ai/ask-ai-button';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useCurrentMembership } from '@/lib/permissions/context';
+import { StudentTeamView } from '@/components/teams/student-team-view';
 
 // --- MOCK DATA ---
 
 
 function mapTeam(r: any) {
   return {
-    id: r.id, name: r.name, manager: r.team_lead_member_id ? 'Lead assigned' : '—',
-    department: r.department_id ? 'Department' : '—',
+    id: r.id, name: r.name, manager: r.team_lead?.profile?.full_name ?? '—',
+    department: r.department?.name ?? '—',
     members: r.team_members?.[0]?.count ?? 0, projects: 0, sprint: '—',
     capacity: Number(r.capacity_hours_per_week) || 0, velocity: 0, openBugs: 0, health: 'Healthy',
   };
@@ -65,6 +67,13 @@ const getHealthColor = (health: string) => {
 // --- MAIN COMPONENT ---
 
 export default function TeamsPage() {
+  const { workspaceType } = useCurrentMembership();
+  if (workspaceType === 'STUDENT_TEAM') return <StudentTeamView />;
+  if (workspaceType === 'STUDENT_SOLO') return <StudentTeamView solo />;
+  return <EnterpriseTeamsPage />;
+}
+
+function EnterpriseTeamsPage() {
   const [currentView, setCurrentView] = useState<'directory' | 'resource_planning' | 'team_detail' | 'employee_profile'>('directory');
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);

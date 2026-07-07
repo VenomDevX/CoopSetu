@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import SplitText from '@/components/ui/split-text';
 import { PublicFooter } from '@/components/layout/public-footer';
-import { ArrowRight, BarChart3, CheckCircle2, GitPullRequest, Layers, Lock, Shield, Terminal, Zap, Activity, Cpu, Loader2, ChevronDown } from 'lucide-react';
+import { ArrowRight, BarChart3, CheckCircle2, GitPullRequest, Layers, Lock, Shield, Terminal, Zap, Activity, Cpu, Loader2, ChevronDown, LogOut, Settings, User, LayoutDashboard } from 'lucide-react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
 import { useState, useRef, useEffect } from 'react';
 
@@ -45,6 +45,8 @@ export default function LandingPage() {
   const [expandedPanel, setExpandedPanel] = useState<number | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const checkDemoAndLogout = () => {
@@ -80,6 +82,26 @@ export default function LandingPage() {
     window.addEventListener('pageshow', checkDemoAndLogout);
     return () => window.removeEventListener('pageshow', checkDemoAndLogout);
   }, [pathname, router]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setUserDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSignOut = async () => {
+    setUserDropdownOpen(false);
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setIsLoggedIn(false);
+    setUserName(null);
+    router.refresh();
+  };
 
   const toggleArchPanel = (index: number | null) => {
     setExpandedPanel(prev => prev === index ? null : index);
@@ -166,23 +188,64 @@ export default function LandingPage() {
           <div className="flex items-center gap-4 md:gap-6">
             <ThemeToggle />
             {isLoggedIn ? (
-              <div className="flex items-center gap-4">
-                {userName && (
-                  <span className="hidden md:block text-[10px] font-mono text-muted-foreground uppercase tracking-widest truncate max-w-[120px]">
-                    Hi, {userName.split(' ')[0]}
-                  </span>
-                )}
-                <Button
-                  onClick={() => handleNavigate('/dashboard', 'dashboard')}
-                  disabled={isNavigating}
-                  className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-8 px-4 md:px-6 text-xs font-mono uppercase tracking-widest transition-all"
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="group flex items-center gap-2.5 py-1 transition-all duration-200 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground"
                 >
-                  {isNavigating && navType === 'dashboard' ? (
-                    <span className="flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> LOADING</span>
-                  ) : (
-                    <span>Dashboard</span>
+                  <span className="w-5 h-5 rounded-full bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center text-[8px] font-bold text-white ring-2 ring-accent/20">
+                    {userName ? userName.charAt(0).toUpperCase() : 'U'}
+                  </span>
+                  <span className="hidden md:block truncate max-w-[96px]">
+                    {userName ? userName.split(' ')[0] : 'User'}
+                  </span>
+                  <ChevronDown className={`w-3 h-3 shrink-0 text-muted-foreground group-hover:text-foreground transition-transform duration-200 ${userDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                <AnimatePresence>
+                  {userDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-2 w-52 bg-background border border-border shadow-2xl z-50 overflow-hidden"
+                    >
+                      <div className="px-4 py-3 border-b border-border">
+                        <p className="text-xs font-mono uppercase tracking-widest text-foreground truncate">{userName || 'User'}</p>
+                        <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mt-0.5">Workspace</p>
+                      </div>
+                      <div className="py-1">
+                        <button
+                          onClick={() => { setUserDropdownOpen(false); handleNavigate('/dashboard', 'dashboard'); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+                        >
+                          <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
+                        </button>
+                        <button
+                          onClick={() => { setUserDropdownOpen(false); handleNavigate('/dashboard/settings', 'settings'); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+                        >
+                          <Settings className="w-3.5 h-3.5" /> Settings
+                        </button>
+                        <button
+                          onClick={() => { setUserDropdownOpen(false); handleNavigate('/dashboard/profile', 'profile'); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+                        >
+                          <User className="w-3.5 h-3.5" /> Profile
+                        </button>
+                      </div>
+                      <div className="border-t border-border py-1">
+                        <button
+                          onClick={handleSignOut}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-red-400 hover:text-red-300 hover:bg-surface-hover transition-colors"
+                        >
+                          <LogOut className="w-3.5 h-3.5" /> Sign Out
+                        </button>
+                      </div>
+                    </motion.div>
                   )}
-                </Button>
+                </AnimatePresence>
               </div>
             ) : (
               <>
@@ -271,10 +334,10 @@ export default function LandingPage() {
 
               <h1 className="text-5xl md:text-7xl lg:text-[96px] font-bold tracking-tighter mb-6 leading-[0.9] uppercase relative">
                 <div className="flex flex-col text-left">
-                  <SplitText text="Ship." className="block" textAlign="left" delay={50} splitType="chars" />
-                  <SplitText text="Control." className="block text-muted-foreground" textAlign="left" delay={50} splitType="chars" />
+                  <SplitText text="Ship." className="block" textAlign="left" delay={120} splitType="chars" />
+                  <SplitText text="Control." className="block text-muted-foreground" textAlign="left" delay={120} splitType="chars" />
                   <div className="flex items-center">
-                    <SplitText text="Dominate." className="block" textAlign="left" delay={50} splitType="chars" />
+                    <SplitText text="Dominate." className="block" textAlign="left" delay={120} splitType="chars" />
                     <motion.span
                       animate={{ opacity: [1, 0, 1] }}
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
@@ -506,18 +569,15 @@ export default function LandingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1, duration: 1 }}
-            className="absolute bottom-10 left-8 hidden sm:flex items-center gap-3"
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden sm:flex flex-col items-center gap-3"
           >
-            <div className="flex items-center justify-center w-4 h-16">
-              <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground rotate-90 whitespace-nowrap">Scroll</span>
-            </div>
-            <div className="w-px h-16 bg-border overflow-hidden">
-              <motion.div
-                animate={{ y: [0, 64] }}
-                transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-                className="w-full h-1/2 bg-accent"
-              />
-            </div>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground whitespace-nowrap">Scroll Down</span>
+            <motion.div
+              animate={{ y: [0, 5, 0] }}
+              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+            >
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </motion.div>
           </motion.div>
         </section>
 

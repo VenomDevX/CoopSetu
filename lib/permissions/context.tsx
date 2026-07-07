@@ -9,6 +9,7 @@ export interface MembershipContextValue {
   roles: string[];
   permissions: string[];
   isDemo?: boolean;
+  workspaceType?: 'ENTERPRISE' | 'STUDENT_SOLO' | 'STUDENT_TEAM';
 }
 
 const MembershipContext = createContext<MembershipContextValue | null>(null);
@@ -41,15 +42,20 @@ export function usePermission(): {
   isAdmin: boolean;
   roles: string[];
   isDemo: boolean;
+  workspaceType: 'ENTERPRISE' | 'STUDENT_SOLO' | 'STUDENT_TEAM';
+  isStudent: boolean;
 } {
   const m = useContext(MembershipContext);
   const roles = m?.roles ?? [];
   const isAdmin = roles.some((r) => ADMIN_ROLES.includes(r));
+  const workspaceType = m?.workspaceType ?? 'ENTERPRISE';
   return {
     has: (perm: string) => isAdmin || (m?.permissions.includes(perm) ?? false),
     hasRole: (...codes: string[]) => codes.some((c) => roles.includes(c)),
     isAdmin,
     roles,
     isDemo: !!m?.isDemo,
+    workspaceType,
+    isStudent: workspaceType !== 'ENTERPRISE',
   };
 }

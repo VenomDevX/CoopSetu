@@ -13,9 +13,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   return handle(async () => {
-    const { supabase } = await requireUser();
+    const { user, supabase } = await requireUser();
     const body = createOrganizationSchema.parse(await req.json());
-    const org = await createOrganization(supabase, body);
+    const org = await createOrganization(supabase, user.id, body);
     return ok(org, undefined, 201);
   });
 }
