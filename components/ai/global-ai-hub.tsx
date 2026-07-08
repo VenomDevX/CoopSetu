@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bot, X, MessageSquare, Sun, LayoutDashboard, ChevronRight, Lock } from 'lucide-react';
+import { X, MessageSquare, Sun, LayoutDashboard, ChevronRight, Lock } from 'lucide-react';
+import { AiLogo } from '@/components/ai/ai-logo';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { usePermission } from '@/lib/permissions/context';
@@ -47,9 +48,9 @@ export function GlobalAiHub() {
             >
               {/* Header */}
               <div className="h-16 flex items-center justify-between px-5 border-b border-border bg-surface-hover flex-shrink-0">
-                <div className="flex items-center gap-2">
-                  <Bot className="w-4 h-4 text-accent" />
-                  <h2 className="font-mono text-xs uppercase tracking-widest font-bold">Handoff AI</h2>
+                <div className="flex items-center gap-1 text-accent font-mono text-xs uppercase tracking-widest font-bold">
+                  <span>HANDOFF</span>
+                  <AiLogo className="w-3 h-3" />
                 </div>
                 <button onClick={() => setOpen(false)} className="p-2 hover:bg-surface border border-transparent hover:border-border transition-colors">
                   <X className="w-4 h-4" />
@@ -118,7 +119,7 @@ export function GlobalAiHub() {
       <Button
         type="button"
         variant="outline"
-        size="sm"
+        size="icon"
         onClick={() => {
           if (isDemo) {
             window.dispatchEvent(new CustomEvent('demo-alert'));
@@ -126,9 +127,9 @@ export function GlobalAiHub() {
           }
           setOpen(true);
         }}
-        className="relative w-9 h-9 flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-none transition-colors border border-transparent hover:border-border text-xs font-mono uppercase tracking-widest"
+        className="relative w-9 h-9 p-0 flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-none transition-colors border border-transparent hover:border-border text-xs font-mono uppercase tracking-widest"
       >
-        <Bot className="w-4 h-4 text-accent" />
+        <AiLogo className="w-4 h-4 text-accent" />
       </Button>
 
       {panel}

@@ -139,13 +139,15 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
               type="text" placeholder="Jane Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
           </div>
 
-          <div className="space-y-1.5 relative w-full">
+          <div className="space-y-1.5 w-full">
             <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Username</label>
-            <input className={`w-full h-11 px-4 bg-surface border text-sm focus:outline-none transition-colors pr-10 ${usernameTouched && !isUsernameSyntaxValid ? 'border-red-500 focus:border-red-500' : usernameAvailable === true ? 'border-green-500/50 focus:border-green-500/50' : usernameAvailable === false && usernameTouched ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-foreground'}`}
-              placeholder="janedoe" value={username} onChange={(e) => { setUsername(e.target.value.toLowerCase()); setUsernameTouched(true); }} required onFocus={() => setUsernameTouched(true)} />
-            <div className="absolute right-3 top-[26px]">
-              {checkingUsername ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> :
-                usernameAvailable === true ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : null}
+            <div className="relative">
+              <input className={`w-full h-11 px-4 bg-surface border text-sm focus:outline-none transition-colors pr-10 ${usernameTouched && !isUsernameSyntaxValid ? 'border-red-500 focus:border-red-500' : usernameAvailable === true ? 'border-green-500/50 focus:border-green-500/50' : usernameAvailable === false && usernameTouched ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-foreground'}`}
+                placeholder="janedoe" value={username} onChange={(e) => { setUsername(e.target.value.toLowerCase()); setUsernameTouched(true); }} required onFocus={() => setUsernameTouched(true)} />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {checkingUsername ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> :
+                  usernameAvailable === true ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : null}
+              </div>
             </div>
             {usernameTouched && !isUsernameSyntaxValid ? (
               <p className="text-[10px] text-red-500 font-mono">3–30 characters · letters, numbers, dots, underscores, and hyphens only</p>
