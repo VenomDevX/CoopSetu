@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bot, CheckCircle, ShieldCheck, Code2, TestTube2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { CheckCircle, ShieldCheck, Code2, TestTube2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { AiLogo } from '@/components/ai/ai-logo';
 
 import { DEMO_PERSONAS } from '@/lib/demo/provision-demo-workspace';
 
@@ -106,7 +107,7 @@ export default function DemoPage() {
         
         <div className="flex flex-col gap-2 w-full max-w-2xl mx-auto">
           {DEMO_PERSONAS.map((persona) => {
-            const Icon = ROLE_ICONS[persona.role] || Bot;
+            const Icon = ROLE_ICONS[persona.role] || AiLogo;
             const isLoading = loadingRole === persona.role;
             const isDisabled = loadingRole !== null && loadingRole !== persona.role;
             

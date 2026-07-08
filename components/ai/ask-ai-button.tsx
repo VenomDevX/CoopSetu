@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Bot } from 'lucide-react';
+import { AiLogo } from '@/components/ai/ai-logo';
 import { Button } from '@/components/ui/button';
 import { usePermission } from '@/lib/permissions/context';
 import { AiPanel } from '@/components/ai/ai-panel';
@@ -24,7 +24,7 @@ interface Props {
 }
 
 const DEFAULT_CLASS =
-  'h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2';
+  'h-9 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2 flex items-center';
 
 /**
  * Trigger for the AI panel, gated on `ai:use` (+ an optional feature permission),
@@ -41,7 +41,7 @@ export function AskAiButton({
   releaseId,
   permission,
   permissions,
-  label = 'Ask Handoff AI',
+  label,
   className,
 }: Props) {
   const { has, isDemo } = usePermission();
@@ -68,9 +68,9 @@ export function AskAiButton({
         onClick={handleClick}
         disabled={!allowed && !isDemo}
         title={!allowed && !isDemo ? 'Requires AI access' : undefined}
-        className={`${className ?? DEFAULT_CLASS} ${(!allowed && !isDemo) ? 'opacity-40' : ''}`}
+        className={`${className ?? DEFAULT_CLASS} ${label ? 'px-4' : 'w-9 justify-center p-0'} ${(!allowed && !isDemo) ? 'opacity-40' : ''}`}
       >
-        <Bot className="w-4 h-4" />
+        <AiLogo className="w-4 h-4" />
         {label}
       </Button>
       {open && (

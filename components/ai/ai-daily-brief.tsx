@@ -2,7 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Bot, ArrowUpRight, Terminal, Loader2, RefreshCw, Square } from 'lucide-react';
+import { ArrowUpRight, Terminal, Loader2, RefreshCw, Square } from 'lucide-react';
+import { AiLogo } from '@/components/ai/ai-logo';
 import { usePermission } from '@/lib/permissions/context';
 import { sourceHref } from '@/lib/ai/source-href';
 import { useAiStream } from '@/components/ai/use-ai-stream';
@@ -31,9 +32,9 @@ export function AiDailyBrief() {
     <div className="border border-border bg-background relative overflow-hidden">
       <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 rounded-bl-full pointer-events-none" />
       <div className="p-4 border-b border-border bg-surface-hover flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Bot className="w-4 h-4 text-accent" />
-          <h3 className="font-mono text-xs uppercase tracking-widest font-bold">AI Daily Brief</h3>
+        <div className="flex items-center gap-1 text-accent">
+          <AiLogo className="w-3 h-3" />
+          <h3 className="font-mono text-xs uppercase tracking-widest font-bold">DAILY BRIEF</h3>
         </div>
         {loading ? (
           <button onClick={stop} title="Stop" className="text-destructive hover:opacity-80">

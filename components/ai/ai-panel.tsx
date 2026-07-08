@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { Bot, X, ArrowUpRight, Terminal, Loader2, CornerDownLeft, Square } from 'lucide-react';
+import { X, ArrowUpRight, Terminal, Loader2, CornerDownLeft, Square } from 'lucide-react';
+import { AiLogo } from '@/components/ai/ai-logo';
 import { Button } from '@/components/ui/button';
 import { sourceHref } from '@/lib/ai/source-href';
 import { useAiStream, type AiStreamBody } from '@/components/ai/use-ai-stream';
@@ -94,9 +95,24 @@ export function AiPanel(props: Props) {
       >
         {/* Header */}
         <div className="h-16 flex items-center justify-between px-5 border-b border-border bg-surface-hover flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <Bot className="w-4 h-4 text-accent" />
-            <h2 className="font-mono text-xs uppercase tracking-widest font-bold">{title ?? 'Handoff AI'}</h2>
+          <div className="flex items-center gap-1 text-accent font-mono text-xs uppercase tracking-widest font-bold">
+            {(() => {
+              const displayTitle = title ?? 'HANDOFF AI';
+              if (displayTitle.toUpperCase() === 'HANDOFF AI') {
+                return (
+                  <>
+                    <span>HANDOFF</span>
+                    <AiLogo className="w-3 h-3" />
+                  </>
+                );
+              }
+              return (
+                <>
+                  <AiLogo className="w-3 h-3" />
+                  <span>{displayTitle}</span>
+                </>
+              );
+            })()}
           </div>
           <button onClick={onClose} className="p-2 hover:bg-surface border border-transparent hover:border-border transition-colors">
             <X className="w-4 h-4" />
