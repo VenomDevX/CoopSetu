@@ -10,7 +10,7 @@ const schema = z.object({
   summary: z.string().max(5000).optional(),
   root_cause: z.string().max(5000).optional(),
   customer_impact: z.string().max(2000).optional(),
-});
+}).strict();
 
 export async function GET(_req: Request, { params }: { params: Promise<{ incidentId: string }> }) {
   return handle(async () => {

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getLegalStatus } from '@/lib/legal/get-legal-status';
 
 export default async function OnboardingIndex({
   searchParams,
@@ -19,7 +20,15 @@ export default async function OnboardingIndex({
     redirect('/login');
   }
 
-  // 2. Valid signed return-to invite destination
+  // 2. Legal acceptance missing or outdated (demo/anonymous sessions exempt)
+  if (!user.is_anonymous) {
+    const status = await getLegalStatus(user, supabase);
+    if (!status.isAccepted) {
+      redirect('/onboarding/legal-consent');
+    }
+  }
+
+  // 3. Valid signed return-to invite destination
   const cookieStore = await cookies();
   const inviteReturnTo = cookieStore.get('invite_return_to')?.value;
   
@@ -66,19 +75,19 @@ export default async function OnboardingIndex({
 
   const hasPendingInvites = (pendingInvites && pendingInvites.length > 0);
 
-  // 3. Profile incomplete
+  // 4. Profile incomplete
   if (!profile?.profile_completed_at) {
     redirect('/onboarding/profile');
   }
 
   const createWorkspaceIntent = cookieStore.get('create_workspace_intent')?.value === 'true';
 
-  // 4. Verified pending invitations and no active organization and NO create intent
+  // 5. Verified pending invitations and no active organization and NO create intent
   if (activeMemberships.length === 0 && hasPendingInvites && !createWorkspaceIntent) {
     redirect('/onboarding/invites');
   }
 
-  // 5. No membership: route by work-vs-study intent (set by /onboarding/workspace-path).
+  // 6. No membership: route by work-vs-study intent (set by /onboarding/workspace-path).
   // Choosing student grants no permission by itself — it's only onboarding intent.
   if (activeMemberships.length === 0) {
     const workspacePathIntent = cookieStore.get('workspace_path_intent')?.value;
@@ -91,7 +100,7 @@ export default async function OnboardingIndex({
     }
   }
 
-  // 6. New Organization Owner with initial workspace setup unfinished
+  // 7. New Organization Owner with initial workspace setup unfinished
   // Check if they are an owner of an org with initial_setup_completed_at IS NULL
   const unfinishedOwnedOrg = activeMemberships.find(m => {
     // @ts-ignore - Supabase join typing
@@ -104,6 +113,6 @@ export default async function OnboardingIndex({
     redirect('/onboarding/team');
   }
 
-  // 7. Completed membership/onboarding
+  // 8. Completed membership/onboarding
   redirect(safeNext || '/dashboard');
 }

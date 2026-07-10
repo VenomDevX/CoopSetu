@@ -12,7 +12,7 @@ const INVITABLE = ROLE_CODES.filter((r) => r !== 'SUPER_ADMIN' && r !== 'ORG_OWN
 const schema = z.object({
   email: z.string().email(),
   role_code: z.enum(INVITABLE as [string, ...string[]]),
-});
+}).strict();
 
 export async function GET() {
   return handle(async () => {

@@ -32,6 +32,6 @@ export const contactRequestSchema = z.object({
     .max(3000, 'Message cannot exceed 3000 characters')
     .trim(),
   honeypot: z.string().optional(),
-});
+}).strict();
 
 export type ContactRequestInput = z.infer<typeof contactRequestSchema>;

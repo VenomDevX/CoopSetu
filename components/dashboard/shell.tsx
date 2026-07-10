@@ -150,7 +150,7 @@ export function DashboardShell({ children, displayName, initials, membership }: 
                 const active = pathname === item.href;
                 return (
                   <Link key={j} href={item.href} prefetch={false}
-                    className={`flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest transition-colors ${
+                    className={`flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest transition-colors rounded-[4px] ${
                       active
                         ? 'bg-foreground text-background font-bold border border-foreground'
                         : 'hover:bg-surface-hover text-muted-foreground hover:text-foreground border border-transparent'
@@ -225,7 +225,7 @@ export function DashboardShell({ children, displayName, initials, membership }: 
                 type="button"
                 onClick={() => setPaletteOpen(true)}
                 aria-label="Open command palette"
-                className="relative w-full max-w-sm hidden md:flex items-center h-9 pl-10 pr-4 text-xs font-mono uppercase tracking-widest bg-surface-hover border border-border rounded-none hover:border-foreground transition-all text-muted-foreground">
+                className="relative w-full max-w-sm hidden md:flex items-center h-9 pl-10 pr-4 text-xs font-mono uppercase tracking-widest bg-surface-hover border border-border rounded hover:border-foreground transition-all text-muted-foreground">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <span className="flex-1 text-left">Search query...</span>
                 <kbd className="text-[10px] border border-border px-1.5 py-0.5">CTRL+K</kbd>
@@ -262,7 +262,7 @@ export function DashboardShell({ children, displayName, initials, membership }: 
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.95 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-2 w-52 bg-background border border-border shadow-2xl z-[90] overflow-hidden"
+                      className="absolute right-0 top-full mt-2 w-52 bg-background border border-border rounded-[2px] shadow-2xl z-[90] overflow-hidden"
                     >
                       <div className="px-4 py-3 border-b border-border">
                         <p className="text-xs font-mono uppercase tracking-widest text-foreground truncate">{displayName}</p>
@@ -332,7 +332,7 @@ export function DashboardShell({ children, displayName, initials, membership }: 
               initial={{ opacity: 0, y: 50, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.95 }}
-              className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4 bg-background border border-border shadow-2xl px-6 py-4 min-w-[320px] rounded-none border-l-4 border-l-red-500"
+              className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4 bg-background border border-border shadow-2xl px-6 py-4 min-w-[320px] rounded border-l-4 border-l-red-500"
             >
               <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
               <div className="flex-1">

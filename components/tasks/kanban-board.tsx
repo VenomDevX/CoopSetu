@@ -43,7 +43,7 @@ function Card({ task, onOpen }: { task: Task; onOpen: (id: string) => void }) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`task-card border border-border bg-background p-3 mb-2 cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-40' : ''}`}
+      className={`task-card border border-border rounded bg-background p-3 mb-2 cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-40' : ''}`}
       {...listeners}
       {...attributes}
     >
@@ -72,7 +72,7 @@ function Column({ col, tasks, onOpen }: { col: { key: string; label: string }; t
         <span className="font-mono text-[10px] font-bold uppercase tracking-widest">{col.label}</span>
         <span className="font-mono text-[10px] text-muted-foreground">{tasks.length}</span>
       </div>
-      <div ref={setNodeRef} className={`flex-1 min-h-[10rem] overflow-y-auto p-2 border border-border scrollbar-thin ${isOver ? 'bg-surface-hover' : 'bg-surface'}`}>
+      <div ref={setNodeRef} className={`flex-1 min-h-[10rem] overflow-y-auto p-2 border border-border rounded scrollbar-thin ${isOver ? 'bg-surface-hover' : 'bg-surface'}`}>
         {tasks.map((t) => <Card key={t.id} task={t} onOpen={onOpen} />)}
       </div>
     </div>
@@ -162,7 +162,7 @@ export function KanbanBoard() {
         <select
           value={projectId ?? ''}
           onChange={(e) => setProjectId(e.target.value)}
-          className="h-9 px-3 bg-surface border border-border text-xs font-mono uppercase tracking-widest"
+          className="h-9 px-3 bg-surface border border-border rounded text-xs font-mono uppercase tracking-widest"
         >
           {projects.map((p) => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
         </select>

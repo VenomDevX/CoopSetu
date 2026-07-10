@@ -9,7 +9,7 @@ const schema = z.object({
   identifier: z.string().min(1, "Username or email is required"),
   password: z.string().min(1, "Password is required"),
   rememberDevice: z.boolean().optional().default(false),
-});
+}).strict();
 
 export async function POST(req: Request) {
   // Extract IP for basic rate limiting
@@ -46,6 +46,15 @@ export async function POST(req: Request) {
         throw Errors.unauthenticated('Invalid username/email or password.');
       }
       emailToLogin = profile.email;
+    }
+
+    // Per-account lockout — closes the gap where a distributed/multi-IP
+    // credential-stuffing attempt against one account bypasses the
+    // per-IP-only limit above. Keyed by the resolved account, not the
+    // source IP, using the same rate_limits table/RPC (the "ip" column is
+    // just a generic text key, not format-validated).
+    if (!(await checkRateLimit(`account:${emailToLogin.toLowerCase()}`, 10, 900))) {
+      throw Errors.unauthenticated('Too many failed attempts on this account. Please try again later.');
     }
 
     // Attempt Supabase Auth login

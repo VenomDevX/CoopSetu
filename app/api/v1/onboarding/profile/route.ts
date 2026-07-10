@@ -16,7 +16,7 @@ const schema = z.object({
   specialization: z.string().min(2).max(100),
   professionalDescription: z.string().max(500).optional(),
   timezone: z.string().optional(),
-});
+}).strict();
 
 export async function POST(req: NextRequest) {
   return handle(async () => {

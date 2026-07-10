@@ -79,7 +79,7 @@ export function GlobalAiHub() {
                           key={meta.intent}
                           disabled={!allowed}
                           onClick={() => setInsightIntent(meta.intent)}
-                          className="w-full text-left px-4 py-3 flex items-center justify-between gap-4 border border-border hover:bg-surface-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          className="w-full text-left px-4 py-3 flex items-center justify-between gap-4 border border-border rounded hover:bg-surface-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                         >
                           <div className="flex-1 min-w-0">
                             <div className="text-xs font-mono uppercase tracking-widest font-bold flex items-center gap-2 mb-1">
@@ -127,7 +127,7 @@ export function GlobalAiHub() {
           }
           setOpen(true);
         }}
-        className="relative w-9 h-9 p-0 flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-none transition-colors border border-transparent hover:border-border text-xs font-mono uppercase tracking-widest"
+        className="relative w-9 h-9 p-0 flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded transition-colors border border-transparent hover:border-border text-xs font-mono uppercase tracking-widest"
       >
         <AiLogo className="w-4 h-4 text-accent" />
       </Button>

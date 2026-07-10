@@ -4,9 +4,19 @@ import { fail } from '@/lib/api/response';
 import { ApiError } from '@/lib/api/errors';
 import { requireUser } from '@/lib/auth/require-user';
 import { requireOrganization } from '@/lib/auth/require-organization';
+import { requireLegalAccepted } from '@/lib/legal/require-legal-accepted';
 import { getIntent } from '@/lib/ai/intents';
 import { checkIntentPermissions } from '@/lib/ai/ai-permission-checks';
 import { buildAiStream } from '@/lib/ai/ai-streaming';
+import { rateLimit } from '@/lib/security/rate-limit';
+
+// Separate, stricter budget than the generic /api/v1/* bucket — both to
+// blunt automated prompt-injection probing and to bound Gemini cost exposure.
+// Keyed by member id (not IP) so distributed/NAT'd traffic from one account
+// can't dodge it, and one account's abuse can't drown out others behind the
+// same IP.
+const AI_RATE_LIMIT = 20;
+const AI_RATE_WINDOW_MS = 5 * 60 * 1000;
 
 export const runtime = 'nodejs';
 
@@ -18,7 +28,7 @@ const schema = z.object({
   task_id: z.string().uuid().optional(),
   incident_id: z.string().uuid().optional(),
   release_id: z.string().uuid().optional(),
-});
+}).strict();
 
 /**
  * Single streaming endpoint for every AI intent. All gates — auth, org, `ai:use`,
@@ -29,7 +39,7 @@ const schema = z.object({
  */
 export async function POST(req: NextRequest) {
   try {
-    const { supabase } = await requireUser();
+    const { user, supabase } = await requireUser();
     const m = await requireOrganization();
     const body = schema.parse(await req.json());
 
@@ -39,6 +49,13 @@ export async function POST(req: NextRequest) {
     if (m.isDemo) {
       return fail('DEMO_AI_DISABLED', 'AI is unavailable in the public demo workspace.', 403);
     }
+
+    const rl = rateLimit(`ai:member:${m.memberId}`, AI_RATE_LIMIT, AI_RATE_WINDOW_MS);
+    if (!rl.success) {
+      return fail('RATE_LIMITED', 'Too many AI requests. Please wait a few minutes and try again.', 429);
+    }
+
+    await requireLegalAccepted(user, supabase);
 
     checkIntentPermissions(m, def.permissions);
 

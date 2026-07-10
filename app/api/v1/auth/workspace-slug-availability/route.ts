@@ -12,7 +12,7 @@ const schema = z.object({
     .max(50)
     .regex(/^[a-z0-9\-]+$/)
     .refine(val => !val.startsWith('-') && !val.endsWith('-') && !val.includes('--'))
-});
+}).strict();
 
 export async function POST(req: NextRequest) {
   try {

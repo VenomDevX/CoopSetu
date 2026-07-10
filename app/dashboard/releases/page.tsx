@@ -49,7 +49,7 @@ export default async function ReleasesListPage() {
         </div>
       </div>
 
-      <div className="border border-border bg-background">
+      <div className="border border-border rounded bg-background">
         {releases.length === 0 ? (
           <div className="p-6 text-xs font-mono text-muted-foreground">No releases in this organization yet.</div>
         ) : (

@@ -8,7 +8,7 @@ const patchSchema = z.object({
   read: z.boolean().optional(),
   archived: z.boolean().optional(),
   snoozed_until: z.string().datetime().nullable().optional(),
-});
+}).strict();
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ notificationId: string }> }) {
   return handle(async () => {

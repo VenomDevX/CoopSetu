@@ -143,7 +143,7 @@ export default function CompanyClient({ connectedAccount }: CompanyClientProps) 
 
           <div className="space-y-1.5 w-full">
             <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Industry (Optional)</label>
-            <select className="w-full h-11 px-3 bg-surface border border-border text-sm focus:outline-none focus:border-foreground appearance-none rounded-none"
+            <select className="w-full h-11 px-3 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground appearance-none rounded"
               value={industry} onChange={(e) => setIndustry(e.target.value)}>
               <option value="" disabled>Select...</option>
               <option value="Technology">Technology</option>

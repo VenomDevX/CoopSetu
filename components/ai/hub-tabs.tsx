@@ -69,13 +69,13 @@ export function HubChatTab({ onClose }: { onClose: () => void }) {
                       key={i}
                       href={href}
                       onClick={onClose}
-                      className="flex items-center gap-2 text-xs font-mono border border-border px-2 py-1.5 hover:bg-foreground hover:text-background transition-colors"
+                      className="flex items-center gap-2 text-xs font-mono border border-border rounded px-2 py-1.5 hover:bg-foreground hover:text-background transition-colors"
                     >
                       <span className="text-[9px] uppercase tracking-widest opacity-60">{s.source_type}</span>
                       <span className="truncate">{s.source_title}</span>
                     </Link>
                   ) : (
-                    <div key={i} className="flex items-center gap-2 text-xs font-mono border border-border px-2 py-1.5 text-muted-foreground">
+                    <div key={i} className="flex items-center gap-2 text-xs font-mono border border-border rounded px-2 py-1.5 text-muted-foreground">
                       <span className="text-[9px] uppercase tracking-widest opacity-60">{s.source_type}</span>
                       <span className="truncate">{s.source_title}</span>
                     </div>
@@ -99,7 +99,7 @@ export function HubChatTab({ onClose }: { onClose: () => void }) {
               <button
                 key={s}
                 onClick={() => { setPrompt(s); run(body(s)); }}
-                className="block w-full text-left text-xs border border-border px-3 py-2 hover:bg-surface-hover transition-colors"
+                className="block w-full text-left text-xs border border-border rounded px-3 py-2 hover:bg-surface-hover transition-colors"
               >
                 {s}
               </button>
@@ -115,14 +115,14 @@ export function HubChatTab({ onClose }: { onClose: () => void }) {
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && canSubmit) { e.preventDefault(); run(body()); } }}
           placeholder="Ask about your authorized workspace data…"
           rows={2}
-          className="flex-1 px-3 py-2 bg-background border border-border text-xs resize-none focus:outline-none focus:border-foreground"
+          className="flex-1 px-3 py-2 bg-background border border-border rounded text-xs resize-none focus:outline-none focus:border-foreground"
         />
         {loading ? (
-          <Button onClick={stop} className="h-auto px-3 rounded-none bg-destructive text-background" title="Stop generation">
+          <Button onClick={stop} className="h-auto px-3 rounded bg-destructive text-background" title="Stop generation">
             <Square className="w-4 h-4" />
           </Button>
         ) : (
-          <Button onClick={() => run(body())} disabled={!canSubmit} className="h-auto px-3 rounded-none bg-foreground text-background disabled:opacity-50">
+          <Button onClick={() => run(body())} disabled={!canSubmit} className="h-auto px-3 rounded bg-foreground text-background disabled:opacity-50">
             <CornerDownLeft className="w-4 h-4" />
           </Button>
         )}
@@ -182,13 +182,13 @@ export function HubBriefTab({ onClose }: { onClose: () => void }) {
                       key={i}
                       href={href}
                       onClick={onClose}
-                      className="flex items-center gap-2 text-xs font-mono border border-border px-2 py-1.5 hover:bg-foreground hover:text-background transition-colors"
+                      className="flex items-center gap-2 text-xs font-mono border border-border rounded px-2 py-1.5 hover:bg-foreground hover:text-background transition-colors"
                     >
                       <span className="text-[9px] uppercase tracking-widest opacity-60">{s.source_type}</span>
                       <span className="truncate">{s.source_title}</span>
                     </Link>
                   ) : (
-                    <div key={i} className="flex items-center gap-2 text-xs font-mono border border-border px-2 py-1.5 text-muted-foreground">
+                    <div key={i} className="flex items-center gap-2 text-xs font-mono border border-border rounded px-2 py-1.5 text-muted-foreground">
                       <span className="text-[9px] uppercase tracking-widest opacity-60">{s.source_type}</span>
                       <span className="truncate">{s.source_title}</span>
                     </div>
@@ -208,14 +208,14 @@ export function HubBriefTab({ onClose }: { onClose: () => void }) {
 
       {loading && (
         <div className="p-4 border-t border-border bg-surface flex-shrink-0">
-          <Button onClick={stop} className="w-full h-9 rounded-none bg-destructive text-background gap-2" title="Stop generation">
+          <Button onClick={stop} className="w-full h-9 rounded bg-destructive text-background gap-2" title="Stop generation">
             <Square className="w-4 h-4" /> Stop Generation
           </Button>
         </div>
       )}
       {!loading && done && (
         <div className="p-4 border-t border-border bg-surface flex-shrink-0">
-          <Button onClick={() => run({ intent: 'daily-brief' })} variant="outline" className="w-full h-9 rounded-none gap-2 font-mono text-xs uppercase tracking-widest">
+          <Button onClick={() => run({ intent: 'daily-brief' })} variant="outline" className="w-full h-9 rounded gap-2 font-mono text-xs uppercase tracking-widest">
             Regenerate Brief
           </Button>
         </div>

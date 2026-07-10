@@ -270,11 +270,11 @@ export default function InboxPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button onClick={handleMarkAllRead} variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+          <Button onClick={handleMarkAllRead} variant="outline" className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
             <CheckCircle2 className="w-4 h-4" />
             Mark All Read
           </Button>
-          <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+          <Button variant="outline" className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
             <Settings className="w-4 h-4" />
             Configure
           </Button>
@@ -305,7 +305,7 @@ export default function InboxPage() {
                   <span className="truncate">{cat.name}</span>
                 </div>
                 {count > 0 && (
-                  <span className={`px-1.5 py-0.5 text-[9px] ${activeCategory === cat.key ? 'bg-background text-foreground' : 'bg-surface border border-border'}`}>
+                  <span className={`px-1.5 py-0.5 text-[9px] ${activeCategory === cat.key ? 'bg-background text-foreground' : 'bg-surface border border-border rounded'}`}>
                     {count}
                   </span>
                 )}
@@ -315,24 +315,24 @@ export default function InboxPage() {
         </div>
 
         {/* Middle Column - Notification List */}
-        <DataViewport className="lg:col-span-6 border-0 lg:border border-border">
+        <DataViewport className="lg:col-span-6 border-0 lg:border border-border rounded">
 
           {/* Top Tools */}
           <div className="p-3 border-b border-border bg-surface-hover flex flex-col md:flex-row md:items-center justify-between gap-3 flex-shrink-0">
             <div className="flex items-center gap-2 flex-1">
               <div className="relative flex-1 max-w-xs">
                 <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input type="text" placeholder="SEARCH INBOX..." className="w-full h-8 pl-8 pr-3 bg-background border border-border text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors" />
+                <input type="text" placeholder="SEARCH INBOX..." className="w-full h-8 pl-8 pr-3 bg-background border border-border rounded text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors" />
               </div>
-              <Button variant="outline" size="sm" className="h-8 px-3 rounded-none text-[10px] font-mono uppercase border-border">
+              <Button variant="outline" size="sm" className="h-8 px-3 rounded text-[10px] font-mono uppercase border-border">
                 <Filter className="w-3 h-3 mr-2" /> Filter
               </Button>
-              <Button variant="outline" size="sm" className="h-8 px-3 rounded-none text-[10px] font-mono uppercase border-border">
+              <Button variant="outline" size="sm" className="h-8 px-3 rounded text-[10px] font-mono uppercase border-border">
                 <ListOrdered className="w-3 h-3 mr-2" /> Sort
               </Button>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="h-8 px-2 rounded-none border-border">
+              <Button variant="outline" size="sm" className="h-8 px-2 rounded border-border">
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
             </div>
@@ -353,7 +353,7 @@ export default function InboxPage() {
                       <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-accent animate-pulse" />
                     )}
                     <div className="flex items-start gap-4 pr-6">
-                      <div className="mt-1 flex-shrink-0 bg-surface border border-border w-8 h-8 flex items-center justify-center">
+                      <div className="mt-1 flex-shrink-0 bg-surface border border-border rounded w-8 h-8 flex items-center justify-center">
                         {getTypeIcon(notif.type)}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -371,7 +371,7 @@ export default function InboxPage() {
                           <span>•</span>
                           <span>{notif.project}</span>
                           <span>•</span>
-                          <span className="border border-border px-1 bg-surface">{notif.reference}</span>
+                          <span className="border border-border rounded px-1 bg-surface">{notif.reference}</span>
                           <span>•</span>
                           <span>{notif.timestamp}</span>
                         </div>
@@ -397,14 +397,14 @@ export default function InboxPage() {
         </DataViewport>
 
         {/* Right Column - Detail Panel */}
-        <DataViewport className="lg:col-span-4 border-0 lg:border border-border">
+        <DataViewport className="lg:col-span-4 border-0 lg:border border-border rounded">
           {selectedNotif ? (
             <>
               {/* Detail Header */}
               <div className="p-4 border-b border-border bg-surface flex flex-col gap-4 flex-shrink-0">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="bg-background border border-border w-10 h-10 flex items-center justify-center">
+                    <div className="bg-background border border-border rounded w-10 h-10 flex items-center justify-center">
                       {getTypeIcon(selectedNotif.type)}
                     </div>
                     <div>
@@ -419,22 +419,22 @@ export default function InboxPage() {
                 <div className="flex items-center gap-2 pt-2 border-t border-border/50">
                   {selectedNotif.entityType === 'approval_request' ? (
                     <>
-                      <Button onClick={() => handleDecide(selectedNotif, 'APPROVED')} disabled={actionBusy} size="sm" className="h-8 rounded-none text-[10px] font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 flex-1 disabled:opacity-50">
+                      <Button onClick={() => handleDecide(selectedNotif, 'APPROVED')} disabled={actionBusy} size="sm" className="h-8 rounded text-[10px] font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 flex-1 disabled:opacity-50">
                         Approve
                       </Button>
-                      <Button onClick={() => handleDecide(selectedNotif, 'REJECTED')} disabled={actionBusy} variant="outline" size="sm" className="h-8 rounded-none text-[10px] font-mono uppercase tracking-widest border-destructive text-destructive hover:bg-destructive hover:text-background flex-1 disabled:opacity-50">
+                      <Button onClick={() => handleDecide(selectedNotif, 'REJECTED')} disabled={actionBusy} variant="outline" size="sm" className="h-8 rounded text-[10px] font-mono uppercase tracking-widest border-destructive text-destructive hover:bg-destructive hover:text-background flex-1 disabled:opacity-50">
                         Reject
                       </Button>
                     </>
                   ) : (
-                    <Button onClick={() => handleOpenItem(selectedNotif)} disabled={!selectedNotif.entityType} size="sm" className="h-8 rounded-none text-[10px] font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 flex-1 disabled:opacity-50" title={selectedNotif.entityType ? undefined : 'No linked item'}>
+                    <Button onClick={() => handleOpenItem(selectedNotif)} disabled={!selectedNotif.entityType} size="sm" className="h-8 rounded text-[10px] font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 flex-1 disabled:opacity-50" title={selectedNotif.entityType ? undefined : 'No linked item'}>
                       Open Item
                     </Button>
                   )}
-                  <Button onClick={() => handleUpdate(selectedNotif.id, { snoozed_until: new Date(Date.now() + 86400000).toISOString() })} variant="outline" size="sm" className="h-8 px-3 rounded-none border-border hover:bg-surface-hover" title="Snooze 24h">
+                  <Button onClick={() => handleUpdate(selectedNotif.id, { snoozed_until: new Date(Date.now() + 86400000).toISOString() })} variant="outline" size="sm" className="h-8 px-3 rounded border-border hover:bg-surface-hover" title="Snooze 24h">
                     <Clock className="w-4 h-4" />
                   </Button>
-                  <Button onClick={() => handleUpdate(selectedNotif.id, { archived: true })} variant="outline" size="sm" className="h-8 px-3 rounded-none border-border hover:bg-surface-hover" title="Archive">
+                  <Button onClick={() => handleUpdate(selectedNotif.id, { archived: true })} variant="outline" size="sm" className="h-8 px-3 rounded border-border hover:bg-surface-hover" title="Archive">
                     <Archive className="w-4 h-4" />
                   </Button>
                 </div>
@@ -451,7 +451,7 @@ export default function InboxPage() {
                 {/* Message / Description content */}
                 <div className="p-5">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-8 h-8 bg-surface border border-border flex items-center justify-center text-xs font-mono font-bold">
+                    <div className="w-8 h-8 bg-surface border border-border rounded flex items-center justify-center text-xs font-mono font-bold">
                       {selectedNotif.sender.charAt(0)}
                     </div>
                     <div>

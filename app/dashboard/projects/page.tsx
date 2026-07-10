@@ -77,11 +77,11 @@ function mapProject(r: any): Project {
 
 const getHealthColor = (health: string) => {
   switch (health) {
-    case 'On Track': return 'text-emerald-500 border-emerald-500 bg-emerald-500/10';
-    case 'At Risk': return 'text-orange-500 border-orange-500 bg-orange-500/10';
-    case 'Off Track': return 'text-destructive border-destructive bg-destructive/10';
-    case 'Completed': return 'text-muted-foreground border-border bg-surface';
-    default: return 'text-foreground border-border bg-surface';
+    case 'On Track': return 'text-emerald-500 bg-emerald-500/10';
+    case 'At Risk': return 'text-orange-500 bg-orange-500/10';
+    case 'Off Track': return 'text-destructive bg-destructive/10';
+    case 'Completed': return 'text-muted-foreground bg-surface';
+    default: return 'text-foreground bg-surface';
   }
 };
 
@@ -156,29 +156,29 @@ export default function ProjectsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {canImport && (
-            <Button data-testid="project-import-button" onClick={() => setIsImportModalOpen(true)} variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest gap-2">
+            <Button data-testid="project-import-button" onClick={() => setIsImportModalOpen(true)} variant="outline" className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest gap-2">
               <Upload className="w-4 h-4" />
               Import
             </Button>
           )}
           {canExport && (
-            <Button data-testid="project-export-report-button" onClick={() => setIsExportModalOpen(true)} variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest gap-2">
+            <Button data-testid="project-export-report-button" onClick={() => setIsExportModalOpen(true)} variant="outline" className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest gap-2">
               <Download className="w-4 h-4" />
               Export Report
             </Button>
           )}
           {canCreate && (
-            <Button data-testid="create-project-button" onClick={() => setIsCreateModalOpen(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
+            <Button data-testid="create-project-button" onClick={() => setIsCreateModalOpen(true)} className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
               <Plus className="w-4 h-4" />
               Create Project
             </Button>
           )}
-          <AskAiButton intent="summarize-projects" label="Ask Handoff AI" title="Projects Digest" />
+          <AskAiButton intent="summarize-projects" title="Projects Digest" />
         </div>
       </div>
 
       {/* Top Controls */}
-      <div className="p-3 border border-border bg-surface-hover flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0">
+      <div className="p-3 border border-border rounded bg-surface-hover flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0">
         <div className="flex items-center gap-2 flex-1">
           <div className="relative flex-1 max-w-sm">
             <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -187,7 +187,7 @@ export default function ProjectsPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="SEARCH PROJECTS..."
-              className="w-full h-8 pl-8 pr-3 bg-background border border-border text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors"
+              className="w-full h-8 pl-8 pr-3 bg-background border border-border rounded text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors"
             />
           </div>
           <div className="relative flex items-center">
@@ -195,7 +195,7 @@ export default function ProjectsPage() {
             <select
               value={healthFilter}
               onChange={(e) => setHealthFilter(e.target.value as 'ALL' | Project['health'])}
-              className="h-8 pl-7 pr-3 rounded-none text-[10px] font-mono uppercase border border-border bg-background focus:outline-none focus:border-foreground transition-colors cursor-pointer"
+              className="h-8 pl-7 pr-3 rounded text-[10px] font-mono uppercase border border-border rounded bg-background focus:outline-none focus:border-foreground transition-colors cursor-pointer"
             >
               <option value="ALL">All Health</option>
               <option value="On Track">On Track</option>
@@ -205,7 +205,7 @@ export default function ProjectsPage() {
             </select>
           </div>
         </div>
-        <div className="flex items-center gap-2 bg-background border border-border">
+        <div className="flex items-center gap-2 bg-background border border-border rounded">
           <button
             onClick={() => setView('table')}
             className={`p-1.5 transition-colors ${view === 'table' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}
@@ -222,7 +222,7 @@ export default function ProjectsPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-h-0 border border-border bg-background flex flex-col">
+      <div className="flex-1 min-h-0 border border-border rounded bg-background flex flex-col">
         {view === 'table' ? (
           <DataViewport className="border-0">
             <table className="w-full min-w-[800px] text-left text-sm font-mono border-collapse whitespace-nowrap">
@@ -245,7 +245,7 @@ export default function ProjectsPage() {
                   <tr>
                     <td colSpan={9} className="p-8 text-center">
                       <div className="text-[10px] uppercase tracking-widest text-destructive mb-3">{error}</div>
-                      <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={load}>
+                      <Button variant="outline" size="sm" className="rounded text-xs font-mono uppercase tracking-widest" onClick={load}>
                         Retry
                       </Button>
                     </td>
@@ -267,19 +267,19 @@ export default function ProjectsPage() {
                           <span className="font-sans font-bold text-sm truncate max-w-[200px]">{project.name}</span>
                         </div>
                         <div className="text-[10px] text-muted-foreground flex items-center gap-2">
-                          <span className="px-1.5 py-0.5 bg-surface border border-border">{project.code}</span>
+                          <span className="px-1.5 py-0.5 bg-surface rounded-[3px]">{project.code}</span>
                           <span>{project.department}</span>
                         </div>
                       </Link>
                     </td>
                     <td className="p-3">
-                      <span className={`text-[10px] px-2 py-0.5 border ${getHealthColor(project.health)}`}>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-[3px] ${getHealthColor(project.health)}`}>
                         {project.health}
                       </span>
                     </td>
                     <td className="p-3 hidden sm:table-cell">
                       <div className="flex items-center gap-2 w-32">
-                        <div className="flex-1 h-1.5 bg-surface border border-border overflow-hidden">
+                        <div className="flex-1 h-1.5 bg-surface border border-border rounded overflow-hidden">
                           <div className="h-full bg-foreground" style={{ width: `${project.progress}%` }} />
                         </div>
                         <span className="text-[10px] text-muted-foreground w-6 text-right">{project.progress}%</span>
@@ -310,7 +310,7 @@ export default function ProjectsPage() {
                       )}
                     </td>
                     <td className="p-3 text-right">
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-none opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                         <MoreVertical className="w-4 h-4" />
                       </Button>
                     </td>
@@ -331,7 +331,7 @@ export default function ProjectsPage() {
             {!loading && error && (
               <div className="p-8 text-center">
                 <div className="text-[10px] font-mono uppercase tracking-widest text-destructive mb-3">{error}</div>
-                <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={load}>
+                <Button variant="outline" size="sm" className="rounded text-xs font-mono uppercase tracking-widest" onClick={load}>
                   Retry
                 </Button>
               </div>
@@ -343,13 +343,13 @@ export default function ProjectsPage() {
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {!loading && !error && filtered.map((project) => (
-                <Link href={`/dashboard/projects/${project.id}`} key={project.id} className="border border-border bg-background p-4 hover:border-foreground transition-colors group flex flex-col">
+                <Link href={`/dashboard/projects/${project.id}`} key={project.id} className="border border-border rounded bg-background p-4 hover:border-foreground transition-colors group flex flex-col">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono text-[10px] px-1.5 py-0.5 bg-surface border border-border">{project.code}</span>
-                      <span className={`font-mono text-[10px] px-2 py-0.5 border ${getHealthColor(project.health)}`}>{project.health}</span>
+                      <span className="font-mono text-[10px] px-1.5 py-0.5 bg-surface rounded-[3px]">{project.code}</span>
+                      <span className={`font-mono text-[10px] px-2 py-0.5 rounded-[3px] ${getHealthColor(project.health)}`}>{project.health}</span>
                     </div>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-none opacity-0 group-hover:opacity-100 transition-opacity -mt-1 -mr-1">
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded opacity-0 group-hover:opacity-100 transition-opacity -mt-1 -mr-1">
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   </div>
@@ -365,7 +365,7 @@ export default function ProjectsPage() {
                         <span>Progress</span>
                         <span>{project.progress}%</span>
                       </div>
-                      <div className="h-1 bg-surface border border-border w-full overflow-hidden">
+                      <div className="h-1 bg-surface border border-border rounded w-full overflow-hidden">
                         <div className="h-full bg-foreground" style={{ width: `${project.progress}%` }} />
                       </div>
                     </div>
@@ -384,8 +384,8 @@ export default function ProjectsPage() {
 
                   <div className="pt-3 border-t border-border flex items-center justify-between text-xs">
                     <div className="flex -space-x-2">
-                      <div className="w-6 h-6 border border-border bg-surface flex items-center justify-center font-mono text-[9px] uppercase z-20" title={project.owner}>{project.owner.charAt(0)}</div>
-                      <div className="w-6 h-6 border border-border bg-surface-hover flex items-center justify-center font-mono text-[9px] uppercase z-10" title={project.manager}>{project.manager.charAt(0)}</div>
+                      <div className="w-6 h-6 border border-border rounded bg-surface flex items-center justify-center font-mono text-[9px] uppercase z-20" title={project.owner}>{project.owner.charAt(0)}</div>
+                      <div className="w-6 h-6 border border-border rounded bg-surface-hover flex items-center justify-center font-mono text-[9px] uppercase z-10" title={project.manager}>{project.manager.charAt(0)}</div>
                     </div>
                     {project.openRisks > 0 && (
                       <div className="flex items-center gap-1 text-[10px] font-mono uppercase text-destructive bg-destructive/10 px-1.5 py-0.5 border border-destructive/30">

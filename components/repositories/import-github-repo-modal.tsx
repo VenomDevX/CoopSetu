@@ -79,7 +79,7 @@ export function ImportGithubRepoModal({
       bodyClassName="space-y-5"
       footer={
         <>
-          <button onClick={onClose} className="h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest">
+          <button onClick={onClose} className="h-9 px-4 border border-border rounded font-mono text-xs uppercase tracking-widest">
             Cancel
           </button>
           {githubIntegration && (
@@ -122,7 +122,7 @@ export function ImportGithubRepoModal({
             </div>
           )}
           {!loading && !error && repos && (
-            <div className="border border-border overflow-hidden">
+            <div className="border border-border rounded overflow-hidden">
               <div className="p-3 bg-surface-hover border-b border-border font-mono text-[10px] uppercase tracking-widest">
                 Select a repository ({repos.length})
               </div>

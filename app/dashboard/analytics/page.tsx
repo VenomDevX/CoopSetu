@@ -130,19 +130,19 @@ export default function AnalyticsPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="outline" onClick={() => window.open('/api/v1/analytics/export?format=pdf', '_blank')} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 hover:bg-surface-hover">
+          <Button variant="outline" onClick={() => window.open('/api/v1/analytics/export?format=pdf', '_blank')} className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 hover:bg-surface-hover">
             <Printer className="w-4 h-4" />
             Export PDF
           </Button>
-          <Button variant="outline" onClick={() => window.open('/api/v1/analytics/export?format=csv', '_blank')} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 hover:bg-surface-hover">
+          <Button variant="outline" onClick={() => window.open('/api/v1/analytics/export?format=csv', '_blank')} className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 hover:bg-surface-hover">
             <Download className="w-4 h-4" />
             Export CSV
           </Button>
-          <Button variant="outline" onClick={() => setShowCreateModal(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 hover:bg-surface-hover">
+          <Button variant="outline" onClick={() => setShowCreateModal(true)} className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2 hover:bg-surface-hover">
             <Calendar className="w-4 h-4" />
             Schedule
           </Button>
-          <Button onClick={() => setShowCreateModal(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background gap-2 hover:bg-foreground/90">
+          <Button onClick={() => setShowCreateModal(true)} className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest bg-foreground text-background gap-2 hover:bg-foreground/90">
             <Plus className="w-4 h-4" />
             Create Report
           </Button>
@@ -155,19 +155,19 @@ export default function AnalyticsPage() {
         <div className="flex items-center gap-4 text-sm font-mono flex-wrap">
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase text-muted-foreground tracking-widest">Date Range:</span>
-            <select disabled title="Not available yet" className="bg-background border border-border px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase disabled:opacity-40">
+            <select disabled title="Not available yet" className="bg-background border border-border rounded px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase disabled:opacity-40">
               <option>All Time</option>
             </select>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase text-muted-foreground tracking-widest">Team:</span>
-            <select disabled title="Not available yet" className="bg-background border border-border px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase disabled:opacity-40">
+            <select disabled title="Not available yet" className="bg-background border border-border rounded px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase disabled:opacity-40">
               <option>All Teams</option>
             </select>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase text-muted-foreground tracking-widest">Compare:</span>
-            <select disabled title="Not available yet" className="bg-background border border-border px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase disabled:opacity-40">
+            <select disabled title="Not available yet" className="bg-background border border-border rounded px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase disabled:opacity-40">
               <option>None</option>
             </select>
           </div>
@@ -199,7 +199,7 @@ export default function AnalyticsPage() {
         {activeTab === 'Delivery Analytics' && !loading && hasError && (
           <div className="p-8 text-center">
             <div className="text-[10px] font-mono uppercase tracking-widest text-destructive mb-3">Failed to load analytics.</div>
-            <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={retryAll}>
+            <Button variant="outline" size="sm" className="rounded text-xs font-mono uppercase tracking-widest" onClick={retryAll}>
               Retry
             </Button>
           </div>
@@ -209,28 +209,28 @@ export default function AnalyticsPage() {
 
             {/* Top KPIs — derived from real sprint/project data */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="border border-border p-5 bg-surface flex flex-col justify-between">
+              <div className="border border-border rounded p-5 bg-surface flex flex-col justify-between">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Avg Sprint Velocity</div>
                 <div className="text-3xl font-bold font-mono tracking-tight">{avgVelocity} pts</div>
                 <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground mt-2">
                   <span>Across {velocityData.length} sprint{velocityData.length === 1 ? '' : 's'}</span>
                 </div>
               </div>
-              <div className="border border-border p-5 bg-surface flex flex-col justify-between">
+              <div className="border border-border rounded p-5 bg-surface flex flex-col justify-between">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Completion Rate</div>
                 <div className="text-3xl font-bold font-mono tracking-tight">{completionRate}%</div>
                 <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground mt-2">
                   <span>{totalCompleted}/{totalPlanned} story points</span>
                 </div>
               </div>
-              <div className="border border-border p-5 bg-surface flex flex-col justify-between">
+              <div className="border border-border rounded p-5 bg-surface flex flex-col justify-between">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Projects On Track</div>
                 <div className="text-3xl font-bold font-mono tracking-tight">{onTrackPct}%</div>
                 <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground mt-2">
                   <span>{projectHealthData.find((p) => p.name === 'On Track')?.value ?? 0}/{totalProjects} projects</span>
                 </div>
               </div>
-              <div className="border border-border p-5 bg-surface flex flex-col justify-between">
+              <div className="border border-border rounded p-5 bg-surface flex flex-col justify-between">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Average Cycle Time</div>
                 <div className="text-xl font-bold tracking-tight text-muted-foreground">—</div>
                 <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground mt-2">
@@ -242,7 +242,7 @@ export default function AnalyticsPage() {
             {/* Charts Row 1 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Sprint Velocity Chart */}
-              <div className="border border-border p-5 bg-surface">
+              <div className="border border-border rounded p-5 bg-surface">
                 <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold mb-6">Sprint Velocity Trend</h3>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
@@ -262,7 +262,7 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Cycle Time Trend — no historical cycle-time series tracked yet */}
-              <div className="border border-border p-5 bg-surface">
+              <div className="border border-border rounded p-5 bg-surface">
                 <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold mb-6">Cycle Time Trend (Days)</h3>
                 <div className="h-64 flex flex-col items-center justify-center text-center border border-dashed border-border bg-surface/40">
                   <Clock className="w-8 h-8 text-muted-foreground mb-3" />
@@ -274,7 +274,7 @@ export default function AnalyticsPage() {
             {/* Charts Row 2 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Project Health */}
-              <div className="border border-border p-5 bg-surface col-span-1">
+              <div className="border border-border rounded p-5 bg-surface col-span-1">
                 <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold mb-6">Project Health</h3>
                 <div className="h-48 flex items-center justify-center relative">
                   <ResponsiveContainer width="100%" height="100%">
@@ -314,7 +314,7 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Work By Status */}
-              <div className="border border-border p-5 bg-surface col-span-2">
+              <div className="border border-border rounded p-5 bg-surface col-span-2">
                 <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold mb-6">Work by Status</h3>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">

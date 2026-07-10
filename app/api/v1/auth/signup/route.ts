@@ -27,7 +27,7 @@ const schema = z.object({
   industry: z.string().optional(),
   companySize: z.string().optional(),
   timezone: z.string().optional(),
-}).refine(data => !data.confirmPassword || data.password === data.confirmPassword, {
+}).strict().refine(data => !data.confirmPassword || data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"]
 });

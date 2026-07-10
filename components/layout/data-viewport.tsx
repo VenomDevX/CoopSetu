@@ -14,7 +14,7 @@ export function DataViewport({
   className?: string 
 }) {
   return (
-    <div className={`flex-1 min-h-0 overflow-auto bg-background border border-border scrollbar-thin flex flex-col ${className}`}>
+    <div className={`flex-1 min-h-0 overflow-auto bg-background border border-border rounded scrollbar-thin flex flex-col ${className}`}>
       {children}
     </div>
   );

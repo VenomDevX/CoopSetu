@@ -10,7 +10,7 @@ export const createProjectDeadlineSchema = z.object({
   due_date: z.string().date(),
   owner_member_id: z.string().uuid().optional(),
   status: z.enum(['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'MISSED', 'CANCELLED']).optional(),
-});
+}).strict();
 
 export const projectImportMappingSchema = z.object({
   name: z.string().min(1),
@@ -20,7 +20,7 @@ export const projectImportMappingSchema = z.object({
   status: z.string().optional(),
   start_date: z.string().optional(),
   target_end_date: z.string().optional(),
-});
+}).strict();
 
 export const exportFormatSchema = z.enum(['csv', 'pdf']).default('csv');
 

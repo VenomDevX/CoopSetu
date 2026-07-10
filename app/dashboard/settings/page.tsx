@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
-import { useCurrentMembership } from '@/lib/permissions/context';
+import { useCurrentMembership, usePermission } from '@/lib/permissions/context';
 import {
   Building2, Users, Shield, Key, Webhook, Activity, CreditCard, MonitorSmartphone,
   Eye, EyeOff, Check, X, Loader2, Lock, User, Camera, Save, Trash2, AlertTriangle
@@ -55,6 +55,7 @@ function SettingsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { workspaceType } = useCurrentMembership();
+  const { isDemo } = usePermission();
   const isStudent = workspaceType !== 'ENTERPRISE';
   const allowedTabIds = useMemo(() => (
     isStudent
@@ -184,6 +185,10 @@ function SettingsPageContent() {
   });
 
   const handleSaveSettings = async () => {
+    if (isDemo) {
+      window.dispatchEvent(new CustomEvent('demo-alert'));
+      return;
+    }
     try {
       const res = await fetch('/api/v1/organizations/current', {
         method: 'PATCH',
@@ -198,6 +203,10 @@ function SettingsPageContent() {
   };
 
   const handleSaveProfile = async () => {
+    if (isDemo) {
+      window.dispatchEvent(new CustomEvent('demo-alert'));
+      return;
+    }
     setSavingProfile(true);
     setProfileMsg(null);
     try {
@@ -217,6 +226,10 @@ function SettingsPageContent() {
   };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isDemo) {
+      window.dispatchEvent(new CustomEvent('demo-alert'));
+      return;
+    }
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -243,6 +256,10 @@ function SettingsPageContent() {
   };
 
   const handleRemoveAvatar = async () => {
+    if (isDemo) {
+      window.dispatchEvent(new CustomEvent('demo-alert'));
+      return;
+    }
     setUploadingAvatar(true);
     try {
       const res = await fetch('/api/v1/profile/avatar', { method: 'DELETE' });
@@ -257,6 +274,10 @@ function SettingsPageContent() {
   };
 
   const handleSaveIPAllowlist = async () => {
+    if (isDemo) {
+      window.dispatchEvent(new CustomEvent('demo-alert'));
+      return;
+    }
     // Parse comma-separated list into an array
     const allowlistArray = ipAllowlist.split(',')
       .map(ip => ip.trim())
@@ -630,7 +651,7 @@ function SettingsPageContent() {
                       disabled={savingProfile || !fullName}
                       className="bg-foreground text-background hover:bg-foreground/90 rounded-sm gap-2"
                     >
-                      {savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      {isDemo ? <Lock className="w-4 h-4" /> : savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                       Save Profile
                     </Button>
                   </div>
@@ -682,12 +703,15 @@ function SettingsPageContent() {
                   <label className="text-sm font-medium text-foreground">Workspace URL</label>
                   <div className="flex items-center gap-0 max-w-md">
                     <span className="text-muted-foreground bg-surface border border-r-0 border-border rounded-l-sm px-3 h-10 flex items-center text-sm">https://</span>
-                    <Input value={orgSlug} onChange={(e) => setOrgSlug(e.target.value)} className="flex-1 rounded-none border-border bg-surface text-foreground focus:border-border-strong focus:z-10" />
+                    <Input value={orgSlug} onChange={(e) => setOrgSlug(e.target.value)} className="flex-1 rounded border-border bg-surface text-foreground focus:border-border-strong focus:z-10" />
                     <span className="text-muted-foreground bg-surface border border-l-0 border-border rounded-r-sm px-3 h-10 flex items-center text-sm">.handoff.app</span>
                   </div>
                 </div>
                 <div className="pt-4">
-                  <Button onClick={handleSaveSettings} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-sm">Save Changes</Button>
+                  <Button onClick={handleSaveSettings} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-sm gap-2">
+                    {isDemo && <Lock className="w-4 h-4" />}
+                    Save Changes
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -720,8 +744,9 @@ function SettingsPageContent() {
                     </div>
                   )}
                   <div className="pt-4">
-                    <Button onClick={handleSaveWorkspace} disabled={savingWorkspace || !workspaceName} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-sm">
-                      {savingWorkspace ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}
+                    <Button onClick={handleSaveWorkspace} disabled={savingWorkspace || !workspaceName} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-sm gap-2">
+                      {isDemo ? <Lock className="w-4 h-4" /> : savingWorkspace ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                      Save Changes
                     </Button>
                   </div>
                 </CardContent>
@@ -912,7 +937,10 @@ function SettingsPageContent() {
                         onChange={(e) => setIpAllowlist(e.target.value)}
                         className="bg-surface text-foreground"
                       />
-                      <Button onClick={handleSaveIPAllowlist}>Save</Button>
+                      <Button onClick={handleSaveIPAllowlist} className="gap-2">
+                        {isDemo && <Lock className="w-4 h-4" />}
+                        Save
+                      </Button>
                     </div>
                   </div>
 

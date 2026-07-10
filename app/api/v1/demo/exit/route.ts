@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     }
     
     // Clear demo session cookie
-    const cookieStore = require('next/headers').cookies();
+    const cookieStore = await require('next/headers').cookies();
     cookieStore.delete('handoff_demo_session');
 
     // Always redirect to login on exit

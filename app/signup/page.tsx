@@ -4,8 +4,10 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 import { ChevronRight, Loader2, Eye, EyeOff, Github, CheckCircle2 } from 'lucide-react';
+import { GoogleIcon } from '@/components/icons/google-icon';
 import { createClient } from '@/lib/supabase/client';
 import { OnboardingShell } from '@/components/auth/onboarding-shell';
+import { checkPassword } from '@/lib/validation/password';
 
 // Any alphabet/script (Unicode letters + marks) — names aren't Latin-only.
 const nameSchema = z.string().min(1).max(100).regex(/^[\p{L}\p{M}\s'.\-]+$/u);
@@ -17,6 +19,7 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [githubLoading, setGithubLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
 
   // Step 1: Account
@@ -26,21 +29,15 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [touched1, setTouched1] = useState(false);
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
 
   // Validation
   const isNameValid = nameSchema.safeParse(fullName).success;
   const isEmailValid = emailSchema.safeParse(email).success;
-  const passLength = password.length >= 12;
-  const passUpper = /[A-Z]/.test(password);
-  const passLower = /[a-z]/.test(password);
-  const passNumber = /[0-9]/.test(password);
-  const passSpecial = /[^A-Za-z0-9]/.test(password);
+  const { length: passLength, upper: passUpper, lower: passLower, number: passNumber, special: passSpecial, strength: passStrength } = checkPassword(password);
   const passMatch = password.length > 0 && password === confirmPassword;
 
-  const passScore = [passUpper, passLower, passNumber, passSpecial].filter(Boolean).length;
-  const passStrength = passScore < 2 ? 'WEAK' : passScore < 4 ? 'FAIR' : 'STRONG';
-
-  const isStep1Valid = isNameValid && isEmailValid && passLength && passUpper && passLower && passNumber && passSpecial && passMatch;
+  const isStep1Valid = isNameValid && isEmailValid && passLength && passUpper && passLower && passNumber && passSpecial && passMatch && acceptedLegal;
 
   async function signInWithGithub() {
     setError(null);
@@ -53,6 +50,26 @@ export default function SignupPage() {
     if (oauthError) {
       setError('Could not start GitHub sign-in. Please try again.');
       setGithubLoading(false);
+    }
+  }
+
+  async function signInWithGoogle() {
+    setError(null);
+    setGoogleLoading(true);
+    const supabase = createClient();
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
+    if (oauthError) {
+      setError('Could not start Google sign-in. Please try again.');
+      setGoogleLoading(false);
     }
   }
 
@@ -93,7 +110,20 @@ export default function SignupPage() {
       return;
     }
 
-    // Session created (email confirmation disabled or auto-confirmed)
+    // Session created (email confirmation disabled or auto-confirmed).
+    // Record the legal acceptance now, using the authenticated session --
+    // if this fails, the onboarding resolver's legal-consent gate will
+    // still catch it and let the user re-accept there.
+    try {
+      await fetch('/api/v1/legal/accept', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acceptedTerms: true, acceptedPrivacy: true, source: 'SIGNUP' }),
+      });
+    } catch {
+      // Non-fatal: the onboarding resolver will redirect to /onboarding/legal-consent.
+    }
+
     router.push('/onboarding');
     router.refresh();
   };
@@ -107,7 +137,7 @@ export default function SignupPage() {
         title="Check your email"
         subtitle={`We sent a verification link to ${email}`}
       >
-        <div className="bg-surface p-6 border border-border text-center space-y-4 rounded-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="bg-surface p-6 border border-border rounded text-center space-y-4 rounded-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
           <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto" />
           <p className="text-sm text-muted-foreground">
             Please click the link in the email to verify your account and continue setting up your workspace.
@@ -175,7 +205,7 @@ export default function SignupPage() {
             </div>
 
             {/* Live Password Checklist */}
-            <div className="bg-surface p-4 border border-border space-y-3 w-full">
+            <div className="bg-surface p-4 border border-border rounded space-y-3 w-full">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Password Guidance</span>
                 <span className={`text-[10px] font-mono uppercase tracking-widest ${passStrength === 'STRONG' ? 'text-green-500' : passStrength === 'FAIR' ? 'text-yellow-500' : 'text-red-500'}`}>{passStrength}</span>
@@ -204,6 +234,26 @@ export default function SignupPage() {
           </div>
         </div>
 
+        <label className="flex items-start gap-3 cursor-pointer select-none w-full">
+          <input
+            type="checkbox"
+            checked={acceptedLegal}
+            onChange={(e) => setAcceptedLegal(e.target.checked)}
+            className="mt-0.5 w-4 h-4 shrink-0 accent-foreground"
+          />
+          <span className="text-sm text-foreground">
+            I agree to the{' '}
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">
+              Terms of Service
+            </a>{' '}
+            and{' '}
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">
+              Privacy Policy
+            </a>
+            .
+          </span>
+        </label>
+
         <button type="submit" disabled={!isStep1Valid || loading} className="w-full h-11 bg-foreground text-background text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-50">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continue <ChevronRight className="w-4 h-4" /></>}
         </button>
@@ -218,10 +268,20 @@ export default function SignupPage() {
           type="button"
           onClick={signInWithGithub}
           disabled={githubLoading || loading}
-          className="w-full h-11 bg-surface border border-border text-xs font-mono uppercase tracking-widest hover:bg-surface-hover disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+          className="w-full h-11 bg-surface border border-border rounded text-xs font-mono uppercase tracking-widest hover:bg-surface-hover disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
         >
           {githubLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Github className="w-4 h-4" />}
           Continue with GitHub
+        </button>
+
+        <button
+          type="button"
+          onClick={signInWithGoogle}
+          disabled={googleLoading || loading}
+          className="w-full h-11 bg-surface border border-border rounded text-xs font-mono uppercase tracking-widest hover:bg-surface-hover disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+        >
+          {googleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <GoogleIcon />}
+          Continue with Google
         </button>
       </form>
     </OnboardingShell>

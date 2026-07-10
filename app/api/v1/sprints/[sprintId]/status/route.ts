@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 const schema = z.object({
   status: z.enum(['ACTIVE', 'COMPLETED']),
-});
+}).strict();
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ sprintId: string }> }) {
   return handle(async () => {

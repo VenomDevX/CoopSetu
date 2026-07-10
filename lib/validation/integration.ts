@@ -6,7 +6,7 @@ export const connectRepositorySchema = z.object({
   provider: z.enum(['github', 'gitlab', 'bitbucket', 'azure_devops']).default('github'),
   default_branch: z.string().min(1).max(255).default('main'),
   url: z.string().url().optional(),
-});
+}).strict();
 
 /**
  * Importing a specific GitHub repo the caller picked from the real
@@ -20,4 +20,4 @@ export const importGithubRepositorySchema = z.object({
   full_name: z.string().min(1).max(255),
   default_branch: z.string().min(1).max(255),
   html_url: z.string().url(),
-});
+}).strict();

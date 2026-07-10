@@ -56,6 +56,10 @@ describe('TEAM_MANAGER team-scoped task assignment', () => {
     const devM = await memberId(pm, DEV_U);
     const tmM = await memberId(pm, TM_U);
     const task = await upiTask(pm, devM);
+    
+    // Ensure tmM is not already assigned to avoid duplicate key constraint
+    await pm.from('task_assignees').delete().eq('task_id', task).eq('organization_member_id', tmM);
+
     const { error } = await tm.from('task_assignees')
       .insert({
         task_id: task,

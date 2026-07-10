@@ -79,7 +79,7 @@ function SelectWorkspaceInner() {
               <button
                 key={ws.organization_id}
                 onClick={() => selectWorkspace(ws.organization_id)}
-                className="flex flex-col items-start p-6 border border-border bg-surface hover:bg-surface-hover hover:border-foreground transition-all group text-left"
+                className="flex flex-col items-start p-6 border border-border rounded bg-surface hover:bg-surface-hover hover:border-foreground transition-all group text-left"
               >
                 <h3 className="font-medium text-lg mb-1">{ws.organizations?.name || 'Unknown Company'}</h3>
                 <p className="text-xs text-muted-foreground font-mono uppercase tracking-widest mb-4">

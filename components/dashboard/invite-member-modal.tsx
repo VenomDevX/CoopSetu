@@ -66,7 +66,7 @@ export function InviteMemberModal({
           <button onClick={() => { onInvited(); onClose(); }} className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest">Done</button>
         ) : (
           <>
-            <button onClick={onClose} className="h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest">Cancel</button>
+            <button onClick={onClose} className="h-9 px-4 border border-border rounded font-mono text-xs uppercase tracking-widest">Cancel</button>
             <button onClick={submit} disabled={submitting}
               className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest disabled:opacity-50">
               {submitting ? 'Sending…' : 'Send Invite'}

@@ -25,7 +25,7 @@ export const createTaskSchema = z.object({
   estimated_hours: z.number().nonnegative().optional(),
   story_points: z.number().nonnegative().optional(),
   acceptance_criteria: z.string().max(10000).optional(),
-});
+}).strict();
 
 export const updateTaskSchema = z.object({
   title: z.string().min(1).max(300).optional(),
@@ -47,18 +47,18 @@ export const updateTaskSchema = z.object({
   is_blocked: z.boolean().optional(),
   blocker_reason: z.string().max(1000).nullable().optional(),
   position: z.number().optional(),
-});
+}).strict();
 
 export const bulkUpdateSchema = z.object({
   task_ids: z.array(z.string().uuid()).min(1).max(200),
   patch: updateTaskSchema,
-});
+}).strict();
 
 export const addAssigneeSchema = z.object({
   organization_member_id: z.string().uuid(),
   assignment_role: z.string().max(40).optional(),
   assignment_type: z.enum(TASK_ASSIGNMENT_TYPES).optional(),
-});
+}).strict();
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;

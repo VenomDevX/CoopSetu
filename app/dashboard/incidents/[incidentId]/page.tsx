@@ -57,7 +57,7 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
       recordLabel={`INCIDENT · ${inc.severity}`}
       title={inc.title}
       badges={[{ label: inc.severity, tone: severityTone(inc.severity) }, { label: inc.status.replace(/_/g, ' '), tone: statusTone(inc.status) }]}
-      actions={<AskAiButton intent="summarize-incident" incidentId={incidentId} label="Summarize Incident" title="Incident Summary" />}
+      actions={<AskAiButton intent="summarize-incident" incidentId={incidentId} title="Incident Summary" />}
       fields={[
         { label: 'Status', value: inc.status.replace(/_/g, ' ') },
         { label: 'Severity', value: inc.severity },

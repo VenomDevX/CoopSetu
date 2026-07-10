@@ -81,7 +81,7 @@ export default function DeveloperStatusPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {connections.map((c) => (
-          <div key={c.label} className="border border-border bg-surface p-4 flex items-center justify-between">
+          <div key={c.label} className="border border-border rounded bg-surface p-4 flex items-center justify-between">
             <span className="font-mono text-[10px] uppercase tracking-widest">{c.label}</span>
             <Dot ok={c.ok} />
           </div>
@@ -89,7 +89,7 @@ export default function DeveloperStatusPage() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="border border-border bg-background p-4 space-y-2">
+        <div className="border border-border rounded bg-background p-4 space-y-2">
           <h3 className="font-mono text-xs uppercase tracking-widest font-bold mb-2">Session</h3>
           <Row k="User" v={status?.user.email ?? '—'} />
           <Row k="User ID" v={status?.user.id ?? '—'} mono />
@@ -97,7 +97,7 @@ export default function DeveloperStatusPage() {
           <Row k="Org ID" v={status?.organization.id ?? '—'} mono />
           <Row k="Member ID" v={status?.member.id ?? '—'} mono />
         </div>
-        <div className="border border-border bg-background p-4 space-y-2">
+        <div className="border border-border rounded bg-background p-4 space-y-2">
           <h3 className="font-mono text-xs uppercase tracking-widest font-bold mb-2">Environment</h3>
           <Row k="Supabase URL" v={status?.env.supabaseUrl ?? '—'} mono />
           <Row k="App URL" v={status?.env.appUrl ?? '—'} mono />
@@ -106,27 +106,27 @@ export default function DeveloperStatusPage() {
         </div>
       </div>
 
-      <div className="border border-border bg-background p-4">
+      <div className="border border-border rounded bg-background p-4">
         <h3 className="font-mono text-xs uppercase tracking-widest font-bold mb-2">Roles</h3>
         <div className="flex flex-wrap gap-2">
           {(status?.member.roles ?? membership.roles).map((r) => (
-            <span key={r} className="font-mono text-[10px] uppercase tracking-widest border border-border px-2 py-1">{r}</span>
+            <span key={r} className="font-mono text-[10px] uppercase tracking-widest border border-border rounded px-2 py-1">{r}</span>
           ))}
         </div>
       </div>
 
-      <div className="border border-border bg-background p-4">
+      <div className="border border-border rounded bg-background p-4">
         <h3 className="font-mono text-xs uppercase tracking-widest font-bold mb-2">
           Effective Permissions ({status?.member.permissions.length ?? 0})
         </h3>
         <div className="flex flex-wrap gap-1">
           {(status?.member.permissions ?? []).map((p) => (
-            <span key={p} className="font-mono text-[10px] border border-border px-1.5 py-0.5 text-muted-foreground">{p}</span>
+            <span key={p} className="font-mono text-[10px] border border-border rounded px-1.5 py-0.5 text-muted-foreground">{p}</span>
           ))}
         </div>
       </div>
 
-      <div className="border border-border bg-background p-4">
+      <div className="border border-border rounded bg-background p-4">
         <h3 className="font-mono text-xs uppercase tracking-widest font-bold mb-2">Seed Data (this org)</h3>
         <div className="grid grid-cols-4 gap-3">
           {status && [
@@ -135,7 +135,7 @@ export default function DeveloperStatusPage() {
             { k: 'Projects', v: status.seed.projects },
             { k: 'Tasks', v: status.seed.tasks },
           ].map((s) => (
-            <div key={s.k} className="text-center border border-border p-3">
+            <div key={s.k} className="text-center border border-border rounded p-3">
               <div className="text-2xl font-bold">{s.v}</div>
               <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{s.k}</div>
             </div>

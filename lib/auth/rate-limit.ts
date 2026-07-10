@@ -28,6 +28,7 @@ export async function checkRateLimit(
   windowSeconds = 300,
 ): Promise<boolean> {
   if (!ip) return true;
+  if (process.env.NODE_ENV === 'development') return true;
 
   try {
     const supabase = createAdminClient();

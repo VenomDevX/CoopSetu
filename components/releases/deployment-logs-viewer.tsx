@@ -35,7 +35,7 @@ export function DeploymentLogsViewer({ deploymentId }: { deploymentId: string })
   }, [deploymentId]);
 
   return (
-    <div className="border border-border bg-black text-green-400 font-mono text-[11px] overflow-hidden rounded-sm flex flex-col mt-4">
+    <div className="border border-border rounded bg-black text-green-400 font-mono text-[11px] overflow-hidden rounded-sm flex flex-col mt-4">
       <div className="flex items-center justify-between p-2 border-b border-white/20 bg-white/5">
         <div className="flex items-center gap-2 text-white/70 font-sans text-xs">
           <Terminal className="w-4 h-4" />

@@ -187,19 +187,19 @@ export default function QaSecurityPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button onClick={() => setShowSecurityReview(true)} variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2">
+          <Button onClick={() => setShowSecurityReview(true)} variant="outline" className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2">
             <ShieldCheck className="w-4 h-4" />
             Start Security Review
           </Button>
-          <Button onClick={() => setShowCreateTestPlan(true)} variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2">
+          <Button onClick={() => setShowCreateTestPlan(true)} variant="outline" className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest border-border text-foreground gap-2">
             <FileCheck className="w-4 h-4" />
             Create Test Plan
           </Button>
-          <Button onClick={() => setShowCreateBug(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background gap-2">
+          <Button onClick={() => setShowCreateBug(true)} className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest bg-foreground text-background gap-2">
             <Plus className="w-4 h-4" />
             Create Bug
           </Button>
-          <AskAiButton intent="summarize-qa" permissions={['qa:view', 'security:view']} label="Ask Handoff AI" title="QA & Security Digest" />
+          <AskAiButton intent="summarize-qa" permissions={['qa:view', 'security:view']} title="QA & Security Digest" />
         </div>
       </div>
 
@@ -220,13 +220,13 @@ export default function QaSecurityPage() {
       </div>
 
       {/* Top Controls */}
-      <div className="p-3 border border-border bg-surface-hover flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0">
+      <div className="p-3 border border-border rounded bg-surface-hover flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0">
         <div className="flex items-center gap-2 flex-1">
           <div className="relative flex-1 max-w-sm">
             <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`SEARCH ${activeTab.toUpperCase()}...`} className="w-full h-8 pl-8 pr-3 bg-background border border-border text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors" />
+            <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`SEARCH ${activeTab.toUpperCase()}...`} className="w-full h-8 pl-8 pr-3 bg-background border border-border rounded text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors" />
           </div>
-          <Button variant="outline" size="sm" disabled title="Not available yet" className="h-8 px-3 rounded-none text-[10px] font-mono uppercase border-border bg-background disabled:opacity-40">
+          <Button variant="outline" size="sm" disabled title="Not available yet" className="h-8 px-3 rounded text-[10px] font-mono uppercase border-border bg-background disabled:opacity-40">
             <Filter className="w-3 h-3 mr-2" /> Filters
           </Button>
         </div>
@@ -236,7 +236,7 @@ export default function QaSecurityPage() {
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-6">
 
         {/* Left Column (Table) */}
-        <div className="flex-1 min-w-0 border border-border bg-background flex flex-col overflow-hidden">
+        <div className="flex-1 min-w-0 border border-border rounded bg-background flex flex-col overflow-hidden">
           <DataViewport className="border-0">
             <table className="w-full min-w-[1000px] text-left text-sm font-mono border-collapse whitespace-nowrap">
               <thead className="sticky top-0 bg-surface-hover z-10 shadow-[0_1px_0_0_var(--border)]">
@@ -305,7 +305,7 @@ export default function QaSecurityPage() {
                   <tr>
                     <td colSpan={9} className="p-8 text-center">
                       <div className="text-[10px] uppercase tracking-widest text-destructive mb-3">{error}</div>
-                      <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={fetchQAData}>
+                      <Button variant="outline" size="sm" className="rounded text-xs font-mono uppercase tracking-widest" onClick={fetchQAData}>
                         Retry
                       </Button>
                     </td>
@@ -314,7 +314,7 @@ export default function QaSecurityPage() {
                 {!loading && !error && activeTab === 'Bugs' && fBugs.map((bug) => (
                   <tr key={bug.id} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
-                      <div className="text-[10px] bg-surface border border-border px-1.5 py-0.5 inline-flex text-muted-foreground">
+                      <div className="text-[10px] bg-surface border border-border rounded px-1.5 py-0.5 inline-flex text-muted-foreground">
                         {bug.id}
                       </div>
                     </td>
@@ -340,7 +340,7 @@ export default function QaSecurityPage() {
                     </td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 bg-surface border border-border flex items-center justify-center font-mono text-[9px] uppercase">{bug.assignee !== 'Unassigned' ? bug.assignee.charAt(0) : '?'}</div>
+                        <div className="w-5 h-5 bg-surface border border-border rounded flex items-center justify-center font-mono text-[9px] uppercase">{bug.assignee !== 'Unassigned' ? bug.assignee.charAt(0) : '?'}</div>
                         <span className="text-xs">{bug.assignee}</span>
                       </div>
                     </td>
@@ -408,7 +408,7 @@ export default function QaSecurityPage() {
                 {!loading && !error && activeTab === 'Compliance' && fCompliance.map((comp, i) => (
                   <tr key={i} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
-                      <div className="text-[10px] bg-surface border border-border px-1.5 py-0.5 inline-flex font-bold">
+                      <div className="text-[10px] bg-surface border border-border rounded px-1.5 py-0.5 inline-flex font-bold">
                         {comp.control}
                       </div>
                     </td>
@@ -458,7 +458,7 @@ export default function QaSecurityPage() {
         <div className="w-full lg:w-80 flex-shrink-0 flex flex-col gap-6">
 
           {/* Quality Summary Panel */}
-          <div className="border border-border bg-background flex flex-col">
+          <div className="border border-border rounded bg-background flex flex-col">
             <div className="p-4 border-b border-border bg-surface-hover">
               <h3 className="font-mono text-xs uppercase tracking-widest font-bold flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Quality Summary
@@ -482,7 +482,7 @@ export default function QaSecurityPage() {
           </div>
 
           {/* AI Assistant Panel — honestly disabled (no AI wired here yet) */}
-          <div className="border border-border bg-surface/40 relative overflow-hidden flex-1 flex flex-col">
+          <div className="border border-border rounded bg-surface/40 relative overflow-hidden flex-1 flex flex-col">
             <div className="p-4 border-b border-border flex items-center gap-2">
               <Bot className="w-4 h-4 text-muted-foreground" />
               <h2 className="font-mono text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Handoff QA & Sec</h2>
@@ -490,13 +490,13 @@ export default function QaSecurityPage() {
             <div className="p-4 flex-1 flex flex-col gap-4">
               <p className="text-xs font-mono text-muted-foreground">AI analysis not available yet.</p>
               <div className="space-y-2 mt-auto">
-                <Button variant="outline" size="sm" disabled title="Not available yet" className="w-full justify-start h-8 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border text-left disabled:opacity-40">
+                <Button variant="outline" size="sm" disabled title="Not available yet" className="w-full justify-start h-8 px-3 rounded text-[10px] font-mono uppercase tracking-widest border-border text-left disabled:opacity-40">
                   Draft Remediation Tasks
                 </Button>
-                <Button variant="outline" size="sm" disabled title="Not available yet" className="w-full justify-start h-8 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border text-left disabled:opacity-40">
+                <Button variant="outline" size="sm" disabled title="Not available yet" className="w-full justify-start h-8 px-3 rounded text-[10px] font-mono uppercase tracking-widest border-border text-left disabled:opacity-40">
                   Summarize Compliance Gaps
                 </Button>
-                <Button variant="outline" size="sm" disabled title="Not available yet" className="w-full justify-start h-8 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border text-left disabled:opacity-40">
+                <Button variant="outline" size="sm" disabled title="Not available yet" className="w-full justify-start h-8 px-3 rounded text-[10px] font-mono uppercase tracking-widest border-border text-left disabled:opacity-40">
                   Identify Release Risk
                 </Button>
               </div>

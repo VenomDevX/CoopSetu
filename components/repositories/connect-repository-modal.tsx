@@ -69,7 +69,7 @@ export function ConnectRepositoryModal({ onClose, onSuccess }: Props) {
                 name="name"
                 required
                 placeholder="e.g., handoff-core"
-                className="font-mono text-xs rounded-none h-9"
+                className="font-mono text-xs rounded h-9"
               />
             </div>
 
@@ -82,7 +82,7 @@ export function ConnectRepositoryModal({ onClose, onSuccess }: Props) {
                   name="provider"
                   required
                   defaultValue="github"
-                  className="w-full h-9 px-3 bg-background border border-border text-xs font-mono uppercase focus:outline-none focus:border-foreground"
+                  className="w-full h-9 px-3 bg-background border border-border rounded text-xs font-mono uppercase focus:outline-none focus:border-foreground"
                 >
                   <option value="github">GitHub</option>
                   <option value="gitlab">GitLab</option>
@@ -98,7 +98,7 @@ export function ConnectRepositoryModal({ onClose, onSuccess }: Props) {
                   name="default_branch"
                   required
                   defaultValue="main"
-                  className="font-mono text-xs rounded-none h-9"
+                  className="font-mono text-xs rounded h-9"
                 />
               </div>
             </div>
@@ -111,7 +111,7 @@ export function ConnectRepositoryModal({ onClose, onSuccess }: Props) {
                 name="url"
                 type="url"
                 placeholder="https://github.com/org/repo"
-                className="font-mono text-xs rounded-none h-9"
+                className="font-mono text-xs rounded h-9"
               />
             </div>
           </div>
@@ -121,14 +121,14 @@ export function ConnectRepositoryModal({ onClose, onSuccess }: Props) {
               type="button"
               variant="outline"
               onClick={onClose}
-              className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest"
+              className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest"
               disabled={submitting}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90"
+              className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90"
               disabled={submitting}
             >
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Connect'}

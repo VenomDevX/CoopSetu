@@ -3,6 +3,7 @@ import { handle, ok } from '@/lib/api/response';
 import { Errors } from '@/lib/api/errors';
 import { requireUser } from '@/lib/auth/require-user';
 import { requireOrganization, requirePermission } from '@/lib/auth/require-organization';
+import { requireLegalAccepted } from '@/lib/legal/require-legal-accepted';
 import { createSoloWorkspaceSchema, updateSoloWorkspaceSchema, deleteSoloWorkspaceSchema } from '@/lib/validation/student-team';
 import { createStudentSoloWorkspace } from '@/services/student-workspace.service';
 import { ACTIVE_ORG_COOKIE } from '@/lib/auth/get-current-membership';
@@ -12,6 +13,7 @@ import { createAuditLog } from '@/lib/audit/create-audit-log';
 export async function POST(req: NextRequest) {
   return handle(async () => {
     const { user, supabase } = await requireUser();
+    await requireLegalAccepted(user, supabase);
     const body = createSoloWorkspaceSchema.parse(await req.json());
 
     const org = await createStudentSoloWorkspace(supabase, user.id, body);

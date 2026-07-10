@@ -28,19 +28,19 @@ export default function BrandPreviewPage() {
         <section className="space-y-4">
           <h2 className="text-sm font-bold uppercase tracking-widest font-mono border-b border-border pb-2">1 & 2. Core Variants</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="border border-border p-6 flex flex-col items-center justify-center gap-4 bg-surface">
+            <div className="border border-border rounded p-6 flex flex-col items-center justify-center gap-4 bg-surface">
               <HandoffLogo variant="icon" size={32} />
               <span className="text-[10px] font-mono uppercase text-muted-foreground">Icon Only</span>
             </div>
-            <div className="border border-border p-6 flex flex-col items-center justify-center gap-4 bg-surface">
+            <div className="border border-border rounded p-6 flex flex-col items-center justify-center gap-4 bg-surface">
               <HandoffLogo variant="wordmark" size={32} />
               <span className="text-[10px] font-mono uppercase text-muted-foreground">Wordmark</span>
             </div>
-            <div className="border border-border p-6 flex flex-col items-center justify-center gap-4 bg-surface">
+            <div className="border border-border rounded p-6 flex flex-col items-center justify-center gap-4 bg-surface">
               <HandoffLogo variant="compact" size={32} />
               <span className="text-[10px] font-mono uppercase text-muted-foreground">Compact</span>
             </div>
-            <div className="border border-border p-6 flex flex-col items-center justify-center gap-4 bg-surface">
+            <div className="border border-border rounded p-6 flex flex-col items-center justify-center gap-4 bg-surface">
               <HandoffLogo variant="inverse" size={32} />
               <span className="text-[10px] font-mono uppercase text-muted-foreground">Inverse</span>
             </div>
@@ -74,7 +74,7 @@ export default function BrandPreviewPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             
             {/* Sidebar Size */}
-            <div className="border border-border p-4 bg-surface flex flex-col gap-4">
+            <div className="border border-border rounded p-4 bg-surface flex flex-col gap-4">
               <div className="flex items-center gap-3 border-b border-border pb-4">
                 <HandoffLogo variant="icon" size={24} />
                 <span className="uppercase tracking-widest text-xs font-bold">HANDOFF</span>
@@ -83,7 +83,7 @@ export default function BrandPreviewPage() {
             </div>
 
             {/* Auth Page Size */}
-            <div className="border border-border p-4 bg-surface flex flex-col justify-center items-center gap-6">
+            <div className="border border-border rounded p-4 bg-surface flex flex-col justify-center items-center gap-6">
               <HandoffLogo variant="icon" size={48} />
               <div className="text-center">
                 <h3 className="text-xl font-bold">Welcome Back</h3>
@@ -92,7 +92,7 @@ export default function BrandPreviewPage() {
             </div>
 
             {/* Page Heading Size */}
-            <div className="border border-border p-4 bg-surface flex flex-col gap-4">
+            <div className="border border-border rounded p-4 bg-surface flex flex-col gap-4">
               <h1 className="text-2xl font-bold tracking-tight uppercase flex items-center gap-2">
                 <HandoffLogo variant="icon" size={20} />
                 UPI REFUND SYSTEM

@@ -146,7 +146,7 @@ export function CreateTaskModal({
   }
 
   const labelCls = 'font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1 block';
-  const fieldCls = 'w-full h-9 px-3 bg-background border border-border text-sm';
+  const fieldCls = 'w-full h-9 px-3 bg-background border border-border rounded text-sm';
 
   return (
     <Dialog
@@ -157,7 +157,7 @@ export function CreateTaskModal({
       bodyClassName="space-y-4"
       footer={
         <>
-          <button onClick={onClose} className="h-9 px-4 border border-border text-xs font-mono uppercase">Cancel</button>
+          <button onClick={onClose} className="h-9 px-4 border border-border rounded text-xs font-mono uppercase">Cancel</button>
           <button data-testid="task-save-button" onClick={submit} disabled={submitting}
             className="h-9 px-4 bg-foreground text-background text-xs font-mono uppercase tracking-widest disabled:opacity-50">
             {submitting ? 'Creating…' : 'Create Task'}
@@ -189,7 +189,7 @@ export function CreateTaskModal({
           <div>
             <label className={labelCls}>Description</label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)}
-              rows={3} className="w-full px-3 py-2 bg-background border border-border text-sm" />
+              rows={3} className="w-full px-3 py-2 bg-background border border-border rounded text-sm" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -252,7 +252,7 @@ export function CreateTaskModal({
                 multiple
                 value={additional}
                 onChange={(e) => setAdditional([...e.target.selectedOptions].map((o) => o.value))}
-                className="w-full px-2 py-1 bg-background border border-border text-xs min-h-[72px]"
+                className="w-full px-2 py-1 bg-background border border-border rounded text-xs min-h-[72px]"
               >
                 {members.filter((m) => m.member_id !== assignee).map((m) => (
                   <option key={m.member_id} value={m.member_id}>{memberLabel(m)}</option>
@@ -301,7 +301,7 @@ export function CreateTaskModal({
           <div>
             <label className={labelCls}>Acceptance Criteria</label>
             <textarea value={acceptance} onChange={(e) => setAcceptance(e.target.value)}
-              rows={2} className="w-full px-3 py-2 bg-background border border-border text-sm" />
+              rows={2} className="w-full px-3 py-2 bg-background border border-border rounded text-sm" />
           </div>
 
           {error && (

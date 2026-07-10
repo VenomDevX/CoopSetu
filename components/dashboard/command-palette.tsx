@@ -132,7 +132,7 @@ function PaletteBody({ onClose, navItems, canViewTasks }: Omit<Props, 'open'>) {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -12, scale: 0.98 }}
         transition={{ type: 'spring', damping: 24, stiffness: 300 }}
-        className="fixed left-1/2 top-[15vh] -translate-x-1/2 w-[92%] max-w-xl bg-background border border-border shadow-2xl z-[71] flex flex-col"
+        className="fixed left-1/2 top-[15vh] -translate-x-1/2 w-[92%] max-w-xl bg-background border border-border rounded shadow-2xl z-[71] flex flex-col"
         onKeyDown={onKeyDown}
       >
         {/* Input */}
@@ -146,7 +146,7 @@ function PaletteBody({ onClose, navItems, canViewTasks }: Omit<Props, 'open'>) {
             className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground"
           />
           {searching && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground shrink-0" />}
-          <kbd className="hidden sm:inline-block text-[10px] font-mono uppercase tracking-widest text-muted-foreground border border-border px-1.5 py-0.5">Esc</kbd>
+          <kbd className="hidden sm:inline-block text-[10px] font-mono uppercase tracking-widest text-muted-foreground border border-border rounded px-1.5 py-0.5">Esc</kbd>
         </div>
 
         {/* Results */}

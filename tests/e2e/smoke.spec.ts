@@ -26,6 +26,7 @@ test.describe('Smoke: critical journeys', () => {
     await page.fill('input[type="email"]', email);
     await page.fill('input[type="password"]', 'Password123!@#');
     await page.locator('input[type="password"]').nth(1).fill('Password123!@#');
+    await page.check('input[type="checkbox"]');
     await page.click('button:has-text("Continue")');
     await page.waitForURL('**/onboarding/profile', { timeout: 15000 });
     await expect(page.locator('text=Professional Identity').first()).toBeVisible();
@@ -42,6 +43,7 @@ test.describe('Smoke: critical journeys', () => {
     await page.fill('input[type="email"]', email);
     await page.fill('input[type="password"]', 'Password123!@#');
     await page.locator('input[type="password"]').nth(1).fill('Password123!@#');
+    await page.check('input[type="checkbox"]');
     await page.click('button:has-text("Continue")');
     await page.waitForURL('**/onboarding/profile', { timeout: 15000 });
 
@@ -70,6 +72,7 @@ test.describe('Smoke: critical journeys', () => {
     await page.fill('input[type="email"]', email);
     await page.fill('input[type="password"]', 'Password123!@#');
     await page.locator('input[type="password"]').nth(1).fill('Password123!@#');
+    await page.check('input[type="checkbox"]');
     await page.click('button:has-text("Continue")');
     await page.waitForURL('**/onboarding/profile', { timeout: 15000 });
 
@@ -96,6 +99,7 @@ test.describe('Smoke: critical journeys', () => {
     await leadPage.fill('input[type="email"]', leadEmail);
     await leadPage.fill('input[type="password"]', 'Password123!@#');
     await leadPage.locator('input[type="password"]').nth(1).fill('Password123!@#');
+    await leadPage.check('input[type="checkbox"]');
     await leadPage.click('button:has-text("Continue")');
     await leadPage.waitForURL('**/onboarding/profile', { timeout: 15000 });
     await leadPage.request.post('/api/v1/onboarding/profile', {
@@ -115,6 +119,7 @@ test.describe('Smoke: critical journeys', () => {
     await joinerPage.fill('input[type="email"]', joinerEmail);
     await joinerPage.fill('input[type="password"]', 'Password123!@#');
     await joinerPage.locator('input[type="password"]').nth(1).fill('Password123!@#');
+    await joinerPage.check('input[type="checkbox"]');
     await joinerPage.click('button:has-text("Continue")');
     await joinerPage.waitForURL('**/onboarding/profile', { timeout: 15000 });
     await joinerPage.request.post('/api/v1/onboarding/profile', {

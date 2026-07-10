@@ -34,7 +34,7 @@ const updateSchema = z.object({
   // Any alphabet/script (Unicode letters + marks) — names aren't Latin-only.
   fullName: z.string().min(1, 'Name is required').max(100).regex(/^[\p{L}\p{M}\s'.\-]+$/u, 'Invalid characters in name').optional(),
   username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9._\-]+$/, 'Invalid username format').optional(),
-});
+}).strict();
 
 export async function PATCH(req: NextRequest) {
   return handle(async () => {
@@ -74,7 +74,7 @@ export async function PATCH(req: NextRequest) {
 /* ── DELETE /api/v1/profile ─── Permanently delete the account ── */
 const deleteSchema = z.object({
   confirmation: z.string().min(1, 'Confirmation is required'),
-});
+}).strict();
 
 export async function DELETE(req: NextRequest) {
   return handle(async () => {

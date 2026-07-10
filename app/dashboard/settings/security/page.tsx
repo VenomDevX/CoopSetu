@@ -115,7 +115,7 @@ export default function SecuritySettingsPage() {
         </p>
       </div>
 
-      <div className="border border-border bg-background">
+      <div className="border border-border rounded bg-background">
         <div className="p-4 border-b border-border bg-surface-hover">
           <h2 className="font-mono text-sm uppercase tracking-widest font-bold">Authenticator App (TOTP)</h2>
         </div>
@@ -133,7 +133,7 @@ export default function SecuritySettingsPage() {
           ) : factors.length > 0 ? (
             <div className="space-y-2">
               {factors.map((f) => (
-                <div key={f.id} className="flex items-center justify-between border border-border p-3">
+                <div key={f.id} className="flex items-center justify-between border border-border rounded p-3">
                   <div>
                     <div className="text-sm font-bold">{f.friendly_name || 'Authenticator App'}</div>
                     <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
@@ -142,7 +142,7 @@ export default function SecuritySettingsPage() {
                   </div>
                   <button
                     onClick={() => unenroll(f.id)}
-                    className="h-8 px-3 border border-border text-xs font-mono uppercase tracking-widest flex items-center gap-2 hover:border-destructive hover:text-destructive"
+                    className="h-8 px-3 border border-border rounded text-xs font-mono uppercase tracking-widest flex items-center gap-2 hover:border-destructive hover:text-destructive"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Remove
                   </button>
@@ -164,7 +164,7 @@ export default function SecuritySettingsPage() {
           ) : null}
 
           {enrolling && qrSvg && (
-            <div className="border border-border p-4 space-y-4">
+            <div className="border border-border rounded p-4 space-y-4">
               <div>
                 <label className={labelCls}>Scan with your authenticator app</label>
                 {/* Rendered as an <img> data URI rather than dangerouslySetInnerHTML
@@ -178,7 +178,7 @@ export default function SecuritySettingsPage() {
               {secret && (
                 <div>
                   <label className={labelCls}>Or enter this code manually</label>
-                  <code className="block text-xs font-mono break-all bg-surface border border-border p-2">{secret}</code>
+                  <code className="block text-xs font-mono break-all bg-surface border border-border rounded p-2">{secret}</code>
                 </div>
               )}
               <div>
@@ -193,7 +193,7 @@ export default function SecuritySettingsPage() {
                 />
               </div>
               <div className="flex gap-3">
-                <button onClick={cancelEnroll} className="h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest">
+                <button onClick={cancelEnroll} className="h-9 px-4 border border-border rounded font-mono text-xs uppercase tracking-widest">
                   Cancel
                 </button>
                 <button

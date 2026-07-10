@@ -74,7 +74,7 @@ export default function SolutionsPage() {
             </button>
             <Button 
               onClick={() => handleNavigate('/dashboard', 'demo')}
-              className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-9 px-6 text-xs font-mono uppercase tracking-widest"
+              className="bg-foreground text-background hover:bg-foreground/90 rounded h-9 px-6 text-xs font-mono uppercase tracking-widest"
               disabled={isNavigating}
             >
               {isNavigating && navType === 'demo' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Request Demo'}
@@ -101,14 +101,14 @@ export default function SolutionsPage() {
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Button 
                 onClick={() => handleNavigate('/product', 'explore')}
-                className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+                className="bg-foreground text-background hover:bg-foreground/90 rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
                 Explore Solutions
               </Button>
               <Button 
                 onClick={() => handleNavigate('/contact', 'demo')}
                 variant="outline"
-                className="border-border text-foreground hover:bg-surface-hover rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+                className="border-border text-foreground hover:bg-surface-hover rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
                 Request Demo
               </Button>
@@ -144,23 +144,23 @@ export default function SolutionsPage() {
               </div>
             </div>
             
-            <div className="border border-border bg-background p-4 relative shadow-xl">
+            <div className="border border-border rounded bg-background p-4 relative shadow-xl">
               <div className="absolute -top-4 -left-4 w-24 h-24 bg-surface-hover rounded-tr-[100px] pointer-events-none -z-10" />
               <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2 flex justify-between">
                 <span>Executive Portfolio</span>
                 <span>Q3 Delivery</span>
               </div>
               <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="bg-surface p-4 border border-border">
+                <div className="bg-surface p-4 border border-border rounded">
                   <div className="text-[10px] uppercase text-muted-foreground mb-1">Org Velocity</div>
                   <div className="text-2xl font-bold">1,240 <span className="text-xs text-muted-foreground">pts</span></div>
                 </div>
-                <div className="bg-surface p-4 border border-border">
+                <div className="bg-surface p-4 border border-border rounded">
                   <div className="text-[10px] uppercase text-muted-foreground mb-1">Projects at Risk</div>
                   <div className="text-2xl font-bold text-orange-500">3</div>
                 </div>
               </div>
-              <div className="bg-surface p-4 border border-border">
+              <div className="bg-surface p-4 border border-border rounded">
                  <div className="text-[10px] uppercase text-muted-foreground mb-3 font-bold">Strategic Initiatives</div>
                  <div className="space-y-3">
                    <div className="flex justify-between items-center border-b border-border pb-2">
@@ -180,24 +180,24 @@ export default function SolutionsPage() {
         {/* SECTION 2 - Product Managers */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32 border-t border-border pt-32">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="order-2 lg:order-1 border border-border bg-surface p-6 shadow-xl relative">
+            <div className="order-2 lg:order-1 border border-border rounded bg-surface p-6 shadow-xl relative">
               <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2">
                 Roadmap & Backlog
               </div>
               <div className="space-y-4">
-                 <div className="bg-background border border-border p-4 flex gap-4 items-center">
-                   <div className="w-8 h-8 bg-surface border border-border flex items-center justify-center font-bold">Q3</div>
+                 <div className="bg-background border border-border rounded p-4 flex gap-4 items-center">
+                   <div className="w-8 h-8 bg-surface border border-border rounded flex items-center justify-center font-bold">Q3</div>
                    <div className="flex-1">
                      <div className="text-sm font-bold mb-1">New Authentication Flow</div>
-                     <div className="w-full h-1.5 bg-surface border border-border"><div className="h-full bg-foreground w-[40%]" /></div>
+                     <div className="w-full h-1.5 bg-surface border border-border rounded"><div className="h-full bg-foreground w-[40%]" /></div>
                    </div>
                  </div>
                  <div className="pl-12 space-y-2">
-                    <div className="bg-background border border-border p-3 flex justify-between items-center text-xs">
+                    <div className="bg-background border border-border rounded p-3 flex justify-between items-center text-xs">
                       <span>Implement OAuth2 Providers</span>
                       <span className="font-mono text-[10px] text-muted-foreground">IN PROGRESS</span>
                     </div>
-                    <div className="bg-background border border-border p-3 flex justify-between items-center text-xs">
+                    <div className="bg-background border border-border rounded p-3 flex justify-between items-center text-xs">
                       <span>Update Login UI Components</span>
                       <span className="font-mono text-[10px] text-muted-foreground">BACKLOG</span>
                     </div>
@@ -238,7 +238,7 @@ export default function SolutionsPage() {
               </div>
             </div>
             
-            <div className="border border-border bg-background p-6 shadow-xl">
+            <div className="border border-border rounded bg-background p-6 shadow-xl">
               <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-6 border-b border-border pb-2 flex justify-between">
                 <span>Team Workload</span>
                 <span>Frontend Team</span>
@@ -253,7 +253,7 @@ export default function SolutionsPage() {
                          <span>{name}</span>
                          <span className={`font-mono ${isOver ? 'text-orange-500' : ''}`}>{workload}%</span>
                        </div>
-                       <div className="h-2 w-full bg-surface border border-border">
+                       <div className="h-2 w-full bg-surface border border-border rounded">
                          <div className={`h-full ${isOver ? 'bg-orange-500' : 'bg-foreground'}`} style={{ width: `${Math.min(workload, 100)}%` }} />
                        </div>
                      </div>
@@ -267,15 +267,15 @@ export default function SolutionsPage() {
         {/* SECTION 4 - Developers */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32 border-t border-border pt-32">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="order-2 lg:order-1 border border-border bg-surface p-6 shadow-xl">
+            <div className="order-2 lg:order-1 border border-border rounded bg-surface p-6 shadow-xl">
               <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2">
                 Developer Workspace
               </div>
               <div className="space-y-4">
-                 <div className="bg-background border border-border p-4">
+                 <div className="bg-background border border-border rounded p-4">
                    <div className="flex justify-between items-start mb-4">
                      <div className="text-sm font-bold">Implement rate limiting middleware</div>
-                     <span className="text-[10px] font-mono border border-border px-2 py-0.5 bg-surface">IN PROGRESS</span>
+                     <span className="text-[10px] font-mono border border-border rounded px-2 py-0.5 bg-surface">IN PROGRESS</span>
                    </div>
                    <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground mt-4 pt-4 border-t border-border">
                      <span className="flex items-center gap-1"><GitPullRequest className="w-3 h-3" /> PR #1042 Open</span>
@@ -326,17 +326,17 @@ export default function SolutionsPage() {
               </div>
             </div>
             
-            <div className="border border-border bg-background p-6 shadow-xl">
+            <div className="border border-border rounded bg-background p-6 shadow-xl">
               <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2 flex justify-between">
                 <span>Test Run: Release 2.4</span>
                 <span className="text-orange-500 font-bold">1 BLOCKER</span>
               </div>
               <div className="space-y-3">
-                 <div className="bg-surface border border-border p-3 flex items-center justify-between">
+                 <div className="bg-surface border border-border rounded p-3 flex items-center justify-between">
                    <span className="text-xs font-bold">Login with SSO</span>
                    <span className="text-[10px] font-mono text-emerald-500 border border-emerald-500 px-2 bg-emerald-500/10">PASSED</span>
                  </div>
-                 <div className="bg-surface border border-border p-3 flex items-center justify-between">
+                 <div className="bg-surface border border-border rounded p-3 flex items-center justify-between">
                    <span className="text-xs font-bold">Payment Processing</span>
                    <span className="text-[10px] font-mono text-emerald-500 border border-emerald-500 px-2 bg-emerald-500/10">PASSED</span>
                  </div>
@@ -355,13 +355,13 @@ export default function SolutionsPage() {
         {/* SECTION 6 - Security & Compliance */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32 border-t border-border pt-32">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="order-2 lg:order-1 border border-border bg-surface p-6 shadow-xl">
+            <div className="order-2 lg:order-1 border border-border rounded bg-surface p-6 shadow-xl">
               <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2 flex justify-between">
                 <span>Security Review Gate</span>
                 <span className="text-accent font-bold">PENDING</span>
               </div>
               <div className="space-y-4">
-                 <div className="bg-background border border-border p-4">
+                 <div className="bg-background border border-border rounded p-4">
                    <div className="text-sm font-bold mb-3">Release 2.4 Security Requirements</div>
                    <div className="space-y-2">
                      <div className="flex items-center gap-3 text-xs">
@@ -371,14 +371,14 @@ export default function SolutionsPage() {
                        <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Dependency Scan Passed
                      </div>
                      <div className="flex items-center gap-3 text-xs">
-                       <div className="w-4 h-4 border border-border bg-surface" /> Manual Pen-test Signoff Required
+                       <div className="w-4 h-4 border border-border rounded bg-surface" /> Manual Pen-test Signoff Required
                      </div>
                    </div>
                  </div>
                  <Button 
                    onClick={() => setIsApproved(true)}
                    disabled={isApproved}
-                   className={`w-full h-8 rounded-none font-mono text-[10px] uppercase tracking-widest ${isApproved ? 'bg-background text-foreground border border-border' : 'bg-foreground text-background'}`}
+                   className={`w-full h-8 rounded font-mono text-[10px] uppercase tracking-widest ${isApproved ? 'bg-background text-foreground border border-border rounded' : 'bg-foreground text-background'}`}
                  >
                    {isApproved ? <span className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-emerald-500" /> Approved</span> : 'Approve & Sign'}
                  </Button>
@@ -417,13 +417,13 @@ export default function SolutionsPage() {
               </div>
             </div>
             
-            <div className="border border-border bg-background p-6 shadow-xl">
+            <div className="border border-border rounded bg-background p-6 shadow-xl">
               <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2 flex justify-between">
                 <span>Deployments</span>
                 <span>Production</span>
               </div>
               <div className="space-y-3">
-                 <div className="bg-surface border border-border p-3">
+                 <div className="bg-surface border border-border rounded p-3">
                    <div className="flex justify-between items-center mb-2">
                      <span className="text-xs font-bold">API Gateway v1.5.0</span>
                      <span className="text-[10px] font-mono text-emerald-500">SUCCESS</span>
@@ -433,7 +433,7 @@ export default function SolutionsPage() {
                      <span>Triggered by: S. Jenkins</span>
                    </div>
                  </div>
-                 <div className="bg-background border border-border p-3 opacity-70">
+                 <div className="bg-background border border-border rounded p-3 opacity-70">
                    <div className="flex justify-between items-center mb-2">
                      <span className="text-xs font-bold">Auth Service v2.1.2</span>
                      <span className="text-[10px] font-mono text-muted-foreground">ROLLED BACK</span>
@@ -450,26 +450,26 @@ export default function SolutionsPage() {
 
         {/* SECTION 8 - Fintech & Regulated */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32 border-t border-border pt-32">
-          <div className="bg-surface border border-border p-8 lg:p-16 text-center max-w-5xl mx-auto shadow-2xl">
+          <div className="bg-surface border border-border rounded p-8 lg:p-16 text-center max-w-5xl mx-auto shadow-2xl">
             <Lock className="w-12 h-12 mx-auto mb-6 text-foreground" />
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">Control delivery where accountability matters.</h2>
             <p className="text-muted-foreground text-lg mb-10 max-w-2xl mx-auto">
               Designed for controlled environments, HANDOFF supports strict compliance workflows for fintech, healthcare, and enterprise organizations.
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-xs uppercase tracking-widest text-foreground text-left">
-              <div className="border border-border bg-background p-4 flex flex-col items-center text-center gap-2">
+              <div className="border border-border rounded bg-background p-4 flex flex-col items-center text-center gap-2">
                 <Users className="w-5 h-5 text-muted-foreground" />
                 Segregation of Duties
               </div>
-              <div className="border border-border bg-background p-4 flex flex-col items-center text-center gap-2">
+              <div className="border border-border rounded bg-background p-4 flex flex-col items-center text-center gap-2">
                 <GitPullRequest className="w-5 h-5 text-muted-foreground" />
                 Approval Chains
               </div>
-              <div className="border border-border bg-background p-4 flex flex-col items-center text-center gap-2">
+              <div className="border border-border rounded bg-background p-4 flex flex-col items-center text-center gap-2">
                 <Database className="w-5 h-5 text-muted-foreground" />
                 Immutable Audit Logs
               </div>
-              <div className="border border-border bg-background p-4 flex flex-col items-center text-center gap-2">
+              <div className="border border-border rounded bg-background p-4 flex flex-col items-center text-center gap-2">
                 <FileText className="w-5 h-5 text-muted-foreground" />
                 Release Evidence
               </div>
@@ -485,14 +485,14 @@ export default function SolutionsPage() {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button 
               onClick={() => handleNavigate('/dashboard', 'demo')}
-              className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+              className="bg-foreground text-background hover:bg-foreground/90 rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
             >
               Request Demo
             </Button>
             <Button 
               onClick={() => handleNavigate('/contact', 'sales')}
               variant="outline"
-              className="border-border text-foreground hover:bg-surface-hover rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+              className="border-border text-foreground hover:bg-surface-hover rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
             >
               Contact Sales
             </Button>
@@ -506,7 +506,7 @@ export default function SolutionsPage() {
       {/* Loading Overlay */}
       {isNavigating && (
         <div className="fixed inset-0 z-[100] bg-background/50 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-surface border border-border p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
+          <div className="bg-surface border border-border rounded p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
             <Loader2 className="w-8 h-8 text-foreground animate-spin mb-6" />
             <div className="font-mono text-xs uppercase tracking-widest text-center text-muted-foreground">
               {navType === 'signin' ? 'AUTHENTICATING' : 'INITIALIZING WORKSPACE'}...

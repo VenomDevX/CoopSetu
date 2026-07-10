@@ -46,10 +46,10 @@ const fmtDate = (d?: string | null) =>
 
 const statusBadge = (status: string) => {
   switch (status) {
-    case 'ACTIVE': return 'border-emerald-500 text-emerald-500 bg-emerald-500/10';
-    case 'PLANNED': return 'border-accent text-accent bg-accent/10';
-    case 'COMPLETED': return 'border-border text-muted-foreground bg-surface';
-    default: return 'border-border text-muted-foreground bg-surface';
+    case 'ACTIVE': return 'text-emerald-500 bg-emerald-500/10';
+    case 'PLANNED': return 'text-accent bg-accent/10';
+    case 'COMPLETED': return 'text-muted-foreground bg-surface';
+    default: return 'text-muted-foreground bg-surface';
   }
 };
 
@@ -103,7 +103,7 @@ export default function SprintDetailPage() {
     return (
       <div className="p-8 text-center">
         <div className="text-[10px] font-mono uppercase tracking-widest text-destructive mb-3">{error ?? 'Sprint not found.'}</div>
-        <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={load}>
+        <Button variant="outline" size="sm" className="rounded text-xs font-mono uppercase tracking-widest" onClick={load}>
           Retry
         </Button>
       </div>
@@ -141,16 +141,16 @@ export default function SprintDetailPage() {
               <KanbanSquare className="w-8 h-8" />
               {s.name}
             </h1>
-            <span className={`font-mono text-[10px] uppercase tracking-widest px-2 py-1 border ${statusBadge(s.status)}`}>
+            <span className={`font-mono text-[10px] uppercase tracking-widest px-2 py-1 rounded-[3px] ${statusBadge(s.status)}`}>
               {s.status}
             </span>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <AskAiButton intent="summarize-sprint" sprintId={sprintId} permission="task:view" label="Sprint Insights" title="Sprint Summary" />
+          <AskAiButton intent="summarize-sprint" sprintId={sprintId} permission="task:view" title="Sprint Summary" />
           {has('sprint:complete') && (
             <Button data-testid="sprint-detail-complete" disabled={updating || s.status === 'COMPLETED'} onClick={completeSprint}
-              className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2 disabled:opacity-50">
+              className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2 disabled:opacity-50">
               <CheckCircle2 className="w-4 h-4" />
               {s.status === 'COMPLETED' ? 'Completed' : updating ? 'Completing…' : 'Complete Sprint'}
             </Button>
@@ -160,37 +160,37 @@ export default function SprintDetailPage() {
 
       {/* KPI Strip — all real / derived */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 flex-shrink-0">
-        <div className="p-4 border border-border bg-surface">
+        <div className="p-4 border border-border rounded bg-surface">
           <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Sprint Goal</div>
           <div className="text-xs font-bold line-clamp-2">{s.goal || 'No goal set.'}</div>
         </div>
-        <div className="p-4 border border-border bg-surface relative overflow-hidden">
+        <div className="p-4 border border-border rounded bg-surface relative overflow-hidden">
           <div className="absolute top-0 right-0 p-2 opacity-20"><TrendingUp className="w-10 h-10" /></div>
           <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Points Completed</div>
           <div className="text-2xl font-bold tracking-tighter relative z-10">{data.completedPoints} <span className="text-sm font-normal text-muted-foreground">/ {data.plannedPoints}</span></div>
-          <div className="h-1 bg-background border border-border w-full overflow-hidden mt-2 relative z-10">
+          <div className="h-1 bg-background border border-border rounded w-full overflow-hidden mt-2 relative z-10">
             <div className="h-full bg-foreground" style={{ width: `${progress}%` }} />
           </div>
         </div>
-        <div className="p-4 border border-border bg-surface relative overflow-hidden">
+        <div className="p-4 border border-border rounded bg-surface relative overflow-hidden">
           <div className="absolute top-0 right-0 p-2 opacity-20"><Calendar className="w-10 h-10" /></div>
           <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Timeline</div>
           <div className="text-sm font-bold relative z-10">{timelineText}</div>
           <div className="text-[10px] font-mono text-muted-foreground mt-1 relative z-10">Ends {fmtDate(s.end_date)}</div>
         </div>
-        <div className="p-4 border border-border bg-surface relative overflow-hidden">
+        <div className="p-4 border border-border rounded bg-surface relative overflow-hidden">
           <div className="absolute top-0 right-0 p-2 opacity-20"><Activity className="w-10 h-10" /></div>
           <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Remaining Points</div>
           <div className="text-2xl font-bold tracking-tighter relative z-10">{data.remainingPoints}</div>
           <div className="text-[10px] font-mono text-muted-foreground mt-1 relative z-10">{tasks.length} tasks</div>
         </div>
-        <div className="p-4 border border-border bg-surface relative overflow-hidden">
+        <div className="p-4 border border-border rounded bg-surface relative overflow-hidden">
           <div className="absolute top-0 right-0 p-2 opacity-20"><AlertTriangle className={`w-10 h-10 ${blocked.length ? 'text-destructive' : ''}`} /></div>
           <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Blocked</div>
           <div className={`text-2xl font-bold tracking-tighter relative z-10 ${blocked.length ? 'text-destructive' : ''}`}>{blocked.length}</div>
           <div className="text-[10px] font-mono text-muted-foreground mt-1 relative z-10">blocked items</div>
         </div>
-        <div className="p-4 border border-border bg-surface relative overflow-hidden">
+        <div className="p-4 border border-border rounded bg-surface relative overflow-hidden">
           <div className="absolute top-0 right-0 p-2 opacity-20"><Users className="w-10 h-10" /></div>
           <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Capacity</div>
           <div className="text-2xl font-bold tracking-tighter relative z-10">{data.capacityHours != null ? `${data.capacityHours}h` : '—'}</div>
@@ -216,25 +216,25 @@ export default function SprintDetailPage() {
             {BOARD_COLUMNS.map((col) => {
               const colTasks = tasks.filter((t) => col.statuses.includes(t.status));
               return (
-                <div key={col.id} className="flex-shrink-0 w-72 flex flex-col border border-border bg-surface/30">
+                <div key={col.id} className="flex-shrink-0 w-72 flex flex-col border border-border rounded bg-surface/30">
                   <div className="p-3 border-b border-border bg-surface-hover flex items-center justify-between">
                     <div className="font-mono text-xs uppercase tracking-widest font-bold">{col.name}</div>
-                    <div className="text-[10px] font-mono px-1.5 py-0.5 bg-background border border-border">{colTasks.length}</div>
+                    <div className="text-[10px] font-mono px-1.5 py-0.5 bg-background border border-border rounded">{colTasks.length}</div>
                   </div>
                   <div className="flex-1 p-2 space-y-2 overflow-y-auto">
                     {colTasks.map((task) => (
                       <div key={task.id} className={`p-3 border bg-background hover:border-foreground transition-colors ${task.status === 'BLOCKED' ? 'border-destructive/50 border-l-2 border-l-destructive' : 'border-border'}`}>
                         <div className="flex items-start justify-between mb-2">
-                          <span className="font-mono text-[10px] uppercase px-1 py-0.5 bg-surface border border-border text-muted-foreground">{task.task_type ?? 'TASK'}</span>
+                          <span className="font-mono text-[10px] uppercase px-1 py-0.5 bg-surface border border-border rounded text-muted-foreground">{task.task_type ?? 'TASK'}</span>
                           {task.status === 'BLOCKED' && <AlertTriangle className="w-3 h-3 text-destructive" />}
                         </div>
                         <div className="text-sm font-bold mb-3 leading-tight">{task.title}</div>
                         <div className="flex items-center justify-between text-xs">
                           <div className="flex items-center gap-2">
-                            <div className="w-5 h-5 bg-surface border border-border flex items-center justify-center font-mono text-[9px] uppercase">{assigneeName(task.primary_assignee_member_id).charAt(0)}</div>
+                            <div className="w-5 h-5 bg-surface border border-border rounded flex items-center justify-center font-mono text-[9px] uppercase">{assigneeName(task.primary_assignee_member_id).charAt(0)}</div>
                             <span className="text-muted-foreground text-[10px] truncate max-w-[100px]">{assigneeName(task.primary_assignee_member_id)}</span>
                           </div>
-                          <div className="font-mono text-[10px] px-1.5 py-0.5 border border-border bg-surface-hover">{task.story_points ?? 0} <span className="text-muted-foreground">pts</span></div>
+                          <div className="font-mono text-[10px] px-1.5 py-0.5 border border-border rounded bg-surface-hover">{task.story_points ?? 0} <span className="text-muted-foreground">pts</span></div>
                         </div>
                       </div>
                     ))}
@@ -251,14 +251,14 @@ export default function SprintDetailPage() {
         {activeTab === 'Metrics' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Real points summary (no fabricated burndown series) */}
-            <div className="border border-border bg-background">
+            <div className="border border-border rounded bg-background">
               <div className="p-4 border-b border-border bg-surface-hover">
                 <h3 className="font-mono text-xs uppercase tracking-widest font-bold">Story Points</h3>
               </div>
               <div className="p-6 space-y-6">
                 <div>
                   <div className="flex justify-between text-sm mb-2"><span className="text-muted-foreground">Completed</span><span className="font-bold">{data.completedPoints} / {data.plannedPoints} pts ({progress}%)</span></div>
-                  <div className="h-2 bg-surface border border-border w-full overflow-hidden"><div className="h-full bg-foreground" style={{ width: `${progress}%` }} /></div>
+                  <div className="h-2 bg-surface border border-border rounded w-full overflow-hidden"><div className="h-full bg-foreground" style={{ width: `${progress}%` }} /></div>
                 </div>
                 <div className="grid grid-cols-3 gap-4 pt-4 border-t border-border text-center">
                   <div><div className="text-2xl font-bold">{data.plannedPoints}</div><div className="text-[10px] font-mono uppercase text-muted-foreground mt-1">Planned</div></div>
@@ -270,7 +270,7 @@ export default function SprintDetailPage() {
             </div>
 
             {/* Real blocked work */}
-            <div className="border border-border bg-background flex flex-col">
+            <div className="border border-border rounded bg-background flex flex-col">
               <div className="p-4 border-b border-border bg-surface-hover">
                 <h3 className="font-mono text-xs uppercase tracking-widest font-bold flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> Blocked Work ({blocked.length})</h3>
               </div>
@@ -288,7 +288,7 @@ export default function SprintDetailPage() {
         )}
 
         {(activeTab === 'Planning' || activeTab === 'Retrospective') && (
-          <div className="flex flex-col items-center justify-center h-64 border border-border border-dashed bg-surface/30 gap-2">
+          <div className="flex flex-col items-center justify-center h-64 border border-border rounded border-dashed bg-surface/30 gap-2">
             <Target className="w-8 h-8 text-muted-foreground" />
             <h3 className="font-mono text-sm uppercase tracking-widest font-bold">{activeTab}</h3>
             <p className="text-xs text-muted-foreground font-mono">Not available yet.</p>

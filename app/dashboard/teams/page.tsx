@@ -31,6 +31,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useCurrentMembership } from '@/lib/permissions/context';
 import { StudentTeamView } from '@/components/teams/student-team-view';
+import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
 
 // --- MOCK DATA ---
 
@@ -133,7 +134,7 @@ function EnterpriseTeamsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 min-h-[calc(100vh-80px)] flex flex-col">
+    <WorkspaceDataLayout className="space-y-6 animate-in fade-in duration-500 flex flex-col">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 flex-shrink-0">
         <div>
@@ -163,7 +164,7 @@ function EnterpriseTeamsPage() {
 
           <div className="flex items-center gap-3">
             {currentView !== 'directory' && (
-              <Button variant="outline" size="sm" onClick={handleBack} className="h-8 w-8 p-0 rounded-none border-border">
+              <Button variant="outline" size="sm" onClick={handleBack} className="h-8 w-8 p-0 rounded border-border">
                 <ArrowLeft className="w-4 h-4" />
               </Button>
             )}
@@ -187,15 +188,15 @@ function EnterpriseTeamsPage() {
         <div className="flex flex-wrap items-center gap-3">
           {currentView === 'directory' && (
             <>
-              <Button onClick={() => setCurrentView('resource_planning')} variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+              <Button onClick={() => setCurrentView('resource_planning')} variant="outline" className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
                 <BarChart3 className="w-4 h-4" />
                 Resource Planning
               </Button>
-              <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
+              <Button variant="outline" className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
                 <UserCircle className="w-4 h-4" />
                 Invite Employee
               </Button>
-              <Button className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
+              <Button className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
                 <Plus className="w-4 h-4" />
                 Create Team
               </Button>
@@ -208,14 +209,14 @@ function EnterpriseTeamsPage() {
       <div className="flex-1 min-h-0 flex flex-col">
         {/* --- TEAMS DIRECTORY VIEW --- */}
         {currentView === 'directory' && (
-          <div className="flex flex-col flex-1 bg-background border border-border">
+          <div className="flex flex-col flex-1 bg-background border border-border rounded">
             <div className="p-3 border-b border-border bg-surface-hover flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-2 flex-1">
                 <div className="relative flex-1 max-w-md">
                   <Search className="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input type="text" placeholder="SEARCH TEAMS..." className="w-full h-8 pl-9 pr-3 bg-background border border-border text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors" />
+                  <input type="text" placeholder="SEARCH TEAMS..." className="w-full h-8 pl-9 pr-3 bg-background border border-border rounded text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors" />
                 </div>
-                <Button variant="outline" size="sm" className="h-8 px-3 rounded-none text-[10px] font-mono uppercase border-border bg-background">
+                <Button variant="outline" size="sm" className="h-8 px-3 rounded text-[10px] font-mono uppercase border-border bg-background">
                   <Filter className="w-3 h-3 mr-2" /> Filters
                 </Button>
               </div>
@@ -286,9 +287,9 @@ function EnterpriseTeamsPage() {
                 {selectedTeam.health === 'At Risk' ? 'Team is currently overloaded. Consider reallocating 2 active projects.' : 'Team capacity is balanced. Velocity is trending upwards.'}
               </p>
               <div className="flex flex-wrap gap-2">
-                <Button onClick={() => handleAI('Summarize Health')} variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Summarize Health</Button>
-                <Button onClick={() => handleAI('Identify Skills Gaps')} variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Identify Skills Gaps</Button>
-                <Button onClick={() => handleAI('Forecast Capacity')} variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Forecast Capacity</Button>
+                <Button onClick={() => handleAI('Summarize Health')} variant="outline" size="sm" className="h-7 px-3 rounded text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Summarize Health</Button>
+                <Button onClick={() => handleAI('Identify Skills Gaps')} variant="outline" size="sm" className="h-7 px-3 rounded text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Identify Skills Gaps</Button>
+                <Button onClick={() => handleAI('Forecast Capacity')} variant="outline" size="sm" className="h-7 px-3 rounded text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Forecast Capacity</Button>
               </div>
             </div>
 
@@ -310,25 +311,25 @@ function EnterpriseTeamsPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2 space-y-6">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="border border-border p-4 bg-surface">
+                    <div className="border border-border rounded p-4 bg-surface">
                       <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Members</div>
                       <div className="text-2xl font-bold">{selectedTeam.members}</div>
                     </div>
-                    <div className="border border-border p-4 bg-surface">
+                    <div className="border border-border rounded p-4 bg-surface">
                       <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Capacity</div>
                       <div className="text-2xl font-bold">{selectedTeam.capacity}h</div>
                     </div>
-                    <div className="border border-border p-4 bg-surface">
+                    <div className="border border-border rounded p-4 bg-surface">
                       <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Velocity</div>
                       <div className="text-2xl font-bold">{selectedTeam.velocity}</div>
                     </div>
-                    <div className="border border-border p-4 bg-surface">
+                    <div className="border border-border rounded p-4 bg-surface">
                       <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Health</div>
                       <div className={`text-sm font-bold mt-2 px-2 py-0.5 border inline-block ${getHealthColor(selectedTeam.health)} uppercase tracking-widest`}>{selectedTeam.health}</div>
                     </div>
                   </div>
 
-                  <div className="border border-border bg-background">
+                  <div className="border border-border rounded bg-background">
                     <div className="p-3 border-b border-border bg-surface-hover font-mono text-xs uppercase tracking-widest font-bold">
                       Team Members Spotlight
                     </div>
@@ -336,7 +337,7 @@ function EnterpriseTeamsPage() {
                       {mockEmployees.filter(e => e.team === selectedTeam.name).map(emp => (
                         <div key={emp.id} className="p-3 flex items-center justify-between hover:bg-surface-hover cursor-pointer" onClick={() => handleEmployeeClick(emp.id)}>
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-surface border border-border flex items-center justify-center font-mono text-[10px] uppercase">{emp.name.charAt(0)}</div>
+                            <div className="w-8 h-8 bg-surface border border-border rounded flex items-center justify-center font-mono text-[10px] uppercase">{emp.name.charAt(0)}</div>
                             <div>
                               <div className="font-bold text-sm">{emp.name}</div>
                               <div className="text-xs text-muted-foreground">{emp.role}</div>
@@ -350,7 +351,7 @@ function EnterpriseTeamsPage() {
                 </div>
 
                 <div className="space-y-6">
-                  <div className="border border-border bg-background p-5 space-y-4">
+                  <div className="border border-border rounded bg-background p-5 space-y-4">
                     <h3 className="font-mono text-xs uppercase tracking-widest font-bold border-b border-border pb-2">Info</h3>
                     <div>
                       <div className="text-[10px] font-mono uppercase text-muted-foreground mb-1">Manager</div>
@@ -366,7 +367,7 @@ function EnterpriseTeamsPage() {
                     </div>
                   </div>
 
-                  <div className="border border-border bg-background p-5 space-y-4">
+                  <div className="border border-border rounded bg-background p-5 space-y-4">
                     <h3 className="font-mono text-xs uppercase tracking-widest font-bold border-b border-border pb-2">Current Sprint</h3>
                     <div className="text-sm font-bold text-accent">{selectedTeam.sprint}</div>
                     <div className="space-y-2">
@@ -374,7 +375,7 @@ function EnterpriseTeamsPage() {
                         <span>Sprint Progress</span>
                         <span className="font-mono">65%</span>
                       </div>
-                      <div className="h-1.5 w-full bg-surface border border-border overflow-hidden">
+                      <div className="h-1.5 w-full bg-surface border border-border rounded overflow-hidden">
                         <div className="h-full bg-foreground w-[65%]" />
                       </div>
                     </div>
@@ -400,7 +401,7 @@ function EnterpriseTeamsPage() {
           <div className="flex flex-col md:flex-row gap-6">
             {/* Left Sidebar Profile */}
             <div className="w-full md:w-80 space-y-6 flex-shrink-0">
-              <div className="border border-border bg-background p-6 flex flex-col items-center text-center relative overflow-hidden">
+              <div className="border border-border rounded bg-background p-6 flex flex-col items-center text-center relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-16 bg-surface-hover border-b border-border" />
                 <div className="w-20 h-20 bg-background border-2 border-border flex items-center justify-center font-mono text-2xl font-bold uppercase relative z-10 mb-4 shadow-sm">
                   {selectedEmployee.name.charAt(0)}
@@ -410,12 +411,12 @@ function EnterpriseTeamsPage() {
                 <p className="text-xs text-muted-foreground">{selectedEmployee.department}</p>
 
                 <div className="flex gap-2 mt-4">
-                  <Button onClick={() => window.location.href = `mailto:team-member@handoff.dev`} variant="outline" size="sm" className="h-8 px-3 rounded-none border-border"><Mail className="w-3 h-3 mr-2" /> Message</Button>
-                  <Button onClick={() => alert('Opening calendar integration...')} variant="outline" size="sm" className="h-8 px-3 rounded-none border-border"><Calendar className="w-3 h-3 mr-2" /> Meeting</Button>
+                  <Button onClick={() => window.location.href = `mailto:team-member@handoff.dev`} variant="outline" size="sm" className="h-8 px-3 rounded border-border"><Mail className="w-3 h-3 mr-2" /> Message</Button>
+                  <Button onClick={() => alert('Opening calendar integration...')} variant="outline" size="sm" className="h-8 px-3 rounded border-border"><Calendar className="w-3 h-3 mr-2" /> Meeting</Button>
                 </div>
               </div>
 
-              <div className="border border-border bg-background p-5 space-y-4 text-sm">
+              <div className="border border-border rounded bg-background p-5 space-y-4 text-sm">
                 <h3 className="font-mono text-xs uppercase tracking-widest font-bold border-b border-border pb-2">Details</h3>
                 <div className="flex items-center gap-3"><Users className="w-4 h-4 text-muted-foreground" /> <span>Team: <span className="font-bold">{selectedEmployee.team}</span></span></div>
                 <div className="flex items-center gap-3"><UserCircle className="w-4 h-4 text-muted-foreground" /> <span>Manager: {selectedEmployee.manager}</span></div>
@@ -424,11 +425,11 @@ function EnterpriseTeamsPage() {
                 <div className="flex items-center gap-3"><GitPullRequest className="w-4 h-4 text-muted-foreground" /> <span className="font-mono text-xs">{selectedEmployee.github}</span></div>
               </div>
 
-              <div className="border border-border bg-background p-5 space-y-4">
+              <div className="border border-border rounded bg-background p-5 space-y-4">
                 <h3 className="font-mono text-xs uppercase tracking-widest font-bold border-b border-border pb-2">Skills</h3>
                 <div className="flex flex-wrap gap-2">
                   {selectedEmployee.skills.map(skill => (
-                    <span key={skill} className="px-2 py-1 border border-border bg-surface text-[10px] font-mono uppercase tracking-widest">
+                    <span key={skill} className="px-2 py-1 border border-border rounded bg-surface text-[10px] font-mono uppercase tracking-widest">
                       {skill}
                     </span>
                   ))}
@@ -440,38 +441,38 @@ function EnterpriseTeamsPage() {
             <div className="flex-1 space-y-6">
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="border border-border p-4 bg-surface">
+                <div className="border border-border rounded p-4 bg-surface">
                   <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Active Tasks</div>
                   <div className="text-2xl font-bold">{selectedEmployee.activeTasks}</div>
                 </div>
-                <div className="border border-border p-4 bg-surface">
+                <div className="border border-border rounded p-4 bg-surface">
                   <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Capacity</div>
                   <div className="text-2xl font-bold">{selectedEmployee.capacity}h</div>
                 </div>
-                <div className="border border-border p-4 bg-surface">
+                <div className="border border-border rounded p-4 bg-surface">
                   <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Workload</div>
                   <div className={`text-2xl font-bold ${selectedEmployee.workload > selectedEmployee.capacity ? 'text-orange-500' : 'text-foreground'}`}>{selectedEmployee.workload}h</div>
                 </div>
-                <div className="border border-border p-4 bg-surface">
+                <div className="border border-border rounded p-4 bg-surface">
                   <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Sprint</div>
                   <div className="text-lg font-bold mt-1 text-accent">{selectedEmployee.sprint}</div>
                 </div>
               </div>
 
-              <div className="border border-border bg-background">
+              <div className="border border-border rounded bg-background">
                 <div className="p-4 border-b border-border font-mono text-xs uppercase tracking-widest font-bold">
                   Recent Activity
                 </div>
                 <div className="p-4 space-y-4">
                   <div className="flex gap-4">
-                    <div className="w-6 h-6 bg-surface border border-border flex items-center justify-center flex-shrink-0 mt-0.5"><GitPullRequest className="w-3 h-3" /></div>
+                    <div className="w-6 h-6 bg-surface border border-border rounded flex items-center justify-center flex-shrink-0 mt-0.5"><GitPullRequest className="w-3 h-3" /></div>
                     <div>
                       <p className="text-sm">{selectedEmployee.recentActivity}</p>
                       <span className="text-[10px] font-mono text-muted-foreground">2 hours ago</span>
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <div className="w-6 h-6 bg-surface border border-border flex items-center justify-center flex-shrink-0 mt-0.5"><CheckCircle2 className="w-3 h-3 text-emerald-500" /></div>
+                    <div className="w-6 h-6 bg-surface border border-border rounded flex items-center justify-center flex-shrink-0 mt-0.5"><CheckCircle2 className="w-3 h-3 text-emerald-500" /></div>
                     <div>
                       <p className="text-sm">Completed task: Update Auth Service to v2</p>
                       <span className="text-[10px] font-mono text-muted-foreground">Yesterday</span>
@@ -489,8 +490,8 @@ function EnterpriseTeamsPage() {
                     {selectedEmployee.name} is currently allocated at {Math.round((selectedEmployee.workload / selectedEmployee.capacity) * 100)}% capacity. Skills match well with upcoming Q3 architecture projects.
                   </p>
                   <div className="flex gap-2">
-                    <Button onClick={() => handleAI('Suggest Best Assignee')} variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Suggest Best Assignee</Button>
-                    <Button onClick={() => handleAI('Suggest Training Focus')} variant="outline" size="sm" className="h-7 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Suggest Training Focus</Button>
+                    <Button onClick={() => handleAI('Suggest Best Assignee')} variant="outline" size="sm" className="h-7 px-3 rounded text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Suggest Best Assignee</Button>
+                    <Button onClick={() => handleAI('Suggest Training Focus')} variant="outline" size="sm" className="h-7 px-3 rounded text-[10px] font-mono uppercase tracking-widest border-border hover:bg-foreground hover:text-background text-foreground">Suggest Training Focus</Button>
                   </div>
                 </div>
               </div>
@@ -504,19 +505,19 @@ function EnterpriseTeamsPage() {
           <div className="flex flex-col flex-1 gap-6">
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="border border-border p-5 bg-surface">
+              <div className="border border-border rounded p-5 bg-surface">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Total Org Capacity</div>
                 <div className="text-3xl font-bold font-mono tracking-tight">2,320h</div>
               </div>
-              <div className="border border-border p-5 bg-surface">
+              <div className="border border-border rounded p-5 bg-surface">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Allocated Hours</div>
                 <div className="text-3xl font-bold font-mono tracking-tight">2,150h</div>
               </div>
-              <div className="border border-border p-5 bg-surface border-orange-500/50">
+              <div className="border border-border rounded p-5 bg-surface border-orange-500/50">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-orange-500 mb-2">Overloaded Employees</div>
                 <div className="text-3xl font-bold font-mono tracking-tight text-orange-500">12</div>
               </div>
-              <div className="border border-border p-5 bg-surface">
+              <div className="border border-border rounded p-5 bg-surface">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Staffing Requests</div>
                 <div className="text-3xl font-bold font-mono tracking-tight">8</div>
               </div>
@@ -534,23 +535,23 @@ function EnterpriseTeamsPage() {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                <Button className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 whitespace-nowrap">
+                <Button className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 whitespace-nowrap">
                   Apply Recommendations
                 </Button>
-                <Button variant="outline" className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover whitespace-nowrap">
+                <Button variant="outline" className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover whitespace-nowrap">
                   Detect Skills Gaps
                 </Button>
               </div>
             </div>
 
             {/* Allocation Table placeholder */}
-            <div className="flex-1 border border-border bg-background flex flex-col">
+            <div className="flex-1 border border-border rounded bg-background flex flex-col">
               <div className="p-4 border-b border-border bg-surface flex justify-between items-center">
                 <h3 className="font-mono text-xs uppercase tracking-widest font-bold">Allocation Heatmap</h3>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="h-8 rounded-none border-border">By Team</Button>
-                  <Button variant="outline" size="sm" className="h-8 rounded-none border-border">By Project</Button>
-                  <Button variant="outline" size="sm" className="h-8 rounded-none border-border">By Skill</Button>
+                  <Button variant="outline" size="sm" className="h-8 rounded border-border">By Team</Button>
+                  <Button variant="outline" size="sm" className="h-8 rounded border-border">By Project</Button>
+                  <Button variant="outline" size="sm" className="h-8 rounded border-border">By Skill</Button>
                 </div>
               </div>
               <div className="flex-1 p-8 flex flex-col items-center justify-center text-center">
@@ -563,7 +564,7 @@ function EnterpriseTeamsPage() {
           </div>
         )}
       </div>
-    </div>
+    </WorkspaceDataLayout>
   );
 }
 

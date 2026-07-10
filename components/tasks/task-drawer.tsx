@@ -218,7 +218,7 @@ export function TaskDrawer({ taskId, onClose }: { taskId: string; onClose: () =>
     const deleted = !!c.deleted_at;
     const editing = editingId === c.id;
     return (
-      <div key={c.id} data-testid="comment-item" className="border border-border p-3 bg-surface">
+      <div key={c.id} data-testid="comment-item" className="border border-border rounded p-3 bg-surface">
         <div className="flex items-center justify-between mb-1">
           <div className="text-xs font-bold">
             {authorName(c)}
@@ -236,13 +236,13 @@ export function TaskDrawer({ taskId, onClose }: { taskId: string; onClose: () =>
             <textarea
               data-testid="comment-edit-input"
               value={editBody} onChange={(e) => setEditBody(e.target.value)}
-              rows={2} className="w-full px-2 py-1 bg-background border border-border text-sm"
+              rows={2} className="w-full px-2 py-1 bg-background border border-border rounded text-sm"
             />
             <div className="flex gap-2">
               <button data-testid="comment-edit-save" onClick={() => saveEdit(c.id)}
                 className="h-7 px-3 bg-foreground text-background text-[10px] font-mono uppercase tracking-widest">Save</button>
               <button onClick={() => { setEditingId(null); setEditBody(''); }}
-                className="h-7 px-3 border border-border text-[10px] font-mono uppercase tracking-widest">Cancel</button>
+                className="h-7 px-3 border border-border rounded text-[10px] font-mono uppercase tracking-widest">Cancel</button>
             </div>
           </div>
         ) : (
@@ -320,7 +320,7 @@ export function TaskDrawer({ taskId, onClose }: { taskId: string; onClose: () =>
                 permission="task:view"
                 label="Summarize Task"
                 title="Task Summary"
-                className="h-8 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2"
+                className="h-8 px-3 rounded text-[10px] font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2"
               />
               <AskAiButton
                 intent="task-plan"
@@ -328,7 +328,7 @@ export function TaskDrawer({ taskId, onClose }: { taskId: string; onClose: () =>
                 permission="task:view"
                 label="Task Plan Generation"
                 title="Draft Plan"
-                className="h-8 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2"
+                className="h-8 px-3 rounded text-[10px] font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2"
               />
               <AskAiButton
                 intent="summarize-comments"
@@ -336,7 +336,7 @@ export function TaskDrawer({ taskId, onClose }: { taskId: string; onClose: () =>
                 permission="task:view"
                 label="Summarize Discussion"
                 title="Discussion Summary"
-                className="h-8 px-3 rounded-none text-[10px] font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2"
+                className="h-8 px-3 rounded text-[10px] font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2"
               />
             </div>
           )}
@@ -350,17 +350,17 @@ export function TaskDrawer({ taskId, onClose }: { taskId: string; onClose: () =>
                   value={task?.status ?? ''}
                   disabled={savingField === 'status'}
                   onChange={(e) => patchTask({ status: e.target.value }, 'status')}
-                  className="w-full h-9 px-2 bg-background border border-border text-xs font-mono uppercase"
+                  className="w-full h-9 px-2 bg-background border border-border rounded text-xs font-mono uppercase"
                 >
                   {TASK_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               ) : (
-                <span className="border border-border px-2 py-1 font-mono text-[10px] uppercase inline-block">{task?.status}</span>
+                <span className="border border-border rounded px-2 py-1 font-mono text-[10px] uppercase inline-block">{task?.status}</span>
               )}
             </div>
             <div>
               <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1 block">Priority</label>
-              <span className="border border-border px-2 py-1 font-mono text-[10px] uppercase inline-block">{task?.priority}</span>
+              <span className="border border-border rounded px-2 py-1 font-mono text-[10px] uppercase inline-block">{task?.priority}</span>
             </div>
           </div>
 
@@ -374,7 +374,7 @@ export function TaskDrawer({ taskId, onClose }: { taskId: string; onClose: () =>
                 value={task?.primary_assignee_member_id ?? ''}
                 disabled={savingField === 'assignee'}
                 onChange={(e) => patchTask({ primary_assignee_member_id: e.target.value || null }, 'assignee')}
-                className="w-full h-9 px-2 bg-background border border-border text-xs"
+                className="w-full h-9 px-2 bg-background border border-border rounded text-xs"
               >
                 <option value="">— Unassigned —</option>
                 {members.map((m) => <option key={m.member_id} value={m.member_id}>{memberLabel(m)}</option>)}
@@ -388,7 +388,7 @@ export function TaskDrawer({ taskId, onClose }: { taskId: string; onClose: () =>
                 value={task?.visibility_scope ?? 'PRIVATE_ASSIGNMENT'}
                 disabled={savingField === 'visibility'}
                 onChange={(e) => patchTask({ visibility_scope: e.target.value }, 'visibility')}
-                className="w-full h-9 px-2 bg-background border border-border text-xs font-mono uppercase"
+                className="w-full h-9 px-2 bg-background border border-border rounded text-xs font-mono uppercase"
               >
                 {TASK_VISIBILITY_SCOPES.map((scope) => <option key={scope} value={scope}>{scope.replace(/_/g, ' ')}</option>)}
               </select>
@@ -402,7 +402,7 @@ export function TaskDrawer({ taskId, onClose }: { taskId: string; onClose: () =>
             </div>
             <div className="space-y-2">
               {(task?.task_assignees ?? []).map((a) => (
-                <div key={a.id} className="border border-border p-2 bg-surface">
+                <div key={a.id} className="border border-border rounded p-2 bg-surface">
                   <div className="text-xs">{assignmentLine(a)}</div>
                   <div className="font-mono text-[10px] text-muted-foreground mt-1">
                     {new Date(a.assigned_at).toLocaleString()}
@@ -429,7 +429,7 @@ export function TaskDrawer({ taskId, onClose }: { taskId: string; onClose: () =>
             <div className="space-y-2">
               {attachments.map((a) => (
                 <a key={a.id} href={a.url ?? '#'} target="_blank" rel="noreferrer"
-                  className="flex items-center gap-2 border border-border p-2 bg-surface hover:bg-surface-hover text-xs">
+                  className="flex items-center gap-2 border border-border rounded p-2 bg-surface hover:bg-surface-hover text-xs">
                   <Paperclip className="w-3 h-3 text-muted-foreground" />
                   <span className="flex-1 truncate">{a.file_name}</span>
                   {a.size_bytes != null && <span className="font-mono text-[10px] text-muted-foreground">{Math.ceil(a.size_bytes / 1024)} KB</span>}
@@ -471,14 +471,14 @@ export function TaskDrawer({ taskId, onClose }: { taskId: string; onClose: () =>
               data-testid="comment-mention-select"
               value=""
               onChange={(e) => { if (e.target.value) addMention(e.target.value); }}
-              className="h-8 px-2 bg-surface border border-border text-[11px] font-mono"
+              className="h-8 px-2 bg-surface border border-border rounded text-[11px] font-mono"
             >
               <option value="">@ Mention…</option>
               {directory.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
           )}
           {pendingMentions.map((m) => (
-            <span key={m.id} className="inline-flex items-center gap-1 border border-border px-2 py-0.5 text-[10px] font-mono bg-surface">
+            <span key={m.id} className="inline-flex items-center gap-1 border border-border rounded px-2 py-0.5 text-[10px] font-mono bg-surface">
               @{m.name}
               <button onClick={() => setPendingMentions((prev) => prev.filter((p) => p.id !== m.id))} className="text-muted-foreground hover:text-foreground">×</button>
             </span>
@@ -490,7 +490,7 @@ export function TaskDrawer({ taskId, onClose }: { taskId: string; onClose: () =>
             value={body} onChange={(e) => setBody(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && postComment()}
             placeholder="WRITE A COMMENT…"
-            className="flex-1 h-10 px-3 bg-surface border border-border text-sm"
+            className="flex-1 h-10 px-3 bg-surface border border-border rounded text-sm"
           />
           <button data-testid="comment-submit-button" onClick={postComment} className="h-10 px-4 bg-foreground text-background text-xs font-mono uppercase tracking-widest">Send</button>
         </div>

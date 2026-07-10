@@ -5,6 +5,7 @@ import { streamGemini, GEMINI_MODEL } from '@/lib/ai/gemini-provider';
 import { getIntent, systemFor, type IntentDef } from '@/lib/ai/intents';
 import type { GroundedContext, IntentParams } from '@/lib/ai/ai-context-builder';
 import type { AiSource } from '@/lib/ai/provider';
+import { sanitizePromptInput, looksLikeInjectionAttempt } from '@/lib/ai/prompt-safety';
 
 /** Encode a Server-Sent Event frame. */
 function sse(event: string, data: unknown): string {
@@ -12,9 +13,10 @@ function sse(event: string, data: unknown): string {
 }
 
 function buildPrompt(def: IntentDef, ctx: GroundedContext, params: IntentParams): string {
-  // Sanitize input: Strip away the exact boundary markers a malicious user might inject
+  // Sanitize input: strip control chars/padding, then strip away the exact
+  // boundary markers a malicious user might inject to escape the USER REQUEST block.
   const rawPrompt = params.prompt?.trim() || def.defaultPrompt;
-  const safePrompt = rawPrompt
+  const safePrompt = sanitizePromptInput(rawPrompt)
     .replace(/=== USER REQUEST ===/gi, '--- USER REQUEST ---')
     .replace(/=== END USER REQUEST ===/gi, '--- END USER REQUEST ---');
 
@@ -118,6 +120,18 @@ export function buildAiStream({ supabase, m, intent, params, signal }: StreamReq
           /* client disconnected */
         }
       };
+
+      if (params.prompt && looksLikeInjectionAttempt(params.prompt)) {
+        // Flag, don't block — a legitimate user can ask about "ignoring
+        // instructions" in a project-management context. This just makes
+        // probing attempts visible in the audit trail.
+        createAuditLog(supabase, {
+          organizationId: m.organizationId,
+          action: 'ai.suspected_injection',
+          entityType: 'ai_request',
+          metadata: { intent: def.intent },
+        }).catch(() => {});
+      }
 
       try {
         const ctx = await def.build(supabase, m, params);

@@ -46,7 +46,7 @@ export default function TeamClient({ connectedAccount }: TeamClientProps) {
           </div>
         )}
 
-        <div className="bg-surface p-6 border border-border text-sm text-muted-foreground text-center">
+        <div className="bg-surface p-6 border border-border rounded text-sm text-muted-foreground text-center">
           Team creation requires defining departments and setting up capacity constraints. For now, you can skip this step and set up teams later from your workspace settings.
         </div>
 

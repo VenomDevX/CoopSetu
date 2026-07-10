@@ -5,7 +5,7 @@ export const createCommentSchema = z.object({
   parent_comment_id: z.string().uuid().optional(),
   // organization_member_ids mentioned in the comment
   mentions: z.array(z.string().uuid()).max(50).optional(),
-});
+}).strict();
 
 export type CreateCommentInput = z.infer<typeof createCommentSchema>;
 

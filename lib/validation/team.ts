@@ -5,7 +5,7 @@ export const createDepartmentSchema = z.object({
   code: z.string().max(40).optional(),
   description: z.string().max(2000).optional(),
   head_member_id: z.string().uuid().optional(),
-});
+}).strict();
 
 export const createTeamSchema = z.object({
   name: z.string().min(1).max(120),
@@ -14,15 +14,15 @@ export const createTeamSchema = z.object({
   department_id: z.string().uuid().optional(),
   team_lead_member_id: z.string().uuid().optional(),
   capacity_hours_per_week: z.number().min(0).max(10000).optional(),
-});
+}).strict();
 
-export const updateTeamSchema = createTeamSchema.partial();
+export const updateTeamSchema = createTeamSchema.partial().strict();
 
 export const addTeamMemberSchema = z.object({
   organization_member_id: z.string().uuid(),
   role_in_team: z.string().max(80).optional(),
   allocation_percent: z.number().min(0).max(100).optional(),
-});
+}).strict();
 
 export type CreateTeamInput = z.infer<typeof createTeamSchema>;
 export type UpdateTeamInput = z.infer<typeof updateTeamSchema>;

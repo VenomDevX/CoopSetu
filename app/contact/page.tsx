@@ -141,7 +141,7 @@ export default function ContactPage() {
             </button>
             <Button 
               onClick={() => handleNavigate('/dashboard', 'demo')}
-              className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-9 px-6 text-xs font-mono uppercase tracking-widest"
+              className="bg-foreground text-background hover:bg-foreground/90 rounded h-9 px-6 text-xs font-mono uppercase tracking-widest"
               disabled={isNavigating}
             >
               {isNavigating && navType === 'demo' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Request Demo'}
@@ -174,7 +174,7 @@ export default function ContactPage() {
             {/* Left Side: Form */}
             <div className="lg:col-span-2">
               {submitStatus === 'success' && (
-                <div className="border border-border p-8 mb-8 bg-surface-hover flex flex-col gap-4">
+                <div className="border border-border rounded p-8 mb-8 bg-surface-hover flex flex-col gap-4">
                   <div className="flex items-center gap-3 text-foreground">
                     <CheckCircle2 className="w-5 h-5 text-foreground" />
                     <span className="font-mono text-xs uppercase tracking-widest font-bold">SUBMISSION_RECEIVED</span>
@@ -184,7 +184,7 @@ export default function ContactPage() {
                   </p>
                   <Button 
                     onClick={() => setSubmitStatus('idle')}
-                    className="border border-border bg-transparent text-foreground hover:bg-surface rounded-none h-10 px-6 text-xs font-mono uppercase tracking-widest self-start mt-2"
+                    className="border border-border rounded bg-transparent text-foreground hover:bg-surface rounded h-10 px-6 text-xs font-mono uppercase tracking-widest self-start mt-2"
                   >
                     Send another message
                   </Button>
@@ -228,7 +228,7 @@ export default function ContactPage() {
                         id="fullName"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        className="bg-transparent border border-border px-4 py-3 text-foreground focus:outline-none focus:border-foreground rounded-none uppercase"
+                        className="bg-transparent border border-border rounded px-4 py-3 text-foreground focus:outline-none focus:border-foreground rounded uppercase"
                         required
                         disabled={isLoading}
                       />
@@ -242,7 +242,7 @@ export default function ContactPage() {
                         id="workEmail"
                         value={workEmail}
                         onChange={(e) => setWorkEmail(e.target.value)}
-                        className="bg-transparent border border-border px-4 py-3 text-foreground focus:outline-none focus:border-foreground rounded-none lowercase"
+                        className="bg-transparent border border-border rounded px-4 py-3 text-foreground focus:outline-none focus:border-foreground rounded lowercase"
                         required
                         disabled={isLoading}
                       />
@@ -258,7 +258,7 @@ export default function ContactPage() {
                         id="companyName"
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
-                        className="bg-transparent border border-border px-4 py-3 text-foreground focus:outline-none focus:border-foreground rounded-none uppercase"
+                        className="bg-transparent border border-border rounded px-4 py-3 text-foreground focus:outline-none focus:border-foreground rounded uppercase"
                         required
                         disabled={isLoading}
                       />
@@ -271,7 +271,7 @@ export default function ContactPage() {
                         id="companySize"
                         value={companySize}
                         onChange={(e) => setCompanySize(e.target.value)}
-                        className="bg-background border border-border px-4 py-3 text-foreground focus:outline-none focus:border-foreground rounded-none uppercase"
+                        className="bg-background border border-border rounded px-4 py-3 text-foreground focus:outline-none focus:border-foreground rounded uppercase"
                         required
                         disabled={isLoading}
                       >
@@ -291,7 +291,7 @@ export default function ContactPage() {
                         id="role"
                         value={role}
                         onChange={(e) => setRole(e.target.value)}
-                        className="bg-transparent border border-border px-4 py-3 text-foreground focus:outline-none focus:border-foreground rounded-none uppercase"
+                        className="bg-transparent border border-border rounded px-4 py-3 text-foreground focus:outline-none focus:border-foreground rounded uppercase"
                         required
                         disabled={isLoading}
                       />
@@ -304,7 +304,7 @@ export default function ContactPage() {
                         id="topic"
                         value={topic}
                         onChange={(e) => setTopic(e.target.value)}
-                        className="bg-background border border-border px-4 py-3 text-foreground focus:outline-none focus:border-foreground rounded-none"
+                        className="bg-background border border-border rounded px-4 py-3 text-foreground focus:outline-none focus:border-foreground rounded"
                         required
                         disabled={isLoading}
                       >
@@ -322,7 +322,7 @@ export default function ContactPage() {
                       id="message"
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      className="bg-transparent border border-border px-4 py-3 text-foreground focus:outline-none focus:border-foreground rounded-none h-40 uppercase"
+                      className="bg-transparent border border-border rounded px-4 py-3 text-foreground focus:outline-none focus:border-foreground rounded h-40 uppercase"
                       maxLength={3000}
                       required
                       disabled={isLoading}
@@ -341,7 +341,7 @@ export default function ContactPage() {
 
                   <Button 
                     type="submit"
-                    className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs self-start"
+                    className="bg-foreground text-background hover:bg-foreground/90 rounded h-12 px-8 font-mono uppercase tracking-widest text-xs self-start"
                     disabled={isLoading}
                   >
                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send Message'}
@@ -352,7 +352,7 @@ export default function ContactPage() {
             </div>
 
             {/* Right Side: Sidebar Info */}
-            <div className="border border-border p-8 flex flex-col gap-8 h-fit bg-surface/30">
+            <div className="border border-border rounded p-8 flex flex-col gap-8 h-fit bg-surface/30">
               <div>
                 <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest block mb-3">Enterprise Sales</span>
                 <p className="text-sm text-foreground leading-relaxed font-sans">
@@ -379,7 +379,7 @@ export default function ContactPage() {
       {/* Loading Overlay */}
       {isNavigating && (
         <div className="fixed inset-0 z-[100] bg-background/50 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-surface border border-border p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
+          <div className="bg-surface border border-border rounded p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
             <Loader2 className="w-8 h-8 text-foreground animate-spin mb-6" />
             <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
               Navigating to workspace...

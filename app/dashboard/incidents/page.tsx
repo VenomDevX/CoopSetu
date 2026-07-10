@@ -128,18 +128,18 @@ export default function IncidentsPage() {
             <AlertTriangle className="w-4 h-4 mr-2" />
             Declare Incident
           </Button>
-          <AskAiButton intent="summarize-incidents" label="Ask Handoff AI" title="Incidents Digest" />
+          <AskAiButton intent="summarize-incidents" title="Incidents Digest" />
         </div>
       </div>
 
       {/* Top Controls */}
-      <div className="p-3 border border-border bg-surface-hover flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0">
+      <div className="p-3 border border-border rounded bg-surface-hover flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0">
         <div className="flex items-center gap-2 flex-1">
           <div className="relative flex-1 max-w-sm">
             <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder="SEARCH INCIDENTS..." className="w-full h-8 pl-8 pr-3 bg-background border border-border text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors" />
+            <input type="text" placeholder="SEARCH INCIDENTS..." className="w-full h-8 pl-8 pr-3 bg-background border border-border rounded text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors" />
           </div>
-          <Button variant="outline" size="sm" className="h-8 px-3 rounded-none text-[10px] font-mono uppercase border-border bg-background">
+          <Button variant="outline" size="sm" className="h-8 px-3 rounded text-[10px] font-mono uppercase border-border bg-background">
             <Filter className="w-3 h-3 mr-2" /> Filters
           </Button>
         </div>
@@ -147,7 +147,7 @@ export default function IncidentsPage() {
 
       {/* Main Content Area */}
       <div className="flex-1 min-h-0 flex gap-6">
-        <div className="flex-1 min-w-0 border border-border bg-background flex flex-col overflow-hidden">
+        <div className="flex-1 min-w-0 border border-border rounded bg-background flex flex-col overflow-hidden">
           <DataViewport className="border-0">
             <table className="w-full min-w-[800px] text-left text-sm font-mono border-collapse whitespace-nowrap">
               <thead className="sticky top-0 bg-surface-hover z-10 shadow-[0_1px_0_0_var(--border)]">
@@ -170,7 +170,7 @@ export default function IncidentsPage() {
                   <tr>
                     <td colSpan={10} className="p-8 text-center">
                       <div className="text-[10px] uppercase tracking-widest text-destructive mb-3">{error}</div>
-                      <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={() => refetch()}>
+                      <Button variant="outline" size="sm" className="rounded text-xs font-mono uppercase tracking-widest" onClick={() => refetch()}>
                         Retry
                       </Button>
                     </td>
@@ -186,7 +186,7 @@ export default function IncidentsPage() {
                 {!loading && !error && incidents.map((inc) => (
                   <tr key={inc.id} className="hover:bg-surface-hover group cursor-pointer transition-colors">
                     <td className="p-3">
-                      <Link href={`/dashboard/incidents/${inc.id}`} className="text-[10px] bg-surface border border-border px-1.5 py-0.5 inline-flex text-muted-foreground group-hover:text-foreground">
+                      <Link href={`/dashboard/incidents/${inc.id}`} className="text-[10px] bg-surface border border-border rounded px-1.5 py-0.5 inline-flex text-muted-foreground group-hover:text-foreground">
                         {inc.id}
                       </Link>
                     </td>
@@ -207,7 +207,7 @@ export default function IncidentsPage() {
                     <td className="p-3 text-xs truncate max-w-[150px]">{inc.impact}</td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 bg-surface border border-border flex items-center justify-center font-mono text-[9px] uppercase">{inc.commander.charAt(0)}</div>
+                        <div className="w-5 h-5 bg-surface border border-border rounded flex items-center justify-center font-mono text-[9px] uppercase">{inc.commander.charAt(0)}</div>
                         <span className="text-xs">{inc.commander}</span>
                       </div>
                     </td>
@@ -220,7 +220,7 @@ export default function IncidentsPage() {
                       <span className="text-xs">{inc.followUps} tasks</span>
                     </td>
                     <td className="p-3 text-right">
-                      <Link href={`/dashboard/incidents/${inc.id}`} className="inline-flex h-6 w-6 items-center justify-center rounded-none opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground">
+                      <Link href={`/dashboard/incidents/${inc.id}`} className="inline-flex h-6 w-6 items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground">
                         <ArrowRight className="w-4 h-4" />
                       </Link>
                     </td>

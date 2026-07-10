@@ -108,7 +108,7 @@ export function AddDeadlineModal({
       onClose={onClose}
       footer={
         <>
-          <button onClick={onClose} className="h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest">Cancel</button>
+          <button onClick={onClose} className="h-9 px-4 border border-border rounded font-mono text-xs uppercase tracking-widest">Cancel</button>
           <button data-testid="deadline-save-button" onClick={submit} disabled={busy}
             className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest disabled:opacity-50">
             {busy ? 'Creating...' : 'Create Deadline'}
@@ -171,7 +171,7 @@ export function AddDeadlineModal({
           <div>
             <label className={labelCls}>Description</label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)}
-              className="w-full h-20 p-3 bg-background border border-border text-sm focus:outline-none focus:border-foreground transition-colors resize-none"
+              className="w-full h-20 p-3 bg-background border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors resize-none"
               placeholder="Deadline context..." />
           </div>
 

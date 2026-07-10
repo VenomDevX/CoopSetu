@@ -32,7 +32,7 @@ export default function WorkspacePathClient() {
         <button
           type="button"
           onClick={() => choose('enterprise')}
-          className="w-full text-left p-6 border border-border bg-surface hover:border-foreground/40 hover:bg-surface-hover transition-colors group"
+          className="w-full text-left p-6 border border-border rounded bg-surface hover:border-foreground/40 hover:bg-surface-hover transition-colors group"
         >
           <div className="flex items-start justify-between gap-4">
             <div className="flex gap-4">
@@ -50,7 +50,7 @@ export default function WorkspacePathClient() {
         <button
           type="button"
           onClick={() => choose('student')}
-          className="w-full text-left p-6 border border-border bg-surface hover:border-foreground/40 hover:bg-surface-hover transition-colors group"
+          className="w-full text-left p-6 border border-border rounded bg-surface hover:border-foreground/40 hover:bg-surface-hover transition-colors group"
         >
           <div className="flex items-start justify-between gap-4">
             <div className="flex gap-4">

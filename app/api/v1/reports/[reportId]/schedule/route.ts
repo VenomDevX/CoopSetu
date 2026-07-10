@@ -7,7 +7,7 @@ import { z } from 'zod';
 const scheduleSchema = z.object({
   cron_expression: z.string().min(1),
   recipients: z.array(z.string().email()),
-});
+}).strict();
 
 // A trivial parser just for demonstration: 
 // Treat everything as running 1 day from now to mock the calculation

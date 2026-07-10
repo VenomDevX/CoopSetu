@@ -4,7 +4,7 @@ import { requireUser } from '@/lib/auth/require-user';
 import { requireOrganization, requirePermission } from '@/lib/auth/require-organization';
 import { addDocumentComment } from '@/services/document.service';
 
-const schema = z.object({ body: z.string().min(1).max(10000) });
+const schema = z.object({ body: z.string().min(1).max(10000) }).strict();
 
 export async function POST(req: Request, { params }: { params: Promise<{ documentId: string }> }) {
   return handle(async () => {

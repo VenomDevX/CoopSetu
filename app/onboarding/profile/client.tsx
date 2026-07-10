@@ -163,7 +163,7 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
           <div className="grid grid-cols-2 gap-4 w-full">
             <div className="space-y-1.5 w-full">
               <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Job Family</label>
-              <select className="w-full h-11 px-3 bg-surface border border-border text-sm focus:outline-none focus:border-foreground appearance-none rounded-none"
+              <select className="w-full h-11 px-3 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground appearance-none rounded"
                 value={jobFamily} onChange={(e) => setJobFamily(e.target.value)} required>
                 <option value="" disabled>Select...</option>
                 {JOB_FAMILIES.map(f => <option key={f} value={f}>{f}</option>)}
@@ -171,7 +171,7 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
             </div>
             <div className="space-y-1.5 w-full">
               <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Job Title</label>
-              <select className="w-full h-11 px-3 bg-surface border border-border text-sm focus:outline-none focus:border-foreground appearance-none rounded-none"
+              <select className="w-full h-11 px-3 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground appearance-none rounded"
                 value={jobTitleSelect} onChange={(e) => setJobTitleSelect(e.target.value)} required>
                 <option value="" disabled>Select...</option>
                 {JOB_TITLES.map(f => <option key={f} value={f}>{f}</option>)}
@@ -182,7 +182,7 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
           {jobTitleSelect === 'Other' && (
             <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 w-full">
               <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Custom Job Title</label>
-              <input className="w-full h-11 px-4 bg-surface border border-border text-sm focus:outline-none focus:border-foreground transition-colors"
+              <input className="w-full h-11 px-4 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors"
                 placeholder="e.g. Lead Catalyst" value={customJobTitle} onChange={(e) => setCustomJobTitle(e.target.value)} required />
             </div>
           )}
@@ -190,7 +190,7 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
           <div className="grid grid-cols-2 gap-4 w-full">
             <div className="space-y-1.5 w-full">
               <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Specialization</label>
-              <select className="w-full h-11 px-3 bg-surface border border-border text-sm focus:outline-none focus:border-foreground appearance-none rounded-none"
+              <select className="w-full h-11 px-3 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground appearance-none rounded"
                 value={specializationSelect} onChange={(e) => setSpecializationSelect(e.target.value)} required>
                 <option value="" disabled>Select...</option>
                 {SPECIALIZATIONS.map(f => <option key={f} value={f}>{f}</option>)}
@@ -199,7 +199,7 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
             {MANAGER_TITLES.includes(jobTitleSelect) && (
               <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 w-full">
                 <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Manager Type</label>
-                <select className="w-full h-11 px-3 bg-surface border border-border text-sm focus:outline-none focus:border-foreground appearance-none rounded-none"
+                <select className="w-full h-11 px-3 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground appearance-none rounded"
                   value={managerType} onChange={(e) => setManagerType(e.target.value)}>
                   {MANAGER_TYPES.map(f => <option key={f} value={f}>{f}</option>)}
                 </select>
@@ -208,7 +208,7 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
           </div>
 
           {MANAGER_TITLES.includes(jobTitleSelect) && (
-            <p className="text-[10px] text-muted-foreground font-mono bg-surface p-2 border border-border animate-in fade-in">
+            <p className="text-[10px] text-muted-foreground font-mono bg-surface p-2 border border-border rounded animate-in fade-in">
               Your job title describes your work profile. Your system authority is assigned separately by your organization.
             </p>
           )}
@@ -216,7 +216,7 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
           {specializationSelect === 'Other' && (
             <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 w-full">
               <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Custom Specialization</label>
-              <input className="w-full h-11 px-4 bg-surface border border-border text-sm focus:outline-none focus:border-foreground transition-colors"
+              <input className="w-full h-11 px-4 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors"
                 placeholder="e.g. Embedded Systems" value={customSpecialization} onChange={(e) => setCustomSpecialization(e.target.value)} required />
             </div>
           )}
@@ -226,7 +226,7 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
               <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Professional Description (Optional)</label>
               <span className="text-[10px] font-mono text-muted-foreground">{description.length} / 500</span>
             </div>
-            <textarea className="w-full h-24 px-4 py-3 bg-surface border border-border text-sm focus:outline-none focus:border-foreground transition-colors resize-none"
+            <textarea className="w-full h-24 px-4 py-3 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors resize-none"
               placeholder="Briefly describe your responsibilities..." maxLength={500} value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
         </div>

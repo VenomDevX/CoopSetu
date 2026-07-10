@@ -48,7 +48,7 @@ export default function AboutPage() {
             </button>
             <Button 
               onClick={() => handleNavigate('/dashboard', 'demo')}
-              className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-9 px-6 text-xs font-mono uppercase tracking-widest"
+              className="bg-foreground text-background hover:bg-foreground/90 rounded h-9 px-6 text-xs font-mono uppercase tracking-widest"
               disabled={isNavigating}
             >
               {isNavigating && navType === 'demo' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Request Demo'}
@@ -77,35 +77,35 @@ export default function AboutPage() {
 
           {/* VALUES / SECTIONS */}
           <section className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-24">
-            <div className="border border-border p-8 flex flex-col gap-4">
+            <div className="border border-border rounded p-8 flex flex-col gap-4">
               <span className="font-mono text-xs text-muted-foreground">01 — WHAT HANDOFF DOES</span>
               <p className="text-base text-foreground leading-relaxed">
                 Project, task, sprint, team, QA, security, approval, and release coordination in one controlled workspace.
               </p>
             </div>
 
-            <div className="border border-border p-8 flex flex-col gap-4">
+            <div className="border border-border rounded p-8 flex flex-col gap-4">
               <span className="font-mono text-xs text-muted-foreground">02 — BUILT FOR ACCOUNTABILITY</span>
               <p className="text-base text-foreground leading-relaxed">
                 Every action is connected to the right organization, project, team, role, and audit trail.
               </p>
             </div>
 
-            <div className="border border-border p-8 flex flex-col gap-4">
+            <div className="border border-border rounded p-8 flex flex-col gap-4">
               <span className="font-mono text-xs text-muted-foreground">03 — ROLE-AWARE BY DESIGN</span>
               <p className="text-base text-foreground leading-relaxed">
                 Owners, Admins, Project Managers, Team Managers, Developers, QA, Security, Auditors, and Client Viewers see only what they are authorized to access.
               </p>
             </div>
 
-            <div className="border border-border p-8 flex flex-col gap-4">
+            <div className="border border-border rounded p-8 flex flex-col gap-4">
               <span className="font-mono text-xs text-muted-foreground">04 — REALTIME DELIVERY OPERATIONS</span>
               <p className="text-base text-foreground leading-relaxed">
                 Task assignments, updates, comments, notifications, workload, blockers, and delivery signals update without manual refresh.
               </p>
             </div>
 
-            <div className="border border-border p-8 md:col-span-2 flex flex-col gap-4">
+            <div className="border border-border rounded p-8 md:col-span-2 flex flex-col gap-4">
               <span className="font-mono text-xs text-muted-foreground">05 — TRUSTED DATA, NOT FABRICATED DASHBOARDS</span>
               <p className="text-base text-foreground leading-relaxed">
                 Show truthful data and accurate empty states. Do not invent projects, employees, alerts, metrics, or delivery risks.
@@ -114,7 +114,7 @@ export default function AboutPage() {
           </section>
 
           {/* BUILT FOR SEGMENTS */}
-          <section className="border border-border py-8 mb-24 overflow-hidden relative flex items-center bg-surface/30">
+          <section className="border border-border rounded py-8 mb-24 overflow-hidden relative flex items-center bg-surface/30">
             <div className="absolute left-0 px-8 py-8 z-10 bg-background/90 backdrop-blur-md border-r border-border h-full flex items-center">
               <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest">BUILT FOR</span>
             </div>
@@ -135,7 +135,7 @@ export default function AboutPage() {
           </section>
 
           {/* DEVELOPER SECTION */}
-          <section className="border border-border p-8 mb-24 bg-surface/50">
+          <section className="border border-border rounded p-8 mb-24 bg-surface/50">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="md:col-span-2 flex flex-col justify-between gap-4">
                 <div>
@@ -189,14 +189,14 @@ export default function AboutPage() {
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
               <Button 
                 onClick={() => handleNavigate('/dashboard', 'demo')}
-                className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs w-full sm:w-auto"
+                className="bg-foreground text-background hover:bg-foreground/90 rounded h-12 px-8 font-mono uppercase tracking-widest text-xs w-full sm:w-auto"
                 disabled={isNavigating}
               >
                 Request a Demo
               </Button>
               <Button 
                 onClick={() => handleNavigate('/dashboard', 'signup')}
-                className="border border-border bg-transparent text-foreground hover:bg-surface rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs w-full sm:w-auto"
+                className="border border-border rounded bg-transparent text-foreground hover:bg-surface rounded h-12 px-8 font-mono uppercase tracking-widest text-xs w-full sm:w-auto"
                 disabled={isNavigating}
               >
                 Create Workspace <ArrowRight className="ml-2 w-4 h-4" />
@@ -219,7 +219,7 @@ export default function AboutPage() {
       {/* Loading Overlay */}
       {isNavigating && (
         <div className="fixed inset-0 z-[100] bg-background/50 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-surface border border-border p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
+          <div className="bg-surface border border-border rounded p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
             <Loader2 className="w-8 h-8 text-foreground animate-spin mb-6" />
             <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
               Navigating to workspace...

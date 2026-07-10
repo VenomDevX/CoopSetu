@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { Errors } from '@/lib/api/errors';
 import { createAuditLog } from '@/lib/audit/create-audit-log';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { encrypt, decrypt } from '@/lib/security/encryption';
+import { encryptIntegrationSecrets, decryptIntegrationSecrets } from '@/lib/integrations/encrypt-secrets';
 import { z } from 'zod';
 import { connectRepositorySchema, importGithubRepositorySchema } from '@/lib/validation/integration';
 import {
@@ -143,9 +143,8 @@ export async function listIntegrations(supabase: SupabaseClient, orgId: string) 
 }
 
 export async function updateIntegrationSecrets(supabase: SupabaseClient, orgId: string, integrationId: string, secrets: Record<string, string>) {
-  const secretsJson = JSON.stringify(secrets);
-  const encryptedPayload = encrypt(secretsJson);
-  
+  const encryptedPayload = encryptIntegrationSecrets(secrets);
+
   const { data, error } = await supabase.from('integrations')
     .update({ encrypted_secrets: encryptedPayload, status: 'ACTIVE' })
     .eq('id', integrationId)
@@ -181,9 +180,8 @@ export async function getDecryptedIntegrationSecrets(orgId: string, integrationI
     
   if (error || !data) throw Errors.notFound('Integration not found.');
   if (!data.encrypted_secrets) return null;
-  
-  const decryptedJson = decrypt(data.encrypted_secrets);
-  return JSON.parse(decryptedJson) as Record<string, string>;
+
+  return decryptIntegrationSecrets<Record<string, string>>(data.encrypted_secrets);
 }
 
 export async function listPullRequests(supabase: SupabaseClient, orgId: string) {

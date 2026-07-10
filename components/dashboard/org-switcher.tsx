@@ -53,7 +53,7 @@ export function OrgSwitcher() {
         <ChevronsUpDown className="w-3 h-3" />
       </button>
       {open && (
-        <div className="absolute bottom-full mb-2 left-0 w-56 bg-background border border-border z-50 shadow-lg">
+        <div className="absolute bottom-full mb-2 left-0 w-56 bg-background border border-border rounded z-50 shadow-lg">
           {orgs.map((o) => (
             <button key={o.id} onClick={() => switchOrg(o.id)}
               className="w-full flex items-center justify-between px-3 py-2 text-xs hover:bg-surface-hover text-left">

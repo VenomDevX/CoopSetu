@@ -4,7 +4,7 @@ import { requireUser } from '@/lib/auth/require-user';
 import { requireOrganization, requirePermission } from '@/lib/auth/require-organization';
 import { updateRolePermissions } from '@/services/role.service';
 
-const schema = z.object({ permissions: z.array(z.string()).max(100) });
+const schema = z.object({ permissions: z.array(z.string()).max(100) }).strict();
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ roleId: string }> }) {
   return handle(async () => {

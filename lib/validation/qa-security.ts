@@ -15,7 +15,7 @@ export const createBugSchema = z.object({
   primary_assignee_member_id: z.string().uuid('Valid primary assignee is required'),
   additional_assignee_ids: z.array(z.string().uuid()).optional(),
   attachment_ids: z.array(z.string().uuid()).optional(),
-});
+}).strict();
 
 export const createTestPlanSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
@@ -35,8 +35,8 @@ export const createTestPlanSchema = z.object({
     steps: z.string().optional(),
     expected_result: z.string().optional(),
     priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional(),
-  })).optional(),
-});
+  }).strict()).optional(),
+}).strict();
 
 export const createSecurityReviewSchema = z.object({
   title: z.string().min(1, 'Review title is required').max(200),
@@ -50,4 +50,4 @@ export const createSecurityReviewSchema = z.object({
   scope: z.string().optional(),
   description: z.string().optional(),
   due_date: z.string().optional(),
-});
+}).strict();
