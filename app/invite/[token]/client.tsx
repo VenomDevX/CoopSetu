@@ -87,7 +87,7 @@ export default function InviteClient({ token, initialData, error: loadError, cur
           
           <button 
             onClick={() => router.push('/dashboard')}
-            className="w-full h-11 border border-border text-foreground text-xs font-mono uppercase tracking-widest flex items-center justify-center hover:bg-surface-hover transition-colors"
+            className="w-full h-11 border border-border rounded text-foreground text-xs font-mono uppercase tracking-widest flex items-center justify-center hover:bg-surface-hover transition-colors"
           >
             Decline or Go to Dashboard
           </button>

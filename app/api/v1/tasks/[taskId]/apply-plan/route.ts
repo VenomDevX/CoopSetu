@@ -6,7 +6,7 @@ import { requireOrganization, requirePermission } from '@/lib/auth/require-organ
 
 const schema = z.object({
   items: z.array(z.string().min(1)).min(1),
-});
+}).strict();
 
 export async function POST(req: Request, { params }: { params: Promise<{ taskId: string }> }) {
   return handle(async () => {

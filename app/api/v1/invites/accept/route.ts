@@ -5,8 +5,9 @@ import { Errors } from '@/lib/api/errors';
 import { requireUser } from '@/lib/auth/require-user';
 import { ACTIVE_ORG_COOKIE } from '@/lib/auth/get-current-membership';
 import { createClient } from '@/lib/supabase/server';
+import { requireLegalAccepted } from '@/lib/legal/require-legal-accepted';
 
-const schema = z.object({ token: z.string().min(1) });
+const schema = z.object({ token: z.string().min(1) }).strict();
 
 const MESSAGES: Record<string, string> = {
   INVITE_NOT_FOUND: 'This invite link is invalid.',
@@ -33,7 +34,8 @@ export async function GET(req: Request) {
 /** Accept an invite for the current user. */
 export async function POST(req: Request) {
   return handle(async () => {
-    await requireUser();
+    const { user, supabase: authedSupabase } = await requireUser();
+    await requireLegalAccepted(user, authedSupabase);
     const supabase = await createClient();
     const { token } = schema.parse(await req.json());
     const { data, error } = await supabase.rpc('accept_invite', { p_token: token });

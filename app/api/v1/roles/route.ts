@@ -9,7 +9,7 @@ const schema = z.object({
   name: z.string().min(2).max(80),
   description: z.string().max(500).optional(),
   permissions: z.array(z.string()).max(100).default([]),
-});
+}).strict();
 
 export async function GET() {
   return handle(async () => {

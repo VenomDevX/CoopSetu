@@ -115,7 +115,7 @@ export default function PricingPage() {
             </button>
             <Button 
               onClick={() => handleNavigate('/dashboard', 'demo')}
-              className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-9 px-6 text-xs font-mono uppercase tracking-widest"
+              className="bg-foreground text-background hover:bg-foreground/90 rounded h-9 px-6 text-xs font-mono uppercase tracking-widest"
               disabled={isNavigating}
             >
               {isNavigating && navType === 'demo' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Request Demo'}
@@ -142,14 +142,14 @@ export default function PricingPage() {
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Button 
                 onClick={() => handleNavigate('/contact', 'sales')}
-                className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+                className="bg-foreground text-background hover:bg-foreground/90 rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
                 Start a Conversation
               </Button>
               <Button 
                 onClick={() => handleNavigate('/contact', 'demo')}
                 variant="outline"
-                className="border-border text-foreground hover:bg-surface-hover rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+                className="border-border text-foreground hover:bg-surface-hover rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
                 Request Demo
               </Button>
@@ -161,16 +161,16 @@ export default function PricingPage() {
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32">
           {/* Billing Toggle */}
           <div className="flex flex-col items-center justify-center mb-16">
-            <div className="flex items-center gap-4 bg-surface border border-border p-1">
+            <div className="flex items-center gap-4 bg-surface border border-border rounded p-1">
               <button 
                 onClick={() => setIsAnnual(false)}
-                className={`px-6 py-2 text-xs font-mono uppercase tracking-widest transition-colors ${!isAnnual ? 'bg-background border border-border text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`px-6 py-2 text-xs font-mono uppercase tracking-widest transition-colors ${!isAnnual ? 'bg-background border border-border rounded text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 Monthly
               </button>
               <button 
                 onClick={() => setIsAnnual(true)}
-                className={`px-6 py-2 text-xs font-mono uppercase tracking-widest transition-colors ${isAnnual ? 'bg-background border border-border text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`px-6 py-2 text-xs font-mono uppercase tracking-widest transition-colors ${isAnnual ? 'bg-background border border-border rounded text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 Annually
               </button>
@@ -183,7 +183,7 @@ export default function PricingPage() {
           {/* Pricing Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Team Plan */}
-            <div className="border border-border bg-background p-8 flex flex-col relative">
+            <div className="border border-border rounded bg-background p-8 flex flex-col relative">
               <div className="mb-8">
                 <h3 className="text-2xl font-bold tracking-tight mb-2">Team</h3>
                 <p className="text-sm text-muted-foreground">Growing product and engineering teams.</p>
@@ -199,7 +199,7 @@ export default function PricingPage() {
               <Button 
                 onClick={() => handleNavigate('/signup', 'team')}
                 variant="outline" 
-                className="w-full rounded-none border-border h-10 font-mono text-xs uppercase tracking-widest mb-8 hover:bg-surface-hover"
+                className="w-full rounded border-border h-10 font-mono text-xs uppercase tracking-widest mb-8 hover:bg-surface-hover"
               >
                 Start with Team
               </Button>
@@ -244,7 +244,7 @@ export default function PricingPage() {
               </div>
               <Button 
                 onClick={() => handleNavigate('/signup', 'business')}
-                className="w-full rounded-none bg-foreground text-background h-10 font-mono text-xs uppercase tracking-widest mb-8 hover:bg-foreground/90"
+                className="w-full rounded bg-foreground text-background h-10 font-mono text-xs uppercase tracking-widest mb-8 hover:bg-foreground/90"
               >
                 Choose Business
               </Button>
@@ -272,7 +272,7 @@ export default function PricingPage() {
             </div>
 
             {/* Enterprise Plan */}
-            <div className="border border-border bg-background p-8 flex flex-col relative">
+            <div className="border border-border rounded bg-background p-8 flex flex-col relative">
               <div className="mb-8">
                 <h3 className="text-2xl font-bold tracking-tight mb-2">Enterprise</h3>
                 <p className="text-sm text-muted-foreground">Large technology, fintech, and regulated organizations.</p>
@@ -288,7 +288,7 @@ export default function PricingPage() {
               <Button 
                 onClick={() => handleNavigate('/contact', 'sales')}
                 variant="outline" 
-                className="w-full rounded-none border-border h-10 font-mono text-xs uppercase tracking-widest mb-8 hover:bg-surface-hover"
+                className="w-full rounded border-border h-10 font-mono text-xs uppercase tracking-widest mb-8 hover:bg-surface-hover"
               >
                 Contact Sales
               </Button>
@@ -332,30 +332,30 @@ export default function PricingPage() {
                 </p>
                 <Button 
                   onClick={() => handleNavigate('/contact', 'ai')}
-                  className="rounded-none bg-foreground text-background h-10 px-6 font-mono text-xs uppercase tracking-widest"
+                  className="rounded bg-foreground text-background h-10 px-6 font-mono text-xs uppercase tracking-widest"
                 >
                   Learn About Enterprise AI
                 </Button>
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-background border border-border p-4 flex gap-3">
+                <div className="bg-background border border-border rounded p-4 flex gap-3">
                   <Lock className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                   <div className="text-sm font-bold">Permission-aware AI</div>
                 </div>
-                <div className="bg-background border border-border p-4 flex gap-3">
+                <div className="bg-background border border-border rounded p-4 flex gap-3">
                   <FileText className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                   <div className="text-sm font-bold">Source citations</div>
                 </div>
-                <div className="bg-background border border-border p-4 flex gap-3">
+                <div className="bg-background border border-border rounded p-4 flex gap-3">
                   <Eye className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                   <div className="text-sm font-bold">Prompt logging</div>
                 </div>
-                <div className="bg-background border border-border p-4 flex gap-3">
+                <div className="bg-background border border-border rounded p-4 flex gap-3">
                   <Shield className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                   <div className="text-sm font-bold">Restricted data controls</div>
                 </div>
-                <div className="bg-background border border-border p-4 flex gap-3">
+                <div className="bg-background border border-border rounded p-4 flex gap-3">
                   <UserCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                   <div className="text-sm font-bold">Human approval workflows</div>
                 </div>
@@ -371,7 +371,7 @@ export default function PricingPage() {
             <p className="text-muted-foreground">Find the right level of control and visibility for your organization.</p>
           </div>
           
-          <div className="overflow-x-auto border border-border bg-background shadow-xl">
+          <div className="overflow-x-auto border border-border rounded bg-background shadow-xl">
             <table className="w-full text-left text-sm border-collapse min-w-[800px]">
               <thead>
                 <tr className="border-b border-border bg-surface">
@@ -538,7 +538,7 @@ export default function PricingPage() {
           
           <div className="space-y-4">
             {FAQS.map((faq, i) => (
-              <div key={i} className="border border-border bg-background">
+              <div key={i} className="border border-border rounded bg-background">
                 <button 
                   onClick={() => toggleFaq(i)}
                   className="w-full flex items-center justify-between p-6 text-left"
@@ -568,14 +568,14 @@ export default function PricingPage() {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button 
               onClick={() => handleNavigate('/contact', 'sales')}
-              className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+              className="bg-foreground text-background hover:bg-foreground/90 rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
             >
               Contact Sales
             </Button>
             <Button 
               onClick={() => handleNavigate('/dashboard', 'demo')}
               variant="outline"
-              className="border-border text-foreground hover:bg-surface-hover rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+              className="border-border text-foreground hover:bg-surface-hover rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
             >
               Request Demo
             </Button>
@@ -589,7 +589,7 @@ export default function PricingPage() {
       {/* Loading Overlay */}
       {isNavigating && (
         <div className="fixed inset-0 z-[100] bg-background/50 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-surface border border-border p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
+          <div className="bg-surface border border-border rounded p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
             <Loader2 className="w-8 h-8 text-foreground animate-spin mb-6" />
             <div className="font-mono text-xs uppercase tracking-widest text-center text-muted-foreground">
               {navType === 'signin' ? 'AUTHENTICATING' : 'INITIALIZING WORKSPACE'}...

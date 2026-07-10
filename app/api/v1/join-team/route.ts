@@ -6,6 +6,7 @@ import { checkRateLimit } from '@/lib/auth/rate-limit';
 import { joinCodeSchema } from '@/lib/validation/student-team';
 import { redeemJoinCode } from '@/services/student-workspace.service';
 import { ACTIVE_ORG_COOKIE } from '@/lib/auth/get-current-membership';
+import { requireLegalAccepted } from '@/lib/legal/require-legal-accepted';
 
 export async function POST(req: NextRequest) {
   return handle(async () => {
@@ -15,6 +16,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { user, supabase } = await requireUser();
+    await requireLegalAccepted(user, supabase);
     const { code } = joinCodeSchema.parse(await req.json());
 
     const org = await redeemJoinCode(supabase, user.id, code);

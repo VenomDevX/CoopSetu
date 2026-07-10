@@ -92,7 +92,7 @@ export default function SecurityPage() {
             </button>
             <Button 
               onClick={() => handleNavigate('/dashboard', 'demo')}
-              className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-9 px-6 text-xs font-mono uppercase tracking-widest"
+              className="bg-foreground text-background hover:bg-foreground/90 rounded h-9 px-6 text-xs font-mono uppercase tracking-widest"
               disabled={isNavigating}
             >
               {isNavigating && navType === 'demo' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Request Demo'}
@@ -119,13 +119,13 @@ export default function SecurityPage() {
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Button 
                 onClick={() => handleNavigate('/contact', 'security')}
-                className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+                className="bg-foreground text-background hover:bg-foreground/90 rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
                 Talk to Security
               </Button>
               <Button 
                 variant="outline"
-                className="border-border text-foreground hover:bg-surface-hover rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+                className="border-border text-foreground hover:bg-surface-hover rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
                 Request Demo
               </Button>
@@ -133,7 +133,7 @@ export default function SecurityPage() {
           </div>
 
           {/* Hero Visual - Security Console */}
-          <div className="w-full bg-surface-elevated border border-border p-4 shadow-2xl relative overflow-hidden max-w-5xl mx-auto">
+          <div className="w-full bg-surface-elevated border border-border rounded p-4 shadow-2xl relative overflow-hidden max-w-5xl mx-auto">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-50" />
             
             <div className="flex items-center justify-between border-b border-border pb-4 mb-4">
@@ -151,7 +151,7 @@ export default function SecurityPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex flex-col gap-4">
-                <div className="border border-border bg-background p-4">
+                <div className="border border-border rounded bg-background p-4">
                   <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Identity Provider</div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold">SSO Enforced</span>
@@ -162,7 +162,7 @@ export default function SecurityPage() {
                     <CheckCircle2 className="w-3 h-3 text-emerald-500" />
                   </div>
                 </div>
-                <div className="border border-border bg-background p-4 flex-1">
+                <div className="border border-border rounded bg-background p-4 flex-1">
                   <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Recent Audit Records</div>
                   <div className="space-y-2 font-mono text-[10px]">
                     <div className="flex justify-between items-center opacity-70">
@@ -181,14 +181,14 @@ export default function SecurityPage() {
                 </div>
               </div>
 
-              <div className="col-span-2 border border-border bg-background p-4">
+              <div className="col-span-2 border border-border rounded bg-background p-4">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2 flex justify-between">
                   <span>Active Release Approvals</span>
                   <span className="text-accent">PIPELINE-24</span>
                 </div>
                 
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4 bg-surface p-3 border border-border">
+                  <div className="flex items-center gap-4 bg-surface p-3 border border-border rounded">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                     <div className="flex-1">
                       <div className="text-xs font-bold">QA Sign-off</div>
@@ -197,7 +197,7 @@ export default function SecurityPage() {
                     <div className="text-[10px] font-mono">10:42 AM</div>
                   </div>
                   
-                  <div className="flex items-center gap-4 bg-surface p-3 border border-border">
+                  <div className="flex items-center gap-4 bg-surface p-3 border border-border rounded">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                     <div className="flex-1">
                       <div className="text-xs font-bold">Security Review</div>
@@ -216,7 +216,7 @@ export default function SecurityPage() {
                       size="sm" 
                       onClick={() => setIsReviewed(true)}
                       disabled={isReviewed}
-                      className={`h-6 rounded-none text-[10px] font-mono uppercase tracking-widest ${isReviewed ? 'bg-background text-foreground border border-border' : 'bg-foreground text-background'}`}
+                      className={`h-6 rounded text-[10px] font-mono uppercase tracking-widest ${isReviewed ? 'bg-background text-foreground border border-border rounded' : 'bg-foreground text-background'}`}
                     >
                       {isReviewed ? <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Approved</span> : 'Review'}
                     </Button>
@@ -246,14 +246,14 @@ export default function SecurityPage() {
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> SCIM provisioning</div>
               </div>
               <div className="flex flex-wrap gap-3 mt-8">
-                <span className="text-[10px] font-mono bg-surface border border-border px-3 py-1 font-bold">SSO</span>
-                <span className="text-[10px] font-mono bg-surface border border-border px-3 py-1 font-bold">MFA</span>
-                <span className="text-[10px] font-mono bg-surface border border-border px-3 py-1 font-bold">SAML</span>
-                <span className="text-[10px] font-mono bg-surface border border-border px-3 py-1 font-bold">OpenID Connect</span>
+                <span className="text-[10px] font-mono bg-surface border border-border rounded px-3 py-1 font-bold">SSO</span>
+                <span className="text-[10px] font-mono bg-surface border border-border rounded px-3 py-1 font-bold">MFA</span>
+                <span className="text-[10px] font-mono bg-surface border border-border rounded px-3 py-1 font-bold">SAML</span>
+                <span className="text-[10px] font-mono bg-surface border border-border rounded px-3 py-1 font-bold">OpenID Connect</span>
               </div>
             </div>
             
-            <div className="border border-border bg-surface p-6 shadow-xl overflow-x-auto">
+            <div className="border border-border rounded bg-surface p-6 shadow-xl overflow-x-auto">
                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2">
                  Role & Permission Matrix
                </div>
@@ -291,7 +291,7 @@ export default function SecurityPage() {
         {/* SECTION 2 - Approval & separation of duties */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32 border-t border-border pt-32">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="order-2 lg:order-1 border border-border bg-surface p-8 shadow-xl">
+            <div className="order-2 lg:order-1 border border-border rounded bg-surface p-8 shadow-xl">
                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-6 border-b border-border pb-2 flex justify-between">
                  <span>Release Approval Pipeline</span>
                  <span className="text-foreground font-bold">STRICT ENFORCEMENT</span>
@@ -312,7 +312,7 @@ export default function SecurityPage() {
                        )}
                      </div>
                      
-                     <div className="w-[calc(100%-3rem)] md:w-[calc(50%-2rem)] bg-background p-4 border border-border shadow-sm">
+                     <div className="w-[calc(100%-3rem)] md:w-[calc(50%-2rem)] bg-background p-4 border border-border rounded shadow-sm">
                        <div className="flex justify-between items-start mb-1">
                          <div className="text-xs font-bold uppercase tracking-widest font-mono">{step.name}</div>
                          {step.status === 'approved' ? (
@@ -359,7 +359,7 @@ export default function SecurityPage() {
             </p>
           </div>
           
-          <div className="border border-border bg-background shadow-xl overflow-x-auto">
+          <div className="border border-border rounded bg-background shadow-xl overflow-x-auto">
             <div className="p-4 bg-surface border-b border-border flex justify-between items-center">
               <span className="font-mono text-xs uppercase tracking-widest font-bold">System Audit Log</span>
               <Button 
@@ -367,7 +367,7 @@ export default function SecurityPage() {
                 size="sm" 
                 onClick={handleExportCSV}
                 disabled={exportState !== 'idle'}
-                className="h-7 text-[10px] font-mono rounded-none border-border"
+                className="h-7 text-[10px] font-mono rounded border-border"
               >
                 {exportState === 'idle' ? 'Export CSV' : exportState === 'exporting' ? <span className="flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin"/> Exporting...</span> : <span className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3"/> Downloaded</span>}
               </Button>
@@ -394,7 +394,7 @@ export default function SecurityPage() {
                   <tr key={i} className="hover:bg-surface-hover">
                     <td className="p-3 text-muted-foreground">{log.time}</td>
                     <td className="p-3 font-bold">{log.actor}</td>
-                    <td className="p-3"><span className="border border-border px-1.5 py-0.5 bg-surface">{log.type}</span></td>
+                    <td className="p-3"><span className="border border-border rounded px-1.5 py-0.5 bg-surface">{log.type}</span></td>
                     <td className="p-3">{log.res}</td>
                     <td className="p-3 opacity-80">{log.det}</td>
                     <td className="p-3 text-right text-muted-foreground">{log.ip}</td>
@@ -414,12 +414,12 @@ export default function SecurityPage() {
 
         {/* SECTION 4 & 5 - Data Governance & AI Controls */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32 border-t border-border pt-32 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="border border-border bg-background p-8 lg:p-12">
+          <div className="border border-border rounded bg-background p-8 lg:p-12">
             <Database className="w-8 h-8 mb-6 text-foreground" />
             <h2 className="text-2xl font-bold tracking-tight mb-4">Keep sensitive work appropriately classified.</h2>
             <div className="flex gap-2 mb-8">
-              <span className="text-[10px] font-mono px-2 py-0.5 border border-border bg-surface">PUBLIC</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 border border-border bg-surface">INTERNAL</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 border border-border rounded bg-surface">PUBLIC</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 border border-border rounded bg-surface">INTERNAL</span>
               <span className="text-[10px] font-mono px-2 py-0.5 border border-orange-500 text-orange-500 bg-orange-500/10">CONFIDENTIAL</span>
               <span className="text-[10px] font-mono px-2 py-0.5 border border-destructive text-destructive bg-destructive/10">RESTRICTED</span>
             </div>
@@ -443,7 +443,7 @@ export default function SecurityPage() {
             </div>
           </div>
           
-          <div className="border border-border bg-surface p-8 lg:p-12 flex flex-col">
+          <div className="border border-border rounded bg-surface p-8 lg:p-12 flex flex-col">
             <Bot className="w-8 h-8 mb-6 text-accent" />
             <h2 className="text-2xl font-bold tracking-tight mb-4">AI that works within your security model.</h2>
             <p className="text-sm text-muted-foreground mb-8">
@@ -471,19 +471,19 @@ export default function SecurityPage() {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto font-mono text-xs uppercase tracking-widest text-center">
-            <div className="border border-border bg-surface p-6 flex flex-col items-center justify-center gap-3 hover:bg-background transition-colors cursor-default">
+            <div className="border border-border rounded bg-surface p-6 flex flex-col items-center justify-center gap-3 hover:bg-background transition-colors cursor-default">
               <FileCode2 className="w-6 h-6 text-muted-foreground" />
               Security review checklists
             </div>
-            <div className="border border-border bg-surface p-6 flex flex-col items-center justify-center gap-3 hover:bg-background transition-colors cursor-default">
+            <div className="border border-border rounded bg-surface p-6 flex flex-col items-center justify-center gap-3 hover:bg-background transition-colors cursor-default">
               <Terminal className="w-6 h-6 text-muted-foreground" />
               Vulnerability tracking
             </div>
-            <div className="border border-border bg-surface p-6 flex flex-col items-center justify-center gap-3 hover:bg-background transition-colors cursor-default">
+            <div className="border border-border rounded bg-surface p-6 flex flex-col items-center justify-center gap-3 hover:bg-background transition-colors cursor-default">
               <FileText className="w-6 h-6 text-muted-foreground" />
               Threat model documents
             </div>
-            <div className="border border-border bg-surface p-6 flex flex-col items-center justify-center gap-3 hover:bg-background transition-colors cursor-default">
+            <div className="border border-border rounded bg-surface p-6 flex flex-col items-center justify-center gap-3 hover:bg-background transition-colors cursor-default">
               <Clock className="w-6 h-6 text-muted-foreground" />
               Incident follow-up
             </div>
@@ -496,12 +496,12 @@ export default function SecurityPage() {
             <Fingerprint className="w-10 h-10 mx-auto mb-6 text-muted-foreground opacity-50" />
             <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-8">Organize the evidence behind controlled delivery.</h2>
             <div className="flex flex-wrap justify-center gap-3 font-mono text-[10px] uppercase tracking-widest">
-              <span className="border border-border bg-background px-4 py-2">Supports compliance workflows</span>
-              <span className="border border-border bg-background px-4 py-2">Supports audit evidence collection</span>
-              <span className="border border-border bg-background px-4 py-2">Supports review deadlines</span>
-              <span className="border border-border bg-background px-4 py-2">Supports approval records</span>
-              <span className="border border-border bg-background px-4 py-2">Supports policy documentation</span>
-              <span className="border border-border bg-background px-4 py-2">Supports risk registers</span>
+              <span className="border border-border rounded bg-background px-4 py-2">Supports compliance workflows</span>
+              <span className="border border-border rounded bg-background px-4 py-2">Supports audit evidence collection</span>
+              <span className="border border-border rounded bg-background px-4 py-2">Supports review deadlines</span>
+              <span className="border border-border rounded bg-background px-4 py-2">Supports approval records</span>
+              <span className="border border-border rounded bg-background px-4 py-2">Supports policy documentation</span>
+              <span className="border border-border rounded bg-background px-4 py-2">Supports risk registers</span>
             </div>
             <p className="text-xs text-muted-foreground mt-8 opacity-70">
               * HANDOFF provides the workflow and auditing tools necessary to support secure software delivery in highly regulated environments.
@@ -517,14 +517,14 @@ export default function SecurityPage() {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button 
               onClick={() => handleNavigate('/contact', 'security')}
-              className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+              className="bg-foreground text-background hover:bg-foreground/90 rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
             >
               Talk to Security
             </Button>
             <Button 
               onClick={() => handleNavigate('/dashboard', 'demo')}
               variant="outline"
-              className="border-border text-foreground hover:bg-surface-hover rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+              className="border-border text-foreground hover:bg-surface-hover rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
             >
               Request Demo
             </Button>
@@ -538,7 +538,7 @@ export default function SecurityPage() {
       {/* Loading Overlay */}
       {isNavigating && (
         <div className="fixed inset-0 z-[100] bg-background/50 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-surface border border-border p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
+          <div className="bg-surface border border-border rounded p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
             <Loader2 className="w-8 h-8 text-foreground animate-spin mb-6" />
             <div className="font-mono text-xs uppercase tracking-widest text-center text-muted-foreground">
               {navType === 'signin' ? 'AUTHENTICATING' : 'INITIALIZING WORKSPACE'}...

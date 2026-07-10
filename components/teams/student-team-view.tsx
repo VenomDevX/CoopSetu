@@ -150,16 +150,16 @@ export function StudentTeamView({ solo = false }: { solo?: boolean }) {
       ) : (
         <>
           {canManage && (
-            <div className="border border-border bg-surface-elevated p-6 space-y-4">
+            <div className="border border-border rounded bg-surface-elevated p-6 space-y-4">
               <div className="flex items-center gap-2 text-sm font-mono uppercase tracking-widest">
                 <KeyRound className="w-4 h-4" /> Join Code Management
               </div>
               {revealedCode ? (
-                <div className="p-4 border border-border bg-surface flex items-center justify-between gap-4">
+                <div className="p-4 border border-border rounded bg-surface flex items-center justify-between gap-4">
                   <span className="font-mono text-lg tracking-widest">{revealedCode}</span>
                   <button
                     onClick={copyCode}
-                    className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-border hover:border-foreground/40 flex items-center gap-1.5"
+                    className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-border rounded hover:border-foreground/40 flex items-center gap-1.5"
                   >
                     {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                     {copied ? 'Copied' : 'Copy'}
@@ -177,7 +177,7 @@ export function StudentTeamView({ solo = false }: { solo?: boolean }) {
                 <button
                   onClick={rotateCode}
                   disabled={busy}
-                  className="px-4 py-2 text-xs font-mono uppercase tracking-widest border border-border hover:border-foreground/40 flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 text-xs font-mono uppercase tracking-widest border border-border rounded hover:border-foreground/40 flex items-center gap-2 disabled:opacity-50"
                 >
                   <RotateCw className="w-3.5 h-3.5" /> Rotate Code
                 </button>
@@ -194,13 +194,13 @@ export function StudentTeamView({ solo = false }: { solo?: boolean }) {
             </div>
           )}
 
-          <div className="border border-border bg-surface-elevated p-6 space-y-4">
+          <div className="border border-border rounded bg-surface-elevated p-6 space-y-4">
             <div className="flex items-center gap-2 text-sm font-mono uppercase tracking-widest">
               <Users className="w-4 h-4" /> Team Members
             </div>
             <div className="space-y-2">
               {members.map((m) => (
-                <div key={m.id} className="flex items-center justify-between p-3 border border-border bg-surface">
+                <div key={m.id} className="flex items-center justify-between p-3 border border-border rounded bg-surface">
                   <div className="flex items-center gap-3">
                     {m.roleCode === 'STUDENT_TEAM_LEAD' && <Crown className="w-4 h-4 text-yellow-500" />}
                     <div>
@@ -230,7 +230,7 @@ export function StudentTeamView({ solo = false }: { solo?: boolean }) {
           </div>
 
           {(isLead || isCoLead) && (
-            <div className="border border-border bg-surface-elevated p-6 space-y-2 text-sm text-muted-foreground">
+            <div className="border border-border rounded bg-surface-elevated p-6 space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2 text-sm font-mono uppercase tracking-widest text-foreground">
                 <Settings className="w-4 h-4" /> Team Settings
               </div>

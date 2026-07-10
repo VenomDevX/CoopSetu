@@ -38,7 +38,7 @@ export function MockActionButton({
   return (
     <Button
       variant={state === 'success' ? 'outline' : variant}
-      className={cn("h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest gap-0", className, state === 'success' && 'border-emerald-500/30')}
+      className={cn("h-9 px-4 rounded text-xs font-mono uppercase tracking-widest gap-0", className, state === 'success' && 'border-emerald-500/30')}
       onClick={handleClick}
       disabled={state === 'loading'}
       {...props}

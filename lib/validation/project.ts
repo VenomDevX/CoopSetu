@@ -17,11 +17,11 @@ export const createProjectSchema = z.object({
   target_end_date: z.string().date().optional(),
   budget_amount: z.number().nonnegative().optional(),
   effort_estimate_hours: z.number().nonnegative().optional(),
-});
+}).strict();
 
 export const updateProjectSchema = createProjectSchema.partial().extend({
   health: z.enum(['ON_TRACK','AT_RISK','OFF_TRACK']).optional(),
-});
+}).strict();
 
 export const addProjectMemberSchema = z.object({
   organization_member_id: z.string().uuid(),
@@ -30,7 +30,7 @@ export const addProjectMemberSchema = z.object({
   can_comment: z.boolean().optional(),
   can_edit: z.boolean().optional(),
   can_manage: z.boolean().optional(),
-});
+}).strict();
 
 export const createMilestoneSchema = z.object({
   title: z.string().min(1).max(200),
@@ -38,7 +38,7 @@ export const createMilestoneSchema = z.object({
   due_date: z.string().date().optional(),
   owner_member_id: z.string().uuid().optional(),
   status: z.enum(['PLANNED','IN_PROGRESS','COMPLETED','MISSED']).optional(),
-});
+}).strict();
 
 export const createRiskSchema = z.object({
   title: z.string().min(1).max(200),
@@ -50,7 +50,7 @@ export const createRiskSchema = z.object({
   owner_member_id: z.string().uuid().optional(),
   mitigation_plan: z.string().max(2000).optional(),
   due_date: z.string().date().optional(),
-});
+}).strict();
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;

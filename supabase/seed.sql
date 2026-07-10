@@ -97,6 +97,51 @@ begin
   end loop;
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- Legal acceptance seed: every demo account has already accepted the active
+-- Terms/Privacy/Cookies documents (migration 0075), so seeded logins reach
+-- the dashboard directly instead of being routed through
+-- /onboarding/legal-consent on every fresh `db reset`.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  v_user_id uuid;
+  v_terms_id uuid;
+  v_privacy_id uuid;
+  v_cookies_id uuid;
+  user_ids constant uuid[] := array[
+    '00000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000004',
+    '00000000-0000-0000-0000-000000000005',
+    '00000000-0000-0000-0000-000000000006',
+    '00000000-0000-0000-0000-000000000007',
+    '00000000-0000-0000-0000-000000000008',
+    '00000000-0000-0000-0000-000000000009'
+  ];
+begin
+  select id into v_terms_id from public.legal_documents
+    where document_type = 'TERMS' and is_active = true limit 1;
+  select id into v_privacy_id from public.legal_documents
+    where document_type = 'PRIVACY' and is_active = true limit 1;
+  select id into v_cookies_id from public.legal_documents
+    where document_type = 'COOKIES' and is_active = true limit 1;
+
+  if v_terms_id is not null and v_privacy_id is not null then
+    foreach v_user_id in array user_ids loop
+      insert into public.user_legal_acceptances (
+        user_id, terms_document_id, privacy_document_id, cookies_document_id,
+        accepted_cookies_at, acceptance_source, request_id
+      ) values (
+        v_user_id, v_terms_id, v_privacy_id, v_cookies_id,
+        case when v_cookies_id is not null then now() else null end,
+        'SEED', 'seed-' || v_user_id::text
+      );
+    end loop;
+  end if;
+end $$;
+
 -- ============================================================================
 -- Phase 2 seed: departments, teams, projects, milestones, risks
 -- ============================================================================

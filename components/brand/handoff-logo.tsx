@@ -37,7 +37,7 @@ export function HandoffLogo({
 }: HandoffLogoProps) {
   const containerClasses = cn(
     "flex items-center",
-    variant === 'inverse' ? "bg-foreground text-background p-2 rounded-none" : "text-foreground",
+    variant === 'inverse' ? "bg-foreground text-background p-2 rounded" : "text-foreground",
     className
   );
 

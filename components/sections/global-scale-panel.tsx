@@ -92,7 +92,7 @@ export function GlobalScalePanel({ expanded }: { expanded: boolean }) {
         </motion.p>
 
         {/* TELEMETRY PANEL */}
-        <motion.div variants={itemVariants} className={`w-full relative mb-8 rounded-none group ${!expanded && expanded !== null ? 'opacity-0 lg:opacity-100' : ''}`}>
+        <motion.div variants={itemVariants} className={`w-full relative mb-8 rounded group ${!expanded && expanded !== null ? 'opacity-0 lg:opacity-100' : ''}`}>
           <div className="py-2 flex justify-between items-start">
             <div>
               <div className="font-mono text-[11px] uppercase tracking-widest text-white/50 mb-1">Active Regions</div>
@@ -125,7 +125,7 @@ export function GlobalScalePanel({ expanded }: { expanded: boolean }) {
 
       {/* SCOPE PANEL (Radar) */}
       <motion.div variants={itemVariants} className={`mt-auto flex items-center justify-center w-full aspect-square max-w-[280px] mx-auto relative z-10 opacity-90 transition-all duration-700 ${!expanded && expanded !== null ? 'scale-75 opacity-20 lg:scale-100 lg:opacity-90' : ''}`}>
-        <div className="absolute inset-0 rounded-none overflow-hidden">
+        <div className="absolute inset-0 rounded overflow-hidden">
           {/* SVG H-Tree Topology Diagram */}
           <svg viewBox="0 0 200 200" className="w-full h-full p-2" style={{ display: 'block', overflow: 'visible' }}>
 

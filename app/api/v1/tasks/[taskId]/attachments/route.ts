@@ -10,7 +10,7 @@ const schema = z.object({
   mime_type: z.string().max(200).optional(),
   size_bytes: z.number().int().nonnegative().optional(),
   classification: z.enum(['PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED']).optional(),
-});
+}).strict();
 
 export async function GET(_req: Request, { params }: { params: Promise<{ taskId: string }> }) {
   return handle(async () => {

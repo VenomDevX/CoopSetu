@@ -209,7 +209,7 @@ export default function LandingPage() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.95 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-2 w-52 bg-background border border-border shadow-2xl z-50 overflow-hidden"
+                      className="absolute right-0 top-full mt-2 w-52 bg-background border border-border rounded shadow-2xl z-50 overflow-hidden"
                     >
                       <div className="px-4 py-3 border-b border-border">
                         <p className="text-xs font-mono uppercase tracking-widest text-foreground truncate">{userName || 'User'}</p>
@@ -260,7 +260,7 @@ export default function LandingPage() {
                 <Button
                   onClick={() => handleNavigate('/demo', 'demo')}
                   disabled={isNavigating}
-                  className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-8 px-4 md:px-6 text-xs font-mono uppercase tracking-widest transition-all w-auto md:w-40"
+                  className="bg-foreground text-background hover:bg-foreground/90 rounded h-8 px-4 md:px-6 text-xs font-mono uppercase tracking-widest transition-all w-auto md:w-40"
                 >
                   {isNavigating && navType === 'demo' ? (
                     <span className="flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> LOADING...</span>
@@ -301,8 +301,8 @@ export default function LandingPage() {
           />
 
           {/* Abstract Geometry */}
-          <div className="absolute top-0 right-0 -mr-[10vw] -mt-[10vw] w-[80vw] max-w-[800px] aspect-square border border-border/40 rounded-full opacity-20 pointer-events-none z-0" />
-          <div className="absolute top-0 right-0 -mr-[5vw] -mt-[5vw] w-[60vw] max-w-[600px] aspect-square border border-border/40 rounded-full opacity-30 pointer-events-none z-0" />
+          <div className="absolute top-0 right-0 -mr-[10vw] -mt-[10vw] w-[80vw] max-w-[800px] aspect-square border border-border rounded/40 rounded-full opacity-20 pointer-events-none z-0" />
+          <div className="absolute top-0 right-0 -mr-[5vw] -mt-[5vw] w-[60vw] max-w-[600px] aspect-square border border-border rounded/40 rounded-full opacity-30 pointer-events-none z-0" />
           <motion.div
             aria-hidden
             animate={{ rotate: 360 }}
@@ -319,14 +319,14 @@ export default function LandingPage() {
             >
               {/* Status chips */}
               <div className="flex flex-wrap items-center gap-3 mb-6">
-                <div className="flex items-center gap-2.5 border border-border bg-surface/40 backdrop-blur-sm px-3 py-1.5">
+                <div className="flex items-center gap-2.5 border border-border rounded bg-surface/40 backdrop-blur-sm px-3 py-1.5">
                   <span className="relative flex w-2 h-2">
                     <span className="absolute inline-flex w-full h-full bg-accent animate-ping opacity-75" />
                     <span className="relative inline-flex w-2 h-2 bg-accent" />
                   </span>
                   <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">System Online // v2.0</span>
                 </div>
-                <div className="hidden sm:flex items-center gap-2 border border-border bg-surface/40 backdrop-blur-sm px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                <div className="hidden sm:flex items-center gap-2 border border-border rounded bg-surface/40 backdrop-blur-sm px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                   <Cpu className="w-3 h-3 text-accent" />
                   Build 2.0.1
                 </div>
@@ -358,7 +358,7 @@ export default function LandingPage() {
                     size="lg"
                     onClick={() => handleNavigate('/dashboard', 'init')}
                     disabled={isNavigating}
-                    className="h-14 px-8 text-sm font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 rounded-none group w-52"
+                    className="h-14 px-8 text-sm font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 group w-52"
                   >
                     {isNavigating && navType === 'init' ? (
                       <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> BOOTING...</span>
@@ -367,7 +367,7 @@ export default function LandingPage() {
                     )}
                   </Button>
                   <Link href="#explore">
-                    <Button size="lg" variant="outline" className="h-14 px-8 text-sm font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover rounded-none">
+                    <Button size="lg" variant="outline" className="h-14 px-8 text-sm font-mono uppercase tracking-widest border-black text-foreground hover:bg-surface-hover">
                       Explore Architecture
                     </Button>
                   </Link>
@@ -403,9 +403,9 @@ export default function LandingPage() {
                 +12% Velocity
               </motion.div>
 
-              <div className="bg-background border border-border backdrop-blur-sm relative overflow-hidden">
+              <div className="bg-background border border-black rounded backdrop-blur-sm relative overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 h-12 border-b border-border bg-background">
+                <div className="flex items-center justify-between px-5 h-12 border-b border-black bg-background">
                   <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest">
                     <Layers className="w-3.5 h-3.5 text-accent" />
                     <span className="text-foreground font-bold">Sprint 24</span>
@@ -455,11 +455,11 @@ export default function LandingPage() {
                           )}
 
                           <div className="flex items-center justify-between">
-                            <span className="font-mono text-[9px] uppercase tracking-widest border border-border px-1.5 py-0.5 text-muted-foreground">{card.tag}</span>
+                            <span className="font-mono text-[9px] uppercase tracking-widest border border-border rounded px-1.5 py-0.5 text-muted-foreground">{card.tag}</span>
                             {card.done ? (
                               <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
                             ) : (
-                              <span className="w-5 h-5 border border-border flex items-center justify-center font-mono text-[8px] uppercase tracking-wider text-muted-foreground">{card.who}</span>
+                              <span className="w-5 h-5 border border-border rounded flex items-center justify-center font-mono text-[8px] uppercase tracking-wider text-muted-foreground">{card.who}</span>
                             )}
                           </div>
                         </motion.div>
@@ -488,10 +488,10 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 24, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ delay: 1.2, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                className="absolute -left-16 -bottom-16 z-30 w-96 hidden lg:block border border-border bg-background/90 backdrop-blur-md shadow-2xl"
+                className="absolute -left-16 -bottom-16 z-30 w-96 hidden lg:block border border-black rounded bg-background/90 backdrop-blur-md shadow-2xl"
               >
                 {/* Widget header */}
-                <div className="flex items-center justify-between px-5 h-12 border-b border-border">
+                <div className="flex items-center justify-between px-5 h-12 border-b border-black">
                   <div className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-widest text-foreground">
                     <BarChart3 className="w-4 h-4 text-accent" />
                     Analytics
@@ -502,7 +502,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex border-b border-border">
+                <div className="flex border-b border-black">
                   {charts.map((c, i) => (
                     <button
                       key={c.label}
@@ -593,7 +593,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, rotateX: 0, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-              className="border border-border bg-background shadow-[0_0_80px_-20px_rgba(124,92,252,0.15)] relative transition-transform overflow-hidden"
+              className="border border-border rounded bg-background shadow-[0_0_80px_-20px_rgba(124,92,252,0.15)] relative transition-transform overflow-hidden"
             >
               {/* Subtle Purple Gradient Top Border */}
               <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent to-transparent z-20 opacity-70" />
@@ -601,9 +601,9 @@ export default function LandingPage() {
               {/* UI Frame Top */}
               <div className="w-full h-10 bg-surface-elevated border-b border-border flex items-center justify-between px-4 relative z-10">
                 <div className="flex gap-2">
-                  <div className="w-2 h-2 bg-border-strong rounded-none" />
-                  <div className="w-2 h-2 bg-border-strong rounded-none" />
-                  <div className="w-2 h-2 bg-border-strong rounded-none" />
+                  <div className="w-2 h-2 bg-border-strong rounded" />
+                  <div className="w-2 h-2 bg-border-strong rounded" />
+                  <div className="w-2 h-2 bg-border-strong rounded" />
                 </div>
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                   Handoff_Workspace_Alpha
@@ -624,7 +624,7 @@ export default function LandingPage() {
                         <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-4">Operations</div>
                         <div className="space-y-2">
                           {['Projects', 'Sprints', 'Tasks'].map(i => (
-                            <div key={i} className="text-sm font-mono uppercase tracking-wider py-2 px-3 text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-none cursor-pointer transition-colors flex items-center justify-between group">
+                            <div key={i} className="text-sm font-mono uppercase tracking-wider py-2 px-3 text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded cursor-pointer transition-colors flex items-center justify-between group">
                               {i}
                               <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
@@ -635,7 +635,7 @@ export default function LandingPage() {
                         <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-4">Engineering</div>
                         <div className="space-y-2">
                           {['Repositories', 'Releases', 'Incidents'].map(i => (
-                            <div key={i} className="text-sm font-mono uppercase tracking-wider py-2 px-3 text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-none cursor-pointer transition-colors flex items-center justify-between group">
+                            <div key={i} className="text-sm font-mono uppercase tracking-wider py-2 px-3 text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded cursor-pointer transition-colors flex items-center justify-between group">
                               {i}
                               <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
@@ -658,7 +658,7 @@ export default function LandingPage() {
                         <h2 className="text-3xl font-bold text-foreground uppercase tracking-tighter">Command Center</h2>
                       </div>
                       <div className="flex gap-3">
-                        <div className="h-8 w-32 border border-border bg-background rounded-none flex items-center px-3">
+                        <div className="h-8 w-32 border border-border rounded bg-background rounded flex items-center px-3">
                           <div className="w-2 h-2 bg-foreground mr-2 animate-pulse" />
                           <span className="font-mono text-[10px] uppercase">Live Sync</span>
                         </div>
@@ -671,10 +671,10 @@ export default function LandingPage() {
                         { label: 'Sprint Velocity', value: '142', sub: '+12% WoW', icon: <Zap className="w-4 h-4 text-foreground" /> },
                         { label: 'Pending Approvals', value: '07', sub: 'Action Req', icon: <CheckCircle2 className="w-4 h-4 text-foreground" /> }
                       ].map((stat, i) => (
-                        <div key={i} className="bg-background p-6 border border-border flex flex-col justify-between h-40 hover:border-foreground transition-colors group">
+                        <div key={i} className="bg-background p-6 border border-border rounded flex flex-col justify-between h-40 hover:border-foreground transition-colors group">
                           <div className="flex items-center justify-between text-muted-foreground">
                             <span className="font-mono text-[10px] uppercase tracking-widest">{stat.label}</span>
-                            <div className="p-2 border border-border group-hover:border-foreground transition-colors">{stat.icon}</div>
+                            <div className="p-2 border border-border rounded group-hover:border-foreground transition-colors">{stat.icon}</div>
                           </div>
                           <div>
                             <div className="text-4xl font-bold text-foreground mb-1 tracking-tighter">{stat.value}</div>
@@ -685,7 +685,7 @@ export default function LandingPage() {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                      <div className="lg:col-span-2 bg-background border border-border p-6 flex flex-col justify-between">
+                      <div className="lg:col-span-2 bg-background border border-border rounded p-6 flex flex-col justify-between">
                         <div className="flex justify-between items-center mb-8">
                           <h3 className="font-mono text-xs uppercase tracking-widest text-foreground">Velocity Trend</h3>
                           <div className="flex gap-2">
@@ -715,22 +715,22 @@ export default function LandingPage() {
                         </div>
                       </div>
 
-                      <div className="bg-background border border-border p-6 relative overflow-hidden flex flex-col">
+                      <div className="bg-background border border-border rounded p-6 relative overflow-hidden flex flex-col">
                         <div className="absolute top-0 left-0 w-1 h-full bg-accent" />
                         <h3 className="font-mono text-xs uppercase tracking-widest mb-6 flex items-center gap-3 text-foreground">
                           <Terminal className="w-4 h-4 text-accent" />
                           AI Feed
                         </h3>
                         <div className="space-y-4 font-mono text-xs flex-1">
-                          <div className="p-3 border border-border bg-surface-hover text-foreground">
+                          <div className="p-3 border border-border rounded bg-surface-hover text-foreground">
                             <span className="text-accent mr-2">{'>'}</span>
                             WARN: Mobile team over capacity.
                           </div>
-                          <div className="p-3 border border-border text-muted-foreground">
+                          <div className="p-3 border border-border rounded text-muted-foreground">
                             <span className="mr-2">{'>'}</span>
                             INFO: 2 PRs blocked.
                           </div>
-                          <div className="p-3 border border-border text-muted-foreground">
+                          <div className="p-3 border border-border rounded text-muted-foreground">
                             <span className="mr-2">{'>'}</span>
                             INFO: Deploy successful.
                           </div>
@@ -757,13 +757,13 @@ export default function LandingPage() {
             {[...Array(6)].map((_, i) => (
               <div key={i} className="flex items-center gap-12">
                 <span>Enterprise Grade</span>
-                <div className="w-1.5 h-1.5 bg-background rounded-none" />
+                <div className="w-1.5 h-1.5 bg-background rounded" />
                 <span>Zero Compromise</span>
-                <div className="w-1.5 h-1.5 bg-background rounded-none" />
+                <div className="w-1.5 h-1.5 bg-background rounded" />
                 <span>Absolute Precision</span>
-                <div className="w-1.5 h-1.5 bg-background rounded-none" />
+                <div className="w-1.5 h-1.5 bg-background rounded" />
                 <span>Maximum Velocity</span>
-                <div className="w-1.5 h-1.5 bg-background rounded-none" />
+                <div className="w-1.5 h-1.5 bg-background rounded" />
               </div>
             ))}
           </motion.div>
@@ -801,7 +801,7 @@ export default function LandingPage() {
             </motion.div>
 
             {/* Social-proof metrics strip */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-[1px] bg-border border border-border mb-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-[1px] bg-border border border-border rounded mb-3">
               {[
                 { v: '10x', l: 'Faster Delivery' },
                 { v: '99.9%', l: 'Platform Uptime' },
@@ -816,7 +816,7 @@ export default function LandingPage() {
             </div>
 
             {/* Bento feature grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px] bg-border border border-border">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px] bg-border border border-border rounded">
               {/* A — Enterprise Visibility */}
               <div className="md:col-span-2 bg-background p-8 md:p-12 relative overflow-hidden group hover:bg-surface transition-colors duration-500 flex flex-col justify-between min-h-[440px]">
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
@@ -824,7 +824,7 @@ export default function LandingPage() {
                 </div>
                 <div className="relative z-10">
                   <div className="flex items-start justify-between mb-8">
-                    <div className="w-12 h-12 border border-border flex items-center justify-center bg-background group-hover:border-accent transition-colors">
+                    <div className="w-12 h-12 border border-border rounded flex items-center justify-center bg-background group-hover:border-accent transition-colors">
                       <BarChart3 className="w-5 h-5 text-accent" />
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_01</span>
@@ -834,7 +834,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Visible animated chart */}
-                <div className="relative z-10 w-full bg-background border border-border p-6 mt-8">
+                <div className="relative z-10 w-full bg-background border border-border rounded p-6 mt-8">
                   <div className="flex items-center justify-between mb-4 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                     <span>Portfolio Health</span>
                     <span className="text-accent">+18% QoQ</span>
@@ -859,7 +859,7 @@ export default function LandingPage() {
               <div className="bg-background p-8 relative overflow-hidden group hover:bg-surface transition-colors duration-500 flex flex-col justify-between min-h-[440px]">
                 <div>
                   <div className="flex items-start justify-between mb-8">
-                    <div className="w-12 h-12 border border-border flex items-center justify-center group-hover:border-accent transition-colors">
+                    <div className="w-12 h-12 border border-border rounded flex items-center justify-center group-hover:border-accent transition-colors">
                       <Zap className="w-5 h-5 text-accent" />
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_02</span>
@@ -891,7 +891,7 @@ export default function LandingPage() {
               <div className="bg-background p-8 relative overflow-hidden group hover:bg-surface transition-colors duration-500 flex flex-col justify-between min-h-[380px]">
                 <div>
                   <div className="flex items-start justify-between mb-8">
-                    <div className="w-12 h-12 border border-border flex items-center justify-center group-hover:border-accent transition-colors">
+                    <div className="w-12 h-12 border border-border rounded flex items-center justify-center group-hover:border-accent transition-colors">
                       <Shield className="w-5 h-5 text-accent" />
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_03</span>
@@ -901,7 +901,7 @@ export default function LandingPage() {
                 </div>
                 <div className="space-y-2 mt-8 font-mono text-[10px] uppercase tracking-widest">
                   {['Release approved', 'Audit log sealed', '2FA enforced'].map((t, i) => (
-                    <div key={i} className="flex items-center justify-between border border-border p-2.5 group-hover:border-border-strong transition-colors">
+                    <div key={i} className="flex items-center justify-between border border-border rounded p-2.5 group-hover:border-border-strong transition-colors">
                       <span className="text-muted-foreground flex items-center gap-2"><Lock className="w-3 h-3 text-accent" />{t}</span>
                       <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
                     </div>
@@ -913,7 +913,7 @@ export default function LandingPage() {
               <div className="bg-background p-8 relative overflow-hidden group hover:bg-surface transition-colors duration-500 flex flex-col justify-between min-h-[380px]">
                 <div>
                   <div className="flex items-start justify-between mb-8">
-                    <div className="w-12 h-12 border border-border flex items-center justify-center group-hover:border-accent transition-colors">
+                    <div className="w-12 h-12 border border-border rounded flex items-center justify-center group-hover:border-accent transition-colors">
                       <GitPullRequest className="w-5 h-5 text-accent" />
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_04</span>
@@ -921,10 +921,10 @@ export default function LandingPage() {
                   <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">Live Collaboration.</h3>
                   <p className="text-muted-foreground text-sm leading-relaxed">Reviews, comments, and handoffs that keep every team in perfect sync.</p>
                 </div>
-                <div className="mt-8 flex items-center justify-between border border-border p-4">
+                <div className="mt-8 flex items-center justify-between border border-border rounded p-4">
                   <div className="flex -space-x-2">
                     {['AR', 'JK', 'ML', 'PS'].map((a) => (
-                      <span key={a} className="w-8 h-8 border border-border bg-surface flex items-center justify-center font-mono text-[9px] uppercase text-foreground">{a}</span>
+                      <span key={a} className="w-8 h-8 border border-border rounded bg-surface flex items-center justify-center font-mono text-[9px] uppercase text-foreground">{a}</span>
                     ))}
                     <span className="w-8 h-8 border border-accent bg-accent flex items-center justify-center font-mono text-[9px] text-accent-foreground">+8</span>
                   </div>
@@ -938,7 +938,7 @@ export default function LandingPage() {
               <div className="bg-background p-8 relative overflow-hidden group hover:bg-surface transition-colors duration-500 flex flex-col justify-between min-h-[380px]">
                 <div>
                   <div className="flex items-start justify-between mb-8">
-                    <div className="w-12 h-12 border border-border flex items-center justify-center group-hover:border-accent transition-colors">
+                    <div className="w-12 h-12 border border-border rounded flex items-center justify-center group-hover:border-accent transition-colors">
                       <Cpu className="w-5 h-5 text-accent" />
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_05</span>
@@ -956,7 +956,7 @@ export default function LandingPage() {
                       { n: 'Linear', k: 'LN', on: false },
                       { n: 'Docker', k: 'DK', on: false },
                     ].map((it) => (
-                      <div key={it.n} className="flex items-center gap-2.5 border border-border p-2.5 group-hover:border-border-strong transition-colors">
+                      <div key={it.n} className="flex items-center gap-2.5 border border-border rounded p-2.5 group-hover:border-border-strong transition-colors">
                         <span className={`w-7 h-7 shrink-0 flex items-center justify-center font-mono text-[9px] font-bold border ${it.on ? 'border-accent text-accent' : 'border-border text-muted-foreground'}`}>{it.k}</span>
                         <span className="font-mono text-[10px] uppercase tracking-widest text-foreground truncate">{it.n}</span>
                         <span className={`ml-auto w-1.5 h-1.5 shrink-0 ${it.on ? 'bg-accent animate-pulse' : 'bg-border-strong'}`} />
@@ -986,7 +986,7 @@ export default function LandingPage() {
                   <Button
                     onClick={() => handleNavigate('/dashboard', 'ai')}
                     disabled={isNavigating}
-                    className="h-12 px-8 text-xs font-mono uppercase tracking-widest bg-background text-foreground hover:bg-background/90 rounded-none group/btn"
+                    className="h-12 px-8 text-xs font-mono uppercase tracking-widest bg-background text-foreground hover:bg-background/90 rounded group/btn"
                   >
                     See It In Action <ArrowRight className="ml-3 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                   </Button>
@@ -1112,7 +1112,7 @@ export default function LandingPage() {
                       </p>
                       <div className="grid grid-cols-2 gap-4">
                         {['us-east', 'eu-west', 'ap-south', 'sa-east'].map(region => (
-                          <div key={region} className="bg-surface border border-border p-4">
+                          <div key={region} className="bg-surface border border-border rounded p-4">
                             <div className="text-[10px] font-mono uppercase text-muted-foreground mb-2">Region</div>
                             <div className="text-sm font-bold text-foreground mb-2">{region}</div>
                             <div className="text-[10px] font-mono text-green-500 animate-pulse">Online // 99.999%</div>
@@ -1149,7 +1149,7 @@ export default function LandingPage() {
                       <p className="text-muted-foreground text-sm leading-relaxed mb-8">
                         Our custom Conflict-Free Replicated Data Type engine resolves simultaneous edits deterministically without locking. Delta state is pushed over secure WebSockets in sub-10ms.
                       </p>
-                      <div className="bg-surface border border-border p-6 font-mono text-[10px] text-muted-foreground space-y-3 relative overflow-hidden h-64">
+                      <div className="bg-surface border border-border rounded p-6 font-mono text-[10px] text-muted-foreground space-y-3 relative overflow-hidden h-64">
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-surface pointer-events-none z-10" />
                         <motion.div animate={{ y: [0, -40] }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }}>
                           <div>[SYNC] Client A mutation applied</div>

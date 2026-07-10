@@ -55,22 +55,22 @@ const fmtDate = (d?: string | null) =>
 
 const healthColor = (h: string | null) => {
   switch (h) {
-    case 'ON_TRACK': return 'border-emerald-500 text-emerald-500 bg-emerald-500/10';
-    case 'AT_RISK': return 'border-orange-500 text-orange-500 bg-orange-500/10';
-    case 'OFF_TRACK': return 'border-destructive text-destructive bg-destructive/10';
-    default: return 'border-border text-muted-foreground bg-surface';
+    case 'ON_TRACK': return 'text-emerald-500 bg-emerald-500/10';
+    case 'AT_RISK': return 'text-orange-500 bg-orange-500/10';
+    case 'OFF_TRACK': return 'text-destructive bg-destructive/10';
+    default: return 'text-muted-foreground bg-surface';
   }
 };
 const statusColor = (s: string) => {
   switch (s) {
     case 'ACTIVE': case 'DEPLOYED': case 'APPROVED_FOR_DEPLOYMENT': case 'MITIGATING':
-      return 'border-emerald-500 text-emerald-500 bg-emerald-500/10';
+      return 'text-emerald-500 bg-emerald-500/10';
     case 'COMPLETED': case 'CANCELLED': case 'CLOSED': case 'ROLLED_BACK':
-      return 'border-border text-muted-foreground bg-surface';
+      return 'text-muted-foreground bg-surface';
     case 'BLOCKED': case 'OPEN':
-      return 'border-destructive text-destructive bg-destructive/10';
+      return 'text-destructive bg-destructive/10';
     default:
-      return 'border-orange-500 text-orange-500 bg-orange-500/10';
+      return 'text-orange-500 bg-orange-500/10';
   }
 };
 
@@ -165,7 +165,7 @@ export default function ProjectDetailPage() {
     return (
       <div className="h-[calc(100vh-80px)] flex flex-col items-center justify-center gap-3">
         <div className="text-[10px] font-mono uppercase tracking-widest text-destructive">Failed to load project.</div>
-        <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={() => loadProject()}>
+        <Button variant="outline" size="sm" className="rounded text-xs font-mono uppercase tracking-widest" onClick={() => loadProject()}>
           Retry
         </Button>
       </div>
@@ -187,18 +187,18 @@ export default function ProjectDetailPage() {
               <Layers className="w-8 h-8" />
               {project.name}
             </h1>
-            <span className="font-mono text-[10px] uppercase tracking-widest px-2 py-1 bg-surface border border-border">
+            <span className="font-mono text-[10px] uppercase tracking-widest px-2 py-1 bg-surface rounded-[3px]">
               {project.priority}
             </span>
-            <span className={`font-mono text-[10px] uppercase tracking-widest px-2 py-1 border ${healthColor(project.health)}`}>
+            <span className={`font-mono text-[10px] uppercase tracking-widest px-2 py-1 rounded-[3px] ${healthColor(project.health)}`}>
               {project.status === 'COMPLETED' ? 'Completed' : healthLabel(project.health)}
             </span>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <AskAiButton intent="summarize-project" projectId={projectId} permission="task:view" label="Project AI" title="Project Summary" />
+          <AskAiButton intent="summarize-project" projectId={projectId} permission="task:view" title="Project Summary" />
           {has('task:create') && (
-            <Button data-testid="project-create-task" onClick={() => setCreating(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
+            <Button data-testid="project-create-task" onClick={() => setCreating(true)} className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
               <Plus className="w-4 h-4" />
               Create Task
             </Button>
@@ -369,7 +369,7 @@ export default function ProjectDetailPage() {
                   </h3>
                 </div>
                 <div className="p-4 text-sm">
-                  <span className="font-mono text-[10px] uppercase px-2 py-1 bg-surface border border-border">{project.security_classification ?? 'INTERNAL'}</span>
+                  <span className="font-mono text-[10px] uppercase px-2 py-1 bg-surface rounded-[3px]">{project.security_classification ?? 'INTERNAL'}</span>
                 </div>
               </div>
 
@@ -395,7 +395,7 @@ export default function ProjectDetailPage() {
                   </div>
                   <div className="flex items-center gap-4">
                     <span className="font-mono text-[10px] text-muted-foreground">{Number(s.completed_story_points ?? 0)}/{Number(s.planned_story_points ?? 0)} pts</span>
-                    <span className={`font-mono text-[10px] uppercase tracking-widest px-2 py-1 border ${statusColor(s.status)}`}>{s.status}</span>
+                    <span className={`font-mono text-[10px] uppercase tracking-widest px-2 py-1 rounded-[3px] ${statusColor(s.status)}`}>{s.status}</span>
                   </div>
                 </Link>
               ))}
@@ -412,7 +412,7 @@ export default function ProjectDetailPage() {
                     <div className="text-sm font-bold">{rel.name} {rel.version && <span className="font-mono text-[10px] text-muted-foreground">v{rel.version}</span>}</div>
                     <div className="font-mono text-[10px] uppercase text-muted-foreground mt-1">Target: {fmtDate(rel.planned_release_at)}</div>
                   </div>
-                  <span className={`font-mono text-[10px] uppercase tracking-widest px-2 py-1 border ${statusColor(rel.status)}`}>{rel.status.replace(/_/g, ' ')}</span>
+                  <span className={`font-mono text-[10px] uppercase tracking-widest px-2 py-1 rounded-[3px] ${statusColor(rel.status)}`}>{rel.status.replace(/_/g, ' ')}</span>
                 </div>
               ))}
             </div>
@@ -447,7 +447,7 @@ export default function ProjectDetailPage() {
                     <div className="text-sm font-bold">{r.title}</div>
                     <div className="font-mono text-[10px] uppercase text-muted-foreground mt-1">{r.risk_level ?? '—'} · Owner: {memberName(r.owner_member_id)}</div>
                   </div>
-                  <span className={`font-mono text-[10px] uppercase tracking-widest px-2 py-1 border ${statusColor(r.status)}`}>{r.status}</span>
+                  <span className={`font-mono text-[10px] uppercase tracking-widest px-2 py-1 rounded-[3px] ${statusColor(r.status)}`}>{r.status}</span>
                 </div>
               ))}
             </div>

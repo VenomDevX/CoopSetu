@@ -76,16 +76,16 @@ export default function RolesSettingsPage() {
 
       <div className="grid md:grid-cols-3 gap-4">
         {/* Role list */}
-        <div className="border border-border bg-background">
+        <div className="border border-border rounded bg-background">
           <div className="p-3 border-b border-border bg-surface-hover flex items-center justify-between">
             <span className="font-mono text-[10px] uppercase tracking-widest font-bold">Roles</span>
             <button onClick={() => setCreating((c) => !c)} className="text-muted-foreground hover:text-foreground"><Plus className="w-4 h-4" /></button>
           </div>
           {creating && (
             <form onSubmit={create} className="p-3 space-y-2 border-b border-border">
-              <input className="w-full h-8 px-2 bg-surface border border-border text-xs uppercase" placeholder="CODE"
+              <input className="w-full h-8 px-2 bg-surface border border-border rounded text-xs uppercase" placeholder="CODE"
                 value={newRole.code} onChange={(e) => setNewRole((s) => ({ ...s, code: e.target.value.replace(/[^a-zA-Z0-9_]/g, '') }))} required />
-              <input className="w-full h-8 px-2 bg-surface border border-border text-xs" placeholder="Name"
+              <input className="w-full h-8 px-2 bg-surface border border-border rounded text-xs" placeholder="Name"
                 value={newRole.name} onChange={(e) => setNewRole((s) => ({ ...s, name: e.target.value }))} required />
               <button className="w-full h-8 bg-foreground text-background text-[10px] font-mono uppercase tracking-widest">Create</button>
             </form>
@@ -105,7 +105,7 @@ export default function RolesSettingsPage() {
         </div>
 
         {/* Permission editor */}
-        <div className="md:col-span-2 border border-border bg-background">
+        <div className="md:col-span-2 border border-border rounded bg-background">
           <div className="p-3 border-b border-border bg-surface-hover flex items-center justify-between">
             <span className="font-mono text-[10px] uppercase tracking-widest font-bold">
               {current ? `${current.code} permissions` : 'Select a role'}

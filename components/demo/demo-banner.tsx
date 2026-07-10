@@ -53,7 +53,7 @@ export function DemoBanner() {
         <Button 
           variant="outline" 
           size="sm" 
-          className="h-7 text-[10px] rounded-none uppercase tracking-widest whitespace-nowrap"
+          className="h-7 text-[10px] rounded uppercase tracking-widest whitespace-nowrap"
           onClick={handleReset}
           disabled={!!loading}
         >
@@ -63,7 +63,7 @@ export function DemoBanner() {
         <Button 
           variant="outline" 
           size="sm" 
-          className="h-7 text-[10px] rounded-none uppercase tracking-widest whitespace-nowrap"
+          className="h-7 text-[10px] rounded uppercase tracking-widest whitespace-nowrap"
           onClick={handleExit}
           disabled={!!loading}
         >
@@ -73,7 +73,7 @@ export function DemoBanner() {
         <Button 
           variant="default" 
           size="sm" 
-          className="h-7 text-[10px] rounded-none uppercase tracking-widest whitespace-nowrap bg-foreground text-background hover:bg-foreground/90"
+          className="h-7 text-[10px] rounded uppercase tracking-widest whitespace-nowrap bg-foreground text-background hover:bg-foreground/90"
           onClick={handleCreate}
           disabled={!!loading}
         >

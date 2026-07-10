@@ -69,7 +69,7 @@ export function CreateSprintModal({
       className="max-w-lg"
       footer={
         <>
-          <button onClick={onClose} className="h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest">Cancel</button>
+          <button onClick={onClose} className="h-9 px-4 border border-border rounded font-mono text-xs uppercase tracking-widest">Cancel</button>
           <button data-testid="sprint-save-button" onClick={submit} disabled={submitting} className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest disabled:opacity-50">
             {submitting ? 'Creating…' : 'Create Sprint'}
           </button>
@@ -89,7 +89,7 @@ export function CreateSprintModal({
           </div>
           <div>
             <label className={labelCls}>Goal</label>
-            <textarea value={goal} onChange={(e) => setGoal(e.target.value)} rows={2} className="w-full px-3 py-2 bg-background border border-border text-sm focus:outline-none focus:border-foreground transition-colors resize-none" placeholder="Sprint objective…" />
+            <textarea value={goal} onChange={(e) => setGoal(e.target.value)} rows={2} className="w-full px-3 py-2 bg-background border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors resize-none" placeholder="Sprint objective…" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>

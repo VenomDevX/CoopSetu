@@ -10,7 +10,7 @@ const schema = z.object({
   document_type: z.string().max(40).optional(),
   project_id: z.string().uuid().optional(),
   classification: z.enum(['PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED']).optional(),
-});
+}).strict();
 
 export async function GET(req: Request) {
   return handle(async () => {

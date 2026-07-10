@@ -72,7 +72,7 @@ export function MobileNavDrawer({ links, onSignIn, isNavigating }: MobileNavDraw
                     onSignIn();
                   }}
                   disabled={isNavigating}
-                  className="w-full bg-foreground text-background hover:bg-foreground/90 rounded-none h-12 text-xs font-mono uppercase tracking-widest transition-all"
+                  className="w-full bg-foreground text-background hover:bg-foreground/90 rounded h-12 text-xs font-mono uppercase tracking-widest transition-all"
                 >
                   Sign In
                 </Button>

@@ -84,7 +84,7 @@ export default function JoinTeamClient() {
             <div className="space-y-1.5">
               <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Join Code</label>
               <input
-                className="w-full h-14 px-4 bg-surface border border-border text-center text-xl font-mono tracking-widest focus:outline-none focus:border-foreground transition-colors"
+                className="w-full h-14 px-4 bg-surface border border-border rounded text-center text-xl font-mono tracking-widest focus:outline-none focus:border-foreground transition-colors"
                 placeholder="TEAM-XXXX-XXXX"
                 value={code}
                 onChange={(e) => setCode(formatCode(e.target.value))}
@@ -103,7 +103,7 @@ export default function JoinTeamClient() {
           </form>
         ) : (
           <div className="space-y-6">
-            <div className="p-6 border border-border bg-surface flex items-start gap-4">
+            <div className="p-6 border border-border rounded bg-surface flex items-start gap-4">
               <Users className="w-6 h-6 text-muted-foreground shrink-0 mt-0.5" />
               <div>
                 <div className="font-semibold mb-1">{preview.teamName}</div>
@@ -117,7 +117,7 @@ export default function JoinTeamClient() {
               <button
                 type="button"
                 onClick={() => setPreview(null)}
-                className="flex-1 h-11 border border-border text-xs font-mono uppercase tracking-widest hover:bg-surface-hover transition-colors"
+                className="flex-1 h-11 border border-border rounded text-xs font-mono uppercase tracking-widest hover:bg-surface-hover transition-colors"
               >
                 Back
               </button>

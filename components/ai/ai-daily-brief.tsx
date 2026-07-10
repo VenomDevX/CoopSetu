@@ -29,11 +29,11 @@ export function AiDailyBrief() {
   if (!allowed) return null;
 
   return (
-    <div className="border border-border bg-background relative overflow-hidden">
+    <div className="border border-border rounded bg-background relative overflow-hidden">
       <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 rounded-bl-full pointer-events-none" />
       <div className="p-4 border-b border-border bg-surface-hover flex items-center justify-between">
         <div className="flex items-center gap-1 text-accent">
-          <AiLogo className="w-3 h-3" />
+          <AiLogo className="w-2.5 h-2.5" />
           <h3 className="font-mono text-xs uppercase tracking-widest font-bold">DAILY BRIEF</h3>
         </div>
         {loading ? (

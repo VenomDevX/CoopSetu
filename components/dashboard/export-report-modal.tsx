@@ -58,7 +58,7 @@ export function ExportReportModal({
       className="max-w-lg sm:h-auto h-auto"
       footer={
         <>
-          <button onClick={onClose} className="h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest">Close</button>
+          <button onClick={onClose} className="h-9 px-4 border border-border rounded font-mono text-xs uppercase tracking-widest">Close</button>
           <button
             data-testid="export-report-confirm"
             onClick={exportReport}
@@ -72,7 +72,7 @@ export function ExportReportModal({
     >
           <div>
             <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1 block">Format</label>
-            <div className="grid grid-cols-2 border border-border">
+            <div className="grid grid-cols-2 border border-border rounded">
               <button
                 data-testid="export-format-csv"
                 onClick={() => setFormat('csv')}
@@ -95,7 +95,7 @@ export function ExportReportModal({
             )}
           </div>
 
-          <div className="border border-border bg-surface p-3">
+          <div className="border border-border rounded bg-surface p-3">
             <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Current Filters</div>
             <div className="space-y-1 text-xs">
               {Object.entries(filters).map(([key, value]) => (

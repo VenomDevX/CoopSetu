@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { CheckCircle, ShieldCheck, Code2, TestTube2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { AiLogo } from '@/components/ai/ai-logo';
 
@@ -103,6 +104,13 @@ export default function DemoPage() {
               {error}
             </div>
           )}
+          <p className="text-zinc-500 font-mono text-[11px] max-w-xl mx-auto">
+            Demo usage is subject to our{' '}
+            <Link href="/terms" target="_blank" className="underline hover:text-white transition-colors">Terms of Service</Link>
+            {' '}and{' '}
+            <Link href="/privacy" target="_blank" className="underline hover:text-white transition-colors">Privacy Policy</Link>.
+            AI features remain disabled in demo mode.
+          </p>
         </div>
         
         <div className="flex flex-col gap-2 w-full max-w-2xl mx-auto">

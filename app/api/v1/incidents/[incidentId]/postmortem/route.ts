@@ -13,7 +13,7 @@ const schema = z.object({
   resolution: z.string().max(5000).optional(),
   lessons_learned: z.string().max(5000).optional(),
   status: z.string().max(40).optional(),
-});
+}).strict();
 
 export async function POST(req: Request, { params }: { params: Promise<{ incidentId: string }> }) {
   return handle(async () => {

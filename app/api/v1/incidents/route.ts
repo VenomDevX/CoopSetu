@@ -9,7 +9,7 @@ const schema = z.object({
   severity: z.enum(['SEV1', 'SEV2', 'SEV3', 'SEV4']).optional(),
   project_id: z.string().uuid().optional(),
   customer_impact: z.string().max(2000).optional(),
-});
+}).strict();
 
 export async function GET() {
   return handle(async () => {

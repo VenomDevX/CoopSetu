@@ -8,7 +8,7 @@ const createSchema = z.object({
   name: z.string().min(1),
   type: z.string().min(1),
   filters: z.any().optional(),
-});
+}).strict();
 
 export async function POST(req: Request) {
   return handle(async () => {

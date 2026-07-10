@@ -8,7 +8,7 @@ export function StudentWorkspaceChoices() {
     <div className="space-y-4 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
       <Link
         href="/onboarding/student/solo"
-        className="w-full text-left p-6 border border-border bg-surface hover:border-foreground/40 hover:bg-surface-hover transition-colors group flex items-start justify-between gap-4"
+        className="w-full text-left p-6 border border-border rounded bg-surface hover:border-foreground/40 hover:bg-surface-hover transition-colors group flex items-start justify-between gap-4"
       >
         <div className="flex gap-4">
           <User className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors shrink-0 mt-0.5" />
@@ -23,7 +23,7 @@ export function StudentWorkspaceChoices() {
 
       <Link
         href="/onboarding/student/team"
-        className="w-full text-left p-6 border border-border bg-surface hover:border-foreground/40 hover:bg-surface-hover transition-colors group flex items-start justify-between gap-4"
+        className="w-full text-left p-6 border border-border rounded bg-surface hover:border-foreground/40 hover:bg-surface-hover transition-colors group flex items-start justify-between gap-4"
       >
         <div className="flex gap-4">
           <Users className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors shrink-0 mt-0.5" />
@@ -38,7 +38,7 @@ export function StudentWorkspaceChoices() {
 
       <Link
         href="/join-team"
-        className="w-full text-left p-6 border border-border bg-surface hover:border-foreground/40 hover:bg-surface-hover transition-colors group flex items-start justify-between gap-4"
+        className="w-full text-left p-6 border border-border rounded bg-surface hover:border-foreground/40 hover:bg-surface-hover transition-colors group flex items-start justify-between gap-4"
       >
         <div className="flex gap-4">
           <KeyRound className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors shrink-0 mt-0.5" />

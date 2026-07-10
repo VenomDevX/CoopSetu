@@ -68,7 +68,7 @@ export default function InvitesClient({ pendingInvites }: InvitesClientProps) {
 
         <div className="space-y-4">
           {pendingInvites.map((invite) => (
-            <div key={invite.id} className="p-5 border border-border bg-surface flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div key={invite.id} className="p-5 border border-border rounded bg-surface flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="font-bold text-foreground">{invite.organizationName}</h3>
                 <p className="text-xs font-mono text-muted-foreground mt-1">Role: {invite.roleCode}</p>
@@ -93,7 +93,7 @@ export default function InvitesClient({ pendingInvites }: InvitesClientProps) {
           <button 
             onClick={handleCreateWorkspace}
             disabled={!!loadingId}
-            className="h-10 px-6 border border-border text-foreground text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-surface-hover transition-colors disabled:opacity-50"
+            className="h-10 px-6 border border-border rounded text-foreground text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-surface-hover transition-colors disabled:opacity-50"
           >
             Create Workspace <ArrowRight className="w-4 h-4" />
           </button>

@@ -71,7 +71,7 @@ export function ScheduleReportModal({ reportId, onClose, onSuccess }: Props) {
                 required
                 autoFocus
                 placeholder="0 9 * * 1 (Every Monday at 9AM)"
-                className="w-full h-9 rounded-none bg-background border-border text-sm font-mono focus-visible:ring-1 focus-visible:ring-primary"
+                className="w-full h-9 rounded bg-background border-border text-sm font-mono focus-visible:ring-1 focus-visible:ring-primary"
               />
               <p className="text-[10px] text-muted-foreground mt-1 font-mono uppercase tracking-widest">
                 Standard 5-field cron format
@@ -86,16 +86,16 @@ export function ScheduleReportModal({ reportId, onClose, onSuccess }: Props) {
                 name="recipients"
                 required
                 placeholder="manager@example.com, team@example.com"
-                className="w-full h-9 rounded-none bg-background border-border text-sm focus-visible:ring-1 focus-visible:ring-primary"
+                className="w-full h-9 rounded bg-background border-border text-sm focus-visible:ring-1 focus-visible:ring-primary"
               />
             </div>
           </div>
 
           <div className="pt-4 flex justify-end gap-3 border-t border-border mt-6">
-            <Button type="button" variant="ghost" onClick={onClose} disabled={submitting} className="rounded-none font-mono uppercase tracking-widest text-xs h-9">
+            <Button type="button" variant="ghost" onClick={onClose} disabled={submitting} className="rounded font-mono uppercase tracking-widest text-xs h-9">
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting} className="rounded-none font-mono uppercase tracking-widest text-xs h-9">
+            <Button type="submit" disabled={submitting} className="rounded font-mono uppercase tracking-widest text-xs h-9">
               {submitting && <Loader2 className="w-3 h-3 mr-2 animate-spin" />}
               Save Schedule
             </Button>

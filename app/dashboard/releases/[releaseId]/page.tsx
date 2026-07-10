@@ -53,7 +53,7 @@ export default async function ReleaseDetailPage({ params }: { params: Promise<{ 
         { label: rel.status.replace(/_/g, ' '), tone: statusTone(rel.status) },
         ...(rel.requires_compliance_approval ? [{ label: 'Compliance required', tone: 'orange' as BadgeTone }] : []),
       ]}
-      actions={<AskAiButton intent="summarize-release" releaseId={releaseId} permission="release:view" label="Summarize Release" title="Release Summary" />}
+      actions={<AskAiButton intent="summarize-release" releaseId={releaseId} permission="release:view" title="Release Summary" />}
       fields={[
         { label: 'Status', value: rel.status.replace(/_/g, ' ') },
         { label: 'Version', value: rel.version ?? '—' },

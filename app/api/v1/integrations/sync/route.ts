@@ -4,7 +4,7 @@ import { requireUser } from '@/lib/auth/require-user';
 import { requireOrganization, requirePermission } from '@/lib/auth/require-organization';
 import { mockSync, getRepositoryForSync, syncGithubRepository } from '@/services/integration.service';
 
-const syncBodySchema = z.object({ repository_id: z.string().uuid() });
+const syncBodySchema = z.object({ repository_id: z.string().uuid() }).strict();
 
 export async function POST(req: Request) {
   return handle(async () => {

@@ -24,7 +24,7 @@ interface Props {
 }
 
 const DEFAULT_CLASS =
-  'h-9 rounded-none text-xs font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2 flex items-center';
+  'rounded text-xs font-mono uppercase tracking-widest border-border text-accent hover:bg-accent/10 gap-2 flex items-center';
 
 /**
  * Trigger for the AI panel, gated on `ai:use` (+ an optional feature permission),
@@ -68,7 +68,7 @@ export function AskAiButton({
         onClick={handleClick}
         disabled={!allowed && !isDemo}
         title={!allowed && !isDemo ? 'Requires AI access' : undefined}
-        className={`${className ?? DEFAULT_CLASS} ${label ? 'px-4' : 'w-9 justify-center p-0'} ${(!allowed && !isDemo) ? 'opacity-40' : ''}`}
+        className={`${className ?? DEFAULT_CLASS} ${label ? 'px-4' : 'w-10 justify-center p-0'} ${(!allowed && !isDemo) ? 'opacity-40' : ''}`}
       >
         <AiLogo className="w-4 h-4" />
         {label}

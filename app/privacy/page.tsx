@@ -47,7 +47,7 @@ export default function PrivacyPage() {
             </button>
             <Button 
               onClick={() => handleNavigate('/dashboard', 'demo')}
-              className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-9 px-6 text-xs font-mono uppercase tracking-widest"
+              className="bg-foreground text-background hover:bg-foreground/90 rounded h-9 px-6 text-xs font-mono uppercase tracking-widest"
               disabled={isNavigating}
             >
               {isNavigating && navType === 'demo' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Request Demo'}
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
         <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           
           {/* Legal Draft Notice */}
-          <div className="border border-yellow-500/30 bg-yellow-500/5 p-6 mb-12 flex flex-col gap-2 rounded-none">
+          <div className="border border-yellow-500/30 bg-yellow-500/5 p-6 mb-12 flex flex-col gap-2 rounded">
             <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-yellow-500 font-bold">
               <span>✦ Notice</span>
             </div>
@@ -106,7 +106,7 @@ export default function PrivacyPage() {
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">4. Authentication and Account Information</h2>
               <p>
-                Account creation and authentication are handled securely via cryptographic tokens. Your password is encrypted and managed through secure credential stores.
+                Account creation and authentication are handled securely via cryptographic tokens. Your password is never stored in plain or reversible form — it is one-way hashed (bcrypt) before it touches our database, so even we cannot see or recover it. Password resets use a short-lived, single-use signed link sent to your verified email address. Repeated failed sign-in attempts against an account are automatically throttled.
               </p>
             </section>
 
@@ -141,7 +141,7 @@ export default function PrivacyPage() {
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">9. Security Measures</h2>
               <p>
-                We implement access control lists, row-level security (RLS), and rate limiting to prevent unauthorized database read/write access.
+                We implement access control lists, row-level security (RLS), and rate limiting (including account-level lockout on repeated failed logins and a dedicated stricter limit on AI usage) to prevent unauthorized database read/write access. Connected third-party integration credentials (e.g. GitHub access tokens) are encrypted at rest (AES-256-GCM) and are never readable through normal application queries. All traffic is served over HTTPS with a strict Content Security Policy and standard hardening headers (HSTS, X-Frame-Options, X-Content-Type-Options).
               </p>
             </section>
 
@@ -189,7 +189,7 @@ export default function PrivacyPage() {
       {/* Loading Overlay */}
       {isNavigating && (
         <div className="fixed inset-0 z-[100] bg-background/50 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-surface border border-border p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
+          <div className="bg-surface border border-border rounded p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
             <Loader2 className="w-8 h-8 text-foreground animate-spin mb-6" />
             <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
               Navigating to workspace...

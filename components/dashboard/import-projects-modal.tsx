@@ -103,7 +103,7 @@ export function ImportProjectsModal({
       bodyClassName="space-y-6"
       footer={
         <>
-          <button onClick={onClose} className="h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest">
+          <button onClick={onClose} className="h-9 px-4 border border-border rounded font-mono text-xs uppercase tracking-widest">
             {result ? 'Close' : 'Cancel'}
           </button>
           {preview && !result && (
@@ -147,7 +147,7 @@ export function ImportProjectsModal({
 
           {preview && mapping && (
             <>
-              <div className="border border-border bg-surface p-4">
+              <div className="border border-border rounded bg-surface p-4">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
                   Column Mapping
                 </div>
@@ -178,21 +178,21 @@ export function ImportProjectsModal({
               </div>
 
               <div className="grid grid-cols-3 gap-3">
-                <div className="border border-border p-3">
+                <div className="border border-border rounded p-3">
                   <div className="font-mono text-[10px] uppercase text-muted-foreground">Rows</div>
                   <div className="text-xl font-bold">{result?.summary.total ?? preview.summary.total}</div>
                 </div>
-                <div className="border border-border p-3">
+                <div className="border border-border rounded p-3">
                   <div className="font-mono text-[10px] uppercase text-muted-foreground">Created / Valid</div>
                   <div className="text-xl font-bold">{result?.summary.created ?? preview.summary.valid}</div>
                 </div>
-                <div className="border border-border p-3">
+                <div className="border border-border rounded p-3">
                   <div className="font-mono text-[10px] uppercase text-muted-foreground">Skipped / Invalid</div>
                   <div className="text-xl font-bold">{result?.summary.skipped ?? preview.summary.invalid}</div>
                 </div>
               </div>
 
-              <div className="border border-border overflow-hidden">
+              <div className="border border-border rounded overflow-hidden">
                 <div className="p-3 bg-surface-hover border-b border-border font-mono text-[10px] uppercase tracking-widest">
                   Row Review
                 </div>

@@ -25,7 +25,7 @@ export default function AboutPage() {
             { title: 'Enterprise Security', body: 'Role-based access control, audit logs, and org-level isolation out of the box.' },
             { title: 'Open Integration', body: 'Connects to your existing Git repositories, CI pipelines, and communication tools.' },
           ].map((p) => (
-            <div key={p.title} className="border border-border p-4 space-y-1">
+            <div key={p.title} className="border border-border rounded p-4 space-y-1">
               <div className="font-mono text-xs font-bold uppercase tracking-widest">{p.title}</div>
               <p className="text-xs text-muted-foreground leading-relaxed">{p.body}</p>
             </div>
@@ -37,7 +37,7 @@ export default function AboutPage() {
         <h2 className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border pb-2">Technology Stack</h2>
         <div className="flex flex-wrap gap-2">
           {['Next.js 15', 'React 19', 'Supabase', 'PostgreSQL', 'TypeScript', 'Tailwind CSS', 'Claude AI'].map((t) => (
-            <span key={t} className="font-mono text-[10px] uppercase tracking-widest border border-border px-3 py-1 text-muted-foreground">
+            <span key={t} className="font-mono text-[10px] uppercase tracking-widest border border-border rounded px-3 py-1 text-muted-foreground">
               {t}
             </span>
           ))}

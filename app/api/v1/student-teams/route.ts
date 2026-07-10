@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { handle, ok } from '@/lib/api/response';
 import { requireUser } from '@/lib/auth/require-user';
+import { requireLegalAccepted } from '@/lib/legal/require-legal-accepted';
 import { createStudentTeamSchema } from '@/lib/validation/student-team';
 import { createStudentTeam } from '@/services/student-workspace.service';
 import { ACTIVE_ORG_COOKIE } from '@/lib/auth/get-current-membership';
@@ -8,6 +9,7 @@ import { ACTIVE_ORG_COOKIE } from '@/lib/auth/get-current-membership';
 export async function POST(req: NextRequest) {
   return handle(async () => {
     const { user, supabase } = await requireUser();
+    await requireLegalAccepted(user, supabase);
     const body = createStudentTeamSchema.parse(await req.json());
 
     const team = await createStudentTeam(supabase, user.id, body);

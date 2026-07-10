@@ -14,7 +14,7 @@ export function ClientReleasesActions() {
     <>
       <Button
         variant="default"
-        className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-accent text-accent-foreground border-accent hover:bg-accent/90 gap-2"
+        className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest bg-accent text-accent-foreground border-accent hover:bg-accent/90 gap-2"
         onClick={() => setShowCreateModal(true)}
       >
         <Plus className="w-4 h-4" />

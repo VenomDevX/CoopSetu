@@ -65,7 +65,7 @@ export default function EnterprisePage() {
             </button>
             <Button 
               onClick={() => handleNavigate('/dashboard', 'demo')}
-              className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-9 px-6 text-xs font-mono uppercase tracking-widest"
+              className="bg-foreground text-background hover:bg-foreground/90 rounded h-9 px-6 text-xs font-mono uppercase tracking-widest"
               disabled={isNavigating}
             >
               {isNavigating && navType === 'demo' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Request Demo'}
@@ -92,14 +92,14 @@ export default function EnterprisePage() {
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Button 
                 onClick={() => handleNavigate('/contact', 'sales')}
-                className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+                className="bg-foreground text-background hover:bg-foreground/90 rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
                 Contact Sales
               </Button>
               <Button 
                 onClick={() => handleNavigate('/product', 'explore')}
                 variant="outline"
-                className="border-border text-foreground hover:bg-surface-hover rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+                className="border-border text-foreground hover:bg-surface-hover rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
                 Explore Platform
               </Button>
@@ -107,7 +107,7 @@ export default function EnterprisePage() {
           </div>
 
           {/* Hero Visual - Enterprise Command Center */}
-          <div className="w-full bg-surface-elevated border border-border p-4 shadow-2xl relative overflow-hidden">
+          <div className="w-full bg-surface-elevated border border-border rounded p-4 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-foreground to-transparent opacity-50" />
             
             <div className="flex items-center justify-between border-b border-border pb-4 mb-4">
@@ -124,7 +124,7 @@ export default function EnterprisePage() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
               {/* Left Column: Portfolio & AI */}
               <div className="lg:col-span-1 flex flex-col gap-4">
-                <div className="border border-border bg-background p-4 flex-1">
+                <div className="border border-border rounded bg-background p-4 flex-1">
                   <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Portfolio Health</div>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center text-xs">
@@ -154,10 +154,10 @@ export default function EnterprisePage() {
               </div>
 
               {/* Middle Column: Programs & Dependencies */}
-              <div className="lg:col-span-2 border border-border bg-background p-4 flex flex-col">
+              <div className="lg:col-span-2 border border-border rounded bg-background p-4 flex flex-col">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4">Active Programs & Dependencies</div>
                 <div className="flex-1 space-y-4">
-                   <div className="bg-surface border border-border p-3">
+                   <div className="bg-surface border border-border rounded p-3">
                      <div className="flex justify-between mb-2">
                        <span className="text-xs font-bold uppercase">Q3 Global Expansion</span>
                        <span className="text-[10px] font-mono bg-orange-500/10 text-orange-500 border border-orange-500 px-1">AT RISK</span>
@@ -168,7 +168,7 @@ export default function EnterprisePage() {
                      </div>
                    </div>
                    
-                   <div className="bg-surface border border-border p-3">
+                   <div className="bg-surface border border-border rounded p-3">
                      <div className="flex justify-between mb-2">
                        <span className="text-xs font-bold uppercase">Unified Auth Rollout</span>
                        <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-500 border border-emerald-500 px-1">ON TRACK</span>
@@ -183,27 +183,27 @@ export default function EnterprisePage() {
 
               {/* Right Column: Capacity & Release Pipeline */}
               <div className="lg:col-span-1 flex flex-col gap-4">
-                <div className="border border-border bg-background p-4">
+                <div className="border border-border rounded bg-background p-4">
                   <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Global Capacity</div>
                   <div className="text-2xl font-bold font-mono">94%</div>
-                  <div className="w-full h-1 bg-surface mt-2 border border-border overflow-hidden">
+                  <div className="w-full h-1 bg-surface mt-2 border border-border rounded overflow-hidden">
                     <div className="h-full bg-foreground w-[94%]" />
                   </div>
                   <div className="text-[10px] text-muted-foreground mt-2 uppercase">12 Teams Overallocated</div>
                 </div>
 
-                <div className="border border-border bg-background p-4 flex-1">
+                <div className="border border-border rounded bg-background p-4 flex-1">
                   <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Release Pipeline</div>
                   <div className="space-y-2 text-[10px] font-mono">
-                     <div className="flex justify-between items-center bg-surface p-1.5 border border-border">
+                     <div className="flex justify-between items-center bg-surface p-1.5 border border-border rounded">
                        <span>v4.2.0</span>
                        <span className="text-emerald-500">PROD</span>
                      </div>
-                     <div className="flex justify-between items-center bg-surface p-1.5 border border-border">
+                     <div className="flex justify-between items-center bg-surface p-1.5 border border-border rounded">
                        <span>v4.3.0-rc1</span>
                        <span className="text-orange-500">UAT</span>
                      </div>
-                     <div className="flex justify-between items-center bg-surface p-1.5 border border-border">
+                     <div className="flex justify-between items-center bg-surface p-1.5 border border-border rounded">
                        <span>v4.4.0-alpha</span>
                        <span className="text-muted-foreground">DEV</span>
                      </div>
@@ -234,7 +234,7 @@ export default function EnterprisePage() {
               </div>
             </div>
             
-            <div className="border border-border bg-surface p-8 shadow-xl">
+            <div className="border border-border rounded bg-surface p-8 shadow-xl">
                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-6 border-b border-border pb-2">
                  Structural Hierarchy
                </div>
@@ -242,7 +242,7 @@ export default function EnterprisePage() {
                <div className="flex flex-col gap-1 items-center">
                  {['Organization', 'Department', 'Team', 'Program', 'Project', 'Epic', 'Task'].map((level, i, arr) => (
                    <React.Fragment key={level}>
-                     <div className="w-full max-w-[200px] border border-border bg-background p-3 text-center text-xs font-bold font-mono uppercase tracking-widest shadow-sm">
+                     <div className="w-full max-w-[200px] border border-border rounded bg-background p-3 text-center text-xs font-bold font-mono uppercase tracking-widest shadow-sm">
                        {level}
                      </div>
                      {i < arr.length - 1 && (
@@ -258,12 +258,12 @@ export default function EnterprisePage() {
         {/* SECTION 2 - Portfolio & Program Control */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32 border-t border-border pt-32">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="order-2 lg:order-1 border border-border bg-surface p-8 shadow-xl relative">
+            <div className="order-2 lg:order-1 border border-border rounded bg-surface p-8 shadow-xl relative">
               <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2">
                 Program Dependency Map
               </div>
               <div className="space-y-4">
-                 <div className="bg-background border border-border p-4 relative">
+                 <div className="bg-background border border-border rounded p-4 relative">
                    <div className="text-xs font-bold mb-1">Mobile App Rewrite</div>
                    <div className="text-[10px] font-mono text-muted-foreground mb-2">Program Alpha</div>
                    <div className="text-[10px] bg-orange-500/10 text-orange-500 px-2 py-0.5 border border-orange-500 inline-block">BLOCKED BY API V2</div>
@@ -273,10 +273,10 @@ export default function EnterprisePage() {
                    <ArrowDown className="w-4 h-4 text-muted-foreground" />
                  </div>
                  
-                 <div className="bg-background border border-border p-4">
+                 <div className="bg-background border border-border rounded p-4">
                    <div className="text-xs font-bold mb-1">API v2 Gateway</div>
                    <div className="text-[10px] font-mono text-muted-foreground mb-2">Platform Team</div>
-                   <div className="w-full h-1.5 bg-surface border border-border">
+                   <div className="w-full h-1.5 bg-surface border border-border rounded">
                      <div className="h-full bg-foreground w-[85%]" />
                    </div>
                  </div>
@@ -321,14 +321,14 @@ export default function EnterprisePage() {
               </div>
             </div>
             
-            <div className="border border-border bg-background p-6 shadow-xl">
+            <div className="border border-border rounded bg-background p-6 shadow-xl">
               <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2 flex justify-between">
                 <span>Workflow Configuration</span>
                 <span>Data Science Team</span>
               </div>
               <div className="flex flex-wrap gap-2 mb-6">
                 {['Backlog', 'Data Prep', 'Model Training', 'Evaluation', 'Peer Review', 'Productionize'].map((status, i) => (
-                  <div key={i} className="bg-surface border border-border px-3 py-1 text-xs font-mono">
+                  <div key={i} className="bg-surface border border-border rounded px-3 py-1 text-xs font-mono">
                     {status}
                   </div>
                 ))}
@@ -362,7 +362,7 @@ export default function EnterprisePage() {
               { category: 'Migrations', tools: ['Jira Import', 'Trello Import', 'Asana Import'] },
               { category: 'Custom API', tools: ['REST API', 'Webhooks', 'GraphQL'] },
             ].map((block, i) => (
-              <div key={i} className="border border-border bg-surface p-4">
+              <div key={i} className="border border-border rounded bg-surface p-4">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">{block.category}</div>
                 <div className="space-y-2 text-xs font-bold">
                   {block.tools.map((tool, j) => (
@@ -377,12 +377,12 @@ export default function EnterprisePage() {
         {/* SECTION 5 - Administration at Scale */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32 border-t border-border pt-32">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="order-2 lg:order-1 border border-border bg-surface p-8 shadow-xl">
+            <div className="order-2 lg:order-1 border border-border rounded bg-surface p-8 shadow-xl">
                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-6 border-b border-border pb-2">
                  Organization Settings
                </div>
                <div className="space-y-4">
-                 <div className="bg-background border border-border p-4 flex justify-between items-center">
+                 <div className="bg-background border border-border rounded p-4 flex justify-between items-center">
                    <div>
                      <div className="text-sm font-bold">SAML Single Sign-On</div>
                      <div className="text-xs text-muted-foreground">Enforce identity provider login</div>
@@ -391,7 +391,7 @@ export default function EnterprisePage() {
                      <div className="absolute right-1 top-1 bg-background w-3 h-3 rounded-full" />
                    </div>
                  </div>
-                 <div className="bg-background border border-border p-4 flex justify-between items-center">
+                 <div className="bg-background border border-border rounded p-4 flex justify-between items-center">
                    <div>
                      <div className="text-sm font-bold">AI Data Privacy</div>
                      <div className="text-xs text-muted-foreground">Opt out of model training</div>
@@ -400,7 +400,7 @@ export default function EnterprisePage() {
                      <div className="absolute right-1 top-1 bg-background w-3 h-3 rounded-full" />
                    </div>
                  </div>
-                 <div className="bg-background border border-border p-4 flex justify-between items-center">
+                 <div className="bg-background border border-border rounded p-4 flex justify-between items-center">
                    <div>
                      <div className="text-sm font-bold">SCIM User Provisioning</div>
                      <div className="text-xs text-muted-foreground">Automate account creation</div>
@@ -439,7 +439,7 @@ export default function EnterprisePage() {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-             <div className="border border-border bg-surface p-6">
+             <div className="border border-border rounded bg-surface p-6">
                <div className="font-bold mb-4 border-b border-border pb-2">For Executives (CEO, CTO)</div>
                <ul className="space-y-2 text-sm text-muted-foreground">
                  <li>• Executive dashboards</li>
@@ -447,7 +447,7 @@ export default function EnterprisePage() {
                  <li>• Organization-wide velocity</li>
                </ul>
              </div>
-             <div className="border border-border bg-surface p-6">
+             <div className="border border-border rounded bg-surface p-6">
                <div className="font-bold mb-4 border-b border-border pb-2">For Management</div>
                <ul className="space-y-2 text-sm text-muted-foreground">
                  <li>• Scheduled reports</li>
@@ -455,7 +455,7 @@ export default function EnterprisePage() {
                  <li>• Cross-team dependency tracking</li>
                </ul>
              </div>
-             <div className="border border-border bg-surface p-6">
+             <div className="border border-border rounded bg-surface p-6">
                <div className="font-bold mb-4 border-b border-border pb-2">For External / Compliance</div>
                <ul className="space-y-2 text-sm text-muted-foreground">
                  <li>• Exportable PDFs</li>
@@ -470,12 +470,12 @@ export default function EnterprisePage() {
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32 border-y border-border py-20 bg-surface">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-5xl mx-auto">
             <div className="text-center">
-              <div className="w-12 h-12 bg-background border border-border flex items-center justify-center font-mono font-bold mx-auto mb-4">1</div>
+              <div className="w-12 h-12 bg-background border border-border rounded flex items-center justify-center font-mono font-bold mx-auto mb-4">1</div>
               <h3 className="font-bold text-lg mb-2">Connect</h3>
               <p className="text-sm text-muted-foreground">Connect teams, repositories, tools, and workspaces.</p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 bg-background border border-border flex items-center justify-center font-mono font-bold mx-auto mb-4">2</div>
+              <div className="w-12 h-12 bg-background border border-border rounded flex items-center justify-center font-mono font-bold mx-auto mb-4">2</div>
               <h3 className="font-bold text-lg mb-2">Configure</h3>
               <p className="text-sm text-muted-foreground">Set roles, workflows, approval rules, project templates, and reporting.</p>
             </div>
@@ -495,14 +495,14 @@ export default function EnterprisePage() {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button 
               onClick={() => handleNavigate('/contact', 'sales')}
-              className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+              className="bg-foreground text-background hover:bg-foreground/90 rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
             >
               Contact Sales
             </Button>
             <Button 
               onClick={() => handleNavigate('/dashboard', 'demo')}
               variant="outline"
-              className="border-border text-foreground hover:bg-surface-hover rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+              className="border-border text-foreground hover:bg-surface-hover rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
             >
               Request Enterprise Demo
             </Button>
@@ -516,7 +516,7 @@ export default function EnterprisePage() {
       {/* Loading Overlay */}
       {isNavigating && (
         <div className="fixed inset-0 z-[100] bg-background/50 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-surface border border-border p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
+          <div className="bg-surface border border-border rounded p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
             <Loader2 className="w-8 h-8 text-foreground animate-spin mb-6" />
             <div className="font-mono text-xs uppercase tracking-widest text-center text-muted-foreground">
               {navType === 'signin' ? 'AUTHENTICATING' : 'INITIALIZING WORKSPACE'}...

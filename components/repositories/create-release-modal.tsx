@@ -92,7 +92,7 @@ export function CreateReleaseModal({ onClose, onSuccess }: Props) {
                 name="project_id"
                 required
                 disabled={loadingProjects}
-                className="w-full h-9 px-3 bg-background border border-border text-xs font-mono focus:outline-none focus:border-foreground"
+                className="w-full h-9 px-3 bg-background border border-border rounded text-xs font-mono focus:outline-none focus:border-foreground"
               >
                 <option value="">{loadingProjects ? 'Loading projects...' : 'Select Project...'}</option>
                 {projects.map(p => (
@@ -110,7 +110,7 @@ export function CreateReleaseModal({ onClose, onSuccess }: Props) {
                   name="name"
                   required
                   placeholder="e.g., Summer Launch"
-                  className="font-mono text-xs rounded-none h-9"
+                  className="font-mono text-xs rounded h-9"
                 />
               </div>
               <div>
@@ -121,7 +121,7 @@ export function CreateReleaseModal({ onClose, onSuccess }: Props) {
                   name="version"
                   required
                   placeholder="e.g., v1.4.0"
-                  className="font-mono text-xs rounded-none h-9"
+                  className="font-mono text-xs rounded h-9"
                 />
               </div>
             </div>
@@ -133,7 +133,7 @@ export function CreateReleaseModal({ onClose, onSuccess }: Props) {
               <textarea
                 name="description"
                 rows={3}
-                className="w-full p-3 bg-background border border-border text-xs font-mono focus:outline-none focus:border-foreground resize-none"
+                className="w-full p-3 bg-background border border-border rounded text-xs font-mono focus:outline-none focus:border-foreground resize-none"
                 placeholder="Brief description of this release..."
               />
             </div>
@@ -145,7 +145,7 @@ export function CreateReleaseModal({ onClose, onSuccess }: Props) {
               <Input
                 name="planned_release_at"
                 type="datetime-local"
-                className="font-mono text-xs rounded-none h-9"
+                className="font-mono text-xs rounded h-9"
               />
             </div>
 
@@ -156,7 +156,7 @@ export function CreateReleaseModal({ onClose, onSuccess }: Props) {
               <textarea
                 name="rollback_plan"
                 rows={2}
-                className="w-full p-3 bg-background border border-border text-xs font-mono focus:outline-none focus:border-foreground resize-none"
+                className="w-full p-3 bg-background border border-border rounded text-xs font-mono focus:outline-none focus:border-foreground resize-none"
                 placeholder="Steps to rollback if deployment fails..."
               />
             </div>
@@ -166,7 +166,7 @@ export function CreateReleaseModal({ onClose, onSuccess }: Props) {
                 type="checkbox"
                 name="requires_compliance_approval"
                 id="requires_compliance_approval"
-                className="rounded-none border-border bg-background"
+                className="rounded border-border bg-background"
               />
               <label htmlFor="requires_compliance_approval" className="text-xs font-mono uppercase tracking-widest text-foreground cursor-pointer">
                 Requires Compliance Approval
@@ -179,14 +179,14 @@ export function CreateReleaseModal({ onClose, onSuccess }: Props) {
               type="button"
               variant="outline"
               onClick={onClose}
-              className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest"
+              className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest"
               disabled={submitting}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90"
+              className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90"
               disabled={submitting}
             >
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create Release'}

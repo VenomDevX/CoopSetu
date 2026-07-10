@@ -125,4 +125,4 @@ export function Dialog({
 export const dialogLabelCls =
   'text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1 block';
 export const dialogFieldCls =
-  'w-full h-9 px-3 bg-background border border-border text-sm focus:outline-none focus:border-foreground transition-colors';
+  'w-full h-9 px-3 bg-background border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors';

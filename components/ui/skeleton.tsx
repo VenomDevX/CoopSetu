@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse bg-surface-hover border border-border', className)} />;
+  return <div className={cn('animate-pulse bg-surface-hover border border-border rounded', className)} />;
 }
 
 /** Skeleton rows for the standard data-table layout. */

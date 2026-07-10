@@ -9,7 +9,7 @@ const schema = z.object({
   content_markdown: z.string().max(200000).optional(),
   status: z.enum(['DRAFT', 'IN_REVIEW', 'APPROVED', 'ARCHIVED']).optional(),
   change_summary: z.string().max(500).optional(),
-});
+}).strict();
 
 export async function GET(_req: Request, { params }: { params: Promise<{ documentId: string }> }) {
   return handle(async () => {

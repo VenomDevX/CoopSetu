@@ -77,7 +77,7 @@ export function EntityDetailLayout({
         {/* Left: sections + children + timeline */}
         <div className="lg:col-span-2 space-y-6 min-w-0">
           {sections.filter((s) => s.body).map((s, i) => (
-            <div key={i} className="border border-border bg-background p-6">
+            <div key={i} className="border border-border rounded bg-background p-6">
               <h3 className="font-mono text-xs uppercase tracking-widest font-bold mb-3">{s.label}</h3>
               <p className="text-sm leading-relaxed text-foreground/80 whitespace-pre-wrap break-words">{s.body}</p>
             </div>
@@ -86,7 +86,7 @@ export function EntityDetailLayout({
           {children}
 
           {/* Activity timeline — built from real record events/timestamps. */}
-          <div className="border border-border bg-background">
+          <div className="border border-border rounded bg-background">
             <div className="p-4 border-b border-border bg-surface-hover">
               <h3 className="font-mono text-xs uppercase tracking-widest font-bold flex items-center gap-2">
                 <Activity className="w-3.5 h-3.5" /> Activity Timeline
@@ -99,7 +99,7 @@ export function EntityDetailLayout({
                 <div className="relative space-y-6 before:absolute before:top-1 before:bottom-1 before:left-[11px] before:w-px before:bg-border">
                   {timeline.map((t, i) => (
                     <div key={i} className="flex gap-4 relative">
-                      <div className="w-6 h-6 rounded-full bg-surface border border-border flex items-center justify-center relative z-10 shrink-0 mt-0.5">
+                      <div className="w-6 h-6 rounded-full bg-surface border border-border rounded flex items-center justify-center relative z-10 shrink-0 mt-0.5">
                         <div className="w-2 h-2 rounded-full bg-foreground" />
                       </div>
                       <div className="min-w-0">
@@ -119,7 +119,7 @@ export function EntityDetailLayout({
 
         {/* Right: details */}
         <div className="space-y-6">
-          <div className="border border-border bg-background">
+          <div className="border border-border rounded bg-background">
             <div className="p-4 border-b border-border bg-surface-hover">
               <h3 className="font-mono text-xs uppercase tracking-widest font-bold">Details</h3>
             </div>
@@ -149,12 +149,12 @@ export function EntityDetailLayout({
 function StateShell({ icon, title, body, action }: { icon: ReactNode; title: string; body: string; action: { label: string; href: string } }) {
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center text-center gap-4 px-6">
-      <div className="w-12 h-12 border border-border bg-surface flex items-center justify-center text-muted-foreground">{icon}</div>
+      <div className="w-12 h-12 border border-border rounded bg-surface flex items-center justify-center text-muted-foreground">{icon}</div>
       <div>
         <h2 className="font-mono text-sm uppercase tracking-widest font-bold">{title}</h2>
         <p className="text-xs text-muted-foreground mt-2 max-w-sm">{body}</p>
       </div>
-      <Link href={action.href} className="inline-flex items-center gap-2 h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest hover:bg-surface-hover transition-colors">
+      <Link href={action.href} className="inline-flex items-center gap-2 h-9 px-4 border border-border rounded font-mono text-xs uppercase tracking-widest hover:bg-surface-hover transition-colors">
         {action.label} <ChevronRight className="w-3 h-3" />
       </Link>
     </div>
@@ -193,12 +193,12 @@ export function EntityDetailSkeleton() {
       <div className="h-8 w-80 max-w-full bg-surface" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="h-40 bg-surface border border-border" />
-          <div className="h-56 bg-surface border border-border flex items-center justify-center text-xs font-mono text-muted-foreground">
+          <div className="h-40 bg-surface border border-border rounded" />
+          <div className="h-56 bg-surface border border-border rounded flex items-center justify-center text-xs font-mono text-muted-foreground">
             <Clock className="w-4 h-4 mr-2" /> Loading…
           </div>
         </div>
-        <div className="h-64 bg-surface border border-border" />
+        <div className="h-64 bg-surface border border-border rounded" />
       </div>
     </div>
   );

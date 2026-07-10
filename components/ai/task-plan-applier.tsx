@@ -62,7 +62,7 @@ export function TaskPlanApplier({ answer, taskId, onApplied }: Props) {
   };
 
   return (
-    <div className="mt-6 border border-border bg-surface p-4">
+    <div className="mt-6 border border-border rounded bg-surface p-4">
       <h3 className="font-mono text-xs uppercase tracking-widest font-bold flex items-center gap-2 mb-4">
         <CheckSquare className="w-4 h-4 text-accent" />
         Proposed Checklist ({items.length})
@@ -71,7 +71,7 @@ export function TaskPlanApplier({ answer, taskId, onApplied }: Props) {
       <div className="space-y-2 mb-4 max-h-[200px] overflow-y-auto pr-2">
         {items.map((item, idx) => (
           <div key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
-            <div className="mt-0.5 w-3 h-3 rounded-sm border border-border flex-shrink-0" />
+            <div className="mt-0.5 w-3 h-3 rounded-sm border border-border rounded flex-shrink-0" />
             <span className="leading-tight">{item}</span>
           </div>
         ))}
@@ -82,7 +82,7 @@ export function TaskPlanApplier({ answer, taskId, onApplied }: Props) {
       <Button
         onClick={handleApply}
         disabled={applying || applied}
-        className="w-full h-9 rounded-none bg-foreground text-background font-mono text-[10px] uppercase tracking-widest gap-2"
+        className="w-full h-9 rounded bg-foreground text-background font-mono text-[10px] uppercase tracking-widest gap-2"
       >
         {applying && <Loader2 className="w-3 h-3 animate-spin" />}
         {applied ? (

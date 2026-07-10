@@ -4,7 +4,7 @@ import { requireUser } from '@/lib/auth/require-user';
 import { requireOrganization, requirePermission } from '@/lib/auth/require-organization';
 import { updateComment, deleteComment } from '@/services/comment.service';
 
-const updateBodySchema = z.object({ body: z.string().min(1).max(10000) });
+const updateBodySchema = z.object({ body: z.string().min(1).max(10000) }).strict();
 
 /** Edit own comment. Requires `comment:update_own`; ownership re-checked in service + RLS. */
 export async function PATCH(

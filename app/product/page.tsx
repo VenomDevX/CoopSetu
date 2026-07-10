@@ -67,7 +67,7 @@ export default function ProductPage() {
             </button>
             <Button 
               onClick={() => handleNavigate('/dashboard', 'demo')}
-              className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-9 px-6 text-xs font-mono uppercase tracking-widest"
+              className="bg-foreground text-background hover:bg-foreground/90 rounded h-9 px-6 text-xs font-mono uppercase tracking-widest"
               disabled={isNavigating}
             >
               {isNavigating && navType === 'demo' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Request Demo'}
@@ -94,14 +94,14 @@ export default function ProductPage() {
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Button 
                 onClick={() => handleNavigate('/dashboard', 'explore')}
-                className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+                className="bg-foreground text-background hover:bg-foreground/90 rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
                 Explore the Platform
               </Button>
               <Button 
                 onClick={() => handleNavigate('/contact', 'demo')}
                 variant="outline"
-                className="border-border text-foreground hover:bg-surface-hover rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+                className="border-border text-foreground hover:bg-surface-hover rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
                 Request Demo
               </Button>
@@ -109,7 +109,7 @@ export default function ProductPage() {
           </div>
 
           {/* Hero Visual */}
-          <div className="w-full bg-surface-elevated border border-border p-4 shadow-2xl relative overflow-hidden">
+          <div className="w-full bg-surface-elevated border border-border rounded p-4 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-50" />
             
             {/* Mock UI Header */}
@@ -127,13 +127,13 @@ export default function ProductPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                {/* Project Health */}
-               <div className="col-span-2 border border-border bg-background p-4 flex flex-col">
+               <div className="col-span-2 border border-border rounded bg-background p-4 flex flex-col">
                  <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4">Active Sprint Board</div>
                  <div className="flex-1 grid grid-cols-4 gap-2">
                    {["Backlog", "In Progress", "Review", "Done"].map(col => (
-                     <div key={col} className="bg-surface p-2 border border-border border-dashed flex flex-col gap-2">
+                     <div key={col} className="bg-surface p-2 border border-border rounded border-dashed flex flex-col gap-2">
                        <div className="text-[10px] font-bold uppercase">{col}</div>
-                       <div className="h-16 bg-background border border-border p-2">
+                       <div className="h-16 bg-background border border-border rounded p-2">
                          <div className="w-3/4 h-2 bg-surface-hover mb-2" />
                          <div className="w-1/2 h-2 bg-surface-hover" />
                        </div>
@@ -150,14 +150,14 @@ export default function ProductPage() {
 
                {/* AI Summary & Workload */}
                <div className="flex flex-col gap-4">
-                 <div className="border border-border bg-background p-4">
+                 <div className="border border-border rounded bg-background p-4">
                    <div className="flex items-center gap-2 mb-3">
                      <Bot className="w-3 h-3 text-accent" />
                      <span className="font-mono text-[10px] uppercase tracking-widest font-bold">Handoff Insight</span>
                    </div>
                    <p className="text-xs text-muted-foreground">Release v2.4.0 is blocked by 2 critical security vulnerabilities. QA signoff pending for 3 hours.</p>
                  </div>
-                 <div className="border border-border bg-background p-4 flex-1">
+                 <div className="border border-border rounded bg-background p-4 flex-1">
                    <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4">Release Pipeline</div>
                    <div className="space-y-3">
                      <div className="flex items-center gap-2">
@@ -191,7 +191,7 @@ export default function ProductPage() {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div className="lg:col-span-3 border border-border bg-surface p-6">
+            <div className="lg:col-span-3 border border-border rounded bg-surface p-6">
                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-6">Global Project Overview</div>
                <table className="w-full text-left text-sm font-mono whitespace-nowrap">
                   <thead className="border-b border-border text-[10px] text-muted-foreground uppercase">
@@ -207,7 +207,7 @@ export default function ProductPage() {
                       <td className="py-4 font-bold flex items-center gap-2"><div className="w-2 h-2 bg-foreground" /> Core Platform Migration</td>
                       <td className="py-4 text-xs">Sprint 24</td>
                       <td className="py-4">
-                        <div className="w-24 h-1 bg-surface-hover border border-border overflow-hidden">
+                        <div className="w-24 h-1 bg-surface-hover border border-border rounded overflow-hidden">
                           <div className="h-full bg-foreground w-[65%]" />
                         </div>
                       </td>
@@ -217,7 +217,7 @@ export default function ProductPage() {
                       <td className="py-4 font-bold flex items-center gap-2"><div className="w-2 h-2 bg-foreground" /> Payments API v3</td>
                       <td className="py-4 text-xs">Security Review</td>
                       <td className="py-4">
-                        <div className="w-24 h-1 bg-surface-hover border border-border overflow-hidden">
+                        <div className="w-24 h-1 bg-surface-hover border border-border rounded overflow-hidden">
                           <div className="h-full bg-foreground w-[90%]" />
                         </div>
                       </td>
@@ -227,12 +227,12 @@ export default function ProductPage() {
                </table>
             </div>
             <div className="space-y-6">
-              <div className="border border-border bg-surface p-6">
+              <div className="border border-border rounded bg-surface p-6">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Team Capacity</div>
                 <div className="text-3xl font-bold font-mono">92%</div>
                 <div className="text-xs text-orange-500 mt-2 font-mono uppercase">14 OVERALLOCATED</div>
               </div>
-              <div className="border border-border bg-surface p-6">
+              <div className="border border-border rounded bg-surface p-6">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Pending Approvals</div>
                 <div className="text-3xl font-bold font-mono">8</div>
                 <div className="text-xs text-muted-foreground mt-2 font-mono uppercase">Sec & QA Review</div>
@@ -252,12 +252,12 @@ export default function ProductPage() {
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> Deadlines & dependencies</div>
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> Approval workflows</div>
               </div>
-              <Button onClick={() => handleNavigate('/solutions', 'workflows')} variant="outline" className="border-border rounded-none h-10 px-6 font-mono text-xs uppercase tracking-widest">
+              <Button onClick={() => handleNavigate('/solutions', 'workflows')} variant="outline" className="border-border rounded h-10 px-6 font-mono text-xs uppercase tracking-widest">
                 Explore Workflows <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
             
-            <div className="border border-border bg-background p-4 relative">
+            <div className="border border-border rounded bg-background p-4 relative">
               <div className="absolute top-0 right-0 w-32 h-32 bg-surface-hover rounded-bl-[100px] pointer-events-none" />
               <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2 flex justify-between">
                 <span>Task Board</span>
@@ -265,9 +265,9 @@ export default function ProductPage() {
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {["Backlog", "Code Review", "QA Testing"].map(status => (
-                  <div key={status} className="bg-surface border border-border p-3">
+                  <div key={status} className="bg-surface border border-border rounded p-3">
                     <div className="text-[10px] font-bold uppercase mb-3 text-muted-foreground">{status}</div>
-                    <div className="bg-background border border-border p-3 mb-2 shadow-sm">
+                    <div className="bg-background border border-border rounded p-3 mb-2 shadow-sm">
                       <div className="text-xs font-bold mb-2">Update auth tokens</div>
                       <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground">
                         <span>#1042</span>
@@ -284,7 +284,7 @@ export default function ProductPage() {
         {/* SECTION 3 - Agile Delivery */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="order-2 lg:order-1 border border-border bg-surface p-6">
+            <div className="order-2 lg:order-1 border border-border rounded bg-surface p-6">
               <div className="flex justify-between items-end mb-8 border-b border-border pb-4">
                 <div>
                   <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Sprint Health</div>
@@ -302,7 +302,7 @@ export default function ProductPage() {
                      <span>Capacity</span>
                      <span>95%</span>
                    </div>
-                   <div className="h-2 w-full bg-background border border-border">
+                   <div className="h-2 w-full bg-background border border-border rounded">
                      <div className="h-full w-[95%] bg-foreground" />
                    </div>
                  </div>
@@ -311,7 +311,7 @@ export default function ProductPage() {
                      <span>Carryover Risk</span>
                      <span className="text-orange-500">12%</span>
                    </div>
-                   <div className="h-2 w-full bg-background border border-border">
+                   <div className="h-2 w-full bg-background border border-border rounded">
                      <div className="h-full w-[12%] bg-orange-500" />
                    </div>
                  </div>
@@ -340,28 +340,28 @@ export default function ProductPage() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="border border-border bg-background p-6">
+            <div className="border border-border rounded bg-background p-6">
               <GitPullRequest className="w-8 h-8 text-foreground mb-4" />
               <h3 className="font-bold text-lg mb-2">PR Tracking</h3>
               <p className="text-sm text-muted-foreground mb-4">Automatically link pull requests to stories and tasks. Block merging if tests fail.</p>
-              <div className="text-[10px] font-mono p-2 bg-surface border border-border text-emerald-500">
+              <div className="text-[10px] font-mono p-2 bg-surface border border-border rounded text-emerald-500">
                 MERGED #1042 into main
               </div>
             </div>
-            <div className="border border-border bg-background p-6">
+            <div className="border border-border rounded bg-background p-6">
               <Terminal className="w-8 h-8 text-foreground mb-4" />
               <h3 className="font-bold text-lg mb-2">CI/CD Visibility</h3>
               <p className="text-sm text-muted-foreground mb-4">View build logs, test results, and environment deployments directly on the ticket.</p>
-              <div className="text-[10px] font-mono p-2 bg-surface border border-border flex items-center gap-2">
+              <div className="text-[10px] font-mono p-2 bg-surface border border-border rounded flex items-center gap-2">
                 <Loader2 className="w-3 h-3 animate-spin text-accent" />
                 BUILDING WORKFLOW
               </div>
             </div>
-            <div className="border border-border bg-background p-6">
+            <div className="border border-border rounded bg-background p-6">
               <Layers className="w-8 h-8 text-foreground mb-4" />
               <h3 className="font-bold text-lg mb-2">Environment Tracking</h3>
               <p className="text-sm text-muted-foreground mb-4">Know exactly which features are deployed to staging, pre-prod, and production.</p>
-              <div className="text-[10px] font-mono p-2 bg-surface border border-border text-accent">
+              <div className="text-[10px] font-mono p-2 bg-surface border border-border rounded text-accent">
                 DEPLOYED TO STAGING
               </div>
             </div>
@@ -370,7 +370,7 @@ export default function ProductPage() {
 
         {/* SECTION 5 - Quality, Security & Release */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32">
-          <div className="border border-border bg-surface p-8 lg:p-12">
+          <div className="border border-border rounded bg-surface p-8 lg:p-12">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
               <div>
                 <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">Ship software with evidence, approvals, and accountability.</h2>
@@ -393,7 +393,7 @@ export default function ProductPage() {
                   { step: 'Production Deploy', status: 'pending' }
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-4">
-                    <div className={`w-3 h-3 rounded-full flex-shrink-0 ${item.status === 'done' ? 'bg-foreground' : item.status === 'active' ? 'bg-accent animate-pulse' : 'bg-surface border border-border'}`} />
+                    <div className={`w-3 h-3 rounded-full flex-shrink-0 ${item.status === 'done' ? 'bg-foreground' : item.status === 'active' ? 'bg-accent animate-pulse' : 'bg-surface border border-border rounded'}`} />
                     <div className={`font-mono text-xs uppercase tracking-widest ${item.status === 'pending' ? 'text-muted-foreground' : 'text-foreground font-bold'}`}>
                       {item.step}
                     </div>
@@ -406,31 +406,31 @@ export default function ProductPage() {
 
         {/* SECTION 6 & 7 - Grid Layout */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="border border-border bg-background p-8 lg:p-12">
+          <div className="border border-border rounded bg-background p-8 lg:p-12">
             <Database className="w-10 h-10 mb-6 text-foreground" />
             <h2 className="text-2xl font-bold tracking-tight mb-4">Keep decisions, systems, and delivery knowledge connected.</h2>
             <p className="text-muted-foreground mb-8 text-sm">
               Architecture records, API documentation, runbooks, and meeting notes—all version-controlled, access-restricted, and linked directly to project execution.
             </p>
-            <div className="border border-border bg-surface p-4 text-xs font-mono">
+            <div className="border border-border rounded bg-surface p-4 text-xs font-mono">
               <div className="text-muted-foreground uppercase tracking-widest text-[10px] mb-2 border-b border-border pb-2">Architecture Decision Record</div>
               <div className="font-bold mb-1">Migrate to Event-Driven Architecture</div>
               <div className="opacity-70">Status: Approved • Author: E. Rodriguez</div>
             </div>
           </div>
           
-          <div className="border border-border bg-background p-8 lg:p-12 flex flex-col">
+          <div className="border border-border rounded bg-background p-8 lg:p-12 flex flex-col">
             <BarChart3 className="w-10 h-10 mb-6 text-foreground" />
             <h2 className="text-2xl font-bold tracking-tight mb-4">Turn operational data into delivery intelligence.</h2>
             <p className="text-muted-foreground mb-8 text-sm">
               Executive dashboards for project health, sprint velocity, workload analysis, bug trends, and release reliability.
             </p>
             <div className="grid grid-cols-2 gap-4 mt-auto">
-              <div className="border border-border p-4 bg-surface">
+              <div className="border border-border rounded p-4 bg-surface">
                 <div className="text-[10px] uppercase font-mono tracking-widest text-muted-foreground mb-2">Avg Velocity</div>
                 <div className="text-2xl font-bold font-mono">86.4</div>
               </div>
-              <div className="border border-border p-4 bg-surface">
+              <div className="border border-border rounded p-4 bg-surface">
                 <div className="text-[10px] uppercase font-mono tracking-widest text-muted-foreground mb-2">Bug Ratio</div>
                 <div className="text-2xl font-bold font-mono">1.2%</div>
               </div>
@@ -447,7 +447,7 @@ export default function ProductPage() {
               {['Plan', 'Assign', 'Build', 'Review', 'Test', 'Secure', 'Release', 'Learn'].map((step, i, arr) => (
                 <React.Fragment key={step}>
                   <div className="flex flex-col items-center">
-                    <div className="w-12 h-12 bg-background border border-border flex items-center justify-center font-bold font-mono text-sm mb-3">
+                    <div className="w-12 h-12 bg-background border border-border rounded flex items-center justify-center font-bold font-mono text-sm mb-3">
                       0{i + 1}
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest font-bold">{step}</span>
@@ -472,14 +472,14 @@ export default function ProductPage() {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button 
               onClick={() => handleNavigate('/dashboard', 'demo')}
-              className="bg-foreground text-background hover:bg-foreground/90 rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+              className="bg-foreground text-background hover:bg-foreground/90 rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
             >
               Request Demo
             </Button>
             <Button 
               onClick={() => handleNavigate('/contact', 'sales')}
               variant="outline"
-              className="border-border text-foreground hover:bg-surface-hover rounded-none h-12 px-8 font-mono uppercase tracking-widest text-xs"
+              className="border-border text-foreground hover:bg-surface-hover rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
             >
               Talk to Sales
             </Button>
@@ -493,7 +493,7 @@ export default function ProductPage() {
       {/* Loading Overlay */}
       {isNavigating && (
         <div className="fixed inset-0 z-[100] bg-background/50 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-surface border border-border p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
+          <div className="bg-surface border border-border rounded p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
             <Loader2 className="w-8 h-8 text-foreground animate-spin mb-6" />
             <div className="font-mono text-xs uppercase tracking-widest text-center text-muted-foreground">
               {navType === 'signin' ? 'AUTHENTICATING' : 'INITIALIZING WORKSPACE'}...

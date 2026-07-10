@@ -75,12 +75,12 @@ export default function TeamCreationClient() {
         steps={STEPS}
       >
         <div className="space-y-6 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="p-6 border border-border bg-surface flex items-center justify-between gap-4">
+          <div className="p-6 border border-border rounded bg-surface flex items-center justify-between gap-4">
             <span className="font-mono text-2xl tracking-widest">{joinCode}</span>
             <button
               type="button"
               onClick={copyCode}
-              className="px-3 py-2 text-[10px] font-mono uppercase tracking-widest border border-border hover:border-foreground/40 flex items-center gap-1.5 transition-colors"
+              className="px-3 py-2 text-[10px] font-mono uppercase tracking-widest border border-border rounded hover:border-foreground/40 flex items-center gap-1.5 transition-colors"
             >
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               {copied ? 'Copied' : 'Copy'}
@@ -116,7 +116,7 @@ export default function TeamCreationClient() {
         <div className="space-y-1.5">
           <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Team Name</label>
           <input
-            className="w-full h-11 px-4 bg-surface border border-border text-sm focus:outline-none focus:border-foreground transition-colors"
+            className="w-full h-11 px-4 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors"
             placeholder="Byte Bandits"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -128,7 +128,7 @@ export default function TeamCreationClient() {
         <div className="space-y-1.5">
           <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Hackathon / Event Name (Optional)</label>
           <input
-            className="w-full h-11 px-4 bg-surface border border-border text-sm focus:outline-none focus:border-foreground transition-colors"
+            className="w-full h-11 px-4 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors"
             placeholder="HackNYC 2026"
             value={eventName}
             onChange={(e) => setEventName(e.target.value)}
@@ -138,7 +138,7 @@ export default function TeamCreationClient() {
         <div className="space-y-1.5">
           <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Short Description (Optional)</label>
           <textarea
-            className="w-full h-20 px-4 py-3 bg-surface border border-border text-sm focus:outline-none focus:border-foreground transition-colors resize-none"
+            className="w-full h-20 px-4 py-3 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors resize-none"
             maxLength={500}
             value={shortDescription}
             onChange={(e) => setShortDescription(e.target.value)}
@@ -151,7 +151,7 @@ export default function TeamCreationClient() {
             <input
               type="number"
               min={1}
-              className="w-full h-11 px-4 bg-surface border border-border text-sm focus:outline-none focus:border-foreground transition-colors"
+              className="w-full h-11 px-4 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors"
               placeholder="4"
               value={expectedTeamSize}
               onChange={(e) => setExpectedTeamSize(e.target.value)}
@@ -163,7 +163,7 @@ export default function TeamCreationClient() {
               type="number"
               min={1}
               max={50}
-              className="w-full h-11 px-4 bg-surface border border-border text-sm focus:outline-none focus:border-foreground transition-colors"
+              className="w-full h-11 px-4 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors"
               value={maxTeamSize}
               onChange={(e) => setMaxTeamSize(e.target.value)}
               required
@@ -177,7 +177,7 @@ export default function TeamCreationClient() {
         <div className="space-y-1.5">
           <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Your Primary Team Role (Optional)</label>
           <input
-            className="w-full h-11 px-4 bg-surface border border-border text-sm focus:outline-none focus:border-foreground transition-colors"
+            className="w-full h-11 px-4 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors"
             placeholder="Backend Developer"
             value={primaryTeamRole}
             onChange={(e) => setPrimaryTeamRole(e.target.value)}

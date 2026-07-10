@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireUser } from '@/lib/auth/require-user';
 import { requireOrganization, requirePermission } from '@/lib/auth/require-organization';
 import { Errors } from '@/lib/api/errors';
-import { encrypt } from '@/lib/security/encryption';
+import { encryptIntegrationSecrets } from '@/lib/integrations/encrypt-secrets';
 import { createAuditLog } from '@/lib/audit/create-audit-log';
 import { GITHUB_OAUTH_STATE_COOKIE } from '@/lib/integrations/github-oauth';
 
@@ -66,8 +66,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Encrypt the token securely
-    const secretsJson = JSON.stringify({ access_token: accessToken });
-    const encryptedPayload = encrypt(secretsJson);
+    const encryptedPayload = encryptIntegrationSecrets({ access_token: accessToken });
 
     // Upsert the integration record
     // We check if a github integration already exists for this org

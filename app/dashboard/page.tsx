@@ -96,7 +96,7 @@ export default function CommandCenter() {
       >
         <div>
           <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono uppercase tracking-widest mb-3">
-            <div className="w-2 h-2 bg-foreground animate-pulse rounded-none" />
+            <div className="w-2 h-2 bg-foreground animate-pulse rounded" />
             WORKSPACE: {membership.organizationName} {' // SYNC: ACTIVE // UPDATED: '}{lastSync}
           </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground mb-1">Command Center</h1>
@@ -110,17 +110,17 @@ export default function CommandCenter() {
           {persona === 'ADMIN' && (
             <>
               {has('project:create') && (
-                <Button variant="outline" className="rounded-none font-mono text-xs uppercase" onClick={() => setIsProjectModalOpen(true)}>
+                <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => setIsProjectModalOpen(true)}>
                   <FolderKanban className="w-4 h-4 mr-2" /> Create Project
                 </Button>
               )}
               {has('task:create') && (
-                <Button variant="outline" className="rounded-none font-mono text-xs uppercase" onClick={() => setIsTaskModalOpen(true)}>
+                <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => setIsTaskModalOpen(true)}>
                   <Plus className="w-4 h-4 mr-2" /> Create Task
                 </Button>
               )}
               {has('member:invite') && (
-                <Button variant="outline" className="rounded-none font-mono text-xs uppercase" onClick={() => setIsInviteModalOpen(true)}>
+                <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => setIsInviteModalOpen(true)}>
                   <Users className="w-4 h-4 mr-2" /> Invite Member
                 </Button>
               )}
@@ -130,12 +130,12 @@ export default function CommandCenter() {
           {persona === 'PROJECT_MANAGER' && (
             <>
               {has('task:create') && (
-                <Button variant="outline" className="rounded-none font-mono text-xs uppercase" onClick={() => setIsTaskModalOpen(true)}>
+                <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => setIsTaskModalOpen(true)}>
                   <Plus className="w-4 h-4 mr-2" /> Create Task
                 </Button>
               )}
               {has('project:manage') && (
-                <Button variant="outline" className="rounded-none font-mono text-xs uppercase" asChild>
+                <Button variant="outline" className="rounded font-mono text-xs uppercase" asChild>
                   <Link href="/dashboard/sprints/new"><Calendar className="w-4 h-4 mr-2" /> Create Sprint</Link>
                 </Button>
               )}
@@ -143,7 +143,7 @@ export default function CommandCenter() {
           )}
 
           {persona === 'EMPLOYEE' && (
-            <Button variant="outline" className="rounded-none font-mono text-xs uppercase" asChild>
+            <Button variant="outline" className="rounded font-mono text-xs uppercase" asChild>
               <Link href="/dashboard/my-work"><ArrowRight className="w-4 h-4 mr-2" /> View My Work</Link>
             </Button>
           )}
@@ -156,10 +156,10 @@ export default function CommandCenter() {
 
       {/* INTELLIGENCE FEED */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
-        <Card className="border border-border shadow-none rounded-none bg-background relative overflow-hidden">
+        <Card className="border border-border rounded shadow-none rounded bg-background relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-accent" />
           <CardContent className="p-6 flex flex-col md:flex-row items-start gap-6">
-            <div className="p-3 bg-foreground text-background border border-foreground rounded-none shrink-0 md:mt-1 hidden md:block">
+            <div className="p-3 bg-foreground text-background border border-foreground rounded shrink-0 md:mt-1 hidden md:block">
               <Terminal className="w-6 h-6" />
             </div>
             <div className="flex-1 w-full">
@@ -169,7 +169,7 @@ export default function CommandCenter() {
                   No active delivery signals require attention.
                 </p>
               ) : (
-                <div className="flex flex-col divide-y divide-border border border-border">
+                <div className="flex flex-col divide-y divide-border border border-border rounded">
                   {signals.map((s, idx) => (
                     <Link key={idx} href={s.href} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 hover:bg-surface-hover transition-colors group">
                       <div className="flex items-center gap-3">
@@ -205,12 +205,12 @@ export default function CommandCenter() {
           { label: 'Blocked / Overdue', value: pad(metrics.blockedTasks + metrics.overdueTasks), sub: `${metrics.blockedTasks} Blocked · ${metrics.overdueTasks} Overdue`, icon: <Clock className="w-5 h-5" /> },
           { label: 'Pending Approvals', value: pad(metrics.pendingApprovals), sub: 'Release Gates', icon: <ShieldAlert className="w-5 h-5" /> },
         ]).map((stat, i) => (
-          <Card key={i} className="shadow-none border-border rounded-none bg-background hover:border-foreground transition-colors group relative">
+          <Card key={i} className="shadow-none border-border rounded bg-background hover:border-foreground transition-colors group relative">
             <div className="absolute top-0 right-0 p-2 font-mono text-[10px] text-muted-foreground group-hover:text-foreground">0{i + 1}</div>
             <CardContent className="p-6 flex flex-col justify-between h-full">
               <div className="flex items-center justify-between text-muted-foreground mb-8">
                 <span className="font-mono text-[10px] uppercase tracking-widest">{stat.label}</span>
-                <div className="p-2 border border-border group-hover:bg-foreground group-hover:text-background transition-colors">{stat.icon}</div>
+                <div className="p-2 border border-border rounded group-hover:bg-foreground group-hover:text-background transition-colors">{stat.icon}</div>
               </div>
               <div>
                 <div className="text-4xl font-bold mb-2 text-foreground tracking-tighter">{stat.value}</div>
@@ -225,7 +225,7 @@ export default function CommandCenter() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Delivery Trend */}
-        <Card className="shadow-none border-border rounded-none bg-background h-full flex flex-col">
+        <Card className="shadow-none border-border rounded bg-background h-full flex flex-col">
           <CardHeader className="border-b border-border pb-4 mb-4">
             <CardTitle className="text-xs font-mono uppercase tracking-widest text-foreground">Delivery_Trend</CardTitle>
           </CardHeader>
@@ -252,7 +252,7 @@ export default function CommandCenter() {
         </Card>
 
         {/* Work by Project */}
-        <Card className="shadow-none border-border rounded-none bg-background h-full flex flex-col">
+        <Card className="shadow-none border-border rounded bg-background h-full flex flex-col">
           <CardHeader className="border-b border-border pb-4 mb-4">
             <CardTitle className="text-xs font-mono uppercase tracking-widest text-foreground">Work_By_Project</CardTitle>
           </CardHeader>
@@ -279,7 +279,7 @@ export default function CommandCenter() {
         </Card>
 
         {/* Attention Queue */}
-        <Card className="shadow-none border-border rounded-none bg-background h-full flex flex-col lg:col-span-2">
+        <Card className="shadow-none border-border rounded bg-background h-full flex flex-col lg:col-span-2">
           <CardHeader className="border-b border-border pb-4 bg-surface sticky top-0 z-10">
             <CardTitle className="text-xs font-mono uppercase tracking-widest text-foreground">Attention_Queue</CardTitle>
           </CardHeader>
@@ -305,7 +305,7 @@ export default function CommandCenter() {
                     {attentionQueue.map((item, idx) => (
                       <tr key={idx} className="hover:bg-surface-hover transition-colors group">
                         <td className="p-4">
-                          <Link href={item.href} className="font-mono text-xs border border-border px-1.5 py-0.5 bg-background group-hover:border-foreground transition-colors">
+                          <Link href={item.href} className="font-mono text-xs border border-border rounded px-1.5 py-0.5 bg-background group-hover:border-foreground transition-colors">
                             {item.identifier}
                           </Link>
                         </td>
@@ -332,7 +332,7 @@ export default function CommandCenter() {
         </Card>
 
         {/* Upcoming Deadlines */}
-        <Card className="shadow-none border-border rounded-none bg-background h-full flex flex-col lg:col-span-2">
+        <Card className="shadow-none border-border rounded bg-background h-full flex flex-col lg:col-span-2">
           <CardHeader className="border-b border-border pb-4">
             <CardTitle className="text-xs font-mono uppercase tracking-widest text-foreground">Upcoming_Deadlines</CardTitle>
           </CardHeader>
@@ -346,7 +346,7 @@ export default function CommandCenter() {
                 {upcomingDeadlines.map((t, idx) => (
                   <div key={idx} className="flex items-center justify-between p-4 hover:bg-surface-hover transition-colors">
                     <div className="flex items-center gap-4">
-                      <span className="font-mono text-xs border border-border px-1.5 py-0.5 bg-background">{t.task_key}</span>
+                      <span className="font-mono text-xs border border-border rounded px-1.5 py-0.5 bg-background">{t.task_key}</span>
                       <span className="text-sm">{t.title}</span>
                     </div>
                     <div className="flex items-center gap-4 text-xs font-mono uppercase tracking-widest text-muted-foreground">
@@ -363,7 +363,7 @@ export default function CommandCenter() {
       </div>
 
       {/* RECENT ACTIVITY */}
-      <Card className="shadow-none border-border rounded-none bg-background">
+      <Card className="shadow-none border-border rounded bg-background">
         <CardHeader className="border-b border-border pb-4">
           <CardTitle className="text-xs font-mono uppercase tracking-widest text-foreground">Recent_Authorized_Activity</CardTitle>
         </CardHeader>
@@ -379,7 +379,7 @@ export default function CommandCenter() {
                   <div className="flex items-center gap-2 text-sm">
                     <span className="font-bold">{act.actor}</span>
                     <span className="text-muted-foreground">{act.action}</span>
-                    <Link href={act.href} className="font-mono text-xs border border-border px-1 py-0.5 ml-1 hover:border-foreground transition-colors">
+                    <Link href={act.href} className="font-mono text-xs border border-border rounded px-1 py-0.5 ml-1 hover:border-foreground transition-colors">
                       {act.entityId}
                     </Link>
                     <span className="truncate max-w-[200px] md:max-w-[300px] text-muted-foreground hidden md:inline-block">— {act.targetName}</span>

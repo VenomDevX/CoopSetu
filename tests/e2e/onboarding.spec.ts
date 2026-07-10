@@ -25,6 +25,7 @@ test.describe('Unified Onboarding Flow', () => {
     await page.fill('input[type="email"]', `test-unconfirmed-${Date.now()}@example.com`);
     await page.fill('input[type="password"]', 'Password123!@#');
     await page.locator('input[type="password"]').nth(1).fill('Password123!@#');
+    await page.check('input[type="checkbox"]');
     // Using page.route to simulate email confirmation enabled, where Supabase returns session: null
     await page.route('**/auth/v1/signup*', async (route) => {
       await route.fulfill({ json: { user: { id: '123' }, session: null }, status: 200 });
@@ -64,6 +65,7 @@ test.describe('Student Workspace Onboarding', () => {
     await page.fill('input[type="email"]', email);
     await page.fill('input[type="password"]', 'Password123!@#');
     await page.locator('input[type="password"]').nth(1).fill('Password123!@#');
+    await page.check('input[type="checkbox"]');
     await page.click('button:has-text("Continue")');
 
     // Local dev has email confirmations disabled, so this should land on /onboarding
@@ -102,6 +104,7 @@ test.describe('Student Workspace Onboarding', () => {
     await page.fill('input[type="email"]', email);
     await page.fill('input[type="password"]', 'Password123!@#');
     await page.locator('input[type="password"]').nth(1).fill('Password123!@#');
+    await page.check('input[type="checkbox"]');
     await page.click('button:has-text("Continue")');
 
     await page.waitForURL('**/onboarding/profile', { timeout: 15000 });

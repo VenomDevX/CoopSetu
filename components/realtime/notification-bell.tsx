@@ -139,7 +139,7 @@ export function NotificationBell() {
         onClick={toggleOpen}
         onPointerDown={(e) => dragControls.start(e)}
         aria-label="Notifications"
-        className="relative w-10 h-10 flex items-center justify-center rounded-full cursor-grab active:cursor-grabbing bg-background text-muted-foreground hover:text-foreground border border-border hover:border-foreground/30 shadow-lg shadow-black/20 transition-colors"
+        className="relative w-10 h-10 flex items-center justify-center rounded-full cursor-grab active:cursor-grabbing bg-background text-muted-foreground hover:text-foreground border border-border rounded hover:border-foreground/30 shadow-lg shadow-black/20 transition-colors"
       >
         <Bell className="w-4 h-4" />
         {unread > 0 && (
@@ -150,7 +150,7 @@ export function NotificationBell() {
       </button>
       {open && (
         <div
-          className={`absolute w-80 max-h-96 overflow-y-auto bg-background border border-border z-50 shadow-2xl ${
+          className={`absolute w-80 max-h-96 overflow-y-auto bg-background border border-border rounded z-50 shadow-2xl ${
             panelSide.v === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
           } ${panelSide.h === 'left' ? 'right-0' : 'left-0'}`}
         >

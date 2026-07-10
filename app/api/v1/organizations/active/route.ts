@@ -5,7 +5,7 @@ import { Errors } from '@/lib/api/errors';
 import { requireUser } from '@/lib/auth/require-user';
 import { ACTIVE_ORG_COOKIE } from '@/lib/auth/get-current-membership';
 
-const schema = z.object({ organization_id: z.string().uuid() });
+const schema = z.object({ organization_id: z.string().uuid() }).strict();
 
 /** Set the caller's active organization (validated against membership). */
 export async function POST(req: Request) {

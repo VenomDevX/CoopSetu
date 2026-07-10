@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AskAiButton } from '@/components/ai/ask-ai-button';
+import { AiLogo } from '@/components/ai/ai-logo';
 import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
 
 type EventType = 'task' | 'release' | 'milestone' | 'meeting' | 'compliance' | 'leave' | 'incident';
@@ -248,22 +249,22 @@ export default function CalendarPage() {
         </div>
         <div className="flex items-center gap-3">
           {canAddDeadline && (
-            <Button data-testid="add-deadline-button" onClick={() => setIsDeadlineOpen(true)} className="h-9 px-4 rounded-none text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
+            <Button data-testid="add-deadline-button" onClick={() => setIsDeadlineOpen(true)} className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
               <Plus className="w-4 h-4" />
               Add Deadline
             </Button>
           )}
-          <AskAiButton intent="summarize-calendar" label="Ask Handoff AI" title="Schedule Digest" />
+          <AskAiButton intent="summarize-calendar" title="Schedule Digest" />
         </div>
       </div>
 
       {/* Top Controls */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 p-2 border border-border bg-surface-hover flex-shrink-0">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 p-2 border border-border rounded bg-surface-hover flex-shrink-0">
         <div className="flex items-center gap-2">
-          <Button onClick={goToday} variant="outline" size="sm" className="h-8 px-3 rounded-none text-xs font-mono uppercase tracking-widest border-border bg-background">
+          <Button onClick={goToday} variant="outline" size="sm" className="h-8 px-3 rounded text-xs font-mono uppercase tracking-widest border-border bg-background">
             Today
           </Button>
-          <div className="flex items-center gap-1 bg-background border border-border px-2 h-8">
+          <div className="flex items-center gap-1 bg-background border border-border rounded px-2 h-8">
             <button onClick={() => goMonth(-1)} className="p-1 hover:bg-surface"><ChevronLeft className="w-4 h-4" /></button>
             <span className="font-mono text-xs uppercase px-2 font-bold min-w-[130px] text-center">{monthLabel}</span>
             <button onClick={() => goMonth(1)} className="p-1 hover:bg-surface"><ChevronRight className="w-4 h-4" /></button>
@@ -271,7 +272,7 @@ export default function CalendarPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex border border-border bg-background">
+          <div className="flex border border-border rounded bg-background">
             {['Month', 'Agenda'].map((v) => (
               <button
                 key={v}
@@ -291,9 +292,9 @@ export default function CalendarPage() {
             <input
               value={search} onChange={(e) => setSearch(e.target.value)}
               type="text" placeholder="SEARCH EVENTS..."
-              className="w-full h-8 pl-7 pr-3 bg-background border border-border text-[10px] font-mono uppercase focus:outline-none focus:border-foreground" />
+              className="w-full h-8 pl-7 pr-3 bg-background border border-border rounded text-[10px] font-mono uppercase focus:outline-none focus:border-foreground" />
           </div>
-          <Button variant="outline" disabled title="Not available yet" size="sm" className="h-8 px-3 rounded-none text-[10px] font-mono uppercase border-border bg-background disabled:opacity-40">
+          <Button variant="outline" disabled title="Not available yet" size="sm" className="h-8 px-3 rounded text-[10px] font-mono uppercase border-border bg-background disabled:opacity-40">
             <Filter className="w-3 h-3 mr-2" /> Filter
           </Button>
         </div>
@@ -302,7 +303,7 @@ export default function CalendarPage() {
       {error && (
         <div className="mb-6 p-3 border border-destructive/50 bg-destructive/10 flex items-center justify-between flex-shrink-0">
           <span className="text-[10px] font-mono uppercase tracking-widest text-destructive">{error}</span>
-          <Button variant="outline" size="sm" className="rounded-none text-xs font-mono uppercase tracking-widest" onClick={load}>
+          <Button variant="outline" size="sm" className="rounded text-xs font-mono uppercase tracking-widest" onClick={load}>
             Retry
           </Button>
         </div>
@@ -337,7 +338,7 @@ export default function CalendarPage() {
 
         {/* Middle Column - Calendar Grid */}
         {view === 'Month' ? (
-          <div className="lg:col-span-7 flex flex-col border border-border bg-background min-h-0">
+          <div className="lg:col-span-7 flex flex-col border border-border rounded bg-background min-h-0">
             <div className="grid grid-cols-7 border-b border-border bg-surface-hover">
               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
                 <div key={day} className="p-2 text-center text-[10px] font-mono uppercase tracking-widest text-muted-foreground border-r border-border last:border-r-0">
@@ -378,7 +379,7 @@ export default function CalendarPage() {
           </div>
         ) : (
           /* Agenda view — flat chronological list of the displayed month's events */
-          <div className="lg:col-span-7 flex flex-col border border-border bg-background min-h-0 overflow-y-auto scrollbar-thin">
+          <div className="lg:col-span-7 flex flex-col border border-border rounded bg-background min-h-0 overflow-y-auto scrollbar-thin">
             {monthEvents.length === 0 ? (
               <div className="p-8 text-center text-xs font-mono text-muted-foreground">No events in {monthLabel}.</div>
             ) : (
@@ -405,11 +406,11 @@ export default function CalendarPage() {
         <div className="lg:col-span-3 flex flex-col gap-6 min-h-0 overflow-y-auto pr-2 scrollbar-none">
 
           {/* Schedule Insights — derived from real events for the displayed month */}
-          <div className="border border-border bg-background relative overflow-hidden">
+          <div className="border border-border rounded bg-background relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 rounded-bl-full pointer-events-none" />
             <div className="p-4 border-b border-border bg-surface-hover flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Bot className="w-4 h-4 text-accent" />
+                <AiLogo className="w-4 h-4 text-accent" />
                 <h3 className="font-mono text-xs uppercase tracking-widest font-bold">Schedule Insights</h3>
               </div>
             </div>
@@ -440,7 +441,7 @@ export default function CalendarPage() {
           </div>
 
           {/* Upcoming — real events in the next 7 days */}
-          <div className="border border-border bg-background">
+          <div className="border border-border rounded bg-background">
             <div className="p-4 border-b border-border bg-surface-hover">
               <h3 className="font-mono text-xs uppercase tracking-widest font-bold flex items-center gap-2">
                 <div className="w-2 h-2 bg-foreground" /> Upcoming This Week
@@ -466,7 +467,7 @@ export default function CalendarPage() {
           </div>
 
           {/* Team — real org members (availability tracking not yet implemented) */}
-          <div className="border border-border bg-background">
+          <div className="border border-border rounded bg-background">
             <div className="p-4 border-b border-border bg-surface-hover">
               <h3 className="font-mono text-xs uppercase tracking-widest font-bold flex items-center gap-2">
                 <Users className="w-4 h-4" /> Team
@@ -475,7 +476,7 @@ export default function CalendarPage() {
             <div className="p-4 space-y-4">
               {members.slice(0, 6).map((m) => (
                 <div key={m.id} className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-surface border border-border flex items-center justify-center text-xs font-mono font-bold flex-shrink-0">
+                  <div className="w-8 h-8 bg-surface border border-border rounded flex items-center justify-center text-xs font-mono font-bold flex-shrink-0">
                     {m.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
@@ -543,7 +544,7 @@ export default function CalendarPage() {
                 </div>
 
                 {selectedEvent.href && (
-                  <a href={selectedEvent.href} className="inline-flex items-center gap-2 h-9 px-4 border border-border font-mono text-xs uppercase tracking-widest hover:bg-surface">
+                  <a href={selectedEvent.href} className="inline-flex items-center gap-2 h-9 px-4 border border-border rounded font-mono text-xs uppercase tracking-widest hover:bg-surface">
                     Open Item <ChevronRight className="w-3 h-3" />
                   </a>
                 )}

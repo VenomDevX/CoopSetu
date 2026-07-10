@@ -45,6 +45,7 @@ export function PublicFooter() {
               <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
               <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
               <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+              <Link href="/cookies" className="hover:text-foreground transition-colors">Cookies</Link>
             </div>
 
             <div className="flex flex-col gap-4">

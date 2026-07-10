@@ -8,7 +8,7 @@ import { provisionDemoWorkspace } from '@/lib/demo/provision-demo-workspace';
 
 const schema = z.object({
   role: z.string(),
-});
+}).strict();
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
