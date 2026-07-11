@@ -94,6 +94,18 @@
     GEMINI_API_KEY=your-gemini-api-key
     AI_PROVIDER=gemini
     ```
+    See [`.env.example`](.env.example) for the full list of variables and which
+    are server-only vs. browser-exposed (`NEXT_PUBLIC_`).
+
+    > ### ⚠️ Security: rotate any previously hardcoded secrets
+    > All secrets are now loaded exclusively from environment variables. If any
+    > secret (Supabase service-role/secret key, `GEMINI_API_KEY`,
+    > `ENCRYPTION_KEY`, GitHub/Google OAuth client secrets, SMTP or Upstash
+    > credentials, `CRON_SECRET`, etc.) was **ever** committed to the repository
+    > or hardcoded in source, it remains recoverable in git history even after
+    > removal. **Rotate every such secret immediately** in the respective
+    > provider dashboard before deploying, and treat the old values as
+    > compromised. Never commit `.env.local` — it is gitignored by default.
 
 4.  **Database Migration**
     Link your local CLI configuration to your remote Supabase instance:
