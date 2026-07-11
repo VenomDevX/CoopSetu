@@ -9,7 +9,7 @@ export default async function ResetPasswordPage() {
 
   if (!user) {
     return (
-      <OnboardingShell currentStep={1} totalSteps={1} stepLabel="Account Recovery" title="This link is invalid or expired" steps={[{ id: 1, label: 'Reset Password' }]}>
+      <OnboardingShell currentStep={1} totalSteps={1} stepLabel="Account Recovery" title="This link is invalid or expired">
         <div className="bg-surface p-6 border border-border rounded text-center space-y-4 rounded-sm">
           <p className="text-sm text-muted-foreground">Password reset links expire after a short time and can only be used once. Request a new one.</p>
           <Link href="/forgot-password" className="text-xs font-mono uppercase tracking-widest underline hover:opacity-80">
