@@ -41,7 +41,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: profile } = await supabase.from('profiles').select('full_name, email, avatar_path').eq('id', data.user.id).single();
         const name = profile?.full_name || profile?.email || data.user?.email || 'User';
         setUserName(name);
-        if (profile?.avatar_path) setAvatarUrl(profile.avatar_path);
+        
+        const oauthAvatar = data.user.user_metadata?.avatar_url || data.user.user_metadata?.picture;
+        if (profile?.avatar_path) {
+          setAvatarUrl(profile.avatar_path);
+        } else if (oauthAvatar) {
+          setAvatarUrl(oauthAvatar);
+        }
       } else {
         setIsLoggedIn(false);
         setUserName(null);
