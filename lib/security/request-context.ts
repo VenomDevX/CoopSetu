@@ -24,11 +24,19 @@ function getHmacSecret(): string {
   return `dev-only-${process.pid}-${Math.random().toString(36).slice(2)}`;
 }
 
-const HMAC_SECRET = getHmacSecret();
+// Resolve the secret lazily on first use rather than at module load. Evaluating
+// it at import time would throw during the Next.js production build (page-data
+// collection imports route modules before runtime env vars are available). The
+// fail-closed check still runs — just at request time, where it belongs.
+let cachedSecret: string | null = null;
+function hmacSecret(): string {
+  if (cachedSecret === null) cachedSecret = getHmacSecret();
+  return cachedSecret;
+}
 
 function hashValue(value: string | null | undefined): string | null {
   if (!value) return null;
-  return createHmac('sha256', HMAC_SECRET).update(value).digest('hex');
+  return createHmac('sha256', hmacSecret()).update(value).digest('hex');
 }
 
 export async function getRequestContext(): Promise<RequestContext> {
