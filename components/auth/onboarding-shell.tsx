@@ -25,8 +25,6 @@ export type OnboardingShellProps = {
   /** Called when the back arrow above the step label is clicked. Omit to hide it. */
   onBack?: () => void;
   backLabel?: string;
-  /** Overrides the left-panel step list. Defaults to the enterprise 4-step flow. */
-  steps?: Step[];
 };
 
 const ENTERPRISE_STEPS: Step[] = [
@@ -47,7 +45,6 @@ export function OnboardingShell({
   connectedAccount,
   onBack,
   backLabel = 'Back',
-  steps = ENTERPRISE_STEPS,
 }: OnboardingShellProps) {
   return (
     <div className="min-h-dvh flex flex-col lg:flex-row bg-background text-foreground font-sans selection:bg-foreground selection:text-background">
@@ -69,7 +66,7 @@ export function OnboardingShell({
           </p>
 
           <div className="space-y-6">
-            {steps.map((step) => {
+            {ENTERPRISE_STEPS.map((step) => {
               const isPast = currentStep > step.id;
               const isCurrent = currentStep === step.id;
               const isFuture = currentStep < step.id;

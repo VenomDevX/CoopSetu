@@ -5,13 +5,6 @@ import { useRouter } from 'next/navigation';
 import { ChevronRight, Loader2, Check, Copy } from 'lucide-react';
 import { OnboardingShell } from '@/components/auth/onboarding-shell';
 
-const STEPS = [
-  { id: 1, label: 'Account' },
-  { id: 2, label: 'Profile' },
-  { id: 3, label: 'Workspace Path' },
-  { id: 4, label: 'Student Setup' },
-];
-
 export default function TeamCreationClient() {
   const router = useRouter();
   const [name, setName] = useState('');
@@ -67,12 +60,11 @@ export default function TeamCreationClient() {
   if (joinCode) {
     return (
       <OnboardingShell
-        currentStep={3}
-        totalSteps={3}
+        currentStep={4}
+        totalSteps={4}
         stepLabel="Student Setup"
         title="Your team is ready"
         subtitle="Share this code with teammates so they can join. It's shown only this once — you can rotate it later from Team Settings if you lose it."
-        steps={STEPS}
       >
         <div className="space-y-6 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="p-6 border border-border rounded bg-surface flex items-center justify-between gap-4">
@@ -100,12 +92,11 @@ export default function TeamCreationClient() {
 
   return (
     <OnboardingShell
-      currentStep={3}
-      totalSteps={3}
+      currentStep={4}
+      totalSteps={4}
       stepLabel="Student Setup"
       title="Create a Student Team"
       subtitle="For hackathons, group assignments, clubs, and collaborative student projects."
-      steps={STEPS}
       onBack={() => router.push('/onboarding/student')}
     >
       <form onSubmit={handleSubmit} className="space-y-6 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">

@@ -4,12 +4,6 @@ import { useRouter } from 'next/navigation';
 import { Briefcase, GraduationCap, ArrowRight } from 'lucide-react';
 import { OnboardingShell } from '@/components/auth/onboarding-shell';
 
-const STEPS = [
-  { id: 1, label: 'Profile' },
-  { id: 2, label: 'Workspace Path' },
-  { id: 3, label: 'Setup' },
-];
-
 export default function WorkspacePathClient() {
   const router = useRouter();
 
@@ -20,12 +14,12 @@ export default function WorkspacePathClient() {
 
   return (
     <OnboardingShell
-      currentStep={2}
-      totalSteps={3}
+      currentStep={3}
+      totalSteps={4}
       stepLabel="Workspace Path"
-      title="What brings you to Handoff?"
-      subtitle="This just decides which setup you'll see next — you're never locked in."
-      steps={STEPS}
+      title="How will you use Handoff?"
+      subtitle="This helps us personalize your workspace setup."
+      onBack={() => router.push('/onboarding/profile')}
     >
       <div className="space-y-4 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
         <button

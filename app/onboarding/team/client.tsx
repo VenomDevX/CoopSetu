@@ -29,8 +29,8 @@ export default function TeamClient({ connectedAccount }: TeamClientProps) {
 
   return (
     <OnboardingShell
-      currentStep={3}
-      totalSteps={3}
+      currentStep={4}
+      totalSteps={4}
       stepLabel="Workspace Setup"
       title="Finish Setup"
       subtitle="Your workspace is ready. You can create teams later from the Teams workspace."
