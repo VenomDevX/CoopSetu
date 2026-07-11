@@ -89,7 +89,7 @@ export default function CompanyClient({ connectedAccount }: CompanyClientProps) 
         body: JSON.stringify({ organization_id: data.data.id }),
       });
 
-      router.push('/onboarding'); // Let central resolver redirect to team step
+      router.push('/onboarding/team'); // Let central resolver redirect to team step
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
@@ -105,7 +105,7 @@ export default function CompanyClient({ connectedAccount }: CompanyClientProps) 
       subtitle="You will become the organization owner."
       showConnectedAccount={true}
       connectedAccount={connectedAccount}
-      onBack={loading ? undefined : () => router.push('/onboarding/profile')}
+      onBack={loading ? undefined : () => router.back()}
     >
       <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 w-full">
         {error && (

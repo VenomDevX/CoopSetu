@@ -79,6 +79,44 @@ export async function POST(req: NextRequest) {
       throw Errors.internal('Failed to update profile');
     }
 
-    return ok({ success: true });
+    // Determine the next step dynamically to avoid Next.js redirect flashes
+    let nextUrl = '/dashboard';
+    const { data: pendingInvites } = await admin
+      .from('organization_invites')
+      .select('id')
+      .eq('email', user.email)
+      .eq('status', 'PENDING');
+    const hasPendingInvites = (pendingInvites && pendingInvites.length > 0);
+
+    const { data: memberships } = await admin
+      .from('organization_members')
+      .select(`is_active, organization_id, member_roles!member_roles_organization_member_id_fkey ( roles ( code ) ), organizations:organization_id ( initial_setup_completed_at )`)
+      .eq('user_id', user.id);
+    const activeMemberships = memberships?.filter(m => m.is_active) || [];
+
+    const createWorkspaceIntent = req.cookies.get('create_workspace_intent')?.value === 'true';
+
+    if (activeMemberships.length === 0 && hasPendingInvites && !createWorkspaceIntent) {
+      nextUrl = '/onboarding/invites';
+    } else if (activeMemberships.length === 0) {
+      const workspacePathIntent = req.cookies.get('workspace_path_intent')?.value;
+      if (workspacePathIntent === 'student') {
+        nextUrl = '/onboarding/student';
+      } else if (workspacePathIntent === 'enterprise') {
+        nextUrl = '/onboarding/company';
+      } else {
+        nextUrl = '/onboarding/workspace-path';
+      }
+    } else {
+      const unfinishedOwnedOrg = activeMemberships.find(m => {
+        const roleCodes: string[] = (m.member_roles || []).map((mr: any) => mr.roles?.code).filter(Boolean);
+        return roleCodes.includes('ORG_OWNER') && !m.organizations?.initial_setup_completed_at;
+      });
+      if (unfinishedOwnedOrg) {
+        nextUrl = '/onboarding/team';
+      }
+    }
+
+    return ok({ success: true, nextUrl });
   });
 }

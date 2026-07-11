@@ -119,12 +119,16 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
         })
       });
 
-      const data = await res.json();
+      const payload = await res.json();
       if (!res.ok) {
-        throw new Error(data.error?.message || 'Failed to update profile');
+        throw new Error(payload.error?.message || 'Failed to update profile');
       }
 
-      router.push('/onboarding'); // Let central resolver determine next step
+      if (payload.data?.nextUrl) {
+        router.push(payload.data.nextUrl);
+      } else {
+        router.push('/onboarding');
+      }
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
@@ -140,6 +144,7 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
       subtitle="This is how others will see you in your workspace."
       showConnectedAccount={!!connectedAccount}
       connectedAccount={connectedAccount}
+      onBack={() => router.back()}
     >
       <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 w-full">
         {error && (
@@ -260,26 +265,24 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
           </div>
         </div>
 
-        {needsLegalConsent && (
-          <label className="flex items-start gap-3 cursor-pointer select-none w-full group">
-            <Checkbox
-              checked={acceptedLegal}
-              onCheckedChange={(checked) => setAcceptedLegal(checked as boolean)}
-              className="mt-0.5"
-            />
-            <span className="text-sm text-foreground">
-              I agree to the{' '}
-              <Link href="/terms" target="_blank" className="underline hover:opacity-80">
-                Terms of Service
-              </Link>{' '}
-              and{' '}
-              <Link href="/privacy" target="_blank" className="underline hover:opacity-80">
-                Privacy Policy
-              </Link>
-              .
-            </span>
-          </label>
-        )}
+        <label className="flex items-start gap-3 cursor-pointer select-none w-full group">
+          <Checkbox
+            checked={acceptedLegal}
+            onCheckedChange={(checked) => setAcceptedLegal(checked as boolean)}
+            className="mt-0.5"
+          />
+          <span className="text-sm text-foreground">
+            I agree to the{' '}
+            <Link href="/terms" target="_blank" className="underline hover:opacity-80">
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link href="/privacy" target="_blank" className="underline hover:opacity-80">
+              Privacy Policy
+            </Link>
+            .
+          </span>
+        </label>
 
         <button type="submit" disabled={!isFormValid || checkingUsername || loading} className="w-full h-11 bg-foreground text-background rounded-[6px] text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-50">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continue <ChevronRight className="w-4 h-4" /></>}

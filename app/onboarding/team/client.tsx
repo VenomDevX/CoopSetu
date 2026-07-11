@@ -36,6 +36,7 @@ export default function TeamClient({ connectedAccount }: TeamClientProps) {
       subtitle="Your workspace is ready. You can create teams later from the Teams workspace."
       showConnectedAccount={true}
       connectedAccount={connectedAccount}
+      onBack={isPending ? undefined : () => router.back()}
     >
       <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 w-full">
         {error && (
@@ -52,7 +53,7 @@ export default function TeamClient({ connectedAccount }: TeamClientProps) {
         <button 
           onClick={handleFinish}
           disabled={isPending}
-          className="w-full h-11 bg-foreground text-background text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-50"
+          className="w-full h-11 bg-foreground text-background rounded text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-50"
         >
           {isPending ? (
             <><Loader2 className="w-4 h-4 animate-spin" /> Finishing...</>
