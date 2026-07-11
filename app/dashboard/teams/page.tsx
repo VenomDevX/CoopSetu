@@ -7,7 +7,6 @@ import {
   Search,
   Filter,
   Plus,
-  Bot,
   Users,
   Briefcase,
   UserCircle,
@@ -27,6 +26,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { AskAiButton } from '@/components/ai/ask-ai-button';
+import { AiLogo } from '@/components/ai/ai-logo';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useCurrentMembership } from '@/lib/permissions/context';
@@ -280,7 +280,7 @@ function EnterpriseTeamsPage() {
             <div className="border border-accent/30 bg-accent/5 p-4 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-24 h-24 bg-accent/10 rounded-bl-full pointer-events-none" />
               <div className="flex items-center gap-2 mb-3">
-                <Bot className="w-4 h-4 text-accent" />
+                <AiLogo className="w-4 h-4 text-accent" />
                 <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold text-foreground">Handoff Insights</h3>
               </div>
               <p className="text-sm mb-3">
@@ -483,7 +483,7 @@ function EnterpriseTeamsPage() {
 
               {/* Handoff Assistant */}
               <div className="border border-accent/30 bg-accent/5 p-4 flex items-start gap-4">
-                <Bot className="w-5 h-5 text-accent flex-shrink-0 mt-1" />
+                <AiLogo className="w-5 h-5 text-accent flex-shrink-0 mt-1" />
                 <div>
                   <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold text-foreground mb-2">Handoff Career & Allocation Insights</h3>
                   <p className="text-sm mb-3 text-muted-foreground">
@@ -527,7 +527,7 @@ function EnterpriseTeamsPage() {
             <div className="border border-accent border-l-4 p-5 bg-accent/5 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
               <div className="max-w-3xl">
                 <div className="flex items-center gap-2 mb-2">
-                  <Bot className="w-5 h-5 text-accent" />
+                  <AiLogo className="w-5 h-5 text-accent" />
                   <h3 className="font-mono text-xs uppercase tracking-widest font-bold text-foreground">Handoff Resource Recommendations</h3>
                 </div>
                 <p className="text-sm">

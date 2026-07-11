@@ -120,7 +120,10 @@ export default function CommandCenter() {
                 </Button>
               )}
               {has('member:invite') && (
-                <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => setIsInviteModalOpen(true)}>
+                <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => {
+                  if (membership.isDemo) window.dispatchEvent(new CustomEvent('demo-alert'));
+                  else setIsInviteModalOpen(true);
+                }}>
                   <Users className="w-4 h-4 mr-2" /> Invite Member
                 </Button>
               )}
@@ -206,7 +209,6 @@ export default function CommandCenter() {
           { label: 'Pending Approvals', value: pad(metrics.pendingApprovals), sub: 'Release Gates', icon: <ShieldAlert className="w-5 h-5" /> },
         ]).map((stat, i) => (
           <Card key={i} className="shadow-none border-border rounded bg-background hover:border-foreground transition-colors group relative">
-            <div className="absolute top-0 right-0 p-2 font-mono text-[10px] text-muted-foreground group-hover:text-foreground">0{i + 1}</div>
             <CardContent className="p-6 flex flex-col justify-between h-full">
               <div className="flex items-center justify-between text-muted-foreground mb-8">
                 <span className="font-mono text-[10px] uppercase tracking-widest">{stat.label}</span>

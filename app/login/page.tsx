@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Eye, EyeOff, Loader2, Github } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Github, Building2, Users, Zap } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { GoogleIcon } from '@/components/icons/google-icon';
 import { createClient } from '@/lib/supabase/client';
@@ -140,9 +140,9 @@ function LoginInner() {
           </p>
 
           <div className="space-y-4 font-mono text-xs text-muted-foreground tracking-widest uppercase">
-            <div className="flex items-center gap-3"><div className="w-1.5 h-1.5 bg-foreground"></div> ORG_SCOPED_ACCESS</div>
-            <div className="flex items-center gap-3"><div className="w-1.5 h-1.5 bg-foreground"></div> ROLE_AWARE_WORKSPACE</div>
-            <div className="flex items-center gap-3"><div className="w-1.5 h-1.5 bg-foreground"></div> REALTIME_DELIVERY_SYNC</div>
+            <div className="flex items-center gap-3"><Building2 className="w-4 h-4 text-foreground" /> ORG_SCOPED_ACCESS</div>
+            <div className="flex items-center gap-3"><Users className="w-4 h-4 text-foreground" /> ROLE_AWARE_WORKSPACE</div>
+            <div className="flex items-center gap-3"><Zap className="w-4 h-4 text-foreground" /> REALTIME_DELIVERY_SYNC</div>
           </div>
         </div>
 

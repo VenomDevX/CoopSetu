@@ -1,5 +1,7 @@
 'use client';
 import { Logo } from '@/components/logo';
+import { MarketingHeader } from '@/components/layout/marketing-header';
+import { AiLogo } from '@/components/ai/ai-logo';
 
 import React from 'react';
 import Link from 'next/link';
@@ -16,7 +18,6 @@ import {
   Blocks,
   Settings2,
   PieChart,
-  Bot,
   Terminal,
   Shield,
   Activity,
@@ -40,39 +41,7 @@ export default function EnterprisePage() {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground font-sans selection:bg-foreground selection:text-background transition-colors duration-200">
       {/* Navigation */}
-      <header className="fixed top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl">
-        <div className="w-full px-6 md:px-12 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-12">
-            <Link href="/" className="font-bold text-lg tracking-tight flex items-center gap-3">
-              <Logo width={24} height={24} />
-              <span className="uppercase tracking-widest text-xs">HANDOFF</span>
-            </Link>
-            <nav className="hidden md:flex items-center gap-8 text-xs font-mono uppercase tracking-widest text-muted-foreground">
-              <Link href="/product" className="hover:text-foreground transition-colors">Product</Link>
-              <Link href="/solutions" className="hover:text-foreground transition-colors">Solutions</Link>
-              <Link href="/ai" className="hover:text-foreground transition-colors">AI</Link>
-              <Link href="/security" className="hover:text-foreground transition-colors">Security</Link>
-              <Link href="/enterprise" className="text-foreground transition-colors">Enterprise</Link>
-              <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-6">
-            <button 
-              onClick={() => handleNavigate('/dashboard', 'signin')}
-              className="text-xs font-mono uppercase tracking-widest hover:text-muted-foreground transition-colors hidden sm:block"
-            >
-              Sign In
-            </button>
-            <Button 
-              onClick={() => handleNavigate('/dashboard', 'demo')}
-              className="bg-foreground text-background hover:bg-foreground/90 rounded h-9 px-6 text-xs font-mono uppercase tracking-widest"
-              disabled={isNavigating}
-            >
-              {isNavigating && navType === 'demo' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Request Demo'}
-            </Button>
-          </div>
-        </div>
-      </header>
+      <MarketingHeader />
 
       {/* Main Content */}
       <main className="flex-grow pt-32 pb-24">
@@ -144,7 +113,7 @@ export default function EnterprisePage() {
                 
                 <div className="border border-accent/20 bg-surface p-4 flex-1 shadow-[0_0_15px_rgba(var(--accent),0.05)]">
                   <div className="flex items-center gap-2 mb-2">
-                    <Bot className="w-3 h-3 text-accent" />
+                    <AiLogo className="w-3 h-3 text-accent" />
                     <span className="font-mono text-[10px] uppercase tracking-widest font-bold">Executive Summary</span>
                   </div>
                   <p className="text-[10px] text-muted-foreground leading-relaxed">

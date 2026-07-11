@@ -83,7 +83,7 @@ export async function middleware(request: NextRequest) {
     default-src 'self';
     script-src ${scriptSrc};
     style-src 'self' 'unsafe-inline';
-    img-src 'self' data: https:;
+    img-src 'self' data: https: ${supabaseOrigin} http://127.0.0.1:54321 http://localhost:54321;
     font-src 'self' data:;
     connect-src ${connectSrc};
     worker-src 'self' blob:;

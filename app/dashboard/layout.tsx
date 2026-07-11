@@ -21,13 +21,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   const [{ data: profile }, { data: org }] = await Promise.all([
-    supabase.from('profiles').select('full_name, email').eq('id', user.id).maybeSingle(),
+    supabase.from('profiles').select('full_name, email, avatar_path').eq('id', user.id).maybeSingle(),
     supabase.from('organizations').select('name').eq('id', membership.organizationId).maybeSingle(),
   ]);
 
   const displayName = profile?.full_name || profile?.email || user.email || 'User';
   const initials = displayName.split(/\s+/).map((s: string) => s[0]).slice(0, 2).join('').toUpperCase();
   const orgName = org?.name ?? 'Organization';
+  const avatarUrl = profile?.avatar_path || null;
+  console.log('LAYOUT DEBUG:', { id: user.id, avatarUrl, profile });
 
   return (
       <div className="flex flex-col h-[100dvh]">
@@ -35,6 +37,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <DashboardShell
           displayName={displayName}
           initials={initials}
+          avatarUrl={avatarUrl}
           membership={{
             memberId: membership.memberId,
             organizationId: membership.organizationId,

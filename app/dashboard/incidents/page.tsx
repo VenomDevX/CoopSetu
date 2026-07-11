@@ -9,7 +9,6 @@ import {
   Search,
   Filter,
   Plus,
-  Bot,
   AlertTriangle,
   Download,
   FileText,

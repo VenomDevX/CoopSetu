@@ -1,5 +1,6 @@
 'use client';
 import { Logo } from '@/components/logo';
+import { MarketingHeader } from '@/components/layout/marketing-header';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { WORLD_LAND_PATH } from '@/lib/world-map-path';
 import { EnterpriseCapabilities } from '@/components/marketing/enterprise-capabilities';
@@ -45,6 +46,7 @@ export default function LandingPage() {
   const [expandedPanel, setExpandedPanel] = useState<number | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -66,9 +68,12 @@ export default function LandingPage() {
         supabase.auth.getUser().then(({ data }) => {
           if (data.user) {
             setIsLoggedIn(true);
-            supabase.from('profiles').select('full_name, email').eq('id', data.user.id).single().then(({ data: profile }) => {
+            supabase.from('profiles').select('full_name, email, avatar_path').eq('id', data.user.id).single().then(({ data: profile }) => {
               const name = profile?.full_name || profile?.email || data.user?.email || 'User';
               setUserName(name);
+              if (profile?.avatar_path) {
+                setAvatarUrl(profile.avatar_path);
+              }
             });
           } else {
             setIsLoggedIn(false);
@@ -100,6 +105,7 @@ export default function LandingPage() {
     await supabase.auth.signOut();
     setIsLoggedIn(false);
     setUserName(null);
+    setAvatarUrl(null);
     router.refresh();
   };
 
@@ -164,129 +170,7 @@ export default function LandingPage() {
   return (
     <div className="dark min-h-screen flex flex-col bg-background text-foreground font-sans selection:bg-foreground selection:text-background transition-colors duration-200">
       {/* Sharp minimal header */}
-      <motion.header
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl"
-      >
-        <div className="w-full px-6 md:px-12 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-12">
-            <Link href="/" className="font-bold text-lg tracking-tight flex items-center gap-3">
-              <Logo width={24} height={24} />
-              <span className="uppercase tracking-widest text-xs">HANDOFF</span>
-            </Link>
-            <nav className="hidden md:flex items-center gap-8 text-xs font-mono uppercase tracking-widest text-muted-foreground">
-              <Link href="/product" className="hover:text-foreground transition-colors">Product</Link>
-              <Link href="/solutions" className="hover:text-foreground transition-colors">Solutions</Link>
-              <Link href="/ai" className="hover:text-foreground transition-colors">AI</Link>
-              <Link href="/security" className="hover:text-foreground transition-colors">Security</Link>
-              <Link href="/enterprise" className="hover:text-foreground transition-colors">Enterprise</Link>
-              <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-4 md:gap-6">
-            <ThemeToggle />
-            {isLoggedIn ? (
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="group flex items-center gap-2.5 py-1 transition-all duration-200 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground"
-                >
-                  <span className="w-5 h-5 rounded-full bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center text-[8px] font-bold text-white ring-2 ring-accent/20">
-                    {userName ? userName.charAt(0).toUpperCase() : 'U'}
-                  </span>
-                  <span className="hidden md:block truncate max-w-[96px]">
-                    {userName ? userName.split(' ')[0] : 'User'}
-                  </span>
-                  <ChevronDown className={`w-3 h-3 shrink-0 text-muted-foreground group-hover:text-foreground transition-transform duration-200 ${userDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                <AnimatePresence>
-                  {userDropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -4, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -4, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-2 w-52 bg-background border border-border rounded shadow-2xl z-50 overflow-hidden"
-                    >
-                      <div className="px-4 py-3 border-b border-border">
-                        <p className="text-xs font-mono uppercase tracking-widest text-foreground truncate">{userName || 'User'}</p>
-                        <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mt-0.5">Workspace</p>
-                      </div>
-                      <div className="py-1">
-                        <button
-                          onClick={() => { setUserDropdownOpen(false); handleNavigate('/dashboard', 'dashboard'); }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
-                        >
-                          <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
-                        </button>
-                        <button
-                          onClick={() => { setUserDropdownOpen(false); handleNavigate('/dashboard/settings', 'settings'); }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
-                        >
-                          <Settings className="w-3.5 h-3.5" /> Settings
-                        </button>
-                        <button
-                          onClick={() => { setUserDropdownOpen(false); handleNavigate('/dashboard/profile', 'profile'); }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
-                        >
-                          <User className="w-3.5 h-3.5" /> Profile
-                        </button>
-                      </div>
-                      <div className="border-t border-border py-1">
-                        <button
-                          onClick={handleSignOut}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-red-400 hover:text-red-300 hover:bg-surface-hover transition-colors"
-                        >
-                          <LogOut className="w-3.5 h-3.5" /> Sign Out
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ) : (
-              <>
-                <button
-                  onClick={() => handleNavigate('/login', 'signin')}
-                  disabled={isNavigating}
-                  className="hidden md:flex text-xs font-mono uppercase tracking-widest hover:text-foreground text-muted-foreground transition-colors disabled:opacity-50 items-center gap-2"
-                >
-                  {isNavigating && navType === 'signin' ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                  Sign In
-                </button>
-                <Button
-                  onClick={() => handleNavigate('/demo', 'demo')}
-                  disabled={isNavigating}
-                  className="bg-foreground text-background hover:bg-foreground/90 rounded h-8 px-4 md:px-6 text-xs font-mono uppercase tracking-widest transition-all w-auto md:w-40"
-                >
-                  {isNavigating && navType === 'demo' ? (
-                    <span className="flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> LOADING...</span>
-                  ) : (
-                    <span className="hidden sm:inline">Request Demo</span>
-                  )}
-                  {!(isNavigating && navType === 'demo') && <span className="sm:hidden">Demo</span>}
-                </Button>
-              </>
-            )}
-
-            <MobileNavDrawer
-              links={[
-                { href: '/product', label: 'Product' },
-                { href: '/solutions', label: 'Solutions' },
-                { href: '/ai', label: 'AI' },
-                { href: '/security', label: 'Security' },
-                { href: '/enterprise', label: 'Enterprise' },
-                { href: '/pricing', label: 'Pricing' },
-              ]}
-              onSignIn={() => handleNavigate('/dashboard', 'signin')}
-              isNavigating={isNavigating}
-            />
-          </div>
-        </div>
-      </motion.header>
+      <MarketingHeader animated />
 
       <main className="flex-1 flex flex-col w-full">
         {/* Futuristic Hero Section */}
@@ -367,7 +251,7 @@ export default function LandingPage() {
                     )}
                   </Button>
                   <Link href="#explore">
-                    <Button size="lg" variant="outline" className="h-14 px-8 text-sm font-mono uppercase tracking-widest border-black text-foreground hover:bg-surface-hover">
+                    <Button size="lg" variant="outline" className="h-14 px-8 text-sm font-mono uppercase tracking-widest border-border-strong text-foreground hover:bg-surface-hover">
                       Explore Architecture
                     </Button>
                   </Link>
@@ -397,15 +281,15 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: [0, -8, 0] }}
                 transition={{ opacity: { delay: 1.4, duration: 0.6 }, y: { delay: 1.4, duration: 4, repeat: Infinity, ease: "easeInOut" } }}
-                className="absolute -top-5 -right-3 z-20 hidden lg:flex items-center gap-2 border border-accent bg-background px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-foreground shadow-xl"
+                className="absolute -top-5 -right-3 z-20 hidden lg:flex items-center gap-2 bg-background px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-foreground shadow-xl"
               >
                 <Zap className="w-3 h-3 text-accent" />
                 +12% Velocity
               </motion.div>
 
-              <div className="bg-background border border-black rounded backdrop-blur-sm relative overflow-hidden">
+              <div className="bg-background rounded backdrop-blur-sm relative overflow-hidden shadow-2xl">
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 h-12 border-b border-black bg-background">
+                <div className="flex items-center justify-between px-5 h-12 border-b border-border-strong bg-background">
                   <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest">
                     <Layers className="w-3.5 h-3.5 text-accent" />
                     <span className="text-foreground font-bold">Sprint 24</span>
@@ -488,10 +372,10 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 24, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ delay: 1.2, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                className="absolute -left-16 -bottom-16 z-30 w-96 hidden lg:block border border-black rounded bg-background/90 backdrop-blur-md shadow-2xl"
+                className="absolute -left-16 -bottom-16 z-30 w-96 hidden lg:block rounded bg-background/90 backdrop-blur-md shadow-2xl"
               >
                 {/* Widget header */}
-                <div className="flex items-center justify-between px-5 h-12 border-b border-black">
+                <div className="flex items-center justify-between px-5 h-12 border-b border-border-strong">
                   <div className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-widest text-foreground">
                     <BarChart3 className="w-4 h-4 text-accent" />
                     Analytics
@@ -502,7 +386,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex border-b border-black">
+                <div className="flex border-b border-border-strong">
                   {charts.map((c, i) => (
                     <button
                       key={c.label}
@@ -1036,7 +920,7 @@ export default function LandingPage() {
               <div className="flex-1 min-w-0 relative flex flex-col">
                 <div
                   onClick={() => toggleArchPanel(1)}
-                  className={`flex-1 relative flex flex-col lg:flex-row bg-surface border transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer h-full ${expandedPanel === 1
+                  className={`flex-1 relative flex flex-col lg:flex-row bg-surface border rounded-[6px] transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer h-full ${expandedPanel === 1
                       ? 'w-full lg:w-[calc(200%+2.5rem)] lg:ml-0 z-50 shadow-2xl border-border group hover:border-foreground/30'
                       : expandedPanel === 2
                         ? 'w-full lg:ml-0 z-30 border-border/50 origin-left scale-[0.95] opacity-100'
@@ -1089,7 +973,7 @@ export default function LandingPage() {
               <div className="flex-1 min-w-0 relative flex flex-col">
                 <div
                   onClick={() => toggleArchPanel(2)}
-                  className={`flex-1 relative flex flex-col lg:flex-row bg-surface border transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer h-full ${expandedPanel === 2
+                  className={`flex-1 relative flex flex-col lg:flex-row bg-surface border rounded-[6px] transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer h-full ${expandedPanel === 2
                       ? 'w-full lg:w-[calc(200%+2.5rem)] lg:-ml-[calc(50%+1.25rem)] z-50 shadow-2xl border-border group hover:border-foreground/30'
                       : expandedPanel === 1
                         ? 'w-full lg:ml-0 z-30 border-border/50 translate-x-[calc(55%+1.25rem)] scale-[0.95] opacity-100'
@@ -1128,7 +1012,7 @@ export default function LandingPage() {
               <div className="flex-1 min-w-0 relative flex flex-col">
                 <div
                   onClick={() => toggleArchPanel(3)}
-                  className={`flex-1 relative flex flex-col lg:flex-row bg-surface border transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer h-full ${expandedPanel === 3
+                  className={`flex-1 relative flex flex-col lg:flex-row bg-surface border rounded-[6px] transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer h-full ${expandedPanel === 3
                       ? 'w-full lg:w-[calc(200%+2.5rem)] lg:-ml-[calc(100%+2.5rem)] z-50 shadow-2xl border-border group hover:border-foreground/30'
                       : expandedPanel === 2
                         ? 'w-full lg:ml-0 z-20 border-border/50 origin-right scale-[0.95] opacity-100'
@@ -1172,7 +1056,7 @@ export default function LandingPage() {
         </section>
 
         {/* Global Network / Infrastructure Section */}
-        <section className="section-inverse min-h-screen flex flex-col justify-center py-16 md:py-20 bg-zinc-950 text-white border-b border-white/5 overflow-hidden relative">
+        <section className="min-h-screen flex flex-col justify-center py-16 md:py-20 bg-background text-foreground border-b border-border overflow-hidden relative">
           <div className="container mx-auto px-6 md:px-12 relative z-10">
             {/* Header */}
             <motion.div 
@@ -1197,7 +1081,7 @@ export default function LandingPage() {
                     hidden: { opacity: 0, y: 10 },
                     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }
                   }}
-                  className="font-mono text-xs uppercase tracking-widest text-background/50 mb-4 flex items-center gap-3"
+                  className="font-mono text-xs uppercase tracking-widest text-foreground/50 mb-4 flex items-center gap-3"
                 >
                   <span className="w-2 h-2 bg-accent animate-pulse" /> Infrastructure // Global Network
                 </motion.div>
@@ -1221,7 +1105,7 @@ export default function LandingPage() {
                   hidden: { opacity: 0, y: 10 },
                   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }
                 }}
-                className="text-background/60 font-mono text-sm uppercase tracking-widest max-w-md md:text-right leading-relaxed"
+                className="text-foreground/60 font-mono text-sm uppercase tracking-widest max-w-md md:text-right leading-relaxed"
               >
                 Operating across 24 regions with military-grade redundancy and automated failover.
               </motion.p>
@@ -1236,17 +1120,17 @@ export default function LandingPage() {
                   className="absolute inset-0 z-0 pointer-events-none"
                   style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 45%, rgba(124,92,252,0.22) 0%, rgba(124,92,252,0.07) 40%, transparent 72%)' }}
                 />
-                <div className="absolute top-5 left-5 z-30 font-mono text-[10px] uppercase tracking-widest text-background/40">
+                <div className="absolute top-5 left-5 z-30 font-mono text-[10px] uppercase tracking-widest text-foreground/40">
                   FIG.04 — Global Network Map
                 </div>
-                <div className="absolute top-5 right-5 z-30 font-mono text-[10px] uppercase tracking-widest flex items-center gap-2 text-green-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Core Cluster Online
+                <div className="absolute top-5 right-5 z-30 font-mono text-[10px] uppercase tracking-widest flex items-center gap-2 text-green-600 dark:text-green-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-600 dark:bg-green-400 animate-pulse" /> Core Cluster Online
                 </div>
 
                 <svg
                   viewBox="0 0 900 450"
                   preserveAspectRatio="xMidYMid meet"
-                  className="relative z-10 w-[108%] h-[108%] max-w-none overflow-visible text-background"
+                  className="relative z-10 w-[108%] h-[108%] max-w-none overflow-visible text-foreground"
                   fill="none"
                   style={{ WebkitMaskImage: 'linear-gradient(to bottom, transparent 4%, black 18%, black 82%, transparent 96%)', maskImage: 'linear-gradient(to bottom, transparent 4%, black 18%, black 82%, transparent 96%)' }}
                 >
@@ -1276,7 +1160,7 @@ export default function LandingPage() {
                     ];
                     const nodes = regions.map((r) => {
                       const [x, y] = proj(r.lon, r.lat);
-                      const color = r.sync ? 'var(--accent)' : r.core ? 'var(--background)' : 'var(--background)';
+                      const color = r.sync ? 'var(--accent)' : 'var(--foreground)';
                       const anchor = x > 820 ? 'end' : x < 80 ? 'start' : 'middle';
                       return (
                         <g key={`node-${r.c}`}>
@@ -1284,7 +1168,7 @@ export default function LandingPage() {
                             <animate attributeName="r" values={r.core ? '11;26' : '8;18'} dur="2.4s" repeatCount="indefinite" />
                             <animate attributeName="opacity" values="0.6;0" dur="2.4s" repeatCount="indefinite" />
                           </circle>
-                          <circle cx={x} cy={y} r={r.core ? 6 : 4.5} fill="var(--foreground)" stroke={color} strokeWidth="2" />
+                          <circle cx={x} cy={y} r={r.core ? 6 : 4.5} fill="var(--background)" stroke={color} strokeWidth="2" />
                           <circle cx={x} cy={y} r={r.core ? 3 : 2} fill={color} />
                           <text x={x} y={y - (r.core ? 18 : 14)} textAnchor={anchor} fill="currentColor" fillOpacity={r.core ? 0.85 : 0.55} fontFamily="monospace" fontSize="10" fontWeight={r.core ? 'bold' : 'normal'} letterSpacing="1">
                             {r.c}{r.core ? ' • CORE' : ''}

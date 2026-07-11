@@ -9,7 +9,6 @@ import {
   Search,
   Filter,
   Plus,
-  Bot,
   Bug,
   ShieldCheck,
   CheckSquare,
@@ -28,6 +27,7 @@ import {
   Play
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AiLogo } from '@/components/ai/ai-logo';
 import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
 import { AskAiButton } from '@/components/ai/ask-ai-button';
 import { DataViewport } from '@/components/layout/data-viewport';
@@ -484,7 +484,7 @@ export default function QaSecurityPage() {
           {/* AI Assistant Panel — honestly disabled (no AI wired here yet) */}
           <div className="border border-border rounded bg-surface/40 relative overflow-hidden flex-1 flex flex-col">
             <div className="p-4 border-b border-border flex items-center gap-2">
-              <Bot className="w-4 h-4 text-muted-foreground" />
+              <AiLogo className="w-4 h-4 text-muted-foreground" />
               <h2 className="font-mono text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Handoff QA & Sec</h2>
             </div>
             <div className="p-4 flex-1 flex flex-col gap-4">

@@ -12,7 +12,6 @@ import {
   ChevronLeft,
   Calendar as CalendarIcon,
   Plus,
-  Bot,
   Search,
   Filter,
   Layers,
