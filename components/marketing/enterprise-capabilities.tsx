@@ -116,7 +116,7 @@ const CAPABILITIES = [
 
 export function EnterpriseCapabilities() {
   return (
-    <section className="relative py-24 bg-background border-t border-b border-white/5 transition-colors duration-200">
+    <section className="relative py-24 bg-background border-t border-b border-border transition-colors duration-200">
       <div className="container mx-auto px-6 md:px-12 max-w-7xl">
         <div className="mb-16">
           <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-4">
@@ -133,15 +133,15 @@ export function EnterpriseCapabilities() {
             return (
               <div 
                 key={card.id} 
-                className="relative flex min-h-[360px] flex-col border border-white/10 bg-background p-7 overflow-hidden min-w-0"
+                className="relative flex min-h-[360px] flex-col border border-border bg-background p-7 overflow-hidden min-w-0 rounded-[4px]"
               >
                 {/* Background grid texture */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.04)_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
                 {/* Top: Icon + Label + Badge */}
                 <div className="flex items-center justify-between mb-8 relative z-10">
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-8 h-8 border border-white/10 bg-background shrink-0">
+                    <div className="flex items-center justify-center w-8 h-8 border border-border bg-background shrink-0 rounded-[4px]">
                       <Icon className="w-4 h-4 text-foreground" />
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground break-words">
@@ -149,7 +149,7 @@ export function EnterpriseCapabilities() {
                     </span>
                   </div>
                   {card.isAi ? (
-                    <div className="flex items-center gap-1.5 px-2 py-1 border border-white/10 bg-background shrink-0">
+                    <div className="flex items-center gap-1.5 px-2 py-1 border border-border bg-background shrink-0 rounded-[4px]">
                       <span className="w-1.5 h-1.5 bg-foreground animate-pulse shrink-0" />
                       <span className="font-mono text-[9px] uppercase tracking-widest text-foreground">
                         {card.status}
@@ -182,7 +182,7 @@ export function EnterpriseCapabilities() {
                 </div>
 
                 {/* Bottom: Divider + CTA */}
-                <div className="pt-6 border-t border-white/10 mt-auto relative z-10">
+                <div className="pt-6 border-t border-border mt-auto relative z-10">
                   <Link 
                     href={card.linkHref} 
                     className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-foreground hover:text-foreground/80 transition-colors focus:outline-none group"

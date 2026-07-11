@@ -8,6 +8,7 @@ const PUBLIC_PATHS = [
 
 const MULTIPART_API_PATHS = new Set([
   '/api/v1/projects/imports/preview',
+  '/api/v1/profile/avatar',
 ]);
 
 function isPublic(pathname: string) {

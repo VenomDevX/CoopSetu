@@ -90,6 +90,7 @@ function SettingsPageContent() {
   const [username, setUsername] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   // Avatar
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -149,17 +150,22 @@ function SettingsPageContent() {
   }, [org]);
 
   useEffect(() => {
+    setIsLoadingProfile(true);
     fetch('/api/v1/profile')
       .then(r => r.json())
       .then(res => {
         if (res.data) {
           setProfile(res.data);
-          setFullName(res.data.fullName);
-          setUsername(res.data.username);
+          setFullName(res.data.fullName || '');
+          setUsername(res.data.username || '');
           setAvatarPreview(res.data.avatarUrl);
         }
+        setIsLoadingProfile(false);
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error(err);
+        setIsLoadingProfile(false);
+      });
   }, []);
 
   const {
@@ -213,11 +219,15 @@ function SettingsPageContent() {
       const res = await fetch('/api/v1/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName, username }),
+        body: JSON.stringify({ 
+          fullName: fullName || undefined, 
+          username: username || undefined 
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error?.message || 'Update failed');
       setProfileMsg({ type: 'success', text: 'Profile updated successfully!' });
+      router.refresh();
     } catch (err: unknown) {
       setProfileMsg({ type: 'error', text: err instanceof Error ? err.message : 'Update failed' });
     } finally {
@@ -248,6 +258,7 @@ function SettingsPageContent() {
       if (!res.ok) throw new Error(data.error?.message || 'Upload failed');
       setAvatarPreview(data.data.avatarUrl);
       setProfileMsg({ type: 'success', text: 'Avatar updated!' });
+      router.refresh();
     } catch (err: unknown) {
       setProfileMsg({ type: 'error', text: err instanceof Error ? err.message : 'Upload failed' });
     } finally {
@@ -544,58 +555,69 @@ function SettingsPageContent() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-6">
-                    <div className="relative group">
-                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-accent to-accent/50 flex items-center justify-center text-2xl font-bold text-white overflow-hidden ring-2 ring-accent/20">
-                        {avatarPreview ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
-                        ) : (
-                          <span>{fullName ? fullName.charAt(0).toUpperCase() : 'U'}</span>
-                        )}
-                        {uploadingAvatar && (
-                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
-                            <Loader2 className="w-5 h-5 animate-spin text-white" />
-                          </div>
-                        )}
+                  {isLoadingProfile ? (
+                    <div className="flex items-center gap-6 animate-pulse">
+                      <div className="w-20 h-20 rounded-full bg-surface-hover border border-border" />
+                      <div className="flex-1 space-y-2">
+                        <div className="w-32 h-4 bg-surface-hover border border-border rounded" />
+                        <div className="w-48 h-2 bg-surface-hover border border-border rounded" />
+                        <div className="w-24 h-6 bg-surface-hover border border-border rounded mt-2" />
                       </div>
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-accent text-white flex items-center justify-center shadow-lg hover:bg-accent/80 transition-colors"
-                      >
-                        <Camera className="w-3 h-3" />
-                      </button>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/gif"
-                        className="hidden"
-                        onChange={handleAvatarChange}
-                      />
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-foreground font-medium mb-1">{fullName || 'Your Name'}</p>
-                      <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-3">
-                        JPG, PNG, WebP or GIF. Max 2MB.
-                      </p>
-                      <div className="flex gap-2">
+                  ) : (
+                    <div className="flex items-center gap-6">
+                      <div className="relative group">
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-accent to-accent/50 flex items-center justify-center text-2xl font-bold text-white overflow-hidden ring-2 ring-accent/20">
+                          {avatarPreview ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            <span>{fullName ? fullName.charAt(0).toUpperCase() : 'U'}</span>
+                          )}
+                          {uploadingAvatar && (
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
+                              <Loader2 className="w-5 h-5 animate-spin text-white" />
+                            </div>
+                          )}
+                        </div>
                         <button
                           onClick={() => fileInputRef.current?.click()}
-                          className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-border hover:border-foreground/30 text-muted-foreground hover:text-foreground transition-colors"
+                          className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-accent text-white flex items-center justify-center shadow-lg hover:bg-accent/80 transition-colors"
                         >
-                          Upload New
+                          <Camera className="w-3 h-3" />
                         </button>
-                        {avatarPreview && (
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          className="hidden"
+                          onChange={handleAvatarChange}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-foreground font-medium mb-1">{fullName || 'Your Name'}</p>
+                        <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-3">
+                          JPG, PNG, WebP or GIF. Max 2MB.
+                        </p>
+                        <div className="flex gap-2">
                           <button
-                            onClick={handleRemoveAvatar}
-                            className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-border hover:border-red-400/50 text-muted-foreground hover:text-red-400 transition-colors flex items-center gap-1.5"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-border hover:border-foreground/30 text-muted-foreground hover:text-foreground transition-colors"
                           >
-                            <Trash2 className="w-3 h-3" /> Remove
+                            Upload New
                           </button>
-                        )}
+                          {avatarPreview && (
+                            <button
+                              onClick={handleRemoveAvatar}
+                              className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-border hover:border-red-400/50 text-muted-foreground hover:text-red-400 transition-colors flex items-center gap-1.5"
+                            >
+                              <Trash2 className="w-3 h-3" /> Remove
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -606,55 +628,70 @@ function SettingsPageContent() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-foreground">Full Name</label>
-                      <Input
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="John Doe"
-                        className="bg-surface border-border focus:border-border-strong rounded-sm text-sm"
-                      />
+                  {isLoadingProfile ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-pulse">
+                      <div className="space-y-1.5">
+                        <div className="w-20 h-3 bg-surface-hover border border-border rounded" />
+                        <div className="w-full h-10 bg-surface-hover border border-border rounded-sm" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="w-20 h-3 bg-surface-hover border border-border rounded" />
+                        <div className="w-full h-10 bg-surface-hover border border-border rounded-sm" />
+                      </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-foreground">Username</label>
-                      <Input
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder="johndoe"
-                        className="bg-surface border-border focus:border-border-strong rounded-sm text-sm"
-                      />
-                    </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-medium text-foreground">Full Name</label>
+                          <Input
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                            placeholder="e.g. John Doe"
+                            className="bg-surface border-border focus:border-border-strong rounded-sm text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-medium text-foreground">Username</label>
+                          <Input
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="e.g. johndoe"
+                            className="bg-surface border-border focus:border-border-strong rounded-sm text-sm"
+                          />
+                        </div>
+                      </div>
 
-                  <AnimatePresence>
-                    {profileMsg && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 rounded-sm ${
-                          profileMsg.type === 'success'
-                            ? 'bg-primary/10 text-primary border border-primary/20'
-                            : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                        }`}
-                      >
-                        {profileMsg.type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                        {profileMsg.text}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      <AnimatePresence>
+                        {profileMsg && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 rounded-sm ${
+                              profileMsg.type === 'success'
+                                ? 'bg-primary/10 text-primary border border-primary/20'
+                                : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                            }`}
+                          >
+                            {profileMsg.type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                            {profileMsg.text}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
 
-                  <div className="pt-4 flex items-center justify-end">
-                    <Button
-                      onClick={handleSaveProfile}
-                      disabled={savingProfile || !fullName}
-                      className="bg-foreground text-background hover:bg-foreground/90 rounded-sm gap-2"
-                    >
-                      {isDemo ? <Lock className="w-4 h-4" /> : savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                      Save Profile
-                    </Button>
-                  </div>
+                      <div className="pt-4 flex items-center justify-end">
+                        <Button
+                          onClick={handleSaveProfile}
+                          disabled={savingProfile || !fullName}
+                          className="bg-foreground text-background hover:bg-foreground/90 rounded-sm gap-2"
+                        >
+                          {isDemo ? <Lock className="w-4 h-4" /> : savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                          Save Profile
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
@@ -1018,7 +1055,10 @@ function SettingsPageContent() {
                     <CardTitle className="text-foreground">Users & Roles</CardTitle>
                     <CardDescription className="text-muted-foreground">Manage members and their permissions in your organization.</CardDescription>
                   </div>
-                  <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-sm">Invite Member</Button>
+                  <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-sm" onClick={() => {
+                    if (isDemo) window.dispatchEvent(new CustomEvent('demo-alert'));
+                    // else open invite modal logic (placeholder)
+                  }}>Invite Member</Button>
                 </div>
               </CardHeader>
               <CardContent>

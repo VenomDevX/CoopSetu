@@ -4,12 +4,12 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiGet } from '@/lib/api/client';
 import { motion, AnimatePresence } from 'motion/react';
+import { AiLogo } from '@/components/ai/ai-logo';
 import {
   ChevronRight,
   Search,
   Filter,
   Plus,
-  Bot,
   FileText,
   Upload,
   LayoutTemplate,
@@ -386,7 +386,7 @@ export default function DocumentsPage() {
                 {/* Handoff Assistant Panel — honestly disabled (no AI wired here yet) */}
                 <div className="border border-border rounded bg-surface/40 p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Bot className="w-4 h-4 text-muted-foreground" />
+                    <AiLogo className="w-4 h-4 text-muted-foreground" />
                     <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Handoff Insights</h3>
                   </div>
                   <div className="flex flex-wrap gap-2">

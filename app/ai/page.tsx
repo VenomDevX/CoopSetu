@@ -1,5 +1,7 @@
 'use client';
 import { Logo } from '@/components/logo';
+import { MarketingHeader } from '@/components/layout/marketing-header';
+import { AiLogo } from '@/components/ai/ai-logo';
 
 import React from 'react';
 import Link from 'next/link';
@@ -10,7 +12,6 @@ import {
   CheckCircle2, 
   Terminal, 
   Loader2,
-  Bot,
   Lock,
   Shield,
   FileText,
@@ -69,39 +70,7 @@ export default function AIPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground font-sans selection:bg-foreground selection:text-background transition-colors duration-200">
       {/* Navigation */}
-      <header className="fixed top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl">
-        <div className="w-full px-6 md:px-12 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-12">
-            <Link href="/" className="font-bold text-lg tracking-tight flex items-center gap-3">
-              <Logo width={24} height={24} />
-              <span className="uppercase tracking-widest text-xs">HANDOFF</span>
-            </Link>
-            <nav className="hidden md:flex items-center gap-8 text-xs font-mono uppercase tracking-widest text-muted-foreground">
-              <Link href="/product" className="hover:text-foreground transition-colors">Product</Link>
-              <Link href="/solutions" className="hover:text-foreground transition-colors">Solutions</Link>
-              <Link href="/ai" className="text-foreground transition-colors">AI</Link>
-              <Link href="/security" className="hover:text-foreground transition-colors">Security</Link>
-              <Link href="/enterprise" className="hover:text-foreground transition-colors">Enterprise</Link>
-              <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-6">
-            <button 
-              onClick={() => handleNavigate('/dashboard', 'signin')}
-              className="text-xs font-mono uppercase tracking-widest hover:text-muted-foreground transition-colors hidden sm:block"
-            >
-              Sign In
-            </button>
-            <Button 
-              onClick={() => handleNavigate('/dashboard', 'demo')}
-              className="bg-foreground text-background hover:bg-foreground/90 rounded h-9 px-6 text-xs font-mono uppercase tracking-widest"
-              disabled={isNavigating}
-            >
-              {isNavigating && navType === 'demo' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Request Demo'}
-            </Button>
-          </div>
-        </div>
-      </header>
+      <MarketingHeader />
 
       {/* Main Content */}
       <main className="flex-grow pt-32 pb-24">
@@ -109,8 +78,8 @@ export default function AIPage() {
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32">
           <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-16">
             <div className="font-mono text-xs uppercase tracking-widest text-accent mb-6 flex items-center gap-2">
-              <Bot className="w-4 h-4" />
-              DEV_PILOT_AI
+              <AiLogo className="w-4 h-4" />
+              HANDOFF_AI
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-8 leading-[1.1]">
               AI that understands delivery work — without bypassing control.
@@ -141,7 +110,7 @@ export default function AIPage() {
             {/* Console Header */}
             <div className="flex items-center justify-between border-b border-border pb-4 mb-4">
               <div className="flex items-center gap-4">
-                <Bot className="w-4 h-4 text-accent" />
+                <AiLogo className="w-4 h-4 text-accent" />
                 <span className="font-mono text-xs uppercase tracking-widest font-bold">Handoff Intelligence Console</span>
               </div>
               <div className="flex items-center gap-4">
@@ -172,7 +141,7 @@ export default function AIPage() {
               {/* AI Answer */}
               <div className="flex gap-3">
                 <div className="w-6 h-6 rounded bg-accent/20 text-accent border border-accent/50 flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-4 h-4" />
+                  <AiLogo className="w-4 h-4" />
                 </div>
                 <div className="bg-surface border border-accent/20 p-4 text-sm flex-1 relative shadow-[0_0_15px_rgba(var(--accent),0.05)]">
                   <p className="mb-4 leading-relaxed">
@@ -271,7 +240,7 @@ export default function AIPage() {
             <div className="border border-border rounded bg-surface p-6 shadow-xl relative">
                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2 flex justify-between">
                  <span>Handoff Generation</span>
-                 <Bot className="w-3 h-3 text-accent" />
+                 <AiLogo className="w-3 h-3 text-accent" />
                </div>
                <div className="bg-background border border-border rounded p-4">
                  <div className="text-xs font-bold mb-4">Epic: Migrate to OAuth 2.0</div>
@@ -295,7 +264,7 @@ export default function AIPage() {
             <div className="order-2 lg:order-1 border border-border rounded bg-surface p-6 shadow-xl">
                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2 flex justify-between">
                  <span>Daily Standup Digest</span>
-                 <Bot className="w-3 h-3 text-accent" />
+                 <AiLogo className="w-3 h-3 text-accent" />
                </div>
                <div className="bg-background border border-border rounded p-4 text-sm leading-relaxed border-l-2 border-l-accent">
                  <p className="mb-4">You have 3 high-priority tasks due today. <span className="font-bold">Task #842</span> is blocked by a missing API specification. <span className="font-bold">Task #845</span> has 4 new comments discussing architecture changes.</p>
@@ -343,7 +312,7 @@ export default function AIPage() {
             <div className="border border-border rounded bg-surface p-6 shadow-xl">
                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2 flex justify-between">
                  <span>PR Summary</span>
-                 <Bot className="w-3 h-3 text-accent" />
+                 <AiLogo className="w-3 h-3 text-accent" />
                </div>
                <div className="bg-background border border-border rounded p-4 mb-4">
                  <div className="flex items-center gap-2 mb-2">
@@ -367,7 +336,7 @@ export default function AIPage() {
             <div className="order-2 lg:order-1 border border-border rounded bg-surface p-6 shadow-xl">
                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2 flex justify-between">
                  <span>Document Analysis</span>
-                 <Bot className="w-3 h-3 text-accent" />
+                 <AiLogo className="w-3 h-3 text-accent" />
                </div>
                <div className="bg-background border border-border rounded p-4 mb-2 flex items-center gap-3">
                  <FileText className="w-5 h-5 text-muted-foreground" />
@@ -431,7 +400,7 @@ export default function AIPage() {
             <div className="border border-border rounded bg-surface p-6 shadow-xl">
                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2 flex justify-between">
                  <span>Executive Summary Report</span>
-                 <Bot className="w-3 h-3 text-accent" />
+                 <AiLogo className="w-3 h-3 text-accent" />
                </div>
                <div className="bg-background border border-border rounded p-4 text-sm leading-relaxed border-l-2 border-emerald-500">
                  <p className="mb-2 font-bold text-emerald-500">Forecast: On Track</p>
@@ -458,7 +427,7 @@ export default function AIPage() {
                 { name: 'Permission Check', icon: Lock },
                 { name: 'Data Classification Check', icon: Shield },
                 { name: 'Approved Sources', icon: Database },
-                { name: 'AI Response', icon: Bot },
+                { name: 'AI Response', icon: AiLogo },
                 { name: 'Source Citations', icon: FileText },
                 { name: 'Audit Log', icon: Eye },
               ].map((step, i, arr) => (

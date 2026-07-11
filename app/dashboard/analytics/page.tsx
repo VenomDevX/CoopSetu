@@ -9,7 +9,6 @@ import {
   Search,
   Filter,
   Plus,
-  Bot,
   BarChart3,
   Download,
   FileText,

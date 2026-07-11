@@ -50,10 +50,10 @@ export function RealTimeSyncPanel({ expanded }: RealTimeSyncPanelProps) {
       <div className="mb-12 relative z-10 flex flex-col items-start w-full flex-1">
         {/* Eyebrow */}
         <motion.div variants={itemVariants} className="flex items-center gap-3 w-full mb-6">
-          <div className="font-mono text-[11px] uppercase tracking-widest text-white/50 flex items-center gap-2">
-            <span className="text-white/40">✛</span> PHASE_03 // VELOCITY
+          <div className="font-mono text-[11px] uppercase tracking-widest text-foreground/50 flex items-center gap-2">
+            <span className="text-foreground/40">✛</span> PHASE_03 // VELOCITY
           </div>
-          <div className="h-[1px] bg-white/20 flex-1" />
+          <div className="h-[1px] bg-foreground/20 flex-1" />
         </motion.div>
         
         {/* Title */}
@@ -62,7 +62,7 @@ export function RealTimeSyncPanel({ expanded }: RealTimeSyncPanelProps) {
         </motion.h2>
 
         {/* Subtitle */}
-        <motion.p variants={itemVariants} className={`text-white/60 text-sm leading-relaxed mb-10 font-mono tracking-tight transition-opacity ${!expanded && expanded !== null ? 'opacity-0 lg:opacity-100' : ''}`}>
+        <motion.p variants={itemVariants} className={`text-foreground/60 text-sm leading-relaxed mb-10 font-mono tracking-tight transition-opacity ${!expanded && expanded !== null ? 'opacity-0 lg:opacity-100' : ''}`}>
           Deterministic CRDT engine resolves edits simultaneously without locking. Sub-millisecond state propagation across all nodes globally.
         </motion.p>
 
@@ -70,7 +70,7 @@ export function RealTimeSyncPanel({ expanded }: RealTimeSyncPanelProps) {
         <motion.div variants={itemVariants} className={`w-full relative mb-8 rounded group ${!expanded && expanded !== null ? 'opacity-0 lg:opacity-100' : ''}`}>
           <div className="py-2 flex justify-between items-start">
             <div>
-              <div className="font-mono text-[11px] uppercase tracking-widest text-white/50 mb-1">Throughput</div>
+              <div className="font-mono text-[11px] uppercase tracking-widest text-foreground/50 mb-1">Throughput</div>
               <div className="text-3xl font-bold tracking-tighter flex items-end gap-1">
                 {mounted ? "5M" : "0"}<span className="text-accent mb-1.5 text-xl leading-none">/s</span>
               </div>
@@ -78,13 +78,13 @@ export function RealTimeSyncPanel({ expanded }: RealTimeSyncPanelProps) {
           </div>
           <div className="flex gap-12 mt-4">
             <div>
-              <div className="font-mono text-[11px] uppercase tracking-widest text-white/40 mb-1.5">Latency</div>
-              <div className="text-[11px] font-mono text-white flex items-center gap-1.5">
+              <div className="font-mono text-[11px] uppercase tracking-widest text-foreground/40 mb-1.5">Latency</div>
+              <div className="text-[11px] font-mono text-foreground flex items-center gap-1.5">
                 <span className="text-accent">⚡</span> {'<'} 12ms
               </div>
             </div>
             <div>
-              <div className="font-mono text-[11px] uppercase tracking-widest text-white/40 mb-1.5">Conflicts</div>
+              <div className="font-mono text-[11px] uppercase tracking-widest text-foreground/40 mb-1.5">Conflicts</div>
               <div className="text-[11px] font-mono text-green-500 flex items-center gap-1.5">
                 <span>✓</span> 0.00%
               </div>
@@ -92,7 +92,7 @@ export function RealTimeSyncPanel({ expanded }: RealTimeSyncPanelProps) {
           </div>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="mt-auto inline-flex items-center gap-2 text-[11px] text-white/60 hover:text-white transition-colors font-mono uppercase tracking-widest cursor-pointer group relative w-fit">
+        <motion.div variants={itemVariants} className="mt-auto inline-flex items-center gap-2 text-[11px] text-foreground/60 hover:text-foreground transition-colors font-mono uppercase tracking-widest cursor-pointer group relative w-fit">
           EXTRACT DETAILS <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
           <div className="absolute -bottom-1 left-0 w-0 h-[1px] bg-accent transition-all duration-300 group-hover:w-full" />
         </motion.div>
@@ -104,7 +104,7 @@ export function RealTimeSyncPanel({ expanded }: RealTimeSyncPanelProps) {
 
         <div className="absolute inset-0 rounded overflow-hidden relative z-10">
           {/* SVG Event Stream Diagram */}
-          <svg viewBox="0 0 200 200" className="w-full h-full p-2" style={{ display: 'block', overflow: 'visible' }}>
+          <svg viewBox="0 0 200 200" className="w-full h-full p-2 text-foreground" style={{ display: 'block', overflow: 'visible' }}>
 
 
             {/* Stream Lanes */}
@@ -117,16 +117,16 @@ export function RealTimeSyncPanel({ expanded }: RealTimeSyncPanelProps) {
             ].map((lane, i) => (
               <g key={lane.id}>
                 {/* Lane Background Line */}
-                <line x1="20" y1={lane.y} x2="180" y2={lane.y} stroke="rgba(255,255,255,0.1)" strokeWidth="1" strokeDasharray="2 2" />
+                <line x1="20" y1={lane.y} x2="180" y2={lane.y} stroke="currentColor" strokeOpacity={0.1} strokeWidth="1" strokeDasharray="2 2" />
                 
                 {/* Lane Label */}
-                <text x="18" y={lane.y + 2.5} fill="rgba(255,255,255,0.4)" fontSize="7" fontFamily="monospace" textAnchor="end" letterSpacing="0.5">
+                <text x="18" y={lane.y + 2.5} fill="currentColor" fillOpacity={0.4} fontSize="7" fontFamily="monospace" textAnchor="end" letterSpacing="0.5">
                   {lane.id}
                 </text>
 
                 {/* Left/Right Brackets */}
-                <path d={`M 24 ${lane.y - 4} L 22 ${lane.y - 4} L 22 ${lane.y + 4} L 24 ${lane.y + 4}`} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-                <path d={`M 176 ${lane.y - 4} L 178 ${lane.y - 4} L 178 ${lane.y + 4} L 176 ${lane.y + 4}`} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+                <path d={`M 24 ${lane.y - 4} L 22 ${lane.y - 4} L 22 ${lane.y + 4} L 24 ${lane.y + 4}`} fill="none" stroke="currentColor" strokeOpacity={0.3} strokeWidth="1" />
+                <path d={`M 176 ${lane.y - 4} L 178 ${lane.y - 4} L 178 ${lane.y + 4} L 176 ${lane.y + 4}`} fill="none" stroke="currentColor" strokeOpacity={0.3} strokeWidth="1" />
 
                 {/* Animated Data Packets */}
                 {!shouldReduceMotion && (
@@ -141,14 +141,14 @@ export function RealTimeSyncPanel({ expanded }: RealTimeSyncPanelProps) {
                     }}
                   >
                     {/* Packet Body */}
-                    <rect x="-6" y={lane.y - 2.5} width="12" height="5" fill={lane.active ? "#7c5cfc" : "rgba(255,255,255,0.4)"} />
-                    <rect x="-4" y={lane.y - 1} width="2" height="2" fill="black" opacity="0.5" />
-                    <rect x="0" y={lane.y - 1} width="2" height="2" fill="black" opacity="0.5" />
+                    <rect x="-6" y={lane.y - 2.5} width="12" height="5" fill={lane.active ? "#7c5cfc" : "var(--color-muted-foreground)"} />
+                    <rect x="-4" y={lane.y - 1} width="2" height="2" fill="var(--color-background)" opacity="0.5" />
+                    <rect x="0" y={lane.y - 1} width="2" height="2" fill="var(--color-background)" opacity="0.5" />
                   </motion.g>
                 )}
 
                 {/* Status Dot */}
-                <circle cx="190" cy={lane.y} r="1.5" fill={lane.active ? "#7c5cfc" : "rgba(255,255,255,0.2)"} />
+                <circle cx="190" cy={lane.y} r="1.5" fill={lane.active ? "#7c5cfc" : "var(--color-border-strong)"} />
               </g>
             ))}
 
@@ -168,8 +168,8 @@ export function RealTimeSyncPanel({ expanded }: RealTimeSyncPanelProps) {
             )}
 
             {/* Sub-labels */}
-            <text x="5" y="195" fill="rgba(255,255,255,0.2)" fontSize="6" fontFamily="monospace">SYNC: CRDT-EVT-01</text>
-            <text x="195" y="195" fill="rgba(255,255,255,0.2)" fontSize="6" fontFamily="monospace" textAnchor="end">PKT. LOSS: 0.00%</text>
+            <text x="5" y="195" fill="currentColor" fillOpacity={0.2} fontSize="6" fontFamily="monospace">SYNC: CRDT-EVT-01</text>
+            <text x="195" y="195" fill="currentColor" fillOpacity={0.2} fontSize="6" fontFamily="monospace" textAnchor="end">PKT. LOSS: 0.00%</text>
           </svg>
         </div>
       </motion.div>

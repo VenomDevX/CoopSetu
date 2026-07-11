@@ -8,7 +8,7 @@ import {
   Search, Plus, LayoutDashboard, Briefcase, Inbox, Calendar,
   Layers, KanbanSquare, CheckSquare, GitBranch, ShieldCheck, FileText,
   BarChart3, Settings, Users, AlertCircle, LogOut, Menu, X, Info, Mail, Shield, FileSignature,
-  ChevronDown, User
+  ChevronDown, User, CreditCard, Key, HelpCircle
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NotificationBell } from '@/components/realtime/notification-bell';
@@ -21,12 +21,13 @@ interface ShellProps {
   children: React.ReactNode;
   displayName: string;
   initials: string;
+  avatarUrl?: string | null;
   membership: MembershipContextValue;
 }
 
 const ADMIN_ROLES = ['SUPER_ADMIN', 'ORG_OWNER', 'ORG_ADMIN'];
 
-export function DashboardShell({ children, displayName, initials, membership }: ShellProps) {
+export function DashboardShell({ children, displayName, initials, avatarUrl, membership }: ShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -148,6 +149,17 @@ export function DashboardShell({ children, displayName, initials, membership }: 
             <div className="space-y-1">
               {group.items.map((item, j) => {
                 const active = pathname === item.href;
+                
+                if (item.name === 'Settings' && membership.isDemo) {
+                  return (
+                    <button key={j} onClick={() => window.dispatchEvent(new CustomEvent('demo-alert'))}
+                      className={`w-full flex items-center justify-start text-left gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest transition-colors rounded-[4px] hover:bg-surface-hover text-muted-foreground hover:text-foreground border border-transparent`}>
+                      <item.icon className="w-4 h-4 shrink-0" />
+                      <span className="truncate">{item.name}</span>
+                    </button>
+                  );
+                }
+
                 return (
                   <Link key={j} href={item.href} prefetch={false}
                     className={`flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest transition-colors rounded-[4px] ${
@@ -246,8 +258,13 @@ export function DashboardShell({ children, displayName, initials, membership }: 
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                   className="group flex items-center gap-2 py-1 transition-all duration-200 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground"
                 >
-                  <span className="w-5 h-5 rounded-full bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center text-[8px] font-bold text-white ring-2 ring-accent/20">
-                    {initials.charAt(0)}
+                  <span className="w-5 h-5 rounded-full bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center text-[8px] font-bold text-white ring-2 ring-accent/20 overflow-hidden">
+                    {avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      initials.charAt(0)
+                    )}
                   </span>
                   <span className="hidden sm:block truncate max-w-[80px]">
                     {displayName.split(' ')[0]}
@@ -262,45 +279,81 @@ export function DashboardShell({ children, displayName, initials, membership }: 
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.95 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-2 w-52 bg-background border border-border rounded-[2px] shadow-2xl z-[90] overflow-hidden"
+                      className="absolute right-0 top-full mt-2 w-56 bg-background border border-border rounded-lg shadow-2xl z-[90] overflow-hidden"
                     >
                       <div className="px-4 py-3 border-b border-border">
                         <p className="text-xs font-mono uppercase tracking-widest text-foreground truncate">{displayName}</p>
                         <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mt-0.5">Workspace</p>
                       </div>
-                      <div className="py-1">
+                      <div className="p-1 flex flex-col gap-0.5">
                         {can('task:create') && (
                           <button
                             onClick={() => { setProfileDropdownOpen(false); router.push('/dashboard/tasks'); }}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+                            className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
                           >
                             <Plus className="w-3.5 h-3.5" /> Init Task
                           </button>
                         )}
                         <button
                           onClick={() => { setProfileDropdownOpen(false); router.push('/dashboard'); }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+                          className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
                         >
                           <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
                         </button>
                         <button
-                          onClick={() => { setProfileDropdownOpen(false); router.push('/dashboard/settings?tab=profile'); }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+                          onClick={() => {
+                            setProfileDropdownOpen(false);
+                            if (membership.isDemo) window.dispatchEvent(new CustomEvent('demo-alert'));
+                            else router.push('/dashboard/settings?tab=profile');
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
                         >
                           <User className="w-3.5 h-3.5" /> Profile
                         </button>
                         <button
-                          onClick={() => { setProfileDropdownOpen(false); router.push('/dashboard/settings?tab=org'); }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+                          onClick={() => {
+                            setProfileDropdownOpen(false);
+                            if (membership.isDemo) window.dispatchEvent(new CustomEvent('demo-alert'));
+                            else router.push('/dashboard/settings?tab=org');
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
                         >
                           <Settings className="w-3.5 h-3.5" /> Settings
                         </button>
+                        <button
+                          onClick={() => {
+                            setProfileDropdownOpen(false);
+                            if (membership.isDemo) window.dispatchEvent(new CustomEvent('demo-alert'));
+                            else router.push('/dashboard/settings?tab=billing');
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
+                        >
+                          <CreditCard className="w-3.5 h-3.5" /> Billing
+                        </button>
+                        <button
+                          onClick={() => {
+                            setProfileDropdownOpen(false);
+                            if (membership.isDemo) window.dispatchEvent(new CustomEvent('demo-alert'));
+                            else router.push('/dashboard/repositories');
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
+                        >
+                          <GitBranch className="w-3.5 h-3.5" /> Repository
+                        </button>
                       </div>
-                      <div className="border-t border-border py-1">
+                      <div className="border-t border-border p-1 flex flex-col gap-0.5">
+                        <button
+                          onClick={() => { setProfileDropdownOpen(false); router.push('/help'); }}
+                          className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
+                        >
+                          <HelpCircle className="w-3.5 h-3.5" /> Help & Docs
+                        </button>
+                      </div>
+                      <div className="border-t border-border p-1 flex flex-col gap-0.5">
                         <form action="/auth/signout" method="post">
                           <button
                             type="submit"
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-widest text-red-400 hover:text-red-300 hover:bg-surface-hover transition-colors"
+                            className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-red-400 hover:text-red-300 hover:bg-surface-hover rounded-md transition-colors"
                           >
                             <LogOut className="w-3.5 h-3.5" /> Sign Out
                           </button>

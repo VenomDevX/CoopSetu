@@ -50,10 +50,10 @@ export function DataIntegrityPanel({ expanded }: DataIntegrityPanelProps) {
       <div className="mb-12 relative z-10 flex flex-col items-start w-full flex-1">
         {/* Eyebrow */}
         <motion.div variants={itemVariants} className="flex items-center gap-3 w-full mb-6">
-          <div className="font-mono text-[11px] uppercase tracking-widest text-white/50 flex items-center gap-2">
-            <span className="text-white/40">✛</span> PHASE_01 // ARCHITECTURE
+          <div className="font-mono text-[11px] uppercase tracking-widest text-foreground/50 flex items-center gap-2">
+            <span className="text-foreground/40">✛</span> PHASE_01 // ARCHITECTURE
           </div>
-          <div className="h-[1px] bg-white/20 flex-1" />
+          <div className="h-[1px] bg-foreground/20 flex-1" />
         </motion.div>
         
         {/* Title */}
@@ -62,7 +62,7 @@ export function DataIntegrityPanel({ expanded }: DataIntegrityPanelProps) {
         </motion.h2>
 
         {/* Subtitle */}
-        <motion.p variants={itemVariants} className={`text-white/60 text-sm leading-relaxed mb-10 font-mono tracking-tight transition-opacity ${!expanded && expanded !== null ? 'opacity-0 lg:opacity-100' : ''}`}>
+        <motion.p variants={itemVariants} className={`text-foreground/60 text-sm leading-relaxed mb-10 font-mono tracking-tight transition-opacity ${!expanded && expanded !== null ? 'opacity-0 lg:opacity-100' : ''}`}>
           Every byte is cryptographically hashed and mathematically verified via Merkle trees, ensuring immutable state guarantees across all mutations.
         </motion.p>
 
@@ -70,7 +70,7 @@ export function DataIntegrityPanel({ expanded }: DataIntegrityPanelProps) {
         <motion.div variants={itemVariants} className={`w-full relative mb-8 rounded group ${!expanded && expanded !== null ? 'opacity-0 lg:opacity-100' : ''}`}>
           <div className="py-2 flex justify-between items-start">
             <div>
-              <div className="font-mono text-[11px] uppercase tracking-widest text-white/50 mb-1">Cipher Protocol</div>
+              <div className="font-mono text-[11px] uppercase tracking-widest text-foreground/50 mb-1">Cipher Protocol</div>
               <div className="text-3xl font-bold tracking-tighter flex items-end gap-1">
                 {mounted ? "AES" : "---"}<span className="text-accent mb-1.5 text-xl leading-none">-256</span>
               </div>
@@ -78,13 +78,13 @@ export function DataIntegrityPanel({ expanded }: DataIntegrityPanelProps) {
           </div>
           <div className="flex gap-12 mt-4">
             <div>
-              <div className="font-mono text-[11px] uppercase tracking-widest text-white/40 mb-1.5">Redundancy</div>
-              <div className="text-[11px] font-mono text-white flex items-center gap-1.5">
+              <div className="font-mono text-[11px] uppercase tracking-widest text-foreground/40 mb-1.5">Redundancy</div>
+              <div className="text-[11px] font-mono text-foreground flex items-center gap-1.5">
                 <span className="text-accent">◈</span> Multi-AZ
               </div>
             </div>
             <div>
-              <div className="font-mono text-[11px] uppercase tracking-widest text-white/40 mb-1.5">Ledger</div>
+              <div className="font-mono text-[11px] uppercase tracking-widest text-foreground/40 mb-1.5">Ledger</div>
               <div className="text-[11px] font-mono text-green-500 flex items-center gap-1.5">
                 <span>✓</span> ZERO-KNOWLEDGE
               </div>
@@ -92,7 +92,7 @@ export function DataIntegrityPanel({ expanded }: DataIntegrityPanelProps) {
           </div>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="mt-auto inline-flex items-center gap-2 text-[11px] text-white/60 hover:text-white transition-colors font-mono uppercase tracking-widest cursor-pointer group relative w-fit">
+        <motion.div variants={itemVariants} className="mt-auto inline-flex items-center gap-2 text-[11px] text-foreground/60 hover:text-foreground transition-colors font-mono uppercase tracking-widest cursor-pointer group relative w-fit">
           EXTRACT DETAILS <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
           <div className="absolute -bottom-1 left-0 w-0 h-[1px] bg-accent transition-all duration-300 group-hover:w-full" />
         </motion.div>
@@ -104,11 +104,11 @@ export function DataIntegrityPanel({ expanded }: DataIntegrityPanelProps) {
 
         <div className="absolute inset-0 rounded overflow-hidden relative z-10">
           {/* SVG Merkle Tree Diagram */}
-          <svg viewBox="0 0 200 200" className="w-full h-full p-2" style={{ display: 'block', overflow: 'visible' }}>
+          <svg viewBox="0 0 200 200" className="w-full h-full p-2 text-foreground" style={{ display: 'block', overflow: 'visible' }}>
 
 
             {/* Merkle Tree Lines */}
-            <g stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeLinejoin="round" fill="none">
+            <g stroke="currentColor" strokeOpacity={0.15} strokeWidth="1" strokeLinejoin="round" fill="none">
               {/* Level 2 to Root */}
               <path d="M 60 70 L 100 40 L 140 70" />
               {/* Level 3 to Level 2 (Left) */}
@@ -145,38 +145,38 @@ export function DataIntegrityPanel({ expanded }: DataIntegrityPanelProps) {
 
             {/* Tree Nodes (Hashes) */}
             {/* Root Hash */}
-            <rect x="92" y="32" width="16" height="16" fill="black" stroke="#7c5cfc" strokeWidth="1" />
+            <rect x="92" y="32" width="16" height="16" fill="var(--color-background)" stroke="#7c5cfc" strokeWidth="1" />
             <rect x="96" y="36" width="8" height="8" fill="#7c5cfc" opacity="0.4" />
-            <text x="100" y="24" fill="rgba(255,255,255,0.6)" fontSize="6" fontFamily="monospace" textAnchor="middle" letterSpacing="0.5">ROOT HASH</text>
+            <text x="100" y="24" fill="currentColor" fillOpacity={0.6} fontSize="6" fontFamily="monospace" textAnchor="middle" letterSpacing="0.5">ROOT HASH</text>
 
             {/* Level 2 Hashes */}
-            <rect x="54" y="64" width="12" height="12" fill="black" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-            <rect x="56" y="66" width="8" height="8" fill="rgba(255,255,255,0.1)" />
-            <rect x="134" y="64" width="12" height="12" fill="black" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-            <rect x="136" y="66" width="8" height="8" fill="rgba(255,255,255,0.1)" />
+            <rect x="54" y="64" width="12" height="12" fill="var(--color-background)" stroke="currentColor" strokeOpacity={0.4} strokeWidth="1" />
+            <rect x="56" y="66" width="8" height="8" fill="currentColor" fillOpacity={0.1} />
+            <rect x="134" y="64" width="12" height="12" fill="var(--color-background)" stroke="currentColor" strokeOpacity={0.4} strokeWidth="1" />
+            <rect x="136" y="66" width="8" height="8" fill="currentColor" fillOpacity={0.1} />
 
             {/* Level 3 Hashes */}
             {[30, 90, 110, 170].map(x => (
               <g key={`l3-${x}`}>
-                <rect x={x - 4} y="106" width="8" height="8" fill="black" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-                <rect x={x - 2} y="108" width="4" height="4" fill="rgba(255,255,255,0.1)" />
+                <rect x={x - 4} y="106" width="8" height="8" fill="var(--color-background)" stroke="currentColor" strokeOpacity={0.3} strokeWidth="1" />
+                <rect x={x - 2} y="108" width="4" height="4" fill="currentColor" fillOpacity={0.1} />
               </g>
             ))}
 
             {/* Data Blocks */}
             {[30, 90, 110, 170].map(x => (
               <g key={`data-${x}`}>
-                <rect x={x - 12} y="150" width="24" height="10" fill="black" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-                <path d={`M ${x - 8} 153 L ${x + 8} 153 M ${x - 8} 157 L ${x + 4} 157`} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+                <rect x={x - 12} y="150" width="24" height="10" fill="var(--color-background)" stroke="currentColor" strokeOpacity={0.2} strokeWidth="1" />
+                <path d={`M ${x - 8} 153 L ${x + 8} 153 M ${x - 8} 157 L ${x + 4} 157`} stroke="currentColor" strokeOpacity={0.1} strokeWidth="1" />
               </g>
             ))}
 
-            <text x="60" y="172" fill="rgba(255,255,255,0.3)" fontSize="6" fontFamily="monospace" textAnchor="middle">BLOCK_A</text>
-            <text x="140" y="172" fill="rgba(255,255,255,0.3)" fontSize="6" fontFamily="monospace" textAnchor="middle">BLOCK_B</text>
+            <text x="60" y="172" fill="currentColor" fillOpacity={0.3} fontSize="6" fontFamily="monospace" textAnchor="middle">BLOCK_A</text>
+            <text x="140" y="172" fill="currentColor" fillOpacity={0.3} fontSize="6" fontFamily="monospace" textAnchor="middle">BLOCK_B</text>
 
             {/* Sub-labels */}
-            <text x="5" y="195" fill="rgba(255,255,255,0.2)" fontSize="6" fontFamily="monospace">OP: MERKLE_VERIFY</text>
-            <text x="195" y="195" fill="rgba(255,255,255,0.2)" fontSize="6" fontFamily="monospace" textAnchor="end">SEC: AES-GCM</text>
+            <text x="5" y="195" fill="currentColor" fillOpacity={0.2} fontSize="6" fontFamily="monospace">OP: MERKLE_VERIFY</text>
+            <text x="195" y="195" fill="currentColor" fillOpacity={0.2} fontSize="6" fontFamily="monospace" textAnchor="end">SEC: AES-GCM</text>
           </svg>
         </div>
       </motion.div>

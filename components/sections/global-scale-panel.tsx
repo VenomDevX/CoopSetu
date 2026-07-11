@@ -75,10 +75,10 @@ export function GlobalScalePanel({ expanded }: { expanded: boolean }) {
       <div className="mb-12 relative z-10 flex flex-col items-start w-full flex-1">
         {/* Eyebrow */}
         <motion.div variants={itemVariants} className="flex items-center gap-3 w-full mb-6">
-          <div className="font-mono text-[11px] uppercase tracking-widest text-white/50 flex items-center gap-2">
-            <span className="text-white/40">✛</span> PHASE_02 // DISTRIBUTION
+          <div className="font-mono text-[11px] uppercase tracking-widest text-foreground/50 flex items-center gap-2">
+            <span className="text-foreground/40">✛</span> PHASE_02 // DISTRIBUTION
           </div>
-          <div className="h-[1px] bg-white/20 flex-1" />
+          <div className="h-[1px] bg-foreground/20 flex-1" />
         </motion.div>
         
         {/* Title */}
@@ -87,7 +87,7 @@ export function GlobalScalePanel({ expanded }: { expanded: boolean }) {
         </motion.h2>
 
         {/* Subtitle */}
-        <motion.p variants={itemVariants} className={`text-white/60 text-sm leading-relaxed mb-10 font-mono tracking-tight transition-opacity ${!expanded && expanded !== null ? 'opacity-0 lg:opacity-100' : ''}`}>
+        <motion.p variants={itemVariants} className={`text-foreground/60 text-sm leading-relaxed mb-10 font-mono tracking-tight transition-opacity ${!expanded && expanded !== null ? 'opacity-0 lg:opacity-100' : ''}`}>
           Distributed across 24 edge regions. Requests are routed to the nearest core instantly.
         </motion.p>
 
@@ -95,7 +95,7 @@ export function GlobalScalePanel({ expanded }: { expanded: boolean }) {
         <motion.div variants={itemVariants} className={`w-full relative mb-8 rounded group ${!expanded && expanded !== null ? 'opacity-0 lg:opacity-100' : ''}`}>
           <div className="py-2 flex justify-between items-start">
             <div>
-              <div className="font-mono text-[11px] uppercase tracking-widest text-white/50 mb-1">Active Regions</div>
+              <div className="font-mono text-[11px] uppercase tracking-widest text-foreground/50 mb-1">Active Regions</div>
               <div className="text-3xl font-bold tracking-tighter flex items-end gap-1">
                 {mounted ? count : 0}<span className="text-accent mb-1.5 text-xl leading-none">·</span>
               </div>
@@ -103,13 +103,13 @@ export function GlobalScalePanel({ expanded }: { expanded: boolean }) {
           </div>
           <div className="flex gap-12 mt-4">
             <div>
-              <div className="font-mono text-[11px] uppercase tracking-widest text-white/40 mb-1.5">Latency</div>
-              <div className="text-[11px] font-mono text-white flex items-center gap-1.5">
+              <div className="font-mono text-[11px] uppercase tracking-widest text-foreground/40 mb-1.5">Latency</div>
+              <div className="text-[11px] font-mono text-foreground flex items-center gap-1.5">
                 <span className="text-accent">⚡</span> {'<'} 12ms
               </div>
             </div>
             <div>
-              <div className="font-mono text-[11px] uppercase tracking-widest text-white/40 mb-1.5">Uptime</div>
+              <div className="font-mono text-[11px] uppercase tracking-widest text-foreground/40 mb-1.5">Uptime</div>
               <div className="text-[11px] font-mono text-green-500 flex items-center gap-1.5">
                 <span>✓</span> 99.999%
               </div>
@@ -117,7 +117,7 @@ export function GlobalScalePanel({ expanded }: { expanded: boolean }) {
           </div>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="mt-auto inline-flex items-center gap-2 text-[11px] text-white/60 hover:text-white transition-colors font-mono uppercase tracking-widest cursor-pointer group relative w-fit">
+        <motion.div variants={itemVariants} className="mt-auto inline-flex items-center gap-2 text-[11px] text-foreground/60 hover:text-foreground transition-colors font-mono uppercase tracking-widest cursor-pointer group relative w-fit">
           EXTRACT DETAILS <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
           <div className="absolute -bottom-1 left-0 w-0 h-[1px] bg-accent transition-all duration-300 group-hover:w-full" />
         </motion.div>
@@ -127,19 +127,19 @@ export function GlobalScalePanel({ expanded }: { expanded: boolean }) {
       <motion.div variants={itemVariants} className={`mt-auto flex items-center justify-center w-full aspect-square max-w-[280px] mx-auto relative z-10 opacity-90 transition-all duration-700 ${!expanded && expanded !== null ? 'scale-75 opacity-20 lg:scale-100 lg:opacity-90' : ''}`}>
         <div className="absolute inset-0 rounded overflow-hidden">
           {/* SVG H-Tree Topology Diagram */}
-          <svg viewBox="0 0 200 200" className="w-full h-full p-2" style={{ display: 'block', overflow: 'visible' }}>
+          <svg viewBox="0 0 200 200" className="w-full h-full p-2 text-foreground" style={{ display: 'block', overflow: 'visible' }}>
 
 
             {/* Main Bus Backbone */}
-            <path d="M 80 40 L 80 160" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-            <path d="M 120 40 L 120 160" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-            <path d="M 80 100 L 120 100" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+            <path d="M 80 40 L 80 160" stroke="currentColor" strokeOpacity={0.15} strokeWidth="1" />
+            <path d="M 120 40 L 120 160" stroke="currentColor" strokeOpacity={0.15} strokeWidth="1" />
+            <path d="M 80 100 L 120 100" stroke="currentColor" strokeOpacity={0.15} strokeWidth="1" />
 
             {/* Bus registration ticks */}
             {[40, 80, 120, 160].map(y => (
               <g key={`tick-${y}`}>
-                <circle cx="80" cy={y} r="1" fill="white" opacity="0.4" />
-                <circle cx="120" cy={y} r="1" fill="white" opacity="0.4" />
+                <circle cx="80" cy={y} r="1" fill="currentColor" opacity="0.4" />
+                <circle cx="120" cy={y} r="1" fill="currentColor" opacity="0.4" />
               </g>
             ))}
 
@@ -151,12 +151,12 @@ export function GlobalScalePanel({ expanded }: { expanded: boolean }) {
               { label: "EU-WEST", y: 160, delay: 0.5 },
             ].map(node => (
               <g key={node.label}>
-                <line x1="40" y1={node.y} x2="80" y2={node.y} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+                <line x1="40" y1={node.y} x2="80" y2={node.y} stroke="currentColor" strokeOpacity={0.1} strokeWidth="1" />
                 
                 {/* Node Socket */}
-                <rect x="38" y={node.y - 2} width="4" height="4" fill="black" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-                <rect x="39" y={node.y - 1} width="2" height="2" fill="rgba(255,255,255,0.7)" />
-                <text x="31" y={node.y + 2.5} fill="rgba(255,255,255,0.4)" fontSize="7" fontFamily="monospace" textAnchor="end" letterSpacing="0.5">
+                <rect x="38" y={node.y - 2} width="4" height="4" fill="var(--color-background)" stroke="currentColor" strokeOpacity={0.3} strokeWidth="1" />
+                <rect x="39" y={node.y - 1} width="2" height="2" fill="currentColor" fillOpacity={0.7} />
+                <text x="31" y={node.y + 2.5} fill="currentColor" fillOpacity={0.4} fontSize="7" fontFamily="monospace" textAnchor="end" letterSpacing="0.5">
                   {node.label}
                 </text>
 
@@ -190,12 +190,12 @@ export function GlobalScalePanel({ expanded }: { expanded: boolean }) {
               { label: "AP-SE", y: 160, delay: 1 },
             ].map(node => (
               <g key={node.label}>
-                <line x1="160" y1={node.y} x2="120" y2={node.y} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+                <line x1="160" y1={node.y} x2="120" y2={node.y} stroke="currentColor" strokeOpacity={0.1} strokeWidth="1" />
                 
                 {/* Node Socket */}
-                <rect x="158" y={node.y - 2} width="4" height="4" fill="black" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-                <rect x="159" y={node.y - 1} width="2" height="2" fill="rgba(255,255,255,0.7)" />
-                <text x="169" y={node.y + 2.5} fill="rgba(255,255,255,0.4)" fontSize="7" fontFamily="monospace" textAnchor="start" letterSpacing="0.5">
+                <rect x="158" y={node.y - 2} width="4" height="4" fill="var(--color-background)" stroke="currentColor" strokeOpacity={0.3} strokeWidth="1" />
+                <rect x="159" y={node.y - 1} width="2" height="2" fill="currentColor" fillOpacity={0.7} />
+                <text x="169" y={node.y + 2.5} fill="currentColor" fillOpacity={0.4} fontSize="7" fontFamily="monospace" textAnchor="start" letterSpacing="0.5">
                   {node.label}
                 </text>
 
@@ -222,7 +222,7 @@ export function GlobalScalePanel({ expanded }: { expanded: boolean }) {
             ))}
 
             {/* Center Core */}
-            <rect x="94" y="94" width="12" height="12" fill="black" stroke="#7c5cfc" strokeWidth="1" />
+            <rect x="94" y="94" width="12" height="12" fill="var(--color-background)" stroke="#7c5cfc" strokeWidth="1" />
             <rect x="97" y="97" width="6" height="6" fill="#7c5cfc" opacity="0.4" />
             <rect x="99" y="99" width="2" height="2" fill="#7c5cfc" />
             
@@ -231,8 +231,8 @@ export function GlobalScalePanel({ expanded }: { expanded: boolean }) {
             <text x="100" y="82" fill="#7c5cfc" fontSize="8" fontFamily="monospace" textAnchor="middle" letterSpacing="0.5">CORE-1</text>
 
             {/* Sub-labels */}
-            <text x="5" y="195" fill="rgba(255,255,255,0.2)" fontSize="6" fontFamily="monospace">SYS.OP. NORMAL</text>
-            <text x="195" y="195" fill="rgba(255,255,255,0.2)" fontSize="6" fontFamily="monospace" textAnchor="end">LAT. 12ms</text>
+            <text x="5" y="195" fill="currentColor" fillOpacity={0.2} fontSize="6" fontFamily="monospace">SYS.OP. NORMAL</text>
+            <text x="195" y="195" fill="currentColor" fillOpacity={0.2} fontSize="6" fontFamily="monospace" textAnchor="end">LAT. 12ms</text>
           </svg>
         </div>
       </motion.div>

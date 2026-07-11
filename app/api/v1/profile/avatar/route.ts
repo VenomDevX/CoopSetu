@@ -30,17 +30,21 @@ export async function POST(req: NextRequest) {
   const ext = file.name.split('.').pop() || 'jpg';
   const filePath = `avatars/${user.id}.${ext}`;
 
+  // Convert File to Buffer for Node.js Supabase client
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
   // Upload to Supabase Storage
   const admin = createAdminClient();
   const { error: uploadErr } = await admin.storage
     .from('avatars')
-    .upload(filePath, file, {
+    .upload(filePath, buffer, {
       upsert: true,
       contentType: file.type,
     });
 
   if (uploadErr) {
-    throw Errors.internal('Failed to upload avatar.');
+    throw Errors.internal(`Failed to upload avatar: ${uploadErr.message}`);
   }
 
   // Get public URL

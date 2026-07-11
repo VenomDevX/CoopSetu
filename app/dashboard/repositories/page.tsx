@@ -9,7 +9,6 @@ import {
   Search,
   Filter,
   Plus,
-  Bot,
   GitBranch,
   GitPullRequest,
   GitCommit,

@@ -175,32 +175,36 @@ export default function SignupPage() {
           <div className="grid grid-cols-2 gap-4 w-full">
             <div className="space-y-1.5 w-full">
               <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Full Name</label>
-              <input className={`w-full h-11 px-4 bg-surface border text-sm focus:outline-none transition-colors ${touched1 && !isNameValid ? 'border-red-500 focus:border-red-500' : isNameValid && touched1 ? 'border-green-500/50 focus:border-green-500/50' : 'border-border focus:border-foreground'}`}
+              <input className={`w-full h-11 px-4 bg-surface border rounded text-sm focus:outline-none transition-colors ${touched1 && !isNameValid ? 'border-red-500 focus:border-red-500' : isNameValid && touched1 ? 'border-green-500/50 focus:border-green-500/50' : 'border-border focus:border-foreground'}`}
                 type="text" placeholder="Jane Doe" value={fullName} onChange={(e) => { setFullName(e.target.value); setTouched1(true); }} required autoFocus />
               {touched1 && !isNameValid && <p className="text-[10px] text-red-500 font-mono">Letters, spaces, hyphens only (min 2)</p>}
             </div>
             <div className="space-y-1.5 w-full">
               <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Work Email</label>
-              <input className={`w-full h-11 px-4 bg-surface border text-sm focus:outline-none transition-colors ${touched1 && !isEmailValid ? 'border-red-500 focus:border-red-500' : isEmailValid && touched1 ? 'border-green-500/50 focus:border-green-500/50' : 'border-border focus:border-foreground'}`}
+              <input className={`w-full h-11 px-4 bg-surface border rounded text-sm focus:outline-none transition-colors ${touched1 && !isEmailValid ? 'border-red-500 focus:border-red-500' : isEmailValid && touched1 ? 'border-green-500/50 focus:border-green-500/50' : 'border-border focus:border-foreground'}`}
                 type="email" placeholder="jane@company.com" value={email} onChange={(e) => { setEmail(e.target.value); setTouched1(true); }} required />
             </div>
           </div>
 
           <div className="space-y-4 w-full">
             <div className="grid grid-cols-2 gap-4 w-full">
-              <div className="space-y-1.5 relative w-full">
+              <div className="space-y-1.5 w-full">
                 <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Password</label>
-                <input className={`w-full h-11 px-4 pr-10 bg-surface border text-sm focus:outline-none transition-colors ${touched1 && !passLength ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-foreground'}`}
-                  type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setTouched1(true)} required />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 bottom-0 h-11 flex items-center text-muted-foreground hover:text-foreground">
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+                <div className="relative">
+                  <input className={`w-full h-11 px-4 pr-10 bg-surface border rounded text-sm focus:outline-none transition-colors ${touched1 && !passLength ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-foreground'}`}
+                    type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setTouched1(true)} required />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-muted-foreground hover:text-foreground">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
-              <div className="space-y-1.5 relative w-full">
+              <div className="space-y-1.5 w-full">
                 <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Confirm Password</label>
-                <input className={`w-full h-11 px-4 pr-10 bg-surface border text-sm focus:outline-none transition-colors ${touched1 && password.length > 0 && !passMatch ? 'border-red-500 focus:border-red-500' : passMatch ? 'border-green-500/50 focus:border-green-500/50' : 'border-border focus:border-foreground'}`}
-                  type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
-                {passMatch && <span className="absolute right-3 bottom-0 h-11 flex items-center pointer-events-none"><CheckCircle2 className="w-4 h-4 text-green-500" /></span>}
+                <div className="relative">
+                  <input className={`w-full h-11 px-4 pr-10 bg-surface border rounded text-sm focus:outline-none transition-colors ${touched1 && password.length > 0 && !passMatch ? 'border-red-500 focus:border-red-500' : passMatch ? 'border-green-500/50 focus:border-green-500/50' : 'border-border focus:border-foreground'}`}
+                    type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+                  {passMatch && <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none"><CheckCircle2 className="w-4 h-4 text-green-500" /></span>}
+                </div>
               </div>
             </div>
 
@@ -254,7 +258,7 @@ export default function SignupPage() {
           </span>
         </label>
 
-        <button type="submit" disabled={!isStep1Valid || loading} className="w-full h-11 bg-foreground text-background text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-50">
+        <button type="submit" disabled={!isStep1Valid || loading} className="w-full h-11 bg-foreground text-background rounded text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-50">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continue <ChevronRight className="w-4 h-4" /></>}
         </button>
 
