@@ -16,8 +16,8 @@ export default function StudentChoiceClient() {
 
   return (
     <OnboardingShell
-      currentStep={4}
-      totalSteps={4}
+      currentStep={3}
+      totalSteps={3}
       stepLabel="Student Setup"
       title="Set up your student workspace"
       subtitle="You can always create or join another workspace later."

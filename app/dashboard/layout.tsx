@@ -17,7 +17,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // resolver's legal-consent gate. Demo (anonymous) sessions are exempt.
   if (!user.is_anonymous) {
     const legalStatus = await getLegalStatus(user, supabase);
-    if (!legalStatus.isAccepted) redirect('/onboarding/legal-consent');
+    if (!legalStatus.isAccepted) redirect('/onboarding');
   }
 
   const [{ data: profile }, { data: org }] = await Promise.all([

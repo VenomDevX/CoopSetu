@@ -5,6 +5,7 @@ import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Employee {
   id: string;
@@ -109,20 +110,30 @@ export function CreateTestPlanModal({ onClose, onCreated }: { onClose: () => voi
               </div>
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Project *</label>
-                <select value={projectId} onChange={e => setProjectId(e.target.value)} className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
-                  <option value="">-- Select Project --</option>
-                  {projects.map(p => <option key={p.id} value={p.id}>{p.code} - {p.name}</option>)}
-                </select>
+                <Select value={projectId} onValueChange={setProjectId}>
+                  <SelectTrigger className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
+                    <SelectValue placeholder="-- Select Project --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">-- Select Project --</SelectItem>
+                    {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.code} - {p.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">QA Owner *</label>
-                <select value={ownerMemberId} onChange={e => setOwnerMemberId(e.target.value)} className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
-                  <option value="">-- Select Member --</option>
-                  {employees.map(m => <option key={m.id} value={m.id}>{m.name} {m.job_title ? `(${m.job_title})` : ''}</option>)}
-                </select>
+                <Select value={ownerMemberId} onValueChange={setOwnerMemberId}>
+                  <SelectTrigger className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
+                    <SelectValue placeholder="-- Select Member --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">-- Select Member --</SelectItem>
+                    {employees.map(m => <SelectItem key={m.id} value={m.id}>{m.name} {m.job_title ? `(${m.job_title})` : ''}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Target Date</label>
@@ -167,9 +178,14 @@ export function CreateTestPlanModal({ onClose, onCreated }: { onClose: () => voi
                       </div>
                       <div>
                         <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Priority</label>
-                        <select value={tc.priority} onChange={e => { const nc = [...testCases]; nc[idx].priority = e.target.value; setTestCases(nc); }} className="w-full h-8 border border-border rounded bg-background px-2 outline-none focus:border-foreground">
-                          {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
-                        </select>
+                        <Select value={tc.priority} onValueChange={val => { const nc = [...testCases]; nc[idx].priority = val; setTestCases(nc); }}>
+                          <SelectTrigger className="w-full h-8 border border-border rounded bg-background px-2 outline-none focus:border-foreground">
+                            <SelectValue placeholder="Select Priority" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PRIORITIES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">

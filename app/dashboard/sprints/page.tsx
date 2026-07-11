@@ -11,16 +11,16 @@ import { DataViewport } from '@/components/layout/data-viewport';
 import {
   ChevronRight,
   Search,
-  Filter,
   Plus,
   Download,
+  KanbanSquare,
   Activity,
   ArrowRight,
-  KanbanSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AskAiButton } from '@/components/ai/ask-ai-button';
 import { TableRowsSkeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 
 type Sprint = {
@@ -177,17 +177,17 @@ export default function SprintsPage() {
             />
           </div>
           <div className="relative flex items-center">
-            <Filter className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'ALL' | Sprint['status'])}
-              className="h-8 pl-7 pr-3 rounded text-[10px] font-mono uppercase border border-border rounded bg-background focus:outline-none focus:border-foreground transition-colors cursor-pointer"
-            >
-              <option value="ALL">All Status</option>
-              <option value="Active">Active</option>
-              <option value="Planning">Planning</option>
-              <option value="Completed">Completed</option>
-            </select>
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+              <SelectTrigger className="h-8 pl-3 pr-3 rounded text-[10px] font-mono uppercase border border-border bg-background focus:outline-none focus:border-foreground transition-colors cursor-pointer w-[140px]">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Status</SelectItem>
+                <SelectItem value="Active">Active</SelectItem>
+                <SelectItem value="Planning">Planning</SelectItem>
+                <SelectItem value="Completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>

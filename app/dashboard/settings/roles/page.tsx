@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { ChevronRight, Plus, Save , Settings} from 'lucide-react';
+import { ChevronRight, Plus, Save, Settings } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { usePermission } from '@/lib/permissions/context';
 
 interface Role {
@@ -127,7 +128,7 @@ export default function RolesSettingsPage() {
               const on = current.is_custom ? draft.has(p.code) : current.permissions.includes(p.code);
               return (
                 <label key={p.code} className={`flex items-center gap-2 p-1.5 text-xs ${current.is_custom ? 'cursor-pointer hover:bg-surface-hover' : 'opacity-70'}`}>
-                  <input type="checkbox" checked={on} disabled={!current.is_custom} onChange={() => toggle(p.code)} />
+                  <Checkbox checked={on} disabled={!current.is_custom} onCheckedChange={() => toggle(p.code)} />
                   <span className="font-mono text-[10px]">{p.code}</span>
                 </label>
               );

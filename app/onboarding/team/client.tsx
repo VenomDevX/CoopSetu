@@ -21,7 +21,6 @@ export default function TeamClient({ connectedAccount }: TeamClientProps) {
       try {
         await finishWorkspaceSetup();
         router.push('/dashboard');
-        router.refresh();
       } catch (err: any) {
         setError(err.message || 'An error occurred.');
       }
@@ -30,8 +29,8 @@ export default function TeamClient({ connectedAccount }: TeamClientProps) {
 
   return (
     <OnboardingShell
-      currentStep={4}
-      totalSteps={4}
+      currentStep={3}
+      totalSteps={3}
       stepLabel="Workspace Setup"
       title="Finish Setup"
       subtitle="Your workspace is ready. You can create teams later from the Teams workspace."

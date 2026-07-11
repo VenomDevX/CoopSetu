@@ -5,6 +5,7 @@ import { Loader2, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Props {
   onClose: () => void;
@@ -78,17 +79,17 @@ export function ConnectRepositoryModal({ onClose, onSuccess }: Props) {
                 <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground block mb-1.5">
                   Provider *
                 </label>
-                <select
-                  name="provider"
-                  required
-                  defaultValue="github"
-                  className="w-full h-9 px-3 bg-background border border-border rounded text-xs font-mono uppercase focus:outline-none focus:border-foreground"
-                >
-                  <option value="github">GitHub</option>
-                  <option value="gitlab">GitLab</option>
-                  <option value="bitbucket">Bitbucket</option>
-                  <option value="azure_devops">Azure DevOps</option>
-                </select>
+                <Select name="provider" defaultValue="github" required>
+                  <SelectTrigger className="w-full h-9 px-3 bg-background border border-border rounded text-xs font-mono uppercase focus:outline-none focus:border-foreground">
+                    <SelectValue placeholder="Select Provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="github">GitHub</SelectItem>
+                    <SelectItem value="gitlab">GitLab</SelectItem>
+                    <SelectItem value="bitbucket">Bitbucket</SelectItem>
+                    <SelectItem value="azure_devops">Azure DevOps</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground block mb-1.5">

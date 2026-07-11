@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCurrentMembership, usePermission } from '@/lib/permissions/context';
 import {
   Building2, Users, Shield, Key, Webhook, Activity, CreditCard, MonitorSmartphone,
@@ -958,7 +960,7 @@ function SettingsPageContent() {
                       <div className="font-medium text-sm text-foreground">Require Multi-Factor Authentication</div>
                       <div className="text-xs text-muted-foreground">Enforce MFA for all workspace members.</div>
                     </div>
-                    <input type="checkbox" defaultChecked className="w-4 h-4 rounded-sm border-border text-primary bg-surface focus:ring-primary" />
+                    <Checkbox defaultChecked />
                   </div>
                   
                   <div className="pt-6 border-t border-border mt-6">
@@ -985,11 +987,16 @@ function SettingsPageContent() {
                       <div className="font-medium text-sm text-foreground">Session Timeout</div>
                       <div className="text-xs text-muted-foreground">Automatically log out idle users.</div>
                     </div>
-                    <select className="border border-border bg-surface text-foreground rounded-sm text-sm px-2 py-1 outline-none focus:border-border-strong">
-                      <option>12 hours</option>
-                      <option>24 hours</option>
-                      <option>7 days</option>
-                    </select>
+                    <Select defaultValue="24 hours">
+                      <SelectTrigger className="border border-border bg-surface text-foreground rounded-sm text-sm px-2 py-1 outline-none focus:border-border-strong w-auto min-w-[120px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="12 hours">12 hours</SelectItem>
+                        <SelectItem value="24 hours">24 hours</SelectItem>
+                        <SelectItem value="7 days">7 days</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </CardContent>
               </Card>

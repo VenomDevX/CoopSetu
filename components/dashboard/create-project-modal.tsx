@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Dialog, dialogLabelCls as labelCls, dialogFieldCls as fieldCls } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Employee {
   id: string;
@@ -125,30 +126,50 @@ export function CreateProjectModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Priority</label>
-              <select value={priority} onChange={(e) => setPriority(e.target.value)} className={fieldCls}>
-                {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
+              <Select value={priority} onValueChange={setPriority}>
+                <SelectTrigger className={fieldCls}>
+                  <SelectValue placeholder="Select Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRIORITIES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className={labelCls}>Status</label>
-              <select value={status} onChange={(e) => setStatus(e.target.value)} className={fieldCls}>
-                {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger className={fieldCls}>
+                  <SelectValue placeholder="Select Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className={labelCls}>Security Classification</label>
-              <select value={security} onChange={(e) => setSecurity(e.target.value)} className={fieldCls}>
-                {SECURITY.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
+              <Select value={security} onValueChange={setSecurity}>
+                <SelectTrigger className={fieldCls}>
+                  <SelectValue placeholder="Select Classification" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SECURITY.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className={labelCls}>Project Manager</label>
-              <select data-testid="project-pm-select" value={pm} onChange={(e) => setPm(e.target.value)} className={fieldCls}>
-                <option value="">— Unassigned —</option>
-                {employees.map((e) => (
-                  <option key={e.id} value={e.id}>{[e.name, e.job_title].filter(Boolean).join(' · ')}</option>
-                ))}
-              </select>
+              <Select value={pm} onValueChange={setPm}>
+                <SelectTrigger className={fieldCls} data-testid="project-pm-select">
+                  <SelectValue placeholder="— Unassigned —" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">— Unassigned —</SelectItem>
+                  {employees.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>{[e.name, e.job_title].filter(Boolean).join(' · ')}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className={labelCls}>Start Date</label>

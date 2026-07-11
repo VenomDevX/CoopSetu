@@ -7,5 +7,5 @@ export const acceptLegalSchema = z.object({
   acceptedTerms: z.literal(true),
   acceptedPrivacy: z.literal(true),
   acceptedCookies: z.boolean().optional(),
-  source: z.enum(['SIGNUP', 'OAUTH_CONSENT', 'INVITE', 'RE_ACCEPT']).default('SIGNUP'),
+  source: z.enum(['SIGNUP', 'OAUTH_CONSENT', 'INVITE', 'RE_ACCEPT', 'ONBOARDING_PROFILE', 'ONBOARDING_WORKSPACE']).default('SIGNUP'),
 }).strict();

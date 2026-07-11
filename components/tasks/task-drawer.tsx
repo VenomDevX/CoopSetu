@@ -1,13 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { X, Paperclip } from 'lucide-react';
 import { useTaskRealtime } from '@/hooks/use-task-realtime';
 import { usePresence } from '@/hooks/use-presence';
 import { channels } from '@/lib/realtime/channels';
 import { createClient } from '@/lib/supabase/client';
+import { Check, X, Clock, AlertCircle, Paperclip, Reply, Lock, Eye, Edit2, ShieldAlert } from 'lucide-react';
 import { usePermission } from '@/lib/permissions/context';
 import { TASK_STATUSES, TASK_VISIBILITY_SCOPES } from '@/lib/constants/task-statuses';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AskAiButton } from '@/components/ai/ask-ai-button';
 
 interface Comment {
@@ -345,15 +346,14 @@ export function TaskDrawer({ taskId, onClose }: { taskId: string; onClose: () =>
             <div>
               <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1 block">Status</label>
               {canEdit ? (
-                <select
-                  data-testid="task-status-select"
-                  value={task?.status ?? ''}
-                  disabled={savingField === 'status'}
-                  onChange={(e) => patchTask({ status: e.target.value }, 'status')}
-                  className="w-full h-9 px-2 bg-background border border-border rounded text-xs font-mono uppercase"
-                >
-                  {TASK_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <Select value={task?.status ?? ''} onValueChange={(val) => patchTask({ status: val }, 'status')} disabled={savingField === 'status'}>
+                  <SelectTrigger className="w-full h-9 bg-background border border-border rounded text-xs font-mono uppercase" data-testid="task-status-select">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TASK_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               ) : (
                 <span className="border border-border rounded px-2 py-1 font-mono text-[10px] uppercase inline-block">{task?.status}</span>
               )}
@@ -369,29 +369,28 @@ export function TaskDrawer({ taskId, onClose }: { taskId: string; onClose: () =>
               <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1 block">
                 Assignee {members.length > 0 && `(${members.length} eligible)`}
               </label>
-              <select
-                data-testid="task-assignee-select"
-                value={task?.primary_assignee_member_id ?? ''}
-                disabled={savingField === 'assignee'}
-                onChange={(e) => patchTask({ primary_assignee_member_id: e.target.value || null }, 'assignee')}
-                className="w-full h-9 px-2 bg-background border border-border rounded text-xs"
-              >
-                <option value="">— Unassigned —</option>
-                {members.map((m) => <option key={m.member_id} value={m.member_id}>{memberLabel(m)}</option>)}
-              </select>
+              <Select value={task?.primary_assignee_member_id ?? ''} onValueChange={(val) => patchTask({ primary_assignee_member_id: val || null }, 'assignee')} disabled={savingField === 'assignee'}>
+                <SelectTrigger className="w-full h-9 bg-background border border-border rounded text-xs" data-testid="task-assignee-select">
+                  <SelectValue placeholder="— Unassigned —" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">— Unassigned —</SelectItem>
+                  {members.map((m) => <SelectItem key={m.member_id} value={m.member_id}>{memberLabel(m)}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
           )}
           {canEdit && (
             <div>
               <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1 block">Visibility</label>
-              <select
-                value={task?.visibility_scope ?? 'PRIVATE_ASSIGNMENT'}
-                disabled={savingField === 'visibility'}
-                onChange={(e) => patchTask({ visibility_scope: e.target.value }, 'visibility')}
-                className="w-full h-9 px-2 bg-background border border-border rounded text-xs font-mono uppercase"
-              >
-                {TASK_VISIBILITY_SCOPES.map((scope) => <option key={scope} value={scope}>{scope.replace(/_/g, ' ')}</option>)}
-              </select>
+              <Select value={task?.visibility_scope ?? 'PRIVATE_ASSIGNMENT'} onValueChange={(val) => patchTask({ visibility_scope: val }, 'visibility')} disabled={savingField === 'visibility'}>
+                <SelectTrigger className="w-full h-9 bg-background border border-border rounded text-xs font-mono uppercase">
+                  <SelectValue placeholder="Visibility" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TASK_VISIBILITY_SCOPES.map((scope) => <SelectItem key={scope} value={scope}>{scope.replace(/_/g, ' ')}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
           )}
           {task?.description && <p className="text-sm text-muted-foreground whitespace-pre-wrap">{task.description}</p>}
@@ -467,15 +466,15 @@ export function TaskDrawer({ taskId, onClose }: { taskId: string; onClose: () =>
         )}
         <div className="px-4 pt-3 border-t border-border flex flex-wrap items-center gap-2">
           {directory.length > 0 && (
-            <select
-              data-testid="comment-mention-select"
-              value=""
-              onChange={(e) => { if (e.target.value) addMention(e.target.value); }}
-              className="h-8 px-2 bg-surface border border-border rounded text-[11px] font-mono"
-            >
-              <option value="">@ Mention…</option>
-              {directory.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-            </select>
+            <Select value="" onValueChange={(val) => { if (val) addMention(val); }}>
+              <SelectTrigger className="w-[120px] h-8 bg-surface border border-border rounded text-[11px] font-mono" data-testid="comment-mention-select">
+                <SelectValue placeholder="@ Mention…" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">@ Mention…</SelectItem>
+                {directory.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
           )}
           {pendingMentions.map((m) => (
             <span key={m.id} className="inline-flex items-center gap-1 border border-border rounded px-2 py-0.5 text-[10px] font-mono bg-surface">

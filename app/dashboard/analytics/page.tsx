@@ -22,6 +22,7 @@ import {
   Printer
 } from 'lucide-react';
 import { AskAiButton } from '@/components/ai/ask-ai-button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { CreateReportModal } from '@/components/reports/create-report-modal';
 import { ScheduleReportModal } from '@/components/reports/schedule-report-modal';
@@ -154,21 +155,27 @@ export default function AnalyticsPage() {
         <div className="flex items-center gap-4 text-sm font-mono flex-wrap">
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase text-muted-foreground tracking-widest">Date Range:</span>
-            <select disabled title="Not available yet" className="bg-background border border-border rounded px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase disabled:opacity-40">
-              <option>All Time</option>
-            </select>
+            <Select disabled>
+              <SelectTrigger className="bg-background border border-border rounded px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase disabled:opacity-40 w-auto min-w-[100px] h-7">
+                <SelectValue placeholder="All Time" />
+              </SelectTrigger>
+            </Select>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase text-muted-foreground tracking-widest">Team:</span>
-            <select disabled title="Not available yet" className="bg-background border border-border rounded px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase disabled:opacity-40">
-              <option>All Teams</option>
-            </select>
+            <Select disabled>
+              <SelectTrigger className="bg-background border border-border rounded px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase disabled:opacity-40 w-auto min-w-[100px] h-7">
+                <SelectValue placeholder="All Teams" />
+              </SelectTrigger>
+            </Select>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase text-muted-foreground tracking-widest">Compare:</span>
-            <select disabled title="Not available yet" className="bg-background border border-border rounded px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase disabled:opacity-40">
-              <option>None</option>
-            </select>
+            <Select disabled>
+              <SelectTrigger className="bg-background border border-border rounded px-2 py-1 text-xs focus:outline-none focus:border-foreground uppercase disabled:opacity-40 w-auto min-w-[100px] h-7">
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+            </Select>
           </div>
         </div>
 

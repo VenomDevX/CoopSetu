@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Upload } from 'lucide-react';
 import { Dialog, dialogLabelCls as labelCls, dialogFieldCls as fieldCls } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type Mapping = {
   name: string;
@@ -163,15 +164,15 @@ export function ImportProjectsModal({
                   ] as [keyof Mapping, string][]).map(([key, label]) => (
                     <div key={key}>
                       <label className={labelCls}>{label}</label>
-                      <select
-                        data-testid={`project-import-map-${key}`}
-                        value={mapping[key] ?? ''}
-                        onChange={(e) => setMap(key, e.target.value)}
-                        className={fieldCls}
-                      >
-                        <option value="">Not mapped</option>
-                        {headers.map((header) => <option key={header} value={header}>{header}</option>)}
-                      </select>
+                      <Select value={mapping[key] ?? ''} onValueChange={(val) => setMap(key, val)}>
+                        <SelectTrigger className={fieldCls} data-testid={`project-import-map-${key}`}>
+                          <SelectValue placeholder="Not mapped" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Not mapped</SelectItem>
+                          {headers.map((header) => <SelectItem key={header} value={header}>{header}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
                   ))}
                 </div>

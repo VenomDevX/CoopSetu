@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CalendarDays } from 'lucide-react';
 import { Dialog, dialogLabelCls as labelCls, dialogFieldCls as fieldCls } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Project {
   id: string;
@@ -119,26 +120,34 @@ export function AddDeadlineModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Project *</label>
-              <select
-                data-testid="deadline-project-select"
+              <Select
                 value={projectId}
-                onChange={(e) => {
-                  setProjectId(e.target.value);
+                onValueChange={(val) => {
+                  setProjectId(val);
                   setSprintId('');
                   setSprints([]);
                 }}
-                className={fieldCls}
               >
-                <option value="">Select project</option>
-                {projects.map((p) => <option key={p.id} value={p.id}>{p.code} - {p.name}</option>)}
-              </select>
+                <SelectTrigger className={fieldCls} data-testid="deadline-project-select">
+                  <SelectValue placeholder="Select project" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Select project</SelectItem>
+                  {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.code} - {p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className={labelCls}>Sprint</label>
-              <select data-testid="deadline-sprint-select" value={sprintId} onChange={(e) => setSprintId(e.target.value)} className={fieldCls} disabled={!projectId}>
-                <option value="">No sprint link</option>
-                {sprints.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              <Select value={sprintId} onValueChange={setSprintId} disabled={!projectId}>
+                <SelectTrigger className={fieldCls} data-testid="deadline-sprint-select">
+                  <SelectValue placeholder="No sprint link" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No sprint link</SelectItem>
+                  {sprints.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -153,18 +162,28 @@ export function AddDeadlineModal({
             </div>
             <div>
               <label className={labelCls}>Owner</label>
-              <select data-testid="deadline-owner-select" value={owner} onChange={(e) => setOwner(e.target.value)} className={fieldCls}>
-                <option value="">Unassigned</option>
-                {employees.map((e) => (
-                  <option key={e.id} value={e.id}>{[e.name, e.job_title].filter(Boolean).join(' - ')}</option>
-                ))}
-              </select>
+              <Select value={owner} onValueChange={setOwner}>
+                <SelectTrigger className={fieldCls} data-testid="deadline-owner-select">
+                  <SelectValue placeholder="Unassigned" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Unassigned</SelectItem>
+                  {employees.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>{[e.name, e.job_title].filter(Boolean).join(' - ')}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className={labelCls}>Status</label>
-              <select value={status} onChange={(e) => setStatus(e.target.value)} className={fieldCls}>
-                {['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'MISSED', 'CANCELLED'].map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger className={fieldCls}>
+                  <SelectValue placeholder="Select Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'MISSED', 'CANCELLED'].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

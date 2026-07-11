@@ -4,6 +4,7 @@ import { useState, FormEvent, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronRight, Loader2, CheckCircle2 } from 'lucide-react';
 import { OnboardingShell } from '@/components/auth/onboarding-shell';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface CompanyClientProps {
   connectedAccount?: { provider: 'github' | 'email'; label: string; };
@@ -89,7 +90,6 @@ export default function CompanyClient({ connectedAccount }: CompanyClientProps) 
       });
 
       router.push('/onboarding'); // Let central resolver redirect to team step
-      router.refresh();
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
@@ -98,8 +98,8 @@ export default function CompanyClient({ connectedAccount }: CompanyClientProps) 
 
   return (
     <OnboardingShell
-      currentStep={3}
-      totalSteps={4}
+      currentStep={2}
+      totalSteps={3}
       stepLabel="Organization Setup"
       title="Create your workspace"
       subtitle="You will become the organization owner."
@@ -117,18 +117,20 @@ export default function CompanyClient({ connectedAccount }: CompanyClientProps) 
         <div className="space-y-6 w-full">
           <div className="space-y-1.5 w-full">
             <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Company Name</label>
-            <input className={`w-full h-11 px-4 bg-surface border text-sm focus:outline-none transition-colors ${touched && !isCompanyValid ? 'border-red-500 focus:border-red-500' : isCompanyValid && touched ? 'border-green-500/50 focus:border-green-500/50' : 'border-border focus:border-foreground'}`}
+            <input className={`w-full h-11 px-4 bg-surface rounded-[6px] border text-sm focus:outline-none transition-colors ${touched && !isCompanyValid ? 'border-red-500 focus:border-red-500' : isCompanyValid && touched ? 'border-green-500/50 focus:border-green-500/50' : 'border-border focus:border-foreground'}`}
               placeholder="Apex Financial Technologies" value={companyName} onChange={(e) => { setCompanyName(e.target.value); setTouched(true); }} required autoFocus />
             {touched && !isCompanyValid && <p className="text-[10px] text-red-500 font-mono">Invalid characters. Letters, numbers, spaces, & - . allowed.</p>}
           </div>
 
-          <div className="space-y-1.5 relative w-full">
+          <div className="space-y-1.5 w-full">
             <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Workspace Slug</label>
-            <input className={`w-full h-11 px-4 bg-surface border text-sm focus:outline-none transition-colors pr-10 ${slugTouched && !isSlugSyntaxValid ? 'border-red-500 focus:border-red-500' : slugAvailable === true ? 'border-green-500/50 focus:border-green-500/50' : slugAvailable === false && slugTouched ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-foreground'}`}
-              placeholder="apex-financial" value={workspaceSlug} onChange={(e) => { setWorkspaceSlug(e.target.value.toLowerCase()); setSlugTouched(true); }} required onFocus={() => setSlugTouched(true)} />
-            <div className="absolute right-3 top-[26px]">
-              {checkingSlug ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> :
-                slugAvailable === true ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : null}
+            <div className="relative">
+              <input className={`w-full h-11 px-4 bg-surface rounded-[6px] border text-sm focus:outline-none transition-colors pr-10 ${slugTouched && !isSlugSyntaxValid ? 'border-red-500 focus:border-red-500' : slugAvailable === true ? 'border-green-500/50 focus:border-green-500/50' : slugAvailable === false && slugTouched ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-foreground'}`}
+                placeholder="apex-financial" value={workspaceSlug} onChange={(e) => { setWorkspaceSlug(e.target.value.toLowerCase()); setSlugTouched(true); }} required onFocus={() => setSlugTouched(true)} />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {checkingSlug ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> :
+                  slugAvailable === true ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : null}
+              </div>
             </div>
             {slugTouched && !isSlugSyntaxValid ? (
               <p className="text-[10px] text-red-500 font-mono">✕ Use lowercase letters, numbers, and hyphens only (no consecutive/leading)</p>
@@ -143,19 +145,22 @@ export default function CompanyClient({ connectedAccount }: CompanyClientProps) 
 
           <div className="space-y-1.5 w-full">
             <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Industry (Optional)</label>
-            <select className="w-full h-11 px-3 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground appearance-none rounded"
-              value={industry} onChange={(e) => setIndustry(e.target.value)}>
-              <option value="" disabled>Select...</option>
-              <option value="Technology">Technology</option>
-              <option value="Finance">Finance</option>
-              <option value="Healthcare">Healthcare</option>
-              <option value="Retail">Retail</option>
-              <option value="Other">Other</option>
-            </select>
+            <Select value={industry} onValueChange={setIndustry}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Technology">Technology</SelectItem>
+                <SelectItem value="Finance">Finance</SelectItem>
+                <SelectItem value="Healthcare">Healthcare</SelectItem>
+                <SelectItem value="Retail">Retail</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        <button type="submit" disabled={!isFormValid || loading || checkingSlug} className="w-full h-11 bg-foreground text-background text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-50 mt-4">
+        <button type="submit" disabled={!isFormValid || loading || checkingSlug} className="w-full h-11 bg-foreground text-background rounded-[6px] text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-50 mt-4">
           {loading ? (
             <><Loader2 className="w-4 h-4 animate-spin" /> Provisioning Workspace...</>
           ) : (

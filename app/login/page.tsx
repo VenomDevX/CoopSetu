@@ -7,6 +7,7 @@ import { Eye, EyeOff, Loader2, Github, Building2, Users, Zap } from 'lucide-reac
 import { Logo } from '@/components/logo';
 import { GoogleIcon } from '@/components/icons/google-icon';
 import { createClient } from '@/lib/supabase/client';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const DEMO_ACCOUNTS = [
   { label: 'Org Admin', email: 'admin@apexfintech.test' },
@@ -200,11 +201,11 @@ function LoginInner() {
                 </div>
               </div>
 
-              <label className="flex items-center gap-2 cursor-pointer group">
-                <div className="relative flex items-center justify-center w-4 h-4 border border-border rounded bg-surface group-hover:border-foreground">
-                  <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="peer sr-only" />
-                  {remember && <div className="w-2 h-2 bg-foreground" />}
-                </div>
+              <label className="flex items-center gap-2 cursor-pointer group w-fit">
+                <Checkbox
+                  checked={remember}
+                  onCheckedChange={(checked) => setRemember(checked as boolean)}
+                />
                 <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">Remember this device</span>
               </label>
             </div>

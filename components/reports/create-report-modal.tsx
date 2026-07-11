@@ -5,6 +5,7 @@ import { Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Props {
   onClose: () => void;
@@ -77,15 +78,16 @@ export function CreateReportModal({ onClose, onSuccess }: Props) {
               <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground block mb-1.5">
                 Report Type *
               </label>
-              <select
-                name="type"
-                required
-                className="w-full h-9 px-3 bg-background border border-border rounded text-xs font-mono focus:outline-none focus:border-foreground"
-              >
-                <option value="GLOBAL_ANALYTICS">Global Analytics</option>
-                <option value="SPRINT_SUMMARY">Sprint Summary</option>
-                <option value="PROJECT_HEALTH">Project Health</option>
-              </select>
+              <Select name="type" defaultValue="GLOBAL_ANALYTICS" required>
+                <SelectTrigger className="w-full h-9 px-3 bg-background border border-border rounded text-xs font-mono focus:outline-none focus:border-foreground">
+                  <SelectValue placeholder="Select Report Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="GLOBAL_ANALYTICS">Global Analytics</SelectItem>
+                  <SelectItem value="SPRINT_SUMMARY">Sprint Summary</SelectItem>
+                  <SelectItem value="PROJECT_HEALTH">Project Health</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

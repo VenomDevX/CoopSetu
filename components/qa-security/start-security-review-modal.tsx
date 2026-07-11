@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 
 interface Employee {
@@ -115,20 +116,30 @@ export function StartSecurityReviewModal({ onClose, onCreated }: { onClose: () =
               </div>
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Project *</label>
-                <select value={projectId} onChange={e => setProjectId(e.target.value)} className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
-                  <option value="">-- Select Project --</option>
-                  {projects.map(p => <option key={p.id} value={p.id}>{p.code} - {p.name}</option>)}
-                </select>
+                <Select value={projectId} onValueChange={setProjectId}>
+                  <SelectTrigger className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
+                    <SelectValue placeholder="-- Select Project --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">-- Select Project --</SelectItem>
+                    {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.code} - {p.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Primary Reviewer *</label>
-                <select value={reviewerMemberId} onChange={e => setReviewerMemberId(e.target.value)} className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
-                  <option value="">-- Select Member --</option>
-                  {employees.map(m => <option key={m.id} value={m.id}>{m.name} {m.job_title ? `(${m.job_title})` : ''}</option>)}
-                </select>
+                <Select value={reviewerMemberId} onValueChange={setReviewerMemberId}>
+                  <SelectTrigger className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
+                    <SelectValue placeholder="-- Select Member --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">-- Select Member --</SelectItem>
+                    {employees.map(m => <SelectItem key={m.id} value={m.id}>{m.name} {m.job_title ? `(${m.job_title})` : ''}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Due Date</label>
@@ -139,16 +150,26 @@ export function StartSecurityReviewModal({ onClose, onCreated }: { onClose: () =
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Risk Level</label>
-                <select value={riskLevel} onChange={e => setRiskLevel(e.target.value)} className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
-                  {RISK_LEVELS.map(r => <option key={r} value={r}>{r}</option>)}
-                </select>
+                <Select value={riskLevel} onValueChange={setRiskLevel}>
+                  <SelectTrigger className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
+                    <SelectValue placeholder="Select Risk Level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RISK_LEVELS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Linked Task</label>
-                <select value={taskId} onChange={e => setTaskId(e.target.value)} disabled={!projectId} className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground disabled:opacity-50">
-                  <option value="">-- None --</option>
-                  {tasks.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
-                </select>
+                <Select value={taskId} onValueChange={setTaskId} disabled={!projectId}>
+                  <SelectTrigger className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground disabled:opacity-50">
+                    <SelectValue placeholder="-- None --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">-- None --</SelectItem>
+                    {tasks.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

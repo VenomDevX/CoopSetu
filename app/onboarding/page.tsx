@@ -20,13 +20,8 @@ export default async function OnboardingIndex({
     redirect('/login');
   }
 
-  // 2. Legal acceptance missing or outdated (demo/anonymous sessions exempt)
-  if (!user.is_anonymous) {
-    const status = await getLegalStatus(user, supabase);
-    if (!status.isAccepted) {
-      redirect('/onboarding/legal-consent');
-    }
-  }
+  // 2. Legal acceptance is now handled inline on the profile page.
+  //    OAuth users who haven't accepted yet will see the checkbox there.
 
   // 3. Valid signed return-to invite destination
   const cookieStore = await cookies();

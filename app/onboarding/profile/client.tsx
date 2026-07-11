@@ -2,9 +2,12 @@
 
 import { useState, FormEvent, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { z } from 'zod';
-import { ChevronRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { ChevronRight, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { OnboardingShell } from '@/components/auth/onboarding-shell';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const JOB_FAMILIES = ['Engineering', 'Product', 'Project Management', 'Quality Assurance', 'Security', 'DevOps', 'Design', 'Data', 'Operations', 'Finance', 'Compliance', 'Human Resources', 'Customer Support', 'Other'];
 const JOB_TITLES = ['Software Engineer', 'Frontend Developer', 'Backend Developer', 'Data Scientist', 'Designer', 'Project Manager', 'Team Manager', 'Engineering Manager', 'Product Manager', 'QA Manager', 'Security Manager', 'Operations Manager', 'Other'];
@@ -19,11 +22,12 @@ const usernameSyntaxSchema = z.string().min(3).max(30).regex(/^[a-z0-9\._\-]+$/)
 
 interface ProfileClientProps {
   initialFullName: string;
-  initialUsername?: string;
+  initialUsername: string;
   connectedAccount?: { provider: 'github' | 'email'; label: string; };
+  needsLegalConsent?: boolean;
 }
 
-export default function ProfileClient({ initialFullName, initialUsername, connectedAccount }: ProfileClientProps) {
+export default function ProfileClient({ initialFullName, initialUsername, connectedAccount, needsLegalConsent = false }: ProfileClientProps) {
   const router = useRouter();
 
   const [error, setError] = useState<string | null>(null);
@@ -42,13 +46,14 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
   const [customSpecialization, setCustomSpecialization] = useState('');
   const [managerType, setManagerType] = useState('Not a Manager');
   const [description, setDescription] = useState('');
+  const [acceptedLegal, setAcceptedLegal] = useState(!needsLegalConsent);
 
   const isNameValid = nameSchema.safeParse(fullName).success;
   const isUsernameSyntaxValid = usernameSyntaxSchema.safeParse(username).success;
   const actualJobTitle = jobTitleSelect === 'Other' ? customJobTitle : jobTitleSelect;
   const actualSpec = specializationSelect === 'Other' ? customSpecialization : specializationSelect;
   const isJobValid = jobFamily !== '' && actualJobTitle.length >= 2 && actualSpec.length >= 2 && description.length <= 500;
-  const isFormValid = isNameValid && isUsernameSyntaxValid && usernameAvailable === true && isJobValid;
+  const isFormValid = isNameValid && isUsernameSyntaxValid && usernameAvailable === true && isJobValid && acceptedLegal;
 
   // Debounced Username
   const usernameCheckRef = useRef<NodeJS.Timeout>(null);
@@ -87,6 +92,18 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
     setLoading(true);
 
     try {
+      if (needsLegalConsent) {
+        const legalRes = await fetch('/api/v1/legal/accept', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ acceptedTerms: true, acceptedPrivacy: true, source: 'ONBOARDING_PROFILE' }),
+        });
+        if (!legalRes.ok) {
+          const legalData = await legalRes.json();
+          throw new Error(legalData.error?.message || 'Failed to record legal acceptance.');
+        }
+      }
+
       const res = await fetch('/api/v1/onboarding/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -108,7 +125,6 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
       }
 
       router.push('/onboarding'); // Let central resolver determine next step
-      router.refresh();
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
@@ -117,8 +133,8 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
 
   return (
     <OnboardingShell
-      currentStep={2}
-      totalSteps={4}
+      currentStep={1}
+      totalSteps={3}
       stepLabel="Professional Identity"
       title="Tell us about your work"
       subtitle="How you will appear within the organization."
@@ -135,14 +151,14 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
         <div className="space-y-6 w-full">
           <div className="space-y-1.5 w-full">
             <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Full Name</label>
-            <input className={`w-full h-11 px-4 bg-surface border text-sm focus:outline-none transition-colors ${!isNameValid && fullName.length > 0 ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-foreground'}`}
+            <input className={`w-full h-11 px-4 bg-surface rounded-[6px] border text-sm focus:outline-none transition-colors ${!isNameValid && fullName.length > 0 ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-foreground'}`}
               type="text" placeholder="Jane Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
           </div>
 
           <div className="space-y-1.5 w-full">
             <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Username</label>
             <div className="relative">
-              <input className={`w-full h-11 px-4 bg-surface border text-sm focus:outline-none transition-colors pr-10 ${usernameTouched && !isUsernameSyntaxValid ? 'border-red-500 focus:border-red-500' : usernameAvailable === true ? 'border-green-500/50 focus:border-green-500/50' : usernameAvailable === false && usernameTouched ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-foreground'}`}
+              <input className={`w-full h-11 px-4 bg-surface rounded-[6px] border text-sm focus:outline-none transition-colors pr-10 ${usernameTouched && !isUsernameSyntaxValid ? 'border-red-500 focus:border-red-500' : usernameAvailable === true ? 'border-green-500/50 focus:border-green-500/50' : usernameAvailable === false && usernameTouched ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-foreground'}`}
                 placeholder="janedoe" value={username} onChange={(e) => { setUsername(e.target.value.toLowerCase()); setUsernameTouched(true); }} required onFocus={() => setUsernameTouched(true)} />
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
                 {checkingUsername ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> :
@@ -163,26 +179,32 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
           <div className="grid grid-cols-2 gap-4 w-full">
             <div className="space-y-1.5 w-full">
               <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Job Family</label>
-              <select className="w-full h-11 px-3 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground appearance-none rounded"
-                value={jobFamily} onChange={(e) => setJobFamily(e.target.value)} required>
-                <option value="" disabled>Select...</option>
-                {JOB_FAMILIES.map(f => <option key={f} value={f}>{f}</option>)}
-              </select>
+              <Select value={jobFamily} onValueChange={setJobFamily} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {JOB_FAMILIES.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5 w-full">
               <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Job Title</label>
-              <select className="w-full h-11 px-3 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground appearance-none rounded"
-                value={jobTitleSelect} onChange={(e) => setJobTitleSelect(e.target.value)} required>
-                <option value="" disabled>Select...</option>
-                {JOB_TITLES.map(f => <option key={f} value={f}>{f}</option>)}
-              </select>
+              <Select value={jobTitleSelect} onValueChange={setJobTitleSelect} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {JOB_TITLES.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           {jobTitleSelect === 'Other' && (
             <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 w-full">
               <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Custom Job Title</label>
-              <input className="w-full h-11 px-4 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors"
+              <input className="w-full h-11 px-4 bg-surface border border-border rounded-[6px] text-sm focus:outline-none focus:border-foreground transition-colors"
                 placeholder="e.g. Lead Catalyst" value={customJobTitle} onChange={(e) => setCustomJobTitle(e.target.value)} required />
             </div>
           )}
@@ -190,19 +212,26 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
           <div className="grid grid-cols-2 gap-4 w-full">
             <div className="space-y-1.5 w-full">
               <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Specialization</label>
-              <select className="w-full h-11 px-3 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground appearance-none rounded"
-                value={specializationSelect} onChange={(e) => setSpecializationSelect(e.target.value)} required>
-                <option value="" disabled>Select...</option>
-                {SPECIALIZATIONS.map(f => <option key={f} value={f}>{f}</option>)}
-              </select>
+              <Select value={specializationSelect} onValueChange={setSpecializationSelect} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {SPECIALIZATIONS.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             {MANAGER_TITLES.includes(jobTitleSelect) && (
               <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 w-full">
                 <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Manager Type</label>
-                <select className="w-full h-11 px-3 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground appearance-none rounded"
-                  value={managerType} onChange={(e) => setManagerType(e.target.value)}>
-                  {MANAGER_TYPES.map(f => <option key={f} value={f}>{f}</option>)}
-                </select>
+                <Select value={managerType} onValueChange={setManagerType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MANAGER_TYPES.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </div>
@@ -216,7 +245,7 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
           {specializationSelect === 'Other' && (
             <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 w-full">
               <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Custom Specialization</label>
-              <input className="w-full h-11 px-4 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors"
+              <input className="w-full h-11 px-4 bg-surface border border-border rounded-[6px] text-sm focus:outline-none focus:border-foreground transition-colors"
                 placeholder="e.g. Embedded Systems" value={customSpecialization} onChange={(e) => setCustomSpecialization(e.target.value)} required />
             </div>
           )}
@@ -226,12 +255,33 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
               <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Professional Description (Optional)</label>
               <span className="text-[10px] font-mono text-muted-foreground">{description.length} / 500</span>
             </div>
-            <textarea className="w-full h-24 px-4 py-3 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors resize-none"
+            <textarea className="w-full h-24 px-4 py-3 bg-surface border border-border rounded-[6px] text-sm focus:outline-none focus:border-foreground transition-colors resize-none"
               placeholder="Briefly describe your responsibilities..." maxLength={500} value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
         </div>
 
-        <button type="submit" disabled={!isFormValid || checkingUsername || loading} className="w-full h-11 bg-foreground text-background text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-50">
+        {needsLegalConsent && (
+          <label className="flex items-start gap-3 cursor-pointer select-none w-full group">
+            <Checkbox
+              checked={acceptedLegal}
+              onCheckedChange={(checked) => setAcceptedLegal(checked as boolean)}
+              className="mt-0.5"
+            />
+            <span className="text-sm text-foreground">
+              I agree to the{' '}
+              <Link href="/terms" target="_blank" className="underline hover:opacity-80">
+                Terms of Service
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy" target="_blank" className="underline hover:opacity-80">
+                Privacy Policy
+              </Link>
+              .
+            </span>
+          </label>
+        )}
+
+        <button type="submit" disabled={!isFormValid || checkingUsername || loading} className="w-full h-11 bg-foreground text-background rounded-[6px] text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-50">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continue <ChevronRight className="w-4 h-4" /></>}
         </button>
       </form>
