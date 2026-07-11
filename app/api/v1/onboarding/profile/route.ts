@@ -110,7 +110,8 @@ export async function POST(req: NextRequest) {
     } else {
       const unfinishedOwnedOrg = activeMemberships.find(m => {
         const roleCodes: string[] = (m.member_roles || []).map((mr: any) => mr.roles?.code).filter(Boolean);
-        return roleCodes.includes('ORG_OWNER') && !m.organizations?.initial_setup_completed_at;
+        const org: any = Array.isArray(m.organizations) ? m.organizations[0] : m.organizations;
+        return roleCodes.includes('ORG_OWNER') && !org?.initial_setup_completed_at;
       });
       if (unfinishedOwnedOrg) {
         nextUrl = '/onboarding/team';
