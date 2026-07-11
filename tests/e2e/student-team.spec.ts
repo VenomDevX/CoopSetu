@@ -15,7 +15,7 @@ async function signUpAndCompleteProfile(page: Page, namePrefix: string) {
   await page.fill('input[type="email"]', email);
   await page.fill('input[type="password"]', 'Password123!@#');
   await page.locator('input[type="password"]').nth(1).fill('Password123!@#');
-  await page.check('input[type="checkbox"]');
+  await page.click('button[role="checkbox"]');
   await page.click('button:has-text("Continue")');
   await page.waitForURL('**/onboarding/profile', { timeout: 15000 });
 
