@@ -36,10 +36,10 @@ export async function POST(req: NextRequest) {
       throw Errors.validation('Username is no longer available.');
     }
 
-    // Check username availability
+    // Check username availability and current avatar
     const { data: existingUser } = await admin
       .from('profiles')
-      .select('id')
+      .select('id, avatar_path')
       .eq('username_normalized', normalizedUsername)
       .neq('id', user.id) // Exclude current user in case they are re-saving
       .maybeSingle();
@@ -47,6 +47,16 @@ export async function POST(req: NextRequest) {
     if (existingUser) {
       throw Errors.validation('Username is no longer available.');
     }
+
+    // Get the current profile for the user
+    const { data: currentUserProfile } = await admin
+      .from('profiles')
+      .select('avatar_path')
+      .eq('id', user.id)
+      .single();
+
+    // Prefer existing avatar if set, otherwise try to pull from OAuth metadata (GitHub or Google)
+    const avatarUrl = currentUserProfile?.avatar_path || user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
 
     // Update the profile
     const { error: updateError } = await admin
@@ -57,6 +67,7 @@ export async function POST(req: NextRequest) {
         username_normalized: normalizedUsername,
         job_title: body.jobTitle,
         timezone: body.timezone || 'UTC',
+        avatar_path: avatarUrl,
         profile_completed_at: new Date().toISOString()
       })
       .eq('id', user.id);

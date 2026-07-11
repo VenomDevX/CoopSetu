@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Dialog } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TASK_TYPES, TASK_VISIBILITY_SCOPES, PRIORITIES, SECURITY_CLASSIFICATIONS } from '@/lib/constants/task-statuses';
 
 interface AssignableMember {
@@ -168,15 +169,14 @@ export function CreateTaskModal({
           {!projectId && (
             <div>
               <label className={labelCls}>Project *</label>
-              <select 
-                value={selectedProject} 
-                onChange={(e) => setSelectedProject(e.target.value)} 
-                className={fieldCls}
-                autoFocus
-              >
-                <option value="">— Select Project —</option>
-                {availableProjects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
+              <Select value={selectedProject} onValueChange={setSelectedProject}>
+                <SelectTrigger className={fieldCls}>
+                  <SelectValue placeholder="— Select Project —" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableProjects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
           )}
 
@@ -195,32 +195,52 @@ export function CreateTaskModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Type</label>
-              <select value={taskType} onChange={(e) => setTaskType(e.target.value)} className={fieldCls}>
-                {TASK_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
+              <Select value={taskType} onValueChange={setTaskType}>
+                <SelectTrigger className={fieldCls}>
+                  <SelectValue placeholder="Select Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TASK_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className={labelCls}>Priority</label>
-              <select value={priority} onChange={(e) => setPriority(e.target.value)} className={fieldCls}>
-                {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
+              <Select value={priority} onValueChange={setPriority}>
+                <SelectTrigger className={fieldCls}>
+                  <SelectValue placeholder="Select Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRIORITIES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Epic</label>
-              <select data-testid="task-epic-select" value={epicId} onChange={(e) => setEpicId(e.target.value)} className={fieldCls}>
-                <option value="">— None —</option>
-                {epics.map((ep) => <option key={ep.id} value={ep.id}>{ep.title}</option>)}
-              </select>
+              <Select value={epicId} onValueChange={setEpicId}>
+                <SelectTrigger className={fieldCls} data-testid="task-epic-select">
+                  <SelectValue placeholder="— None —" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">— None —</SelectItem>
+                  {epics.map((ep) => <SelectItem key={ep.id} value={ep.id}>{ep.title}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className={labelCls}>Sprint</label>
-              <select value={sprintId} onChange={(e) => setSprintId(e.target.value)} className={fieldCls}>
-                <option value="">— None —</option>
-                {sprints.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              <Select value={sprintId} onValueChange={setSprintId}>
+                <SelectTrigger className={fieldCls}>
+                  <SelectValue placeholder="— None —" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">— None —</SelectItem>
+                  {sprints.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -231,12 +251,17 @@ export function CreateTaskModal({
 
           <div>
             <label className={labelCls}>Assignee {members.length > 0 && `(${members.length} eligible)`}</label>
-            <select data-testid="task-assignee-select" value={assignee} onChange={(e) => setAssignee(e.target.value)} className={fieldCls}>
-              <option value="">— Unassigned —</option>
-              {members.map((m) => (
-                <option key={m.member_id} value={m.member_id}>{memberLabel(m)}</option>
-              ))}
-            </select>
+            <Select value={assignee} onValueChange={setAssignee}>
+              <SelectTrigger className={fieldCls} data-testid="task-assignee-select">
+                <SelectValue placeholder="— Unassigned —" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">— Unassigned —</SelectItem>
+                {members.map((m) => (
+                  <SelectItem key={m.member_id} value={m.member_id}>{memberLabel(m)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {members.length === 0 && (
               <p className="font-mono text-[10px] text-muted-foreground mt-1">
                 No eligible members — add project members or a project team first.
@@ -252,7 +277,7 @@ export function CreateTaskModal({
                 multiple
                 value={additional}
                 onChange={(e) => setAdditional([...e.target.selectedOptions].map((o) => o.value))}
-                className="w-full px-2 py-1 bg-background border border-border rounded text-xs min-h-[72px]"
+                className="w-full px-2 py-1 bg-surface/80 backdrop-blur-md border border-border rounded-[6px] text-xs min-h-[72px] focus:outline-none focus:border-foreground"
               >
                 {members.filter((m) => m.member_id !== assignee).map((m) => (
                   <option key={m.member_id} value={m.member_id}>{memberLabel(m)}</option>
@@ -264,11 +289,16 @@ export function CreateTaskModal({
 
           <div>
             <label className={labelCls}>Visibility</label>
-            <select value={visibilityScope} onChange={(e) => setVisibilityScope(e.target.value)} className={fieldCls}>
-              {TASK_VISIBILITY_SCOPES.map((scope) => (
-                <option key={scope} value={scope}>{scope.replace(/_/g, ' ')}</option>
-              ))}
-            </select>
+            <Select value={visibilityScope} onValueChange={setVisibilityScope}>
+              <SelectTrigger className={fieldCls}>
+                <SelectValue placeholder="Select Visibility" />
+              </SelectTrigger>
+              <SelectContent>
+                {TASK_VISIBILITY_SCOPES.map((scope) => (
+                  <SelectItem key={scope} value={scope}>{scope.replace(/_/g, ' ')}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -278,10 +308,15 @@ export function CreateTaskModal({
             </div>
             <div>
               <label className={labelCls}>Security Classification</label>
-              <select value={securityClass} onChange={(e) => setSecurityClass(e.target.value)} className={fieldCls}>
-                <option value="">— Default —</option>
-                {SECURITY_CLASSIFICATIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
+              <Select value={securityClass} onValueChange={setSecurityClass}>
+                <SelectTrigger className={fieldCls}>
+                  <SelectValue placeholder="— Default —" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">— Default —</SelectItem>
+                  {SECURITY_CLASSIFICATIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

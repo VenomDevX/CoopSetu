@@ -9,6 +9,7 @@ import { Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { contactRequestSchema, companySizeEnum, topicEnum } from '@/lib/validation/contact';
 import { PublicFooter } from '@/components/layout/public-footer';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function ContactPage() {
   const router = useRouter();
@@ -236,18 +237,16 @@ export default function ContactPage() {
 
                     <div className="flex flex-col gap-2">
                       <label htmlFor="companySize" className="text-foreground font-bold">Company Size <span className="text-red-500">*</span></label>
-                      <select 
-                        id="companySize"
-                        value={companySize}
-                        onChange={(e) => setCompanySize(e.target.value)}
-                        className="bg-background border border-border rounded px-4 py-3 text-foreground focus:outline-none focus:border-foreground rounded uppercase"
-                        required
-                        disabled={isLoading}
-                      >
-                        {companySizeEnum.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
+                      <Select value={companySize} onValueChange={setCompanySize} disabled={isLoading} required>
+                        <SelectTrigger className="bg-transparent border border-border rounded px-4 py-3 text-foreground focus:outline-none focus:border-foreground uppercase min-h-[46px]">
+                          <SelectValue placeholder="Select Company Size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {companySizeEnum.map((opt) => (
+                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       {errors.companySize && <span className="text-red-500 text-[10px] tracking-normal font-sans normal-case mt-1">{errors.companySize}</span>}
                     </div>
                   </div>
@@ -269,18 +268,16 @@ export default function ContactPage() {
 
                     <div className="flex flex-col gap-2">
                       <label htmlFor="topic" className="text-foreground font-bold">Topic <span className="text-red-500">*</span></label>
-                      <select 
-                        id="topic"
-                        value={topic}
-                        onChange={(e) => setTopic(e.target.value)}
-                        className="bg-background border border-border rounded px-4 py-3 text-foreground focus:outline-none focus:border-foreground rounded"
-                        required
-                        disabled={isLoading}
-                      >
-                        {topicEnum.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
+                      <Select value={topic} onValueChange={setTopic} disabled={isLoading} required>
+                        <SelectTrigger className="bg-transparent border border-border rounded px-4 py-3 text-foreground focus:outline-none focus:border-foreground min-h-[46px]">
+                          <SelectValue placeholder="Select Topic" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {topicEnum.map((opt) => (
+                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       {errors.topic && <span className="text-red-500 text-[10px] tracking-normal font-sans normal-case mt-1">{errors.topic}</span>}
                     </div>
                   </div>

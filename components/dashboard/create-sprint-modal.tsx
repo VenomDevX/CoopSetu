@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Dialog, dialogLabelCls as labelCls, dialogFieldCls as fieldCls } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Project { id: string; name: string; code: string }
 
@@ -77,11 +78,15 @@ export function CreateSprintModal({
       }
     >
           <div>
-            <label className={labelCls}>Project *</label>
-            <select data-testid="sprint-project-select" value={projectId} onChange={(e) => setProjectId(e.target.value)} className={fieldCls}>
-              <option value="">— Select project —</option>
-              {projects.map((p) => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
-            </select>
+            <Select value={projectId} onValueChange={setProjectId}>
+              <SelectTrigger className={fieldCls} data-testid="sprint-project-select">
+                <SelectValue placeholder="— Select project —" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">— Select project —</SelectItem>
+                {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.code} — {p.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <label className={labelCls}>Sprint Name *</label>

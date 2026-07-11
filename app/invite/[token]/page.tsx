@@ -31,7 +31,7 @@ export default async function AcceptInvitePage({ params }: { params: Promise<{ t
         maxAge: 60 * 10,
         path: '/',
       });
-      redirect('/onboarding/legal-consent');
+      redirect('/onboarding');
     }
   }
 

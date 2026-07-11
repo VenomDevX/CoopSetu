@@ -5,6 +5,7 @@ import { Loader2, AlertTriangle } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Project {
   id: string;
@@ -102,33 +103,34 @@ export function DeclareIncidentModal({ onClose, onSuccess }: Props) {
             <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
               Severity *
             </label>
-            <select 
-              name="severity" 
-              required
-              className="w-full h-10 px-3 py-2 bg-background border border-input text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              defaultValue="SEV3"
-            >
-              <option value="SEV1">SEV1 - Critical (Entire system down)</option>
-              <option value="SEV2">SEV2 - High (Major functionality broken)</option>
-              <option value="SEV3">SEV3 - Medium (Partial degradation)</option>
-              <option value="SEV4">SEV4 - Low (Minor issue)</option>
-            </select>
+            <Select name="severity" defaultValue="SEV3" required>
+              <SelectTrigger className="w-full h-10 px-3 py-2 bg-background border border-input text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                <SelectValue placeholder="Select Severity" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SEV1">SEV1 - Critical (Entire system down)</SelectItem>
+                <SelectItem value="SEV2">SEV2 - High (Major functionality broken)</SelectItem>
+                <SelectItem value="SEV3">SEV3 - Medium (Partial degradation)</SelectItem>
+                <SelectItem value="SEV4">SEV4 - Low (Minor issue)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
             <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
               Affected Project (Optional)
             </label>
-            <select 
-              name="project_id" 
-              className="w-full h-10 px-3 py-2 bg-background border border-input text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50"
-              disabled={loadingProjects}
-            >
-              <option value="">-- Global / Multiple Projects --</option>
-              {projects.map(p => (
-                <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
-              ))}
-            </select>
+            <Select name="project_id" disabled={loadingProjects}>
+              <SelectTrigger className="w-full h-10 px-3 py-2 bg-background border border-input text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50">
+                <SelectValue placeholder="-- Global / Multiple Projects --" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">-- Global / Multiple Projects --</SelectItem>
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.name} ({p.code})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

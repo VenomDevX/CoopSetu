@@ -26,6 +26,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton, TableRowsSkeleton } from '@/components/ui/skeleton';
 import { AskAiButton } from '@/components/ai/ask-ai-button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 
 type Project = {
@@ -191,18 +192,18 @@ export default function ProjectsPage() {
             />
           </div>
           <div className="relative flex items-center">
-            <Filter className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-            <select
-              value={healthFilter}
-              onChange={(e) => setHealthFilter(e.target.value as 'ALL' | Project['health'])}
-              className="h-8 pl-7 pr-3 rounded text-[10px] font-mono uppercase border border-border rounded bg-background focus:outline-none focus:border-foreground transition-colors cursor-pointer"
-            >
-              <option value="ALL">All Health</option>
-              <option value="On Track">On Track</option>
-              <option value="At Risk">At Risk</option>
-              <option value="Off Track">Off Track</option>
-              <option value="Completed">Completed</option>
-            </select>
+            <Select value={healthFilter} onValueChange={(v) => setHealthFilter(v as any)}>
+              <SelectTrigger className="h-8 pl-3 pr-3 rounded text-[10px] font-mono uppercase border border-border bg-background focus:outline-none focus:border-foreground transition-colors cursor-pointer w-[140px]">
+                <SelectValue placeholder="All Health" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Health</SelectItem>
+                <SelectItem value="On Track">On Track</SelectItem>
+                <SelectItem value="At Risk">At Risk</SelectItem>
+                <SelectItem value="Off Track">Off Track</SelectItem>
+                <SelectItem value="Completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <div className="flex items-center gap-2 bg-background border border-border rounded">

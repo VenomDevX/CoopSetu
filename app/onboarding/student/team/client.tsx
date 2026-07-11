@@ -67,8 +67,8 @@ export default function TeamCreationClient() {
   if (joinCode) {
     return (
       <OnboardingShell
-        currentStep={4}
-        totalSteps={4}
+        currentStep={3}
+        totalSteps={3}
         stepLabel="Student Setup"
         title="Your team is ready"
         subtitle="Share this code with teammates so they can join. It's shown only this once — you can rotate it later from Team Settings if you lose it."
@@ -88,7 +88,7 @@ export default function TeamCreationClient() {
           </div>
           <button
             type="button"
-            onClick={() => { router.push('/dashboard/teams'); router.refresh(); }}
+            onClick={() => { router.push('/dashboard/teams'); }}
             className="w-full h-11 bg-foreground text-background text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors"
           >
             Continue to Team Setup <ChevronRight className="w-4 h-4" />
@@ -100,8 +100,8 @@ export default function TeamCreationClient() {
 
   return (
     <OnboardingShell
-      currentStep={4}
-      totalSteps={4}
+      currentStep={3}
+      totalSteps={3}
       stepLabel="Student Setup"
       title="Create a Student Team"
       subtitle="For hackathons, group assignments, clubs, and collaborative student projects."
@@ -116,7 +116,7 @@ export default function TeamCreationClient() {
         <div className="space-y-1.5">
           <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Team Name</label>
           <input
-            className="w-full h-11 px-4 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors"
+            className="w-full h-11 px-4 bg-surface border border-border rounded-[6px] text-sm focus:outline-none focus:border-foreground transition-colors"
             placeholder="Byte Bandits"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -128,7 +128,7 @@ export default function TeamCreationClient() {
         <div className="space-y-1.5">
           <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Hackathon / Event Name (Optional)</label>
           <input
-            className="w-full h-11 px-4 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors"
+            className="w-full h-11 px-4 bg-surface border border-border rounded-[6px] text-sm focus:outline-none focus:border-foreground transition-colors"
             placeholder="HackNYC 2026"
             value={eventName}
             onChange={(e) => setEventName(e.target.value)}
@@ -138,7 +138,7 @@ export default function TeamCreationClient() {
         <div className="space-y-1.5">
           <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Short Description (Optional)</label>
           <textarea
-            className="w-full h-20 px-4 py-3 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors resize-none"
+            className="w-full h-20 px-4 py-3 bg-surface border border-border rounded-[6px] text-sm focus:outline-none focus:border-foreground transition-colors resize-none"
             maxLength={500}
             value={shortDescription}
             onChange={(e) => setShortDescription(e.target.value)}
@@ -151,7 +151,7 @@ export default function TeamCreationClient() {
             <input
               type="number"
               min={1}
-              className="w-full h-11 px-4 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors"
+              className="w-full h-11 px-4 bg-surface border border-border rounded-[6px] text-sm focus:outline-none focus:border-foreground transition-colors"
               placeholder="4"
               value={expectedTeamSize}
               onChange={(e) => setExpectedTeamSize(e.target.value)}
@@ -163,7 +163,7 @@ export default function TeamCreationClient() {
               type="number"
               min={1}
               max={50}
-              className="w-full h-11 px-4 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors"
+              className="w-full h-11 px-4 bg-surface border border-border rounded-[6px] text-sm focus:outline-none focus:border-foreground transition-colors"
               value={maxTeamSize}
               onChange={(e) => setMaxTeamSize(e.target.value)}
               required
@@ -177,7 +177,7 @@ export default function TeamCreationClient() {
         <div className="space-y-1.5">
           <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Your Primary Team Role (Optional)</label>
           <input
-            className="w-full h-11 px-4 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors"
+            className="w-full h-11 px-4 bg-surface border border-border rounded-[6px] text-sm focus:outline-none focus:border-foreground transition-colors"
             placeholder="Backend Developer"
             value={primaryTeamRole}
             onChange={(e) => setPrimaryTeamRole(e.target.value)}
@@ -187,7 +187,7 @@ export default function TeamCreationClient() {
         <button
           type="submit"
           disabled={!isValid || loading}
-          className="w-full h-11 bg-foreground text-background text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-50"
+          className="w-full h-11 bg-foreground text-background rounded-[6px] text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-50"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Create Team <ChevronRight className="w-4 h-4" /></>}
         </button>

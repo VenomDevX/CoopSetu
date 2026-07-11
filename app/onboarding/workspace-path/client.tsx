@@ -5,10 +5,9 @@ import { Briefcase, GraduationCap, ArrowRight } from 'lucide-react';
 import { OnboardingShell } from '@/components/auth/onboarding-shell';
 
 const STEPS = [
-  { id: 1, label: 'Account' },
-  { id: 2, label: 'Profile' },
-  { id: 3, label: 'Workspace Path' },
-  { id: 4, label: 'Setup' },
+  { id: 1, label: 'Profile' },
+  { id: 2, label: 'Workspace Path' },
+  { id: 3, label: 'Setup' },
 ];
 
 export default function WorkspacePathClient() {
@@ -21,8 +20,8 @@ export default function WorkspacePathClient() {
 
   return (
     <OnboardingShell
-      currentStep={3}
-      totalSteps={4}
+      currentStep={2}
+      totalSteps={3}
       stepLabel="Workspace Path"
       title="What brings you to Handoff?"
       subtitle="This just decides which setup you'll see next — you're never locked in."

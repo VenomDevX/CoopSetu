@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Dialog, dialogLabelCls as labelCls, dialogFieldCls as fieldCls } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const ROLES = [
   { code: 'ADMIN', label: 'Admin (Organization)' },
@@ -97,10 +98,14 @@ export function InviteMemberModal({
               </div>
 
               <div>
-                <label className={labelCls}>Role</label>
-                <select value={roleCode} onChange={(e) => setRoleCode(e.target.value)} className={fieldCls}>
-                  {ROLES.map((r) => <option key={r.code} value={r.code}>{r.label}</option>)}
-                </select>
+                <Select value={roleCode} onValueChange={setRoleCode}>
+                  <SelectTrigger className={fieldCls}>
+                    <SelectValue placeholder="Select Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLES.map((r) => <SelectItem key={r.code} value={r.code}>{r.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
 
               {error && (

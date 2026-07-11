@@ -4,6 +4,7 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 import { ChevronRight, Loader2, Eye, EyeOff, Github, CheckCircle2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { GoogleIcon } from '@/components/icons/google-icon';
 import { createClient } from '@/lib/supabase/client';
 import { OnboardingShell } from '@/components/auth/onboarding-shell';
@@ -112,8 +113,7 @@ export default function SignupPage() {
 
     // Session created (email confirmation disabled or auto-confirmed).
     // Record the legal acceptance now, using the authenticated session --
-    // if this fails, the onboarding resolver's legal-consent gate will
-    // still catch it and let the user re-accept there.
+    // if this fails, the profile step will let the user re-accept there.
     try {
       await fetch('/api/v1/legal/accept', {
         method: 'POST',
@@ -121,7 +121,7 @@ export default function SignupPage() {
         body: JSON.stringify({ acceptedTerms: true, acceptedPrivacy: true, source: 'SIGNUP' }),
       });
     } catch {
-      // Non-fatal: the onboarding resolver will redirect to /onboarding/legal-consent.
+      // Non-fatal: the profile step will require legal acceptance if it failed here.
     }
 
     router.push('/onboarding');
@@ -132,7 +132,7 @@ export default function SignupPage() {
     return (
       <OnboardingShell
         currentStep={1}
-        totalSteps={4}
+        totalSteps={3}
         stepLabel="Account Verification"
         title="Check your email"
         subtitle={`We sent a verification link to ${email}`}
@@ -159,7 +159,7 @@ export default function SignupPage() {
   return (
     <OnboardingShell
       currentStep={1}
-      totalSteps={4}
+      totalSteps={3}
       stepLabel="Account Details"
       title="Create your account"
       subtitle="Enter your personal details to get started."
@@ -238,12 +238,11 @@ export default function SignupPage() {
           </div>
         </div>
 
-        <label className="flex items-start gap-3 cursor-pointer select-none w-full">
-          <input
-            type="checkbox"
+        <label className="flex items-start gap-3 cursor-pointer select-none w-full group">
+          <Checkbox
             checked={acceptedLegal}
-            onChange={(e) => setAcceptedLegal(e.target.checked)}
-            className="mt-0.5 w-4 h-4 shrink-0 accent-foreground"
+            onCheckedChange={(checked) => setAcceptedLegal(checked as boolean)}
+            className="mt-0.5"
           />
           <span className="text-sm text-foreground">
             I agree to the{' '}

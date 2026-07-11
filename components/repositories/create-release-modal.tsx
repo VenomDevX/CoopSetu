@@ -5,6 +5,8 @@ import { Loader2, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Project {
   id: string;
@@ -88,17 +90,17 @@ export function CreateReleaseModal({ onClose, onSuccess }: Props) {
               <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground block mb-1.5">
                 Project *
               </label>
-              <select
-                name="project_id"
-                required
-                disabled={loadingProjects}
-                className="w-full h-9 px-3 bg-background border border-border rounded text-xs font-mono focus:outline-none focus:border-foreground"
-              >
-                <option value="">{loadingProjects ? 'Loading projects...' : 'Select Project...'}</option>
-                {projects.map(p => (
-                  <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
-                ))}
-              </select>
+              <Select name="project_id" required disabled={loadingProjects}>
+                <SelectTrigger className="w-full h-9 px-3 bg-background border border-border rounded text-xs font-mono focus:outline-none focus:border-foreground">
+                  <SelectValue placeholder={loadingProjects ? 'Loading projects...' : 'Select Project...'} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">{loadingProjects ? 'Loading projects...' : 'Select Project...'}</SelectItem>
+                  {projects.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.name} ({p.code})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -161,12 +163,10 @@ export function CreateReleaseModal({ onClose, onSuccess }: Props) {
               />
             </div>
 
-            <div className="flex items-center gap-2 pt-2">
-              <input
-                type="checkbox"
+            <div className="flex items-center gap-2 pt-2 group w-fit">
+              <Checkbox
                 name="requires_compliance_approval"
                 id="requires_compliance_approval"
-                className="rounded border-border bg-background"
               />
               <label htmlFor="requires_compliance_approval" className="text-xs font-mono uppercase tracking-widest text-foreground cursor-pointer">
                 Requires Compliance Approval

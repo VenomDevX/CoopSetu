@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   DndContext, DragOverlay, PointerSensor, useSensor, useSensors,
   type DragStartEvent, type DragEndEvent, useDroppable, useDraggable,
@@ -159,13 +160,16 @@ export function KanbanBoard() {
   return (
     <div className="flex-1 min-h-0 flex flex-col space-y-4">
       <div className="flex items-center gap-3 flex-shrink-0">
-        <select
-          value={projectId ?? ''}
-          onChange={(e) => setProjectId(e.target.value)}
-          className="h-9 px-3 bg-surface border border-border rounded text-xs font-mono uppercase tracking-widest"
-        >
-          {projects.map((p) => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
-        </select>
+        <div className="w-64">
+          <Select value={projectId ?? ''} onValueChange={setProjectId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select Project" />
+            </SelectTrigger>
+            <SelectContent>
+              {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.code} — {p.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
         {canCreate && projectId && (
           <button data-testid="create-task-button" onClick={() => setCreating(true)} className="h-9 px-4 bg-foreground text-background text-xs font-mono uppercase tracking-widest">+ New Task</button>
         )}

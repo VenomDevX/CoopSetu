@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getLegalStatus } from '@/lib/legal/get-legal-status';
 import ProfileClient from './client';
 
 export default async function OnboardingProfilePage() {
@@ -9,6 +10,12 @@ export default async function OnboardingProfilePage() {
 
   if (!user) {
     redirect('/login');
+  }
+
+  let needsLegalConsent = false;
+  if (!user.is_anonymous) {
+    const status = await getLegalStatus(user, supabase);
+    needsLegalConsent = !status.isAccepted;
   }
 
   // Check if they are already complete?
@@ -47,6 +54,8 @@ export default async function OnboardingProfilePage() {
       initialFullName={defaultFullName}
       initialUsername={defaultUsername}
       connectedAccount={connectedAccount}
+      needsLegalConsent={needsLegalConsent}
     />
   );
 }
+

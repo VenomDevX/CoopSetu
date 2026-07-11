@@ -36,7 +36,6 @@ export default function SoloWorkspaceClient({ defaultName }: { defaultName: stri
       if (!res.ok) throw new Error(data.error?.message || 'Failed to create workspace');
 
       router.push('/dashboard');
-      router.refresh();
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
@@ -45,8 +44,8 @@ export default function SoloWorkspaceClient({ defaultName }: { defaultName: stri
 
   return (
     <OnboardingShell
-      currentStep={4}
-      totalSteps={4}
+      currentStep={3}
+      totalSteps={3}
       stepLabel="Personal Workspace"
       title="Create your personal workspace"
       subtitle="A private place for your coursework, ideas, projects, tasks, and personal delivery planning."
@@ -61,7 +60,7 @@ export default function SoloWorkspaceClient({ defaultName }: { defaultName: stri
         <div className="space-y-1.5">
           <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Personal Workspace Name</label>
           <input
-            className="w-full h-11 px-4 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors"
+            className="w-full h-11 px-4 bg-surface border border-border rounded-[6px] text-sm focus:outline-none focus:border-foreground transition-colors"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -72,7 +71,7 @@ export default function SoloWorkspaceClient({ defaultName }: { defaultName: stri
         <div className="space-y-1.5">
           <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Description (Optional)</label>
           <textarea
-            className="w-full h-24 px-4 py-3 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors resize-none"
+            className="w-full h-24 px-4 py-3 bg-surface border border-border rounded-[6px] text-sm focus:outline-none focus:border-foreground transition-colors resize-none"
             placeholder="What are you working on?"
             maxLength={500}
             value={description}
@@ -83,7 +82,7 @@ export default function SoloWorkspaceClient({ defaultName }: { defaultName: stri
         <button
           type="submit"
           disabled={!isValid || loading}
-          className="w-full h-11 bg-foreground text-background text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-50"
+          className="w-full h-11 bg-foreground text-background rounded-[6px] text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-50"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Create Workspace <ChevronRight className="w-4 h-4" /></>}
         </button>
