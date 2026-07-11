@@ -71,8 +71,11 @@ export default function LandingPage() {
             supabase.from('profiles').select('full_name, email, avatar_path').eq('id', data.user.id).single().then(({ data: profile }) => {
               const name = profile?.full_name || profile?.email || data.user?.email || 'User';
               setUserName(name);
+              const oauthAvatar = data.user.user_metadata?.avatar_url || data.user.user_metadata?.picture;
               if (profile?.avatar_path) {
                 setAvatarUrl(profile.avatar_path);
+              } else if (oauthAvatar) {
+                setAvatarUrl(oauthAvatar);
               }
             });
           } else {
