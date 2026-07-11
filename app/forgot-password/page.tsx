@@ -68,7 +68,6 @@ export default function ForgotPasswordPage() {
       stepLabel="Account Recovery"
       title="Forgot your password?"
       subtitle="Enter your email and we'll send you a reset link."
-      steps={[{ id: 1, label: 'Reset Password' }]}
     >
       <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
         <div className="space-y-1.5 w-full">

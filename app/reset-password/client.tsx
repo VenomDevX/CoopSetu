@@ -47,7 +47,7 @@ export default function ResetPasswordClient() {
 
   if (done) {
     return (
-      <OnboardingShell currentStep={1} totalSteps={1} stepLabel="Account Recovery" title="Password updated" steps={[{ id: 1, label: 'Reset Password' }]}>
+      <OnboardingShell currentStep={1} totalSteps={1} stepLabel="Account Recovery" title="Password updated">
         <div className="bg-surface p-6 border border-border rounded text-center space-y-4 rounded-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
           <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto" />
           <p className="text-sm text-muted-foreground">Your password has been changed. Redirecting you to sign in…</p>
@@ -63,7 +63,6 @@ export default function ResetPasswordClient() {
       stepLabel="Account Recovery"
       title="Choose a new password"
       subtitle="Enter a strong new password for your account."
-      steps={[{ id: 1, label: 'Reset Password' }]}
     >
       <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
         {error && (
