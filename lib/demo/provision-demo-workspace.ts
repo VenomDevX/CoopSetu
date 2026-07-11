@@ -49,7 +49,10 @@ export async function provisionDemoWorkspace(authUserId: string, requestedRole: 
     if (!user) {
       const { data: newUser, error: createError } = await admin.auth.admin.createUser({
         email: persona.email,
-        password: 'Password123!',
+        // Dummy demo personas are never logged into directly — only the
+        // anonymous visitor logs in. Give them a random, discarded password so
+        // they can't be signed into with a guessable/shared credential.
+        password: `${crypto.randomUUID()}${crypto.randomUUID()}`,
         email_confirm: true,
         user_metadata: { full_name: persona.name },
       });

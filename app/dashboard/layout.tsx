@@ -29,7 +29,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const initials = displayName.split(/\s+/).map((s: string) => s[0]).slice(0, 2).join('').toUpperCase();
   const orgName = org?.name ?? 'Organization';
   const avatarUrl = profile?.avatar_path || null;
-  console.log('LAYOUT DEBUG:', { id: user.id, avatarUrl, profile });
 
   return (
       <div className="flex flex-col h-[100dvh]">

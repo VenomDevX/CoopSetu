@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     if (countError) {
       console.error(`[CONTACT_API] [${requestId}] Error querying email count limit:`, countError);
     } else if (count !== null && count >= 3) {
-      console.warn(`[CONTACT_API] [${requestId}] Rate limit exceeded for email: ${normalizedEmail}`);
+      console.warn(`[CONTACT_API] [${requestId}] Rate limit exceeded for email: [REDACTED]`);
       return new NextResponse(
         JSON.stringify({ error: 'Too many requests for this email. Please try again tomorrow.' }),
         {
