@@ -8,6 +8,20 @@ export const DEMO_PERSONAS = [
   { role: 'SECURITY_ENGINEER', email: 'demo-sec@handoff.local', name: 'Aisha Khan', title: 'Security Reviewer' },
 ];
 
+// Resolve an auth user by email across all pages of the admin user list.
+// `listUsers()` only returns the first page, which is unreliable once the
+// database holds more than one page of users.
+async function findAuthUserByEmail(admin: any, email: string) {
+  const perPage = 200;
+  for (let page = 1; ; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) throw new Error(`Failed to list users: ${error.message}`);
+    const match = data.users.find((u: any) => u.email === email);
+    if (match) return match;
+    if (data.users.length < perPage) return undefined; // last page reached
+  }
+}
+
 export async function provisionDemoWorkspace(authUserId: string, requestedRole: string) {
   const admin = createAdminClient();
 
@@ -42,9 +56,11 @@ export async function provisionDemoWorkspace(authUserId: string, requestedRole: 
   for (const persona of DEMO_PERSONAS) {
     if (persona.role === requestedRole) continue; // The visitor takes this persona
 
-    // Check if user exists
-    const { data: existingUsers } = await admin.auth.admin.listUsers();
-    let user = existingUsers.users.find(u => u.email === persona.email);
+    // Check if user exists. `listUsers()` is paginated (50/page by default), so
+    // in a busy database (e.g. CI running many suites in parallel) the shared
+    // demo persona can fall off page 1 — scan every page before deciding it's
+    // missing, otherwise we'd try to re-create an existing email.
+    let user = await findAuthUserByEmail(admin, persona.email);
 
     if (!user) {
       const { data: newUser, error: createError } = await admin.auth.admin.createUser({
@@ -56,8 +72,14 @@ export async function provisionDemoWorkspace(authUserId: string, requestedRole: 
         email_confirm: true,
         user_metadata: { full_name: persona.name },
       });
-      if (createError) throw new Error(`Failed to create dummy user: ${createError.message}`);
-      user = newUser.user;
+      if (createError) {
+        // A concurrent provision may have created the persona between our scan
+        // and this insert; fall back to re-reading it rather than failing.
+        user = await findAuthUserByEmail(admin, persona.email);
+        if (!user) throw new Error(`Failed to create dummy user: ${createError.message}`);
+      } else {
+        user = newUser.user;
+      }
     }
     dummyUserIds[persona.role] = user.id;
   }
@@ -140,7 +162,7 @@ async function seedDemoData(admin: any, orgId: string, dummyUserIds: Record<stri
   const secMember = resolveMember('SECURITY_ENGINEER');
 
   // Seed Projects
-  const { data: project } = await admin.from('projects').insert({
+  const { data: project, error: projectError } = await admin.from('projects').insert({
     organization_id: orgId,
     name: 'Apex Web Portal',
     code: 'APEX',
@@ -151,6 +173,8 @@ async function seedDemoData(admin: any, orgId: string, dummyUserIds: Record<stri
     status: 'ACTIVE'
   }).select().single();
 
+  if (projectError || !project) throw new Error(`Failed to seed demo project: ${projectError?.message}`);
+
   // Project Members
   await admin.from('project_members').insert([
     { project_id: project.id, organization_member_id: pmMember, project_role: 'Manager', can_manage: true, can_view: true, can_edit: true, can_comment: true },
@@ -160,7 +184,7 @@ async function seedDemoData(admin: any, orgId: string, dummyUserIds: Record<stri
   ]);
 
   // Sprint
-  const { data: sprint } = await admin.from('sprints').insert({
+  const { data: sprint, error: sprintError } = await admin.from('sprints').insert({
     organization_id: orgId,
     project_id: project.id,
     name: 'Sprint 1',
@@ -168,6 +192,8 @@ async function seedDemoData(admin: any, orgId: string, dummyUserIds: Record<stri
     start_date: new Date().toISOString(),
     end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
   }).select().single();
+
+  if (sprintError || !sprint) throw new Error(`Failed to seed demo sprint: ${sprintError?.message}`);
 
   // Tasks
   const tasksToSeed = [
@@ -178,7 +204,7 @@ async function seedDemoData(admin: any, orgId: string, dummyUserIds: Record<stri
   ];
 
   for (const t of tasksToSeed) {
-    const { data: task } = await admin.from('tasks').insert({
+    const { data: task, error: taskError } = await admin.from('tasks').insert({
       organization_id: orgId,
       project_id: project.id,
       sprint_id: sprint.id,
@@ -188,6 +214,8 @@ async function seedDemoData(admin: any, orgId: string, dummyUserIds: Record<stri
       reporter_member_id: pmMember,
       primary_assignee_member_id: t.assignee
     }).select().single();
+
+    if (taskError || !task) throw new Error(`Failed to seed demo task "${t.title}": ${taskError?.message}`);
 
     if (t.assignee) {
        await admin.from('task_assignees').insert({
