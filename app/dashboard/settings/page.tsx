@@ -150,7 +150,6 @@ function SettingsPageContent() {
   }, [org]);
 
   useEffect(() => {
-    setIsLoadingProfile(true);
     fetch('/api/v1/profile')
       .then(r => r.json())
       .then(res => {
