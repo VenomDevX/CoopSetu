@@ -57,6 +57,7 @@ export default function InvitesClient({ pendingInvites }: InvitesClientProps) {
       stepLabel="Pending Invitations"
       title="You have pending invitations"
       subtitle="Accept an invitation to join an existing workspace."
+      onBack={() => router.back()}
     >
       <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 w-full">
         {error && (

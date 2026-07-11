@@ -65,6 +65,7 @@ export default function TeamCreationClient() {
         stepLabel="Student Setup"
         title="Your team is ready"
         subtitle="Share this code with teammates so they can join. It's shown only this once — you can rotate it later from Team Settings if you lose it."
+        onBack={() => router.back()}
       >
         <div className="space-y-6 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="p-6 border border-border rounded bg-surface flex items-center justify-between gap-4">
