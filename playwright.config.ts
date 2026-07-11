@@ -1,4 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
+import { config as loadEnv } from 'dotenv';
+
+// Load .env.local into the Playwright runner process so the auth setup can read
+// TEST_USER_PASSWORD (and friends). `next dev` loads it for the server, but the
+// test runner itself does not — without this, auth.setup.ts throws
+// "TEST_USER_PASSWORD is required" locally (CI sets it explicitly in the job env).
+loadEnv({ path: '.env.local' });
 
 /**
  * Local E2E config. Drives the real app + local Supabase.
