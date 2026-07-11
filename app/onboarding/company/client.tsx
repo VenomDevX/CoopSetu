@@ -98,8 +98,8 @@ export default function CompanyClient({ connectedAccount }: CompanyClientProps) 
 
   return (
     <OnboardingShell
-      currentStep={2}
-      totalSteps={3}
+      currentStep={3}
+      totalSteps={4}
       stepLabel="Organization Setup"
       title="Create your workspace"
       subtitle="You will become the organization owner."

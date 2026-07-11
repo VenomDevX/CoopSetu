@@ -133,12 +133,12 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
 
   return (
     <OnboardingShell
-      currentStep={1}
-      totalSteps={3}
+      currentStep={2}
+      totalSteps={4}
       stepLabel="Professional Identity"
-      title="Tell us about your work"
-      subtitle="How you will appear within the organization."
-      showConnectedAccount={true}
+      title="Set up your profile"
+      subtitle="This is how others will see you in your workspace."
+      showConnectedAccount={!!connectedAccount}
       connectedAccount={connectedAccount}
     >
       <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 w-full">

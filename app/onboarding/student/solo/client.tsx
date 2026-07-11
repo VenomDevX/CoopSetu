@@ -5,13 +5,6 @@ import { useRouter } from 'next/navigation';
 import { ChevronRight, Loader2 } from 'lucide-react';
 import { OnboardingShell } from '@/components/auth/onboarding-shell';
 
-const STEPS = [
-  { id: 1, label: 'Account' },
-  { id: 2, label: 'Profile' },
-  { id: 3, label: 'Workspace Path' },
-  { id: 4, label: 'Student Setup' },
-];
-
 export default function SoloWorkspaceClient({ defaultName }: { defaultName: string }) {
   const router = useRouter();
   const [name, setName] = useState(defaultName);
@@ -44,12 +37,11 @@ export default function SoloWorkspaceClient({ defaultName }: { defaultName: stri
 
   return (
     <OnboardingShell
-      currentStep={3}
-      totalSteps={3}
+      currentStep={4}
+      totalSteps={4}
       stepLabel="Personal Workspace"
       title="Create your personal workspace"
       subtitle="A private place for your coursework, ideas, projects, tasks, and personal delivery planning."
-      steps={STEPS}
       onBack={() => router.push('/onboarding/student')}
     >
       <form onSubmit={handleSubmit} className="space-y-6 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
