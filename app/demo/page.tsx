@@ -83,7 +83,7 @@ export default function DemoPage() {
       {/* Back Button */}
       <div className="absolute top-8 left-8 sm:top-12 sm:left-12 z-20">
         <button 
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/login')}
           className="text-zinc-500 hover:text-white transition-colors flex items-center gap-2 font-mono text-xs tracking-widest uppercase"
         >
           <ArrowLeft className="w-4 h-4" /> Back
@@ -124,9 +124,9 @@ export default function DemoPage() {
                 key={persona.role}
                 onClick={() => startDemo(persona.role)}
                 disabled={isDisabled || isLoading}
-                className={`group w-full p-4 bg-zinc-950 border border-zinc-800 hover:bg-white hover:border-white transition-colors flex flex-col sm:flex-row items-start sm:items-center gap-4 text-left disabled:opacity-50 disabled:cursor-not-allowed ${isLoading ? 'animate-pulse' : ''}`}
+                className={`group w-full p-4 bg-surface rounded-[6px] hover:bg-surface-hover transition-colors flex flex-col sm:flex-row items-start sm:items-center gap-4 text-left disabled:opacity-50 disabled:cursor-not-allowed ${isLoading ? 'animate-pulse' : ''}`}
               >
-                <div className="p-3 bg-zinc-900 border border-zinc-800 group-hover:bg-zinc-100 group-hover:border-zinc-200 shrink-0 transition-colors">
+                <div className="p-3 bg-zinc-800/50 rounded-[6px] group-hover:bg-zinc-700/50 shrink-0 transition-colors">
                   <Icon className="w-5 h-5 text-zinc-300 group-hover:text-black transition-colors" />
                 </div>
                 

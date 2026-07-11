@@ -261,12 +261,12 @@ function LoginInner() {
           </div>
 
           <div className="pt-4 border-t border-border space-y-3">
-            <Link href="/signup" className="flex items-center justify-between p-3 border border-border rounded bg-surface hover:bg-surface-hover group transition-colors">
-              <span className="text-xs font-medium">Create a company workspace</span>
+            <Link href="/signup" className="flex items-center justify-between p-3 rounded bg-surface hover:bg-surface-hover group transition-colors">
+              <span className="text-xs font-medium">Sign up — Create a new workspace</span>
               <span className="text-muted-foreground group-hover:text-foreground transition-colors">→</span>
             </Link>
-            <Link href="/signup?mode=join" className="flex items-center justify-between p-3 border border-border rounded bg-surface hover:bg-surface-hover group transition-colors">
-              <span className="text-xs font-medium">Accept an invitation</span>
+            <Link href="/signup?mode=join" className="flex items-center justify-between p-3 rounded bg-surface hover:bg-surface-hover group transition-colors">
+              <span className="text-xs font-medium">Join a team — Accept an invitation</span>
               <span className="text-muted-foreground group-hover:text-foreground transition-colors">→</span>
             </Link>
           </div>
