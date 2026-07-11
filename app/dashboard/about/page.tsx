@@ -36,7 +36,7 @@ export default function AboutPage() {
       <section className="space-y-4">
         <h2 className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border pb-2">Technology Stack</h2>
         <div className="flex flex-wrap gap-2">
-          {['Next.js 15', 'React 19', 'Supabase', 'PostgreSQL', 'TypeScript', 'Tailwind CSS', 'Claude AI'].map((t) => (
+          {['Next.js 15', 'React 19', 'Supabase', 'PostgreSQL', 'TypeScript', 'Tailwind CSS'].map((t) => (
             <span key={t} className="font-mono text-[10px] uppercase tracking-widest border border-border rounded px-3 py-1 text-muted-foreground">
               {t}
             </span>
