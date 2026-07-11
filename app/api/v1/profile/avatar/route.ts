@@ -16,9 +16,18 @@ export async function POST(req: NextRequest) {
 
   if (!file) throw Errors.validation('No file provided.');
 
-  // Validate file type
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-  if (!allowedTypes.includes(file.type)) {
+  // Validate file type against a whitelist, and derive both the stored
+  // extension and the served content-type from that whitelist — never from the
+  // client-supplied filename or MIME string, so neither can smuggle an
+  // unexpected extension/content-type into the storage path.
+  const MIME_TO_EXT: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+  };
+  const ext = MIME_TO_EXT[file.type];
+  if (!ext) {
     throw Errors.validation('Only JPEG, PNG, WebP, and GIF images are allowed.');
   }
 
@@ -27,7 +36,6 @@ export async function POST(req: NextRequest) {
     throw Errors.validation('File size must be under 2MB.');
   }
 
-  const ext = file.name.split('.').pop() || 'jpg';
   const filePath = `avatars/${user.id}.${ext}`;
 
   // Convert File to Buffer for Node.js Supabase client
