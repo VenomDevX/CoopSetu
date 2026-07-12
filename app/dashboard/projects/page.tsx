@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiGet } from '@/lib/api/client';
 import { CreateProjectModal } from '@/components/dashboard/create-project-modal';
+import { EditProjectSidebar } from '@/components/dashboard/edit-project-sidebar';
 import { ExportReportModal } from '@/components/dashboard/export-report-modal';
 import { ImportProjectsModal } from '@/components/dashboard/import-projects-modal';
 import { usePermission } from '@/lib/permissions/context';
@@ -27,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton, TableRowsSkeleton } from '@/components/ui/skeleton';
 import { AskAiButton } from '@/components/ai/ask-ai-button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Link from 'next/link';
 
 type Project = {
@@ -98,6 +100,7 @@ const getPriorityColor = (priority: string) => {
 export default function ProjectsPage() {
   const [view, setView] = useState<'table' | 'grid'>('table');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const {
@@ -310,10 +313,25 @@ export default function ProjectsPage() {
                         <span className="text-[10px] text-muted-foreground">—</span>
                       )}
                     </td>
-                    <td className="p-3 text-right">
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
+                    <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-40 p-1 flex flex-col gap-1 border-white/10 bg-black/80" align="end">
+                          <Button variant="ghost" size="sm" className="justify-start text-xs rounded-sm w-full font-mono uppercase tracking-widest" asChild>
+                            <Link href={`/dashboard/projects/${project.id}`}>View Details</Link>
+                          </Button>
+                          <Button variant="ghost" size="sm" className="justify-start text-xs rounded-sm w-full font-mono uppercase tracking-widest" onClick={() => setEditingProjectId(project.id)}>
+                            Edit Project
+                          </Button>
+                          <Button variant="ghost" size="sm" className="justify-start text-xs rounded-sm w-full font-mono uppercase tracking-widest" onClick={() => navigator.clipboard.writeText(window.location.origin + `/dashboard/projects/${project.id}`)}>
+                            Copy Link
+                          </Button>
+                        </PopoverContent>
+                      </Popover>
                     </td>
                   </tr>
                 ))}
@@ -417,6 +435,15 @@ export default function ProjectsPage() {
           onCreated={load}
         />
       )}
+
+      {editingProjectId && (
+        <EditProjectSidebar
+          projectId={editingProjectId}
+          onClose={() => setEditingProjectId(null)}
+          onSaved={load}
+        />
+      )}
+
       {isImportModalOpen && (
         <ImportProjectsModal
           onClose={() => setIsImportModalOpen(false)}

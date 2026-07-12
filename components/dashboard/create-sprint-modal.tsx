@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Dialog, dialogLabelCls as labelCls, dialogFieldCls as fieldCls } from '@/components/ui/dialog';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Project { id: string; name: string; code: string }
@@ -99,11 +100,11 @@ export function CreateSprintModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Start Date</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`${fieldCls} font-mono`} />
+              <DatePicker value={startDate} onChange={setStartDate} />
             </div>
             <div>
               <label className={labelCls}>End Date</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`${fieldCls} font-mono`} />
+              <DatePicker value={endDate} onChange={setEndDate} />
             </div>
             <div>
               <label className={labelCls}>Capacity (hrs)</label>
