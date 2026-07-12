@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { FolderPlus } from 'lucide-react';
 import { Dialog, dialogLabelCls as labelCls, dialogFieldCls as fieldCls } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -89,12 +90,13 @@ export function CreateProjectModal({
   return (
     <Dialog
       title="Create Project"
+      icon={FolderPlus}
       onClose={onClose}
       footer={
         <>
-          <button onClick={onClose} className="h-9 px-4 border border-border rounded font-mono text-xs uppercase tracking-widest">Cancel</button>
+          <button onClick={onClose} className="h-9 px-4 border border-border rounded-[6px] font-mono text-xs uppercase tracking-widest">Cancel</button>
           <button data-testid="project-save-button" onClick={submit} disabled={submitting}
-            className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest disabled:opacity-50">
+            className="h-9 px-4 bg-foreground text-background rounded-[6px] font-mono text-xs uppercase tracking-widest disabled:opacity-50">
             {submitting ? 'Creating…' : 'Initialize Project'}
           </button>
         </>
@@ -119,7 +121,7 @@ export function CreateProjectModal({
           <div>
             <label className={labelCls}>Description</label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)}
-              className="w-full h-20 p-3 bg-background border border-border rounded text-sm focus:outline-none focus:border-foreground transition-colors resize-none"
+              className="w-full h-20 p-3 bg-background border border-border rounded-[6px] text-sm focus:outline-none focus:border-foreground transition-colors resize-none"
               placeholder="Brief project objective and scope..." />
           </div>
 
@@ -187,3 +189,4 @@ export function CreateProjectModal({
     </Dialog>
   );
 }
+

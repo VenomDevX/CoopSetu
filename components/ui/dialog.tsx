@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
  */
 export function Dialog({
   title,
+  icon: Icon,
   onClose,
   footer,
   children,
@@ -20,6 +21,7 @@ export function Dialog({
   testId,
 }: {
   title: React.ReactNode;
+  icon?: React.ElementType;
   onClose: () => void;
   footer?: React.ReactNode;
   children: React.ReactNode;
@@ -80,7 +82,7 @@ export function Dialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm sm:p-4"
       onClick={onClose}
     >
       <div
@@ -91,14 +93,14 @@ export function Dialog({
         aria-label={typeof title === 'string' ? title : undefined}
         tabIndex={-1}
         className={cn(
-          'relative w-full max-w-2xl bg-background sm:border sm:border-border sm:shadow-2xl flex flex-col h-[100dvh] sm:h-auto sm:max-h-[90vh] animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:fade-in duration-300 focus:outline-none',
+          'relative w-full max-w-2xl bg-background/80 backdrop-blur-xl sm:shadow-2xl sm:rounded-[6px] flex flex-col h-[100dvh] sm:h-auto sm:max-h-[90vh] animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:fade-in duration-300 focus:outline-none overflow-hidden border border-border/50',
           className,
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-4 border-b border-border bg-surface-hover flex items-center justify-between shrink-0">
+        <div className="p-4 flex items-center justify-between shrink-0">
           <h2 className="font-mono text-sm uppercase tracking-widest font-bold flex items-center gap-2">
-            <div className="w-2 h-2 bg-foreground" /> {title}
+            {Icon ? <Icon className="w-4 h-4 text-foreground" /> : <div className="w-2 h-2 bg-foreground" />} {title}
           </h2>
           <button
             onClick={onClose}
@@ -112,7 +114,7 @@ export function Dialog({
         <div className={cn('p-6 overflow-y-auto flex-1 space-y-5', bodyClassName)}>{children}</div>
 
         {footer && (
-          <div className="p-4 border-t border-border bg-surface flex justify-end gap-3 shrink-0">
+          <div className="p-4 flex justify-end gap-3 shrink-0">
             {footer}
           </div>
         )}

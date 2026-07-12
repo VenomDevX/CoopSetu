@@ -98,13 +98,14 @@ export function ImportProjectsModal({
 
   return (
     <Dialog
-      title={<><Upload className="w-4 h-4" /> Import Projects</>}
+      title="Import Projects"
+      icon={Upload}
       onClose={onClose}
       className="max-w-4xl sm:max-h-[92vh]"
       bodyClassName="space-y-6"
       footer={
         <>
-          <button onClick={onClose} className="h-9 px-4 border border-border rounded font-mono text-xs uppercase tracking-widest">
+          <button onClick={onClose} className="h-9 px-4 border border-border rounded-[6px] font-mono text-xs uppercase tracking-widest">
             {result ? 'Close' : 'Cancel'}
           </button>
           {preview && !result && (
@@ -112,7 +113,7 @@ export function ImportProjectsModal({
               data-testid="project-import-confirm"
               onClick={confirmImport}
               disabled={busy || !mapping?.name || !mapping?.code}
-              className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest disabled:opacity-50"
+              className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest rounded-[6px] disabled:opacity-50"
             >
               {busy ? 'Importing...' : 'Confirm Import'}
             </button>
@@ -123,24 +124,32 @@ export function ImportProjectsModal({
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
             <div>
               <label className={labelCls}>CSV File</label>
-              <input
-                data-testid="project-import-file"
-                type="file"
-                accept=".csv,text/csv"
-                onChange={(e) => {
-                  setFile(e.target.files?.[0] ?? null);
-                  setPreview(null);
-                  setResult(null);
-                  setError(null);
-                }}
-                className={fieldCls}
-              />
+              <div className="relative flex items-center h-9 w-full bg-background border border-border rounded-[6px] overflow-hidden focus-within:border-foreground transition-colors">
+                <input
+                  data-testid="project-import-file"
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={(e) => {
+                    setFile(e.target.files?.[0] ?? null);
+                    setPreview(null);
+                    setResult(null);
+                    setError(null);
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <div className="h-full px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest flex items-center justify-center shrink-0 border-r border-border">
+                  Choose File
+                </div>
+                <div className="px-3 text-sm truncate text-muted-foreground">
+                  {file ? file.name : 'No file chosen'}
+                </div>
+              </div>
             </div>
             <button
               data-testid="project-import-preview"
               onClick={previewFile}
               disabled={busy}
-              className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest disabled:opacity-50"
+              className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest rounded-[6px] disabled:opacity-50"
             >
               {busy && !preview ? 'Reading...' : 'Preview'}
             </button>
@@ -148,7 +157,7 @@ export function ImportProjectsModal({
 
           {preview && mapping && (
             <>
-              <div className="border border-border rounded bg-surface p-4">
+              <div className="border border-border rounded-[6px] bg-surface p-4">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
                   Column Mapping
                 </div>
@@ -179,21 +188,21 @@ export function ImportProjectsModal({
               </div>
 
               <div className="grid grid-cols-3 gap-3">
-                <div className="border border-border rounded p-3">
+                <div className="border border-border rounded-[6px] p-3">
                   <div className="font-mono text-[10px] uppercase text-muted-foreground">Rows</div>
                   <div className="text-xl font-bold">{result?.summary.total ?? preview.summary.total}</div>
                 </div>
-                <div className="border border-border rounded p-3">
+                <div className="border border-border rounded-[6px] p-3">
                   <div className="font-mono text-[10px] uppercase text-muted-foreground">Created / Valid</div>
                   <div className="text-xl font-bold">{result?.summary.created ?? preview.summary.valid}</div>
                 </div>
-                <div className="border border-border rounded p-3">
+                <div className="border border-border rounded-[6px] p-3">
                   <div className="font-mono text-[10px] uppercase text-muted-foreground">Skipped / Invalid</div>
                   <div className="text-xl font-bold">{result?.summary.skipped ?? preview.summary.invalid}</div>
                 </div>
               </div>
 
-              <div className="border border-border rounded overflow-hidden">
+              <div className="border border-border rounded-[6px] overflow-hidden">
                 <div className="p-3 bg-surface-hover border-b border-border font-mono text-[10px] uppercase tracking-widest">
                   Row Review
                 </div>
@@ -231,3 +240,4 @@ export function ImportProjectsModal({
     </Dialog>
   );
 }
+

@@ -58,12 +58,12 @@ export function ExportReportModal({
       className="max-w-lg sm:h-auto h-auto"
       footer={
         <>
-          <button onClick={onClose} className="h-9 px-4 border border-border rounded font-mono text-xs uppercase tracking-widest">Close</button>
+          <button onClick={onClose} className="h-9 px-4 border border-border rounded-[6px] font-mono text-xs uppercase tracking-widest">Close</button>
           <button
             data-testid="export-report-confirm"
             onClick={exportReport}
             disabled={busy || format === 'pdf'}
-            className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest disabled:opacity-50"
+            className="h-9 px-4 bg-foreground text-background rounded-[6px] font-mono text-xs uppercase tracking-widest disabled:opacity-50"
           >
             {busy ? 'Exporting...' : 'Download'}
           </button>
@@ -72,7 +72,7 @@ export function ExportReportModal({
     >
           <div>
             <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1 block">Format</label>
-            <div className="grid grid-cols-2 border border-border rounded">
+            <div className="grid grid-cols-2 border border-border rounded-[6px] overflow-hidden">
               <button
                 data-testid="export-format-csv"
                 onClick={() => setFormat('csv')}
@@ -95,7 +95,7 @@ export function ExportReportModal({
             )}
           </div>
 
-          <div className="border border-border rounded bg-surface p-3">
+          <div className="border border-border rounded-[6px] bg-surface p-3">
             <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Current Filters</div>
             <div className="space-y-1 text-xs">
               {Object.entries(filters).map(([key, value]) => (
@@ -112,3 +112,4 @@ export function ExportReportModal({
     </Dialog>
   );
 }
+

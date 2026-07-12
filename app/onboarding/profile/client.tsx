@@ -72,8 +72,9 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username }),
         });
-        const data = await res.json();
-        setUsernameAvailable(data.available);
+        if (!res.ok) throw new Error('API Error');
+        const data = await res.json().catch(() => ({}));
+        setUsernameAvailable(data.available ?? false);
       } catch {
         setUsernameAvailable(false);
       } finally {
@@ -99,7 +100,7 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
           body: JSON.stringify({ acceptedTerms: true, acceptedPrivacy: true, source: 'ONBOARDING_PROFILE' }),
         });
         if (!legalRes.ok) {
-          const legalData = await legalRes.json();
+          const legalData = await legalRes.json().catch(() => ({}));
           throw new Error(legalData.error?.message || 'Failed to record legal acceptance.');
         }
       }
@@ -119,7 +120,7 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
         })
       });
 
-      const payload = await res.json();
+      const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(payload.error?.message || 'Failed to update profile');
       }

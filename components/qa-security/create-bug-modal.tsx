@@ -102,8 +102,8 @@ export function CreateBugModal({ onClose, onCreated }: { onClose: () => void; on
       bodyClassName="space-y-6 text-sm font-mono"
       footer={
         <>
-          <Button variant="outline" onClick={onClose} disabled={submitting} className="rounded font-mono uppercase tracking-widest text-[10px]">Cancel</Button>
-          <Button onClick={submit} disabled={submitting} className="rounded bg-foreground text-background font-mono uppercase tracking-widest text-[10px]">
+          <Button variant="outline" onClick={onClose} disabled={submitting} className="rounded-[6px] font-mono uppercase tracking-widest text-[10px]">Cancel</Button>
+          <Button onClick={submit} disabled={submitting} className="rounded-[6px] bg-foreground text-background font-mono uppercase tracking-widest text-[10px]">
             {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Create Bug
           </Button>
@@ -115,14 +115,14 @@ export function CreateBugModal({ onClose, onCreated }: { onClose: () => void; on
           <div className="space-y-4">
             <div>
               <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Bug Title *</label>
-              <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g., Login button unresponsive" className="rounded border-border" />
+              <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g., Login button unresponsive" className="rounded-[6px] border-border" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Project *</label>
                 <Select value={projectId} onValueChange={setProjectId}>
-                  <SelectTrigger className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
+                  <SelectTrigger className="w-full h-10 border border-border rounded-[6px] bg-background px-3 outline-none focus:border-foreground">
                     <SelectValue placeholder="-- Select Project --" />
                   </SelectTrigger>
                   <SelectContent>
@@ -133,7 +133,7 @@ export function CreateBugModal({ onClose, onCreated }: { onClose: () => void; on
               </div>
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Environment</label>
-                <Input value={environment} onChange={e => setEnvironment(e.target.value)} placeholder="e.g., Production, Staging" className="rounded border-border" />
+                <Input value={environment} onChange={e => setEnvironment(e.target.value)} placeholder="e.g., Production, Staging" className="rounded-[6px] border-border" />
               </div>
             </div>
 
@@ -141,7 +141,7 @@ export function CreateBugModal({ onClose, onCreated }: { onClose: () => void; on
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Severity</label>
                 <Select value={severity} onValueChange={setSeverity}>
-                  <SelectTrigger className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
+                  <SelectTrigger className="w-full h-10 border border-border rounded-[6px] bg-background px-3 outline-none focus:border-foreground">
                     <SelectValue placeholder="Select Severity" />
                   </SelectTrigger>
                   <SelectContent>
@@ -152,7 +152,7 @@ export function CreateBugModal({ onClose, onCreated }: { onClose: () => void; on
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Priority</label>
                 <Select value={priority} onValueChange={setPriority}>
-                  <SelectTrigger className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
+                  <SelectTrigger className="w-full h-10 border border-border rounded-[6px] bg-background px-3 outline-none focus:border-foreground">
                     <SelectValue placeholder="Select Priority" />
                   </SelectTrigger>
                   <SelectContent>
@@ -166,7 +166,7 @@ export function CreateBugModal({ onClose, onCreated }: { onClose: () => void; on
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Linked Task</label>
                 <Select value={taskId} onValueChange={setTaskId} disabled={!projectId}>
-                  <SelectTrigger className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground disabled:opacity-50">
+                  <SelectTrigger className="w-full h-10 border border-border rounded-[6px] bg-background px-3 outline-none focus:border-foreground disabled:opacity-50">
                     <SelectValue placeholder="-- None --" />
                   </SelectTrigger>
                   <SelectContent>
@@ -178,7 +178,7 @@ export function CreateBugModal({ onClose, onCreated }: { onClose: () => void; on
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Primary Assignee *</label>
                 <Select value={primaryAssignee} onValueChange={setPrimaryAssignee}>
-                  <SelectTrigger className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
+                  <SelectTrigger className="w-full h-10 border border-border rounded-[6px] bg-background px-3 outline-none focus:border-foreground">
                     <SelectValue placeholder="-- Select Member --" />
                   </SelectTrigger>
                   <SelectContent>
@@ -191,22 +191,22 @@ export function CreateBugModal({ onClose, onCreated }: { onClose: () => void; on
 
             <div>
               <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Description</label>
-              <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full min-h-[80px] p-3 border border-border rounded bg-background outline-none focus:border-foreground resize-y" />
+              <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full min-h-[80px] p-3 border border-border rounded-[6px] bg-background outline-none focus:border-foreground resize-y" />
             </div>
 
             <div>
               <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Steps to Reproduce</label>
-              <textarea value={steps} onChange={e => setSteps(e.target.value)} className="w-full min-h-[80px] p-3 border border-border rounded bg-background outline-none focus:border-foreground resize-y" />
+              <textarea value={steps} onChange={e => setSteps(e.target.value)} className="w-full min-h-[80px] p-3 border border-border rounded-[6px] bg-background outline-none focus:border-foreground resize-y" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Expected Result</label>
-                <textarea value={expected} onChange={e => setExpected(e.target.value)} className="w-full min-h-[80px] p-3 border border-border rounded bg-background outline-none focus:border-foreground resize-y" />
+                <textarea value={expected} onChange={e => setExpected(e.target.value)} className="w-full min-h-[80px] p-3 border border-border rounded-[6px] bg-background outline-none focus:border-foreground resize-y" />
               </div>
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Actual Result</label>
-                <textarea value={actual} onChange={e => setActual(e.target.value)} className="w-full min-h-[80px] p-3 border border-border rounded bg-background outline-none focus:border-foreground resize-y" />
+                <textarea value={actual} onChange={e => setActual(e.target.value)} className="w-full min-h-[80px] p-3 border border-border rounded-[6px] bg-background outline-none focus:border-foreground resize-y" />
               </div>
             </div>
 
@@ -214,3 +214,4 @@ export function CreateBugModal({ onClose, onCreated }: { onClose: () => void; on
     </Dialog>
   );
 }
+
