@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { Errors } from '@/lib/api/errors';
 import { createAuditLog } from '@/lib/audit/create-audit-log';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { cache } from '@/lib/cache/cache';
 import type {
   CreateProjectInput, UpdateProjectInput,
 } from '@/lib/validation/project';
@@ -81,6 +82,11 @@ export async function createProject(supabase: SupabaseClient, orgId: string, inp
     organizationId: orgId, action: 'project.created', entityType: 'project',
     entityId: data.id, projectId: data.id, afterState: { name: data.name, code: data.code },
   });
+
+  // Invalidate dashboard caches to ensure real-time updates
+  await cache.incrementCacheVersion(`cache_versions.dashboard_org_${orgId}`);
+  await cache.incrementCacheVersion(`cache_versions.project_scope_${orgId}`);
+
   return data;
 }
 
@@ -94,6 +100,11 @@ export async function updateProject(supabase: SupabaseClient, orgId: string, pro
     organizationId: orgId, action: 'project.updated', entityType: 'project',
     entityId: projectId, projectId, afterState: input,
   });
+
+  // Invalidate dashboard caches to ensure real-time updates
+  await cache.incrementCacheVersion(`cache_versions.dashboard_org_${orgId}`);
+  await cache.incrementCacheVersion(`cache_versions.project_scope_${orgId}`);
+
   return data;
 }
 

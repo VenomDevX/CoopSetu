@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { FolderPlus } from 'lucide-react';
 import { Dialog, dialogLabelCls as labelCls, dialogFieldCls as fieldCls } from '@/components/ui/dialog';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Employee {
@@ -175,11 +176,11 @@ export function CreateProjectModal({
             </div>
             <div>
               <label className={labelCls}>Start Date</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`${fieldCls} font-mono`} />
+              <DatePicker value={startDate} onChange={setStartDate} />
             </div>
             <div>
               <label className={labelCls}>Target Date</label>
-              <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} className={`${fieldCls} font-mono`} />
+              <DatePicker value={targetDate} onChange={setTargetDate} />
             </div>
           </div>
 

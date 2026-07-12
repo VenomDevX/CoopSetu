@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CalendarDays } from 'lucide-react';
 import { Dialog, dialogLabelCls as labelCls, dialogFieldCls as fieldCls } from '@/components/ui/dialog';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Project {
@@ -159,7 +160,7 @@ export function AddDeadlineModal({
             </div>
             <div>
               <label className={labelCls}>Due Date *</label>
-              <input data-testid="deadline-date-input" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={`${fieldCls} font-mono`} />
+              <DatePicker value={dueDate} onChange={setDueDate} />
             </div>
             <div>
               <label className={labelCls}>Owner</label>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ListTodo } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TASK_TYPES, TASK_VISIBILITY_SCOPES, PRIORITIES, SECURITY_CLASSIFICATIONS } from '@/lib/constants/task-statuses';
 
@@ -294,11 +295,11 @@ export function CreateTaskModal({
 
           <div>
             <label className={labelCls}>Start Date</label>
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={fieldCls} />
+            <DatePicker value={startDate} onChange={setStartDate} />
           </div>
           <div>
             <label className={labelCls}>Due Date</label>
-            <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={fieldCls} />
+            <DatePicker value={dueDate} onChange={setDueDate} />
           </div>
 
           <div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -137,7 +138,7 @@ export function CreateTestPlanModal({ onClose, onCreated }: { onClose: () => voi
               </div>
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Target Date</label>
-                <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="rounded-[6px] border-border" />
+                <DatePicker value={dueDate} onChange={setDueDate} />
               </div>
             </div>
 
