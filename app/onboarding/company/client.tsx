@@ -45,8 +45,9 @@ export default function CompanyClient({ connectedAccount }: CompanyClientProps) 
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ slug: workspaceSlug }),
         });
-        const data = await res.json();
-        setSlugAvailable(data.available);
+        if (!res.ok) throw new Error('API Error');
+        const data = await res.json().catch(() => ({}));
+        setSlugAvailable(data.available ?? false);
       } catch {
         setSlugAvailable(false);
       } finally {
@@ -77,7 +78,7 @@ export default function CompanyClient({ connectedAccount }: CompanyClientProps) 
         })
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(data.error?.message || 'Failed to create organization');
       }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { UserPlus } from 'lucide-react';
 import { Dialog, dialogLabelCls as labelCls, dialogFieldCls as fieldCls } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -60,16 +61,17 @@ export function InviteMemberModal({
   return (
     <Dialog
       title="Invite Member"
+      icon={UserPlus}
       onClose={onClose}
       className="max-w-lg"
       footer={
         successLink ? (
-          <button onClick={() => { onInvited(); onClose(); }} className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest">Done</button>
+          <button onClick={() => { onInvited(); onClose(); }} className="h-9 px-4 rounded-[6px] bg-foreground text-background font-mono text-xs uppercase tracking-widest">Done</button>
         ) : (
           <>
-            <button onClick={onClose} className="h-9 px-4 border border-border rounded font-mono text-xs uppercase tracking-widest">Cancel</button>
+            <button onClick={onClose} className="h-9 px-4 border border-border rounded-[6px] font-mono text-xs uppercase tracking-widest">Cancel</button>
             <button onClick={submit} disabled={submitting}
-              className="h-9 px-4 bg-foreground text-background font-mono text-xs uppercase tracking-widest disabled:opacity-50">
+              className="h-9 px-4 bg-foreground rounded-[6px] text-background font-mono text-xs uppercase tracking-widest disabled:opacity-50">
               {submitting ? 'Sending…' : 'Send Invite'}
             </button>
           </>
@@ -116,3 +118,4 @@ export function InviteMemberModal({
     </Dialog>
   );
 }
+

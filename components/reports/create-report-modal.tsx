@@ -70,7 +70,7 @@ export function CreateReportModal({ onClose, onSuccess }: Props) {
                 required
                 autoFocus
                 placeholder="e.g. Q3 Analytics Overview"
-                className="w-full h-9 rounded bg-background border-border text-sm focus-visible:ring-1 focus-visible:ring-primary"
+                className="w-full h-9 rounded-[6px] bg-background border-border text-sm focus-visible:ring-1 focus-visible:ring-primary"
               />
             </div>
 
@@ -79,7 +79,7 @@ export function CreateReportModal({ onClose, onSuccess }: Props) {
                 Report Type *
               </label>
               <Select name="type" defaultValue="GLOBAL_ANALYTICS" required>
-                <SelectTrigger className="w-full h-9 px-3 bg-background border border-border rounded text-xs font-mono focus:outline-none focus:border-foreground">
+                <SelectTrigger className="w-full h-9 px-3 bg-background border border-border rounded-[6px] text-xs font-mono focus:outline-none focus:border-foreground">
                   <SelectValue placeholder="Select Report Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -92,10 +92,10 @@ export function CreateReportModal({ onClose, onSuccess }: Props) {
           </div>
 
           <div className="pt-4 flex justify-end gap-3 border-t border-border mt-6">
-            <Button type="button" variant="ghost" onClick={onClose} disabled={submitting} className="rounded font-mono uppercase tracking-widest text-xs h-9">
+            <Button type="button" variant="ghost" onClick={onClose} disabled={submitting} className="rounded-[6px] font-mono uppercase tracking-widest text-xs h-9">
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting} className="rounded font-mono uppercase tracking-widest text-xs h-9">
+            <Button type="submit" disabled={submitting} className="rounded-[6px] font-mono uppercase tracking-widest text-xs h-9">
               {submitting && <Loader2 className="w-3 h-3 mr-2 animate-spin" />}
               Save Report
             </Button>
@@ -104,3 +104,4 @@ export function CreateReportModal({ onClose, onSuccess }: Props) {
     </Dialog>
   );
 }
+

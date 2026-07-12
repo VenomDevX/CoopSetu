@@ -92,8 +92,8 @@ export function CreateTestPlanModal({ onClose, onCreated }: { onClose: () => voi
       bodyClassName="space-y-6 text-sm font-mono"
       footer={
         <>
-          <Button variant="outline" onClick={onClose} disabled={submitting} className="rounded font-mono uppercase tracking-widest text-[10px]">Cancel</Button>
-          <Button onClick={submit} disabled={submitting} className="rounded bg-foreground text-background font-mono uppercase tracking-widest text-[10px]">
+          <Button variant="outline" onClick={onClose} disabled={submitting} className="rounded-[6px] font-mono uppercase tracking-widest text-[10px]">Cancel</Button>
+          <Button onClick={submit} disabled={submitting} className="rounded-[6px] bg-foreground text-background font-mono uppercase tracking-widest text-[10px]">
             {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Create Test Plan
           </Button>
@@ -106,12 +106,12 @@ export function CreateTestPlanModal({ onClose, onCreated }: { onClose: () => voi
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Test Plan Title *</label>
-                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g., Release 2.0 Regression" className="rounded border-border" />
+                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g., Release 2.0 Regression" className="rounded-[6px] border-border" />
               </div>
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Project *</label>
                 <Select value={projectId} onValueChange={setProjectId}>
-                  <SelectTrigger className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
+                  <SelectTrigger className="w-full h-10 border border-border rounded-[6px] bg-background px-3 outline-none focus:border-foreground">
                     <SelectValue placeholder="-- Select Project --" />
                   </SelectTrigger>
                   <SelectContent>
@@ -126,7 +126,7 @@ export function CreateTestPlanModal({ onClose, onCreated }: { onClose: () => voi
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">QA Owner *</label>
                 <Select value={ownerMemberId} onValueChange={setOwnerMemberId}>
-                  <SelectTrigger className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
+                  <SelectTrigger className="w-full h-10 border border-border rounded-[6px] bg-background px-3 outline-none focus:border-foreground">
                     <SelectValue placeholder="-- Select Member --" />
                   </SelectTrigger>
                   <SelectContent>
@@ -137,49 +137,49 @@ export function CreateTestPlanModal({ onClose, onCreated }: { onClose: () => voi
               </div>
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Target Date</label>
-                <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="rounded border-border" />
+                <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="rounded-[6px] border-border" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Environment</label>
-                <Input value={environment} onChange={e => setEnvironment(e.target.value)} placeholder="e.g., Staging" className="rounded border-border" />
+                <Input value={environment} onChange={e => setEnvironment(e.target.value)} placeholder="e.g., Staging" className="rounded-[6px] border-border" />
               </div>
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Scope</label>
-                <Input value={scope} onChange={e => setScope(e.target.value)} placeholder="e.g., Core API endpoints" className="rounded border-border" />
+                <Input value={scope} onChange={e => setScope(e.target.value)} placeholder="e.g., Core API endpoints" className="rounded-[6px] border-border" />
               </div>
             </div>
 
             <div>
               <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Acceptance Criteria</label>
-              <textarea value={acceptanceCriteria} onChange={e => setAcceptanceCriteria(e.target.value)} className="w-full min-h-[60px] p-3 border border-border rounded bg-background outline-none focus:border-foreground resize-y" />
+              <textarea value={acceptanceCriteria} onChange={e => setAcceptanceCriteria(e.target.value)} className="w-full min-h-[60px] p-3 border border-border rounded-[6px] bg-background outline-none focus:border-foreground resize-y" />
             </div>
 
             <div className="mt-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-sm font-mono uppercase tracking-widest font-bold">Test Cases</h3>
-                <Button variant="outline" size="sm" onClick={() => setTestCases([...testCases, { title: '', steps: '', expected_result: '', priority: 'MEDIUM' }])} className="rounded font-mono text-[10px] uppercase">
+                <Button variant="outline" size="sm" onClick={() => setTestCases([...testCases, { title: '', steps: '', expected_result: '', priority: 'MEDIUM' }])} className="rounded-[6px] font-mono text-[10px] uppercase">
                   <Plus className="w-3 h-3 mr-1" /> Add Case
                 </Button>
               </div>
 
               <div className="space-y-4">
                 {testCases.map((tc, idx) => (
-                  <div key={idx} className="p-4 border border-border rounded bg-surface-hover/50 space-y-3 relative group">
+                  <div key={idx} className="p-4 border border-border rounded-[6px] bg-surface-hover/50 space-y-3 relative group">
                     <button onClick={() => setTestCases(testCases.filter((_, i) => i !== idx))} className="absolute top-2 right-2 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all">
                       <Trash2 className="w-4 h-4" />
                     </button>
                     <div className="grid grid-cols-[1fr_120px] gap-4">
                       <div>
                         <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Title *</label>
-                        <Input value={tc.title} onChange={e => { const nc = [...testCases]; nc[idx].title = e.target.value; setTestCases(nc); }} className="rounded border-border h-8" />
+                        <Input value={tc.title} onChange={e => { const nc = [...testCases]; nc[idx].title = e.target.value; setTestCases(nc); }} className="rounded-[6px] border-border h-8" />
                       </div>
                       <div>
                         <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Priority</label>
                         <Select value={tc.priority} onValueChange={val => { const nc = [...testCases]; nc[idx].priority = val; setTestCases(nc); }}>
-                          <SelectTrigger className="w-full h-8 border border-border rounded bg-background px-2 outline-none focus:border-foreground">
+                          <SelectTrigger className="w-full h-8 border border-border rounded-[6px] bg-background px-2 outline-none focus:border-foreground">
                             <SelectValue placeholder="Select Priority" />
                           </SelectTrigger>
                           <SelectContent>
@@ -191,11 +191,11 @@ export function CreateTestPlanModal({ onClose, onCreated }: { onClose: () => voi
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Steps</label>
-                        <textarea value={tc.steps} onChange={e => { const nc = [...testCases]; nc[idx].steps = e.target.value; setTestCases(nc); }} className="w-full min-h-[60px] p-2 border border-border rounded bg-background outline-none focus:border-foreground resize-none" />
+                        <textarea value={tc.steps} onChange={e => { const nc = [...testCases]; nc[idx].steps = e.target.value; setTestCases(nc); }} className="w-full min-h-[60px] p-2 border border-border rounded-[6px] bg-background outline-none focus:border-foreground resize-none" />
                       </div>
                       <div>
                         <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Expected Result</label>
-                        <textarea value={tc.expected_result} onChange={e => { const nc = [...testCases]; nc[idx].expected_result = e.target.value; setTestCases(nc); }} className="w-full min-h-[60px] p-2 border border-border rounded bg-background outline-none focus:border-foreground resize-none" />
+                        <textarea value={tc.expected_result} onChange={e => { const nc = [...testCases]; nc[idx].expected_result = e.target.value; setTestCases(nc); }} className="w-full min-h-[60px] p-2 border border-border rounded-[6px] bg-background outline-none focus:border-foreground resize-none" />
                       </div>
                     </div>
                   </div>
@@ -207,3 +207,4 @@ export function CreateTestPlanModal({ onClose, onCreated }: { onClose: () => voi
     </Dialog>
   );
 }
+

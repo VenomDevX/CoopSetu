@@ -157,3 +157,4 @@ export function DeclareIncidentModal({ onClose, onSuccess }: Props) {
     </Dialog>
   );
 }
+

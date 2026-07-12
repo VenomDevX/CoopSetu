@@ -98,8 +98,8 @@ export function StartSecurityReviewModal({ onClose, onCreated }: { onClose: () =
       bodyClassName="space-y-6 text-sm font-mono"
       footer={
         <>
-          <Button variant="outline" onClick={onClose} disabled={submitting} className="rounded font-mono uppercase tracking-widest text-[10px]">Cancel</Button>
-          <Button onClick={submit} disabled={submitting} className="rounded bg-foreground text-background font-mono uppercase tracking-widest text-[10px]">
+          <Button variant="outline" onClick={onClose} disabled={submitting} className="rounded-[6px] font-mono uppercase tracking-widest text-[10px]">Cancel</Button>
+          <Button onClick={submit} disabled={submitting} className="rounded-[6px] bg-foreground text-background font-mono uppercase tracking-widest text-[10px]">
             {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Start Review
           </Button>
@@ -112,12 +112,12 @@ export function StartSecurityReviewModal({ onClose, onCreated }: { onClose: () =
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Review Title *</label>
-                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g., Auth API Security Audit" className="rounded border-border" />
+                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g., Auth API Security Audit" className="rounded-[6px] border-border" />
               </div>
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Project *</label>
                 <Select value={projectId} onValueChange={setProjectId}>
-                  <SelectTrigger className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
+                  <SelectTrigger className="w-full h-10 border border-border rounded-[6px] bg-background px-3 outline-none focus:border-foreground">
                     <SelectValue placeholder="-- Select Project --" />
                   </SelectTrigger>
                   <SelectContent>
@@ -132,7 +132,7 @@ export function StartSecurityReviewModal({ onClose, onCreated }: { onClose: () =
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Primary Reviewer *</label>
                 <Select value={reviewerMemberId} onValueChange={setReviewerMemberId}>
-                  <SelectTrigger className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
+                  <SelectTrigger className="w-full h-10 border border-border rounded-[6px] bg-background px-3 outline-none focus:border-foreground">
                     <SelectValue placeholder="-- Select Member --" />
                   </SelectTrigger>
                   <SelectContent>
@@ -143,7 +143,7 @@ export function StartSecurityReviewModal({ onClose, onCreated }: { onClose: () =
               </div>
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Due Date</label>
-                <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="rounded border-border" />
+                <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="rounded-[6px] border-border" />
               </div>
             </div>
 
@@ -151,7 +151,7 @@ export function StartSecurityReviewModal({ onClose, onCreated }: { onClose: () =
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Risk Level</label>
                 <Select value={riskLevel} onValueChange={setRiskLevel}>
-                  <SelectTrigger className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground">
+                  <SelectTrigger className="w-full h-10 border border-border rounded-[6px] bg-background px-3 outline-none focus:border-foreground">
                     <SelectValue placeholder="Select Risk Level" />
                   </SelectTrigger>
                   <SelectContent>
@@ -162,7 +162,7 @@ export function StartSecurityReviewModal({ onClose, onCreated }: { onClose: () =
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Linked Task</label>
                 <Select value={taskId} onValueChange={setTaskId} disabled={!projectId}>
-                  <SelectTrigger className="w-full h-10 border border-border rounded bg-background px-3 outline-none focus:border-foreground disabled:opacity-50">
+                  <SelectTrigger className="w-full h-10 border border-border rounded-[6px] bg-background px-3 outline-none focus:border-foreground disabled:opacity-50">
                     <SelectValue placeholder="-- None --" />
                   </SelectTrigger>
                   <SelectContent>
@@ -175,15 +175,16 @@ export function StartSecurityReviewModal({ onClose, onCreated }: { onClose: () =
 
             <div>
               <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Scope</label>
-              <Input value={scope} onChange={e => setScope(e.target.value)} placeholder="e.g., Penetration test, code review..." className="rounded border-border" />
+              <Input value={scope} onChange={e => setScope(e.target.value)} placeholder="e.g., Penetration test, code review..." className="rounded-[6px] border-border" />
             </div>
 
             <div>
               <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Description</label>
-              <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full min-h-[80px] p-3 border border-border rounded bg-background outline-none focus:border-foreground resize-y" />
+              <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full min-h-[80px] p-3 border border-border rounded-[6px] bg-background outline-none focus:border-foreground resize-y" />
             </div>
 
           </div>
     </Dialog>
   );
 }
+

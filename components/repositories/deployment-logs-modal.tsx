@@ -47,7 +47,7 @@ export function DeploymentLogsModal({ deployments, onClose }: Props) {
         <Button
           variant="outline"
           onClick={onClose}
-          className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest"
+          className="h-9 px-4 rounded-[6px] text-xs font-mono uppercase tracking-widest"
         >
           Close
         </Button>
@@ -60,7 +60,7 @@ export function DeploymentLogsModal({ deployments, onClose }: Props) {
           ) : (
             <div className="space-y-4">
               {deployments.map((dep) => (
-                <div key={dep.id} className="border border-border rounded bg-surface-hover overflow-hidden flex flex-col">
+                <div key={dep.id} className="border border-border rounded-[6px] bg-surface-hover overflow-hidden flex flex-col">
                   <div className="flex items-center justify-between p-3 border-b border-border bg-background">
                     <div className="flex items-center gap-3">
                       {getStatusIcon(dep.status)}
@@ -90,3 +90,4 @@ export function DeploymentLogsModal({ deployments, onClose }: Props) {
     </Dialog>
   );
 }
+

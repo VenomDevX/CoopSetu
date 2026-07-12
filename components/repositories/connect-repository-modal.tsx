@@ -70,7 +70,7 @@ export function ConnectRepositoryModal({ onClose, onSuccess }: Props) {
                 name="name"
                 required
                 placeholder="e.g., handoff-core"
-                className="font-mono text-xs rounded h-9"
+                className="font-mono text-xs rounded-[6px] h-9"
               />
             </div>
 
@@ -80,7 +80,7 @@ export function ConnectRepositoryModal({ onClose, onSuccess }: Props) {
                   Provider *
                 </label>
                 <Select name="provider" defaultValue="github" required>
-                  <SelectTrigger className="w-full h-9 px-3 bg-background border border-border rounded text-xs font-mono uppercase focus:outline-none focus:border-foreground">
+                  <SelectTrigger className="w-full h-9 px-3 bg-background border border-border rounded-[6px] text-xs font-mono uppercase focus:outline-none focus:border-foreground">
                     <SelectValue placeholder="Select Provider" />
                   </SelectTrigger>
                   <SelectContent>
@@ -99,7 +99,7 @@ export function ConnectRepositoryModal({ onClose, onSuccess }: Props) {
                   name="default_branch"
                   required
                   defaultValue="main"
-                  className="font-mono text-xs rounded h-9"
+                  className="font-mono text-xs rounded-[6px] h-9"
                 />
               </div>
             </div>
@@ -112,7 +112,7 @@ export function ConnectRepositoryModal({ onClose, onSuccess }: Props) {
                 name="url"
                 type="url"
                 placeholder="https://github.com/org/repo"
-                className="font-mono text-xs rounded h-9"
+                className="font-mono text-xs rounded-[6px] h-9"
               />
             </div>
           </div>
@@ -122,14 +122,14 @@ export function ConnectRepositoryModal({ onClose, onSuccess }: Props) {
               type="button"
               variant="outline"
               onClick={onClose}
-              className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest"
+              className="h-9 px-4 rounded-[6px] text-xs font-mono uppercase tracking-widest"
               disabled={submitting}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90"
+              className="h-9 px-4 rounded-[6px] text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90"
               disabled={submitting}
             >
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Connect'}
@@ -139,3 +139,4 @@ export function ConnectRepositoryModal({ onClose, onSuccess }: Props) {
     </Dialog>
   );
 }
+

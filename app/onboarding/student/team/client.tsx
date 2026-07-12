@@ -39,8 +39,8 @@ export default function TeamCreationClient() {
           primaryTeamRole: primaryTeamRole.trim() || undefined,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || 'Failed to create team');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error?.message || 'Failed to create team (Too Many Requests?)');
 
       setJoinCode(data.data.joinCode);
     } catch (err: any) {
