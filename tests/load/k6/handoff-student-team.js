@@ -50,7 +50,7 @@ export function setup() {
   };
 }
 
-export default function (data) {
+export default function runTest(data) {
   const reqHeaders = data.headers || { 'Content-Type': 'application/json' };
   
   const routes = [

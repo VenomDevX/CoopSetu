@@ -15,7 +15,7 @@ export const options = {
 
 const BASE_URL = __ENV.LOAD_BASE_URL || 'http://localhost:3000';
 
-export default function () {
+export default function runTest() {
   const routes = [
     { path: '/', name: 'landing' },
     { path: '/login', name: 'login' },

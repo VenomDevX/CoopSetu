@@ -1167,6 +1167,7 @@ function SettingsPageContent() {
                   {integrationsState.map((integration) => (
                     <div key={integration.id} className="p-4 border border-border rounded-sm bg-surface flex flex-col justify-between">
                       <div className="flex items-start gap-4 mb-4">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={integration.icon} alt={integration.name} className="w-10 h-10 rounded-sm bg-white p-1 object-contain" />
                         <div>
                           <h3 className="font-bold text-foreground">{integration.name}</h3>
