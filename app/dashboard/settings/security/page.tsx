@@ -169,6 +169,7 @@ export default function SecuritySettingsPage() {
                 <label className={labelCls}>Scan with your authenticator app</label>
                 {/* Rendered as an <img> data URI rather than dangerouslySetInnerHTML
                     so the server-supplied SVG markup is never injected into the DOM. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   className="w-40 h-40 bg-white p-2"
                   src={`data:image/svg+xml;utf8,${encodeURIComponent(qrSvg)}`}
