@@ -12,7 +12,7 @@ export interface Membership {
   roles: string[];
   permissions: string[];
   isDemo?: boolean;
-  workspaceType?: 'ENTERPRISE' | 'STUDENT_SOLO' | 'STUDENT_TEAM';
+  workspaceType?: 'ENTERPRISE';
 }
 
 /**

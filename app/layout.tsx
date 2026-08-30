@@ -7,8 +7,8 @@ import './globals.css';
 import { headers } from 'next/headers';
 
 export const metadata: Metadata = {
-  title: 'HANDOFF',
-  description: 'Engineering work management for teams that ship critical software.',
+  title: 'CoopSetu',
+  description: 'Cooperative Training Hub — Digital ERP for training institutions, skill development & employment exchange.',
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

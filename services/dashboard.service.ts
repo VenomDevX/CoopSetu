@@ -2,10 +2,12 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { Errors } from '@/lib/api/errors';
 import { CLOSED_TASK_STATUSES } from '@/lib/constants/task-statuses';
 
+import { DashboardPersona } from '@/lib/auth/dashboard-persona';
+
 export interface DashboardOverviewParams {
   orgId: string;
   memberId: string;
-  persona: 'ADMIN' | 'PROJECT_MANAGER' | 'TEAM_MANAGER' | 'EMPLOYEE';
+  persona: DashboardPersona | 'ADMIN' | 'PROJECT_MANAGER' | 'TEAM_MANAGER' | 'EMPLOYEE';
 }
 
 const OPEN_STATUSES = `(${CLOSED_TASK_STATUSES.join(',')})`;

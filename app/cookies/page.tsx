@@ -54,7 +54,7 @@ export default function CookiesPage() {
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">1. What Cookies Are</h2>
               <p>
-                Cookies are small text files stored on your device that let a website recognize your browser between requests. Handoff uses cookies and similar mechanisms (e.g. localStorage) only to operate and secure the service.
+                Cookies are small text files stored on your device that let a website recognize your browser between requests. CoopSetu uses cookies and similar mechanisms (e.g. localStorage) only to operate and secure the service.
               </p>
             </section>
 
@@ -82,7 +82,7 @@ export default function CookiesPage() {
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">5. Managing Cookies</h2>
               <p>
-                Most browsers let you clear or block cookies through their settings. Blocking essential cookies will prevent you from signing in or using authenticated features of Handoff.
+                Most browsers let you clear or block cookies through their settings. Blocking essential cookies will prevent you from signing in or using authenticated features of CoopSetu.
               </p>
             </section>
 

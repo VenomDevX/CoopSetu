@@ -49,7 +49,7 @@ export function GlobalAiHub() {
               {/* Header */}
               <div className="h-16 flex items-center justify-between px-5 border-b border-border bg-surface-hover flex-shrink-0">
                 <div className="flex items-center gap-1 text-accent font-mono text-xs uppercase tracking-widest font-bold">
-                  <span>HANDOFF</span>
+                  <span>CoopSetu</span>
                   <AiLogo className="w-3 h-3" />
                 </div>
                 <button onClick={() => setOpen(false)} className="p-2 hover:bg-surface border border-transparent hover:border-border transition-colors">

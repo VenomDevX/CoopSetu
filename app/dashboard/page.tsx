@@ -99,7 +99,7 @@ export default function CommandCenter() {
             <div className="w-2 h-2 bg-foreground animate-pulse rounded" />
             WORKSPACE: {membership.organizationName} {' // SYNC: ACTIVE // UPDATED: '}{lastSync}
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground mb-1">Command Center</h1>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground mb-1">CoopSetu Command Center</h1>
           <div className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
             {startOfWeek} — {endOfWeek}
           </div>

@@ -6,7 +6,7 @@ export default function PrivacyPage() {
     },
     {
       title: '2. How We Use Your Information',
-      body: `We use collected information to operate, maintain, and improve Handoff; to authenticate users and enforce role-based permissions; to send transactional communications (e.g., notifications, invitations); and to generate aggregate, anonymized analytics about platform usage. We do not sell your personal data to third parties.`,
+      body: `We use collected information to operate, maintain, and improve CoopSetu; to authenticate users and enforce role-based permissions; to send transactional communications (e.g., notifications, invitations); and to generate aggregate, anonymized analytics about platform usage. We do not sell your personal data to third parties.`,
     },
     {
       title: '3. Data Storage & Security',
@@ -18,11 +18,11 @@ export default function PrivacyPage() {
     },
     {
       title: '5. Cookies & Tracking',
-      body: `Handoff uses session cookies strictly necessary for authentication. We do not use third-party advertising cookies or behavioral tracking. You may disable cookies in your browser settings, but doing so will prevent you from accessing authenticated features.`,
+      body: `CoopSetu uses session cookies strictly necessary for authentication. We do not use third-party advertising cookies or behavioral tracking. You may disable cookies in your browser settings, but doing so will prevent you from accessing authenticated features.`,
     },
     {
       title: '6. Your Rights',
-      body: `Depending on your jurisdiction you may have rights to access, correct, delete, or export your personal data. To exercise these rights, contact privacy@handoff.dev. We will respond to verified requests within 30 days.`,
+      body: `Depending on your jurisdiction you may have rights to access, correct, delete, or export your personal data. To exercise these rights, contact privacy@CoopSetu.dev. We will respond to verified requests within 30 days.`,
     },
     {
       title: '7. Data Retention',
@@ -34,7 +34,7 @@ export default function PrivacyPage() {
     },
     {
       title: '9. Contact',
-      body: `Questions about this policy? Email us at privacy@handoff.dev or write to: Handoff Inc., Privacy Team, 1 Enterprise Way, San Francisco, CA 94105.`,
+      body: `Questions about this policy? Email us at privacy@CoopSetu.dev or write to: CoopSetu Inc., Privacy Team, 1 Enterprise Way, San Francisco, CA 94105.`,
     },
   ];
 
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
       </div>
 
       <p className="text-sm leading-relaxed text-muted-foreground">
-        This Privacy Policy describes how Handoff (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) collects, uses, and protects information about you when you use the Handoff enterprise platform.
+        This Privacy Policy describes how CoopSetu (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) collects, uses, and protects information about you when you use the CoopSetu enterprise platform.
       </p>
 
       <div className="space-y-6">
