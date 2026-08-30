@@ -134,7 +134,7 @@ export default function ContactPage() {
               Talk to the CoopSetu team.
             </h1>
             <p className="text-lg text-muted-foreground max-w-3xl leading-relaxed">
-              Tell us about your organization, delivery workflow, or enterprise requirements.
+              Tell us about your institution, training workflow, or placement requirements.
             </p>
           </section>
 
@@ -322,14 +322,14 @@ export default function ContactPage() {
               <div>
                 <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest block mb-3">Enterprise Sales</span>
                 <p className="text-sm text-foreground leading-relaxed font-sans">
-                  Interested in setting up CoopSetu for custom roles, strict audit trails, or complex delivery pipelines? Get in touch with our solutions engineers.
+                  Interested in setting up CoopSetu for custom training roles, strict attendance audits, or complex placement pipelines? Get in touch with our solutions team.
                 </p>
               </div>
 
               <div className="border-t border-border pt-6">
                 <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest block mb-3">Audits & Reports</span>
                 <p className="text-sm text-foreground leading-relaxed font-sans">
-                  If you need specialized compliance documentation, SOC-2 readiness queries, or security architecture reviews, select the **Security Question** topic.
+                  If you need specialized affiliation documentation, NCCT readiness queries, or assessment portal reviews, select the **Security Question** topic.
                 </p>
               </div>
             </div>
