@@ -23,7 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const isDemo = document.cookie.includes('handoff_demo_session=true');
+      const isDemo = document.cookie.includes('CoopSetu_demo_session=true');
       if (isDemo) {
         await fetch('/api/v1/demo/exit', { method: 'POST' });
         setIsLoggedIn(false);

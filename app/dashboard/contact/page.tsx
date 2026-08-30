@@ -27,9 +27,9 @@ export default function ContactPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: 'Support', value: 'support@handoff.dev', sub: 'Technical issues & bugs' },
-          { label: 'Sales', value: 'sales@handoff.dev', sub: 'Enterprise plans & pricing' },
-          { label: 'Security', value: 'security@handoff.dev', sub: 'Vulnerability disclosures' },
+          { label: 'Support', value: 'support@CoopSetu.dev', sub: 'Technical issues & bugs' },
+          { label: 'Sales', value: 'sales@CoopSetu.dev', sub: 'Enterprise plans & pricing' },
+          { label: 'Security', value: 'security@CoopSetu.dev', sub: 'Vulnerability disclosures' },
         ].map((c) => (
           <div key={c.label} className="border border-border rounded p-4 space-y-1">
             <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{c.label}</div>

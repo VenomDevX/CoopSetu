@@ -69,7 +69,7 @@ export function ConnectRepositoryModal({ onClose, onSuccess }: Props) {
               <Input
                 name="name"
                 required
-                placeholder="e.g., handoff-core"
+                placeholder="e.g., CoopSetu-core"
                 className="font-mono text-xs rounded-[6px] h-9"
               />
             </div>

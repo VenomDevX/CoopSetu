@@ -8,7 +8,9 @@ import {
   Search, Plus, LayoutDashboard, Briefcase, Inbox, Calendar,
   Layers, KanbanSquare, CheckSquare, GitBranch, ShieldCheck, FileText,
   BarChart3, Settings, Users, AlertCircle, LogOut, Menu, X, Info, Mail, Shield, FileSignature,
-  ChevronDown, User, CreditCard, Key, HelpCircle
+  ChevronDown, User, CreditCard, Key, HelpCircle,
+  Building2, GraduationCap, BookOpen, ClipboardCheck, Award, UserCheck,
+  BriefcaseBusiness, Target, Bot, QrCode
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NotificationBell } from '@/components/realtime/notification-bell';
@@ -99,6 +101,27 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
       { name: 'Inbox', href: '/dashboard/inbox', icon: Inbox },
       { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
     ]},
+    { title: 'Training_ERP', items: [
+      { name: 'Institutions', href: '/dashboard/institutions', icon: Building2, perm: 'institution:view' },
+      { name: 'Programmes', href: '/dashboard/programmes', icon: GraduationCap, perm: 'programme:view' },
+      { name: 'Batches', href: '/dashboard/batches', icon: Users, perm: 'batch:view' },
+      { name: 'Trainees', href: '/dashboard/trainees', icon: UserCheck, perm: 'trainee:view' },
+      { name: 'Trainers', href: '/dashboard/trainers', icon: User, perm: 'trainer:view' },
+      { name: 'Attendance', href: '/dashboard/attendance', icon: QrCode, perm: 'attendance:view' },
+    ]},
+    { title: 'Learning_LMS', items: [
+      { name: 'Courses', href: '/dashboard/courses', icon: BookOpen, perm: 'course:view' },
+      { name: 'Assessments', href: '/dashboard/assessments', icon: ClipboardCheck, perm: 'assessment:view' },
+      { name: 'Certificates', href: '/dashboard/certificates', icon: Award, perm: 'certificate:view' },
+      { name: 'Skill Passport', href: '/dashboard/skill-passport', icon: Target, perm: 'skill:view' },
+    ]},
+    { title: 'Employment', items: [
+      { name: 'Employers', href: '/dashboard/employers', icon: BriefcaseBusiness, perm: 'employer:view' },
+      { name: 'Jobs', href: '/dashboard/jobs', icon: Briefcase, perm: 'job:view' },
+    ]},
+    { title: 'Cooperative_AI', items: [
+      { name: 'Career AI', href: '/dashboard/career-ai', icon: Bot },
+    ]},
     { title: 'Ops_MGT', items: [
       { name: 'Projects', href: '/dashboard/projects', icon: Layers, perm: 'project:view' },
       { name: 'Sprints', href: '/dashboard/sprints', icon: KanbanSquare, perm: 'sprint:view' },
@@ -136,7 +159,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
       <div className="h-16 flex items-center px-6 border-b border-border text-foreground shrink-0">
         <Link href="/" className="font-bold text-sm tracking-tight flex items-center gap-3">
           <Logo width={24} height={24} />
-          <span className="uppercase tracking-widest text-xs">HANDOFF</span>
+          <span className="uppercase tracking-widest text-xs">CoopSetu</span>
         </Link>
       </div>
 

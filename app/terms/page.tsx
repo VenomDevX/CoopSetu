@@ -54,14 +54,14 @@ export default function TermsPage() {
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">1. Acceptance of Terms</h2>
               <p>
-                By creating a Handoff account, organizing a workspace, or using any features, you accept these terms of service in full.
+                By creating a CoopSetu account, organizing a workspace, or using any features, you accept these terms of service in full.
               </p>
             </section>
 
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">2. Eligibility and Account Registration</h2>
               <p>
-                To register for a Handoff account, you must provide valid registration credentials and complete the onboarding verification. You are responsible for safeguarding your credentials.
+                To register for a CoopSetu account, you must provide valid registration credentials and complete the onboarding verification. You are responsible for safeguarding your credentials.
               </p>
             </section>
 
@@ -75,21 +75,21 @@ export default function TermsPage() {
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">4. User Roles and Permissions</h2>
               <p>
-                User capabilities within Handoff are restricted based on your assigned role (e.g., Owner, Admin, Team Manager, Developer, QA, Security, Auditor). You agree not to attempt to bypass role-based access controls.
+                User capabilities within CoopSetu are restricted based on your assigned role (e.g., Owner, Admin, Team Manager, Developer, QA, Security, Auditor). You agree not to attempt to bypass role-based access controls.
               </p>
             </section>
 
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">5. Customer Data and Responsibilities</h2>
               <p>
-                You retain ownership of any data, tasks, comments, files, and materials you upload to Handoff. You are responsible for ensuring that your data does not violate third-party rights or applicable laws.
+                You retain ownership of any data, tasks, comments, files, and materials you upload to CoopSetu. You are responsible for ensuring that your data does not violate third-party rights or applicable laws.
               </p>
             </section>
 
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">6. Acceptable Use</h2>
               <p>
-                You agree not to use Handoff for any malicious, illegal, or abusive activities, including attempts to compromise infrastructure integrity, spam, or transmit unauthorized materials.
+                You agree not to use CoopSetu for any malicious, illegal, or abusive activities, including attempts to compromise infrastructure integrity, spam, or transmit unauthorized materials.
               </p>
             </section>
 
@@ -103,14 +103,14 @@ export default function TermsPage() {
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">8. Third-Party Services</h2>
               <p>
-                Handoff may integrate with third-party software (e.g., repository hosts, issue trackers). Use of third-party services is subject to their respective terms.
+                CoopSetu may integrate with third-party software (e.g., repository hosts, issue trackers). Use of third-party services is subject to their respective terms.
               </p>
             </section>
 
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">9. Intellectual Property</h2>
               <p>
-                Handoff logos, code, design patterns, and proprietary features are the property of Handoff and its developers. You may not copy, reverse engineer, or scrape Handoff without permission.
+                CoopSetu logos, code, design patterns, and proprietary features are the property of CoopSetu and its developers. You may not copy, reverse engineer, or scrape CoopSetu without permission.
               </p>
             </section>
 
@@ -138,7 +138,7 @@ export default function TermsPage() {
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">13. Limitation of Liability</h2>
               <p>
-                Handoff shall not be liable for any indirect, incidental, special, or consequential damages arising out of your use of the service.
+                CoopSetu shall not be liable for any indirect, incidental, special, or consequential damages arising out of your use of the service.
               </p>
             </section>
 
@@ -152,14 +152,14 @@ export default function TermsPage() {
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">15. Changes to These Terms</h2>
               <p>
-                We may revise these terms of service draft. Continued use of Handoff after modifications are made constitutes acceptance of the new terms.
+                We may revise these terms of service draft. Continued use of CoopSetu after modifications are made constitutes acceptance of the new terms.
               </p>
             </section>
 
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">16. Governing Law</h2>
               <p>
-                These terms are governed by and construed in accordance with the laws of the jurisdiction where Handoff is registered, without regard to conflicts of law principles.
+                These terms are governed by and construed in accordance with the laws of the jurisdiction where CoopSetu is registered, without regard to conflicts of law principles.
               </p>
             </section>
 

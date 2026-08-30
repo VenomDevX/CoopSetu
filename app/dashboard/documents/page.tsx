@@ -383,11 +383,11 @@ export default function DocumentsPage() {
                   </div>
                 </div>
 
-                {/* Handoff Assistant Panel — honestly disabled (no AI wired here yet) */}
+                {/* CoopSetu Assistant Panel — honestly disabled (no AI wired here yet) */}
                 <div className="border border-border rounded bg-surface/40 p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <AiLogo className="w-4 h-4 text-muted-foreground" />
-                    <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Handoff Insights</h3>
+                    <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold text-muted-foreground">CoopSetu Insights</h3>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Button variant="outline" size="sm" disabled title="Not available yet" className="h-7 px-3 rounded text-[10px] font-mono uppercase tracking-widest border-border disabled:opacity-40">

@@ -53,7 +53,7 @@ export default function LandingPage() {
   useEffect(() => {
     const checkDemoAndLogout = () => {
       setIsNavigating(false);
-      const isDemo = document.cookie.includes('handoff_demo_session=true');
+      const isDemo = document.cookie.includes('CoopSetu_demo_session=true');
       if (isDemo) {
         fetch('/api/v1/demo/exit', { 
           method: 'POST',
@@ -221,10 +221,10 @@ export default function LandingPage() {
 
               <h1 className="text-5xl md:text-7xl lg:text-[96px] font-bold tracking-tighter mb-6 leading-[0.9] uppercase relative">
                 <div className="flex flex-col text-left">
-                  <SplitText text="Ship." className="block" textAlign="left" delay={120} splitType="chars" />
-                  <SplitText text="Control." className="block text-muted-foreground" textAlign="left" delay={120} splitType="chars" />
+                  <SplitText text="Train." className="block" textAlign="left" delay={120} splitType="chars" />
+                  <SplitText text="Certify." className="block text-muted-foreground" textAlign="left" delay={120} splitType="chars" />
                   <div className="flex items-center">
-                    <SplitText text="Dominate." className="block" textAlign="left" delay={120} splitType="chars" />
+                    <SplitText text="Employ." className="block" textAlign="left" delay={120} splitType="chars" />
                     <motion.span
                       animate={{ opacity: [1, 0, 1] }}
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
@@ -238,7 +238,7 @@ export default function LandingPage() {
               <div className="mt-8 border-t border-border pt-8 relative">
                 <div className="absolute -top-[1px] left-0 w-12 h-[1px] bg-accent" />
                 <p className="text-base md:text-lg text-muted-foreground leading-relaxed font-light mb-8 max-w-xl">
-                  Handoff brings projects, sprints, teams, releases, documentation, compliance, and AI intelligence into one hyper-structured, high-performance workspace.
+                  CoopSetu brings institutions, trainees, skills, certifications, and employment exchange into one unified cooperative training platform.
                 </p>
                 <div className="flex flex-col sm:flex-row items-start justify-start gap-6">
                   <Button
@@ -262,7 +262,7 @@ export default function LandingPage() {
 
                 {/* Trust strip */}
                 <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {['500+ Teams', '24 Regions', 'SOC 2 Type II', '99.9% Uptime'].map((item, i) => (
+                  {['200+ Institutions', 'Digital Certificates', 'QR Attendance', 'Skill Passport'].map((item, i) => (
                     <div key={item} className="flex items-center gap-6">
                       {i > 0 && <span className="w-1 h-1 bg-accent" />}
                       <span>{item}</span>
@@ -493,7 +493,7 @@ export default function LandingPage() {
                   <div className="w-2 h-2 bg-border-strong rounded" />
                 </div>
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  Handoff_Workspace_Alpha
+                  CoopSetu_Workspace_Alpha
                 </div>
               </div>
 
@@ -806,7 +806,7 @@ export default function LandingPage() {
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_04</span>
                   </div>
                   <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">Live Collaboration.</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">Reviews, comments, and handoffs that keep every team in perfect sync.</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed">Reviews, comments, and CoopSetus that keep every team in perfect sync.</p>
                 </div>
                 <div className="mt-8 flex items-center justify-between border border-border rounded p-4">
                   <div className="flex -space-x-2">

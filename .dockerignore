@@ -1,0 +1,15 @@
+Dockerfile
+.dockerignore
+node_modules
+npm-debug.log
+README.md
+.next
+.git
+.vercel
+*.log
+tests/
+test-results/
+playwright-report/
+.env.development.local
+.env.test.local
+.env.production.local

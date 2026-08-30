@@ -12,7 +12,7 @@ export function createAdminClient() {
   if (!secret) throw new Error('SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SECRET_KEY is not set');
 
   return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVER_URL || process.env.NEXT_PUBLIC_SUPABASE_URL!,
     secret,
     { auth: { persistSession: false, autoRefreshToken: false } },
   );

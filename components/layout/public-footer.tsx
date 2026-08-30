@@ -12,7 +12,7 @@ export function PublicFooter() {
             <div className="flex items-start gap-4">
               <Logo width={20} height={20} className="mt-0.5" />
               <div className="flex flex-col gap-1">
-                <span className="font-bold text-foreground">HANDOFF // 2026</span>
+                <span className="font-bold text-foreground">CoopSetu // 2026</span>
                 <a 
                   href="https://github.com/VenomDevX" 
                   target="_blank" 

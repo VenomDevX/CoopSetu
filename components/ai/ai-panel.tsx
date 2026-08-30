@@ -97,11 +97,11 @@ export function AiPanel(props: Props) {
         <div className="h-16 flex items-center justify-between px-5 border-b border-border bg-surface-hover flex-shrink-0">
           <div className="flex items-center gap-1 text-accent font-mono text-xs uppercase tracking-widest font-bold">
             {(() => {
-              const displayTitle = title ?? 'HANDOFF AI';
-              if (displayTitle.toUpperCase() === 'HANDOFF AI') {
+              const displayTitle = title ?? 'CoopSetu AI';
+              if (displayTitle.toUpperCase() === 'CoopSetu AI') {
                 return (
                   <>
-                    <span>HANDOFF</span>
+                    <span>CoopSetu</span>
                     <AiLogo className="w-3 h-3" />
                   </>
                 );

@@ -2,15 +2,15 @@ export default function TermsPage() {
   const sections = [
     {
       title: '1. Acceptance of Terms',
-      body: `By accessing or using the Handoff platform ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you are using the Service on behalf of an organization, you represent that you have authority to bind that organization to these Terms.`,
+      body: `By accessing or using the CoopSetu platform ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you are using the Service on behalf of an organization, you represent that you have authority to bind that organization to these Terms.`,
     },
     {
       title: '2. Description of Service',
-      body: `Handoff provides a software-as-a-service platform for project management, sprint planning, incident tracking, and AI-assisted workflows. The Service is provided on a subscription basis, and features may vary by plan tier.`,
+      body: `CoopSetu provides a software-as-a-service platform for project management, sprint planning, incident tracking, and AI-assisted workflows. The Service is provided on a subscription basis, and features may vary by plan tier.`,
     },
     {
       title: '3. Account Registration',
-      body: `You must create an account to use the Service. You are responsible for maintaining the confidentiality of your credentials and for all activity that occurs under your account. You must promptly notify us of any unauthorized use at security@handoff.dev.`,
+      body: `You must create an account to use the Service. You are responsible for maintaining the confidentiality of your credentials and for all activity that occurs under your account. You must promptly notify us of any unauthorized use at security@CoopSetu.dev.`,
     },
     {
       title: '4. Acceptable Use',
@@ -18,11 +18,11 @@ export default function TermsPage() {
     },
     {
       title: '5. Intellectual Property',
-      body: `Handoff and its licensors own all rights, title, and interest in the Service, including all software, designs, trademarks, and documentation. Your data remains your property. You grant Handoff a limited license to host, store, and process your data solely to deliver the Service.`,
+      body: `CoopSetu and its licensors own all rights, title, and interest in the Service, including all software, designs, trademarks, and documentation. Your data remains your property. You grant CoopSetu a limited license to host, store, and process your data solely to deliver the Service.`,
     },
     {
       title: '6. Subscription & Payment',
-      body: `Fees are billed in advance on a monthly or annual basis. All fees are non-refundable except as required by law or as described in our Refund Policy. Handoff reserves the right to modify pricing with 30 days' notice. Failure to pay may result in suspension or termination of your account.`,
+      body: `Fees are billed in advance on a monthly or annual basis. All fees are non-refundable except as required by law or as described in our Refund Policy. CoopSetu reserves the right to modify pricing with 30 days' notice. Failure to pay may result in suspension or termination of your account.`,
     },
     {
       title: '7. Confidentiality',
@@ -34,7 +34,7 @@ export default function TermsPage() {
     },
     {
       title: '9. Limitation of Liability',
-      body: `TO THE MAXIMUM EXTENT PERMITTED BY LAW, HANDOFF WILL NOT BE LIABLE FOR INDIRECT, INCIDENTAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF THE SERVICE. OUR TOTAL LIABILITY SHALL NOT EXCEED THE FEES PAID BY YOU IN THE 12 MONTHS PRECEDING THE CLAIM.`,
+      body: `TO THE MAXIMUM EXTENT PERMITTED BY LAW, CoopSetu WILL NOT BE LIABLE FOR INDIRECT, INCIDENTAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF THE SERVICE. OUR TOTAL LIABILITY SHALL NOT EXCEED THE FEES PAID BY YOU IN THE 12 MONTHS PRECEDING THE CLAIM.`,
     },
     {
       title: '10. Termination',
@@ -50,7 +50,7 @@ export default function TermsPage() {
     },
     {
       title: '13. Contact',
-      body: `Questions about these Terms? Contact legal@handoff.dev or write to: Handoff Inc., Legal Department, 1 Enterprise Way, San Francisco, CA 94105.`,
+      body: `Questions about these Terms? Contact legal@CoopSetu.dev or write to: CoopSetu Inc., Legal Department, 1 Enterprise Way, San Francisco, CA 94105.`,
     },
   ];
 
@@ -62,7 +62,7 @@ export default function TermsPage() {
       </div>
 
       <p className="text-sm leading-relaxed text-muted-foreground">
-        Please read these Terms of Service carefully before using Handoff. They govern your access to and use of our enterprise platform.
+        Please read these Terms of Service carefully before using CoopSetu. They govern your access to and use of our enterprise platform.
       </p>
 
       <div className="space-y-6">

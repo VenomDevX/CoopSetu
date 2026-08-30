@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     
     // Clear demo session cookie
     const cookieStore = await require('next/headers').cookies();
-    cookieStore.delete('handoff_demo_session');
+    cookieStore.delete('CoopSetu_demo_session');
 
     // Always redirect to login on exit
     return ok({ redirectUrl: '/login' });

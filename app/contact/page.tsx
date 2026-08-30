@@ -128,10 +128,10 @@ export default function ContactPage() {
           <section className="mb-16 border-b border-border pb-10">
             <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
               <span className="w-2 h-2 bg-foreground rounded-full" />
-              CONTACT_HANDOFF
+              CONTACT_CoopSetu
             </div>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 leading-[1.1] max-w-4xl">
-              Talk to the Handoff team.
+              Talk to the CoopSetu team.
             </h1>
             <p className="text-lg text-muted-foreground max-w-3xl leading-relaxed">
               Tell us about your organization, delivery workflow, or enterprise requirements.
@@ -302,7 +302,7 @@ export default function ContactPage() {
                   </div>
 
                   <p className="text-[10px] tracking-wide text-muted-foreground/60 leading-relaxed font-sans normal-case max-w-xl">
-                    By submitting this form, you agree that Handoff may use your information to respond to your request.
+                    By submitting this form, you agree that CoopSetu may use your information to respond to your request.
                   </p>
 
                   <Button 
@@ -322,7 +322,7 @@ export default function ContactPage() {
               <div>
                 <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest block mb-3">Enterprise Sales</span>
                 <p className="text-sm text-foreground leading-relaxed font-sans">
-                  Interested in setting up Handoff for custom roles, strict audit trails, or complex delivery pipelines? Get in touch with our solutions engineers.
+                  Interested in setting up CoopSetu for custom roles, strict audit trails, or complex delivery pipelines? Get in touch with our solutions engineers.
                 </p>
               </div>
 

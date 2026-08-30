@@ -65,7 +65,7 @@ export default function SolutionsPage() {
               Built for every team responsible for shipping software.
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-              From product planning to incident response, HANDOFF gives every delivery function a shared operating system.
+              From product planning to incident response, CoopSetu gives every delivery function a shared operating system.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Button 
@@ -105,11 +105,11 @@ export default function SolutionsPage() {
               </div>
 
               <div className="space-y-4 font-mono text-sm uppercase tracking-widest">
-                <div className="text-[10px] text-accent font-bold mb-4">HANDOFF SOLUTION</div>
+                <div className="text-[10px] text-accent font-bold mb-4">CoopSetu SOLUTION</div>
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Portfolio dashboards</div>
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Project health scoring</div>
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Cross-team dependencies</div>
-                <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Handoff AI risk summaries</div>
+                <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> CoopSetu AI risk summaries</div>
               </div>
             </div>
             
@@ -255,7 +255,7 @@ export default function SolutionsPage() {
                  <div className="border border-accent/30 bg-accent/5 p-3 flex gap-3">
                    <AiLogo className="w-4 h-4 text-accent flex-shrink-0" />
                    <div>
-                     <div className="font-mono text-[10px] font-bold uppercase tracking-widest mb-1">Handoff Summary</div>
+                     <div className="font-mono text-[10px] font-bold uppercase tracking-widest mb-1">CoopSetu Summary</div>
                      <p className="text-[10px] leading-relaxed text-muted-foreground">Changes look good. Make sure to update the API documentation to reflect the new 429 response structure.</p>
                    </div>
                  </div>
@@ -423,7 +423,7 @@ export default function SolutionsPage() {
             <Lock className="w-12 h-12 mx-auto mb-6 text-foreground" />
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">Control delivery where accountability matters.</h2>
             <p className="text-muted-foreground text-lg mb-10 max-w-2xl mx-auto">
-              Designed for controlled environments, HANDOFF supports strict compliance workflows for fintech, healthcare, and enterprise organizations.
+              Designed for controlled environments, CoopSetu supports strict compliance workflows for fintech, healthcare, and enterprise organizations.
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-xs uppercase tracking-widest text-foreground text-left">
               <div className="border border-border rounded bg-background p-4 flex flex-col items-center text-center gap-2">
