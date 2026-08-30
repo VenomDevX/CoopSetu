@@ -56,7 +56,12 @@ export async function middleware(request: NextRequest) {
   // 4. Construct Content Security Policy
   const isDev = process.env.NODE_ENV === 'development';
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : '';
+  let supabaseOrigin = '';
+  try {
+    supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : '';
+  } catch (e) {
+    // Ignore invalid URL errors if env var is missing during build/deploy
+  }
   const supabaseWsOrigin = supabaseOrigin
     ? supabaseOrigin.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:')
     : '';
