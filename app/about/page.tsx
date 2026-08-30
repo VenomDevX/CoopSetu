@@ -34,20 +34,20 @@ export default function AboutPage() {
           <section className="mb-24 border-b border-border pb-16">
             <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
               <span className="w-2 h-2 bg-foreground rounded-full" />
-              ABOUT_HANDOFF
+              ABOUT_CoopSetu
             </div>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-8 leading-[1.1] max-w-4xl">
               Operational clarity for teams building critical software.
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl leading-relaxed">
-              Handoff is a role-aware workspace for planning work, assigning teams, managing delivery, tracking approvals, and keeping project data connected in real time.
+              CoopSetu is a role-aware workspace for planning work, assigning teams, managing delivery, tracking approvals, and keeping project data connected in real time.
             </p>
           </section>
 
           {/* VALUES / SECTIONS */}
           <section className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-24">
             <div className="border border-border rounded p-8 flex flex-col gap-4">
-              <span className="font-mono text-xs text-muted-foreground">01 — WHAT HANDOFF DOES</span>
+              <span className="font-mono text-xs text-muted-foreground">01 — WHAT CoopSetu DOES</span>
               <p className="text-base text-foreground leading-relaxed">
                 Project, task, sprint, team, QA, security, approval, and release coordination in one controlled workspace.
               </p>
@@ -110,7 +110,7 @@ export default function AboutPage() {
                 <div>
                   <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest block mb-4">BUILT_BY</span>
                   <h2 className="text-2xl font-bold tracking-tight mb-3">
-                    Handoff is designed and developed by VenomDevX.
+                    CoopSetu is designed and developed by VenomDevX.
                   </h2>
                   <p className="text-muted-foreground leading-relaxed text-sm">
                     Focused on building secure, role-aware workflow software for teams managing complex software delivery.

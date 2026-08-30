@@ -40,7 +40,7 @@ export async function POST(req: Request) {
         // Consume similar time to a real password check so callers can't enumerate
         // valid usernames by measuring response latency.
         await supabase.auth.signInWithPassword({
-          email: `no-such-user-${Date.now()}@invalid.handoff.internal`,
+          email: `no-such-user-${Date.now()}@invalid.CoopSetu.internal`,
           password: body.password,
         });
         throw Errors.unauthenticated('Invalid username/email or password.');
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
     if (activeMemberships.length > 1) {
       redirectUrl = '/select-workspace';
     } else if (activeMemberships.length === 1) {
-      // Optional: Set handoff_active_org cookie here for convenience, but next-js middleware or
+      // Optional: Set CoopSetu_active_org cookie here for convenience, but next-js middleware or
       // UI can do it. For now, /dashboard will pick the first active one automatically.
       redirectUrl = '/dashboard';
     } else {

@@ -79,20 +79,20 @@ export default function AIPage() {
           <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-16">
             <div className="font-mono text-xs uppercase tracking-widest text-accent mb-6 flex items-center gap-2">
               <AiLogo className="w-4 h-4" />
-              HANDOFF_AI
+              CoopSetu_AI
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-8 leading-[1.1]">
               AI that understands delivery work — without bypassing control.
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-              Handoff AI helps teams plan, prioritize, summarize, investigate, and report using the work, code, documents, and data they are already allowed to access.
+              CoopSetu AI helps teams plan, prioritize, summarize, investigate, and report using the work, code, documents, and data they are already allowed to access.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Button 
                 onClick={() => handleNavigate('/product', 'explore')}
                 className="bg-foreground text-background hover:bg-foreground/90 rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
-                Explore Handoff AI
+                Explore CoopSetu AI
               </Button>
               <Button 
                 variant="outline"
@@ -111,7 +111,7 @@ export default function AIPage() {
             <div className="flex items-center justify-between border-b border-border pb-4 mb-4">
               <div className="flex items-center gap-4">
                 <AiLogo className="w-4 h-4 text-accent" />
-                <span className="font-mono text-xs uppercase tracking-widest font-bold">Handoff Intelligence Console</span>
+                <span className="font-mono text-xs uppercase tracking-widest font-bold">CoopSetu Intelligence Console</span>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-500 bg-emerald-500/10 px-2 py-0.5 border border-emerald-500/20">
@@ -186,7 +186,7 @@ export default function AIPage() {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                  placeholder="Ask Handoff..." 
+                  placeholder="Ask CoopSetu..." 
                   className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-sm px-3 font-mono"
                   disabled={isChatting}
                 />
@@ -239,7 +239,7 @@ export default function AIPage() {
             
             <div className="border border-border rounded bg-surface p-6 shadow-xl relative">
                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2 flex justify-between">
-                 <span>Handoff Generation</span>
+                 <span>CoopSetu Generation</span>
                  <AiLogo className="w-3 h-3 text-accent" />
                </div>
                <div className="bg-background border border-border rounded p-4">
@@ -416,7 +416,7 @@ export default function AIPage() {
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">AI with enterprise guardrails.</h2>
             <p className="text-muted-foreground text-lg">
-              Handoff AI respects the same permissions, access controls, and compliance boundaries as human users.
+              CoopSetu AI respects the same permissions, access controls, and compliance boundaries as human users.
             </p>
           </div>
 

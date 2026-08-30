@@ -45,11 +45,11 @@ export default function SecurityPage() {
     setExportState('exporting');
     setTimeout(() => {
       // Create a mock CSV download
-      const csvContent = "data:text/csv;charset=utf-8,Timestamp,Actor,EventType,Resource,IPAddress\n2026-06-28T10:00:00Z,admin@handoff.dev,LOGIN,System,192.168.1.1\n";
+      const csvContent = "data:text/csv;charset=utf-8,Timestamp,Actor,EventType,Resource,IPAddress\n2026-06-28T10:00:00Z,admin@CoopSetu.dev,LOGIN,System,192.168.1.1\n";
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "handoff_audit_log.csv");
+      link.setAttribute("download", "CoopSetu_audit_log.csv");
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -83,7 +83,7 @@ export default function SecurityPage() {
               Built for work that requires accountability.
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-              HANDOFF Enterprise helps organizations control access, protect delivery information, enforce approvals, and maintain a complete record of how work moves to production.
+              CoopSetu Enterprise helps organizations control access, protect delivery information, enforce approvals, and maintain a complete record of how work moves to production.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Button 
@@ -473,7 +473,7 @@ export default function SecurityPage() {
               <span className="border border-border rounded bg-background px-4 py-2">Supports risk registers</span>
             </div>
             <p className="text-xs text-muted-foreground mt-8 opacity-70">
-              * HANDOFF provides the workflow and auditing tools necessary to support secure software delivery in highly regulated environments.
+              * CoopSetu provides the workflow and auditing tools necessary to support secure software delivery in highly regulated environments.
             </p>
           </div>
         </section>

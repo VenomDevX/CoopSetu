@@ -23,16 +23,16 @@ interface AuditRow { id: string; action: string; resource_type: string; created_
 interface SessionRow { id: string; ip: string | null; user_agent: string | null; created_at: string; updated_at: string; }
 
 const MOCK_USERS = [
-  { id: '1', name: 'Alice Admin', email: 'alice@handoff.app', role: 'ORG_ADMIN', status: 'Active', lastActive: 'Just now' },
-  { id: '2', name: 'Bob Builder', email: 'bob@handoff.app', role: 'DEVELOPER', status: 'Active', lastActive: '2 hrs ago' },
-  { id: '3', name: 'Charlie Check', email: 'charlie@handoff.app', role: 'QA_ENGINEER', status: 'Invited', lastActive: 'Never' },
-  { id: '4', name: 'Dana Design', email: 'dana@handoff.app', role: 'DESIGNER', status: 'Active', lastActive: 'Yesterday' }
+  { id: '1', name: 'Alice Admin', email: 'alice@CoopSetu.app', role: 'ORG_ADMIN', status: 'Active', lastActive: 'Just now' },
+  { id: '2', name: 'Bob Builder', email: 'bob@CoopSetu.app', role: 'DEVELOPER', status: 'Active', lastActive: '2 hrs ago' },
+  { id: '3', name: 'Charlie Check', email: 'charlie@CoopSetu.app', role: 'QA_ENGINEER', status: 'Invited', lastActive: 'Never' },
+  { id: '4', name: 'Dana Design', email: 'dana@CoopSetu.app', role: 'DESIGNER', status: 'Active', lastActive: 'Yesterday' }
 ];
 
 const MOCK_INTEGRATIONS = [
   { id: 'github', name: 'GitHub', description: 'Link repositories and pull requests to tasks.', connected: false, icon: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png' },
   { id: 'slack', name: 'Slack', description: 'Receive project updates and alerts in channels.', connected: false, icon: 'https://a.slack-edge.com/80588/marketing/img/meta/favicon-32.png' },
-  { id: 'jira', name: 'Jira', description: 'Sync issues and epics bidirectionally with Handoff.', connected: false, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/jira/jira-original.svg' },
+  { id: 'jira', name: 'Jira', description: 'Sync issues and epics bidirectionally with CoopSetu.', connected: false, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/jira/jira-original.svg' },
   { id: 'datadog', name: 'Datadog', description: 'Monitor application performance and errors.', connected: false, icon: 'https://www.datadoghq.com/favicon.ico' },
 ];
 
@@ -742,7 +742,7 @@ function SettingsPageContent() {
                   <div className="flex items-center gap-0 max-w-md">
                     <span className="text-muted-foreground bg-surface border border-r-0 border-border rounded-l-sm px-3 h-10 flex items-center text-sm">https://</span>
                     <Input value={orgSlug} onChange={(e) => setOrgSlug(e.target.value)} className="flex-1 rounded border-border bg-surface text-foreground focus:border-border-strong focus:z-10" />
-                    <span className="text-muted-foreground bg-surface border border-l-0 border-border rounded-r-sm px-3 h-10 flex items-center text-sm">.handoff.app</span>
+                    <span className="text-muted-foreground bg-surface border border-l-0 border-border rounded-r-sm px-3 h-10 flex items-center text-sm">.CoopSetu.app</span>
                   </div>
                 </div>
                 <div className="pt-4">
@@ -1160,7 +1160,7 @@ function SettingsPageContent() {
             <Card className="shadow-sm border-border bg-surface-elevated">
               <CardHeader>
                 <CardTitle className="text-foreground">Integrations</CardTitle>
-                <CardDescription className="text-muted-foreground">Connect Handoff with your favorite tools.</CardDescription>
+                <CardDescription className="text-muted-foreground">Connect CoopSetu with your favorite tools.</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

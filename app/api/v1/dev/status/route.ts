@@ -56,7 +56,7 @@ export async function GET() {
       env: {
         supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
         appUrl: process.env.NEXT_PUBLIC_APP_URL,
-        aiMode: process.env.HANDOFF_AI_MODE ?? 'mock',
+        aiMode: process.env.CoopSetu_AI_MODE ?? 'mock',
         nodeEnv: process.env.NODE_ENV,
       },
       user: { id: user.id, email: user.email },

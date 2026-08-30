@@ -61,7 +61,7 @@ function SelectWorkspaceInner() {
       <div className="w-full max-w-2xl space-y-8">
         <div className="flex items-center gap-3 justify-center mb-12">
           <Logo width={32} height={32} />
-          <span className="uppercase tracking-widest text-base font-bold">HANDOFF</span>
+          <span className="uppercase tracking-widest text-base font-bold">CoopSetu</span>
         </div>
 
         <div className="text-center space-y-2 mb-12">

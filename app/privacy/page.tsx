@@ -61,7 +61,7 @@ export default function PrivacyPage() {
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">2. How We Use Information</h2>
               <p>
-                We use collected information to run and secure the Handoff workspace, facilitate team coordination, manage notifications, validate account privileges, and respond to sales or support inquiries.
+                We use collected information to run and secure the CoopSetu workspace, facilitate team coordination, manage notifications, validate account privileges, and respond to sales or support inquiries.
               </p>
             </section>
 
@@ -89,14 +89,14 @@ export default function PrivacyPage() {
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">6. AI Features and Workspace Data</h2>
               <p>
-                When AI features are enabled, Handoff processes only authorized workspace data required to provide the requested feature. AI access is permission-controlled and organization-scoped.
+                When AI features are enabled, CoopSetu processes only authorized workspace data required to provide the requested feature. AI access is permission-controlled and organization-scoped.
               </p>
             </section>
 
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">7. Data Sharing and Service Providers</h2>
               <p>
-                We do not sell customer or workspace data. We share data only with trusted infrastructure providers (e.g., host systems, database providers) required to run the Handoff software.
+                We do not sell customer or workspace data. We share data only with trusted infrastructure providers (e.g., host systems, database providers) required to run the CoopSetu software.
               </p>
             </section>
 

@@ -48,7 +48,7 @@ const CAPABILITIES = [
     id: 3,
     category: 'INTELLIGENCE',
     status: 'AI_CONTEXT_READY',
-    title: 'Handoff AI',
+    title: 'CoopSetu AI',
     description: 'Turn authorized delivery signals into risk summaries, task plans, workload insights, sprint forecasts, and evidence-backed next actions.',
     features: [
       'Grounded workspace analysis',

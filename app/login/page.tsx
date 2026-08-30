@@ -127,7 +127,7 @@ function LoginInner() {
         <div className="p-12 relative z-10">
           <div className="flex items-center gap-3 mb-16">
             <Logo width={32} height={32} />
-            <span className="uppercase tracking-widest text-base font-bold">HANDOFF</span>
+            <span className="uppercase tracking-widest text-base font-bold">CoopSetu</span>
           </div>
 
           <h2 className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-4 border border-border rounded inline-block px-2 py-1 bg-background">
@@ -159,7 +159,7 @@ function LoginInner() {
 
           <div className="lg:hidden flex items-center gap-3 mb-8">
             <Logo width={28} height={28} />
-            <span className="uppercase tracking-widest text-sm font-bold">HANDOFF</span>
+            <span className="uppercase tracking-widest text-sm font-bold">CoopSetu</span>
           </div>
 
           <div className="space-y-2">

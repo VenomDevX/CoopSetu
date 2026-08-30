@@ -31,7 +31,7 @@ export default function DemoPage() {
 
   // Auto-logout if a demo user navigates back to the demo selection page
   useEffect(() => {
-    const isDemo = document.cookie.includes('handoff_demo_session=true');
+    const isDemo = document.cookie.includes('CoopSetu_demo_session=true');
     if (isDemo) {
       fetch('/api/v1/demo/exit', { 
         method: 'POST', 
@@ -96,7 +96,7 @@ export default function DemoPage() {
             Choose Your Role
           </h1>
           <p className="text-muted-foreground font-mono text-sm max-w-xl mx-auto">
-            Experience Handoff through the lens of different team members. 
+            Experience CoopSetu through the lens of different team members. 
             Each role has distinct permissions and visibility.
           </p>
           {error && (

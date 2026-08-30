@@ -485,7 +485,7 @@ export default function QaSecurityPage() {
           <div className="border border-border rounded bg-surface/40 relative overflow-hidden flex-1 flex flex-col">
             <div className="p-4 border-b border-border flex items-center gap-2">
               <AiLogo className="w-4 h-4 text-muted-foreground" />
-              <h2 className="font-mono text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Handoff QA & Sec</h2>
+              <h2 className="font-mono text-[10px] uppercase tracking-widest font-bold text-muted-foreground">CoopSetu QA & Sec</h2>
             </div>
             <div className="p-4 flex-1 flex flex-col gap-4">
               <p className="text-xs font-mono text-muted-foreground">AI analysis not available yet.</p>

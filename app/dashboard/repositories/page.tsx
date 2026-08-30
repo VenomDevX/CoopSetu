@@ -257,7 +257,7 @@ export default function RepositoriesPage() {
             {isDemo ? <Lock className="w-4 h-4" /> : <Github className="w-4 h-4" />}
             Import From GitHub
           </Button>
-          <AskAiButton intent="summarize-engineering" title="Ask Handoff AI" />
+          <AskAiButton intent="summarize-engineering" title="Ask CoopSetu AI" />
         </div>
       </div>
 

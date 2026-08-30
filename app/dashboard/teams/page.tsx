@@ -30,7 +30,6 @@ import { AiLogo } from '@/components/ai/ai-logo';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useCurrentMembership } from '@/lib/permissions/context';
-import { StudentTeamView } from '@/components/teams/student-team-view';
 import { WorkspaceDataLayout } from '@/components/layout/workspace-data-layout';
 
 // --- MOCK DATA ---
@@ -68,13 +67,6 @@ const getHealthColor = (health: string) => {
 // --- MAIN COMPONENT ---
 
 export default function TeamsPage() {
-  const { workspaceType } = useCurrentMembership();
-  if (workspaceType === 'STUDENT_TEAM') return <StudentTeamView />;
-  if (workspaceType === 'STUDENT_SOLO') return <StudentTeamView solo />;
-  return <EnterpriseTeamsPage />;
-}
-
-function EnterpriseTeamsPage() {
   const [currentView, setCurrentView] = useState<'directory' | 'resource_planning' | 'team_detail' | 'employee_profile'>('directory');
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
@@ -276,12 +268,12 @@ function EnterpriseTeamsPage() {
         {currentView === 'team_detail' && selectedTeam && (
           <div className="flex flex-col flex-1 gap-6">
 
-            {/* Handoff Assistant */}
+            {/* CoopSetu Assistant */}
             <div className="border border-accent/30 bg-accent/5 p-4 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-24 h-24 bg-accent/10 rounded-bl-full pointer-events-none" />
               <div className="flex items-center gap-2 mb-3">
                 <AiLogo className="w-4 h-4 text-accent" />
-                <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold text-foreground">Handoff Insights</h3>
+                <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold text-foreground">CoopSetu Insights</h3>
               </div>
               <p className="text-sm mb-3">
                 {selectedTeam.health === 'At Risk' ? 'Team is currently overloaded. Consider reallocating 2 active projects.' : 'Team capacity is balanced. Velocity is trending upwards.'}
@@ -411,7 +403,7 @@ function EnterpriseTeamsPage() {
                 <p className="text-xs text-muted-foreground">{selectedEmployee.department}</p>
 
                 <div className="flex gap-2 mt-4">
-                  <Button onClick={() => window.location.href = `mailto:team-member@handoff.dev`} variant="outline" size="sm" className="h-8 px-3 rounded border-border"><Mail className="w-3 h-3 mr-2" /> Message</Button>
+                  <Button onClick={() => window.location.href = `mailto:team-member@CoopSetu.dev`} variant="outline" size="sm" className="h-8 px-3 rounded border-border"><Mail className="w-3 h-3 mr-2" /> Message</Button>
                   <Button onClick={() => alert('Opening calendar integration...')} variant="outline" size="sm" className="h-8 px-3 rounded border-border"><Calendar className="w-3 h-3 mr-2" /> Meeting</Button>
                 </div>
               </div>
@@ -481,11 +473,11 @@ function EnterpriseTeamsPage() {
                 </div>
               </div>
 
-              {/* Handoff Assistant */}
+              {/* CoopSetu Assistant */}
               <div className="border border-accent/30 bg-accent/5 p-4 flex items-start gap-4">
                 <AiLogo className="w-5 h-5 text-accent flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold text-foreground mb-2">Handoff Career & Allocation Insights</h3>
+                  <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold text-foreground mb-2">CoopSetu Career & Allocation Insights</h3>
                   <p className="text-sm mb-3 text-muted-foreground">
                     {selectedEmployee.name} is currently allocated at {Math.round((selectedEmployee.workload / selectedEmployee.capacity) * 100)}% capacity. Skills match well with upcoming Q3 architecture projects.
                   </p>
@@ -523,12 +515,12 @@ function EnterpriseTeamsPage() {
               </div>
             </div>
 
-            {/* Handoff Planning Assistant */}
+            {/* CoopSetu Planning Assistant */}
             <div className="border border-accent border-l-4 p-5 bg-accent/5 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
               <div className="max-w-3xl">
                 <div className="flex items-center gap-2 mb-2">
                   <AiLogo className="w-5 h-5 text-accent" />
-                  <h3 className="font-mono text-xs uppercase tracking-widest font-bold text-foreground">Handoff Resource Recommendations</h3>
+                  <h3 className="font-mono text-xs uppercase tracking-widest font-bold text-foreground">CoopSetu Resource Recommendations</h3>
                 </div>
                 <p className="text-sm">
                   <span className="font-bold text-orange-500">Mobile Banking</span> team is at risk with 110% allocation. Consider shifting 2 developers from <span className="font-bold">Web Platform</span> (currently underutilized) to assist with the React Native migration sprint.
@@ -557,7 +549,7 @@ function EnterpriseTeamsPage() {
               <div className="flex-1 p-8 flex flex-col items-center justify-center text-center">
                 <BarChart3 className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
                 <h4 className="text-lg font-bold mb-2">Resource Heatmap View</h4>
-                <p className="text-sm text-muted-foreground max-w-sm">Detailed allocation charts and skill matrices will be rendered here. Use the Handoff recommendations above for immediate actions.</p>
+                <p className="text-sm text-muted-foreground max-w-sm">Detailed allocation charts and skill matrices will be rendered here. Use the CoopSetu recommendations above for immediate actions.</p>
               </div>
             </div>
 

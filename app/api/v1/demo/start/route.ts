@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     }
 
     const cookieStore = require('next/headers').cookies();
-    cookieStore.set('handoff_demo_session', 'true', {
+    cookieStore.set('CoopSetu_demo_session', 'true', {
       path: '/',
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',

@@ -58,7 +58,7 @@ export default function ProductPage() {
               One operational system for teams building critical software.
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-              HANDOFF Enterprise connects planning, task assignment, delivery, engineering workflows, QA, security, releases, and AI intelligence in one controlled workspace.
+              CoopSetu Enterprise connects planning, task assignment, delivery, engineering workflows, QA, security, releases, and AI intelligence in one controlled workspace.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Button 
@@ -122,7 +122,7 @@ export default function ProductPage() {
                  <div className="border border-border rounded bg-background p-4">
                    <div className="flex items-center gap-2 mb-3">
                      <AiLogo className="w-3 h-3 text-accent" />
-                     <span className="font-mono text-[10px] uppercase tracking-widest font-bold">Handoff Insight</span>
+                     <span className="font-mono text-[10px] uppercase tracking-widest font-bold">CoopSetu Insight</span>
                    </div>
                    <p className="text-xs text-muted-foreground">Release v2.4.0 is blocked by 2 critical security vulnerabilities. QA signoff pending for 3 hours.</p>
                  </div>
