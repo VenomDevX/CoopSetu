@@ -4,7 +4,7 @@ import { isIpAllowed } from '@/lib/security/ip-utils';
 import { Errors } from '@/lib/api/errors';
 import { getAuthContext } from './require-user';
 
-export const ACTIVE_ORG_COOKIE = 'handoff_active_org';
+export const ACTIVE_ORG_COOKIE = 'coopsetu_active_org';
 
 export interface Membership {
   memberId: string;
