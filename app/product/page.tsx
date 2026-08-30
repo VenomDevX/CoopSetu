@@ -58,7 +58,7 @@ export default function ProductPage() {
               One operational system for teams building critical software.
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-              CoopSetu Enterprise connects planning, task assignment, delivery, engineering workflows, QA, security, releases, and AI intelligence in one controlled workspace.
+              CoopSetu Enterprise connects planning, batch assignment, training, moderation workflows, assessments, security, placements, and AI intelligence in one controlled workspace.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Button 
@@ -97,7 +97,7 @@ export default function ProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                {/* Project Health */}
                <div className="col-span-2 border border-border rounded bg-background p-4 flex flex-col">
-                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4">Active Sprint Board</div>
+                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4">Active Batch Board</div>
                  <div className="flex-1 grid grid-cols-4 gap-2">
                    {["Backlog", "In Progress", "Review", "Done"].map(col => (
                      <div key={col} className="bg-surface p-2 border border-border rounded border-dashed flex flex-col gap-2">
@@ -124,10 +124,10 @@ export default function ProductPage() {
                      <AiLogo className="w-3 h-3 text-accent" />
                      <span className="font-mono text-[10px] uppercase tracking-widest font-bold">CoopSetu Insight</span>
                    </div>
-                   <p className="text-xs text-muted-foreground">Release v2.4.0 is blocked by 2 critical security vulnerabilities. QA signoff pending for 3 hours.</p>
+                   <p className="text-xs text-muted-foreground">Final Assessment for Batch A is blocked by 2 attendance anomalies. Moderation signoff pending for 3 hours.</p>
                  </div>
                  <div className="border border-border rounded bg-background p-4 flex-1">
-                   <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4">Release Pipeline</div>
+                   <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4">Placement Pipeline</div>
                    <div className="space-y-3">
                      <div className="flex items-center gap-2">
                        <CheckCircle2 className="w-3 h-3 text-emerald-500" />
@@ -155,7 +155,7 @@ export default function ProductPage() {
           <div className="mb-12">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">See delivery work as it happens.</h2>
             <p className="text-muted-foreground max-w-2xl text-lg">
-              Get an immediate, uncompromising view of project health, engineering capacity, and delivery risk across all organizational teams.
+              Get an immediate, uncompromising view of institute health, training capacity, and certification risk across all training centers.
             </p>
           </div>
           
@@ -174,7 +174,7 @@ export default function ProductPage() {
                   <tbody className="divide-y divide-border">
                     <tr>
                       <td className="py-4 font-bold flex items-center gap-2"><div className="w-2 h-2 bg-foreground" /> Core Platform Migration</td>
-                      <td className="py-4 text-xs">Sprint 24</td>
+                      <td className="py-4 text-xs">Batch 24</td>
                       <td className="py-4">
                         <div className="w-24 h-1 bg-surface-hover border border-border rounded overflow-hidden">
                           <div className="h-full bg-foreground w-[65%]" />
@@ -230,7 +230,7 @@ export default function ProductPage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-surface-hover rounded-bl-[100px] pointer-events-none" />
               <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2 flex justify-between">
                 <span>Task Board</span>
-                <span>Sprint 24</span>
+                <span>Batch 24</span>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {["Backlog", "Code Review", "QA Testing"].map(status => (
@@ -250,14 +250,14 @@ export default function ProductPage() {
           </div>
         </section>
 
-        {/* SECTION 3 - Agile Delivery */}
+        {/* SECTION 3 - Digital Training */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="order-2 lg:order-1 border border-border rounded bg-surface p-6">
               <div className="flex justify-between items-end mb-8 border-b border-border pb-4">
                 <div>
-                  <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Sprint Health</div>
-                  <div className="text-2xl font-bold mt-1">Sprint 42</div>
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Batch Health</div>
+                  <div className="text-2xl font-bold mt-1">Batch 42</div>
                 </div>
                 <div className="text-right">
                   <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Velocity</div>
@@ -288,7 +288,7 @@ export default function ProductPage() {
             </div>
             
             <div className="order-1 lg:order-2">
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">Plan sprints with real capacity.</h2>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">Plan batches with real capacity.</h2>
               <div className="space-y-4 font-mono text-sm uppercase tracking-widest mb-8">
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> Backlog prioritization</div>
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> Story points & velocity</div>
@@ -299,7 +299,7 @@ export default function ProductPage() {
           </div>
         </section>
 
-        {/* SECTION 4 - Engineering Visibility */}
+        {/* SECTION 4 - Institute Visibility */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32 border-t border-border pt-32">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">Connect work to the code that ships.</h2>
@@ -337,7 +337,7 @@ export default function ProductPage() {
           </div>
         </section>
 
-        {/* SECTION 5 - Quality, Security & Release */}
+        {/* SECTION 5 - Assessments, Security & Placement */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32">
           <div className="border border-border rounded bg-surface p-8 lg:p-12">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
@@ -347,12 +347,12 @@ export default function ProductPage() {
                   <div className="flex items-center gap-3"><Shield className="w-4 h-4 text-muted-foreground" /> Security review checklists</div>
                   <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> QA test plans & bugs</div>
                   <div className="flex items-center gap-3"><Lock className="w-4 h-4 text-muted-foreground" /> Compliance evidence</div>
-                  <div className="flex items-center gap-3"><ArrowRight className="w-4 h-4 text-muted-foreground" /> Release approval chains</div>
+                  <div className="flex items-center gap-3"><ArrowRight className="w-4 h-4 text-muted-foreground" /> Placement approval chains</div>
                 </div>
               </div>
               
               <div className="flex flex-col justify-center gap-2">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Release Pipeline Flow</div>
+                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Placement Pipeline Flow</div>
                 {[
                   { step: 'Code Complete', status: 'done' },
                   { step: 'Code Review', status: 'done' },
@@ -392,7 +392,7 @@ export default function ProductPage() {
             <BarChart3 className="w-10 h-10 mb-6 text-foreground" />
             <h2 className="text-2xl font-bold tracking-tight mb-4">Turn operational data into delivery intelligence.</h2>
             <p className="text-muted-foreground mb-8 text-sm">
-              Executive dashboards for project health, sprint velocity, workload analysis, bug trends, and release reliability.
+              Executive dashboards for institute health, certification velocity, workload analysis, dropout trends, and placement reliability.
             </p>
             <div className="grid grid-cols-2 gap-4 mt-auto">
               <div className="border border-border rounded p-4 bg-surface">
@@ -413,7 +413,7 @@ export default function ProductPage() {
             <h2 className="text-2xl font-bold tracking-tight mb-12 text-center">The unified enterprise delivery workflow</h2>
             
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-2">
-              {['Plan', 'Assign', 'Build', 'Review', 'Test', 'Secure', 'Release', 'Learn'].map((step, i, arr) => (
+              {['Enroll', 'Assign', 'Train', 'Review', 'Assess', 'Secure', 'Place', 'Learn'].map((step, i, arr) => (
                 <React.Fragment key={step}>
                   <div className="flex flex-col items-center">
                     <div className="w-12 h-12 bg-background border border-border rounded flex items-center justify-center font-bold font-mono text-sm mb-3">

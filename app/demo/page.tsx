@@ -9,19 +9,19 @@ import { AiLogo } from '@/components/ai/ai-logo';
 import { DEMO_PERSONAS } from '@/lib/demo/provision-demo-workspace';
 
 const ROLE_ICONS: Record<string, any> = {
-  'ORG_ADMIN': ShieldCheck,
-  'PROJECT_MANAGER': CheckCircle,
-  'QA_ENGINEER': TestTube2,
-  'DEVELOPER': Code2,
-  'SECURITY_ENGINEER': AlertCircle,
+  'FEDERATION_ADMIN': ShieldCheck,
+  'INSTITUTE_DIRECTOR': CheckCircle,
+  'MODERATOR': TestTube2,
+  'TRAINER': Code2,
+  'ASSESSOR': AlertCircle,
 };
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
-  'ORG_ADMIN': 'Full visibility into all projects, settings, and team structure.',
-  'PROJECT_MANAGER': 'Plan sprints, assign work, and track project health.',
-  'QA_ENGINEER': 'Verify releases, open bugs, and manage test coverage.',
-  'DEVELOPER': 'Execute tasks, update statuses, and link pull requests.',
-  'SECURITY_ENGINEER': 'Review code changes and conduct compliance audits.',
+  'FEDERATION_ADMIN': 'Full visibility into all programs, settings, and institute structure.',
+  'INSTITUTE_DIRECTOR': 'Plan batches, assign classes, and track institute health.',
+  'MODERATOR': 'Verify assessments, open issues, and manage grading coverage.',
+  'TRAINER': 'Execute classes, update attendance, and link materials.',
+  'ASSESSOR': 'Review assessments and conduct affiliation audits.',
 };
 
 export default function DemoPage() {

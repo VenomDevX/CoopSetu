@@ -61,14 +61,14 @@ export default function PrivacyPage() {
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">2. How We Use Information</h2>
               <p>
-                We use collected information to run and secure the CoopSetu workspace, facilitate team coordination, manage notifications, validate account privileges, and respond to sales or support inquiries.
+                We use collected information to run and secure the CoopSetu workspace, facilitate institute coordination, manage training notifications, validate account privileges, and respond to support inquiries.
               </p>
             </section>
 
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">3. Organization and Workspace Data</h2>
               <p>
-                Organization data, projects, tasks, comments, and attachments are scoped strictly to the respective organization. We do not inspect or leverage this operational data outside of providing workspace services.
+                Institute data, batches, assessments, attendance, and job applications are scoped strictly to the respective institute or trainee. We do not inspect or leverage this operational data outside of providing training and placement services.
               </p>
             </section>
 
@@ -110,7 +110,7 @@ export default function PrivacyPage() {
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">9. Security Measures</h2>
               <p>
-                We implement access control lists, row-level security (RLS), and rate limiting (including account-level lockout on repeated failed logins and a dedicated stricter limit on AI usage) to prevent unauthorized database read/write access. Connected third-party integration credentials (e.g. GitHub access tokens) are encrypted at rest (AES-256-GCM) and are never readable through normal application queries. All traffic is served over HTTPS with a strict Content Security Policy and standard hardening headers (HSTS, X-Frame-Options, X-Content-Type-Options).
+                We implement access control lists, row-level security (RLS), and rate limiting (including account-level lockout on repeated failed logins and a dedicated stricter limit on AI usage) to prevent unauthorized database read/write access. Connected third-party integration credentials (e.g. Payment Gateway or LMS API keys) are encrypted at rest (AES-256-GCM) and are never readable through normal application queries. All traffic is served over HTTPS with a strict Content Security Policy and standard hardening headers (HSTS, X-Frame-Options, X-Content-Type-Options).
               </p>
             </section>
 

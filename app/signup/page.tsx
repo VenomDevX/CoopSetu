@@ -140,7 +140,7 @@ export default function SignupPage() {
         <div className="bg-surface p-6 border border-border rounded text-center space-y-4 rounded-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
           <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto" />
           <p className="text-sm text-muted-foreground">
-            Please click the link in the email to verify your account and continue setting up your workspace.
+            Please click the link in the email to verify your account and continue setting up your institution.
           </p>
           <div className="pt-4">
             <button

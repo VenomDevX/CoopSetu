@@ -75,7 +75,7 @@ export default function TermsPage() {
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">4. User Roles and Permissions</h2>
               <p>
-                User capabilities within CoopSetu are restricted based on your assigned role (e.g., Owner, Admin, Team Manager, Developer, QA, Security, Auditor). You agree not to attempt to bypass role-based access controls.
+                User capabilities within CoopSetu are restricted based on your assigned role (e.g., NCCT Admin, Institute Admin, Trainer, Trainee, Employer). You agree not to attempt to bypass role-based access controls.
               </p>
             </section>
 
@@ -103,14 +103,14 @@ export default function TermsPage() {
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">8. Third-Party Services</h2>
               <p>
-                CoopSetu may integrate with third-party software (e.g., repository hosts, issue trackers). Use of third-party services is subject to their respective terms.
+                CoopSetu may integrate with third-party software (e.g., LMS platforms, state portals, payment gateways). Use of third-party services is subject to their respective terms.
               </p>
             </section>
 
             <section className="space-y-3">
               <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">9. Intellectual Property</h2>
               <p>
-                CoopSetu logos, code, design patterns, and proprietary features are the property of CoopSetu and its developers. You may not copy, reverse engineer, or scrape CoopSetu without permission.
+                CoopSetu logos, workflows, design patterns, and proprietary features are the property of CoopSetu. You may not copy, reverse engineer, or scrape CoopSetu without permission.
               </p>
             </section>
 

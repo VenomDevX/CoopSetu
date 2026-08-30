@@ -9,9 +9,9 @@ import { useAiStream, type AiStreamBody } from '@/components/ai/use-ai-stream';
 import type { AiSource } from '@/components/ai/ai-panel';
 
 const SUGGESTIONS = [
-  'Summarize the current blockers and who owns them.',
-  'What is most at risk right now?',
-  'What should be prioritized today?',
+  'What courses are recommended for my skill gaps?',
+  'Summarize the attendance for my batches this week.',
+  'What jobs match my current digital profile?',
 ];
 
 export function HubChatTab({ onClose }: { onClose: () => void }) {
