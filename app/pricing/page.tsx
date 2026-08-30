@@ -34,24 +34,24 @@ const PRICING = {
 
 const FAQS = [
   {
-    question: "Can we start with a small team?",
-    answer: "Yes, our Team plan is designed for growing product and engineering teams. You can start small and upgrade as your organization scales and requires more advanced portfolio management or enterprise governance."
+    question: "Can we start with a small institute?",
+    answer: "Yes, our Team plan is designed for growing training institutes. You can start small and upgrade as your organization scales and requires more advanced placement management or enterprise governance."
   },
   {
     question: "Is CoopSetu available for large organizations?",
-    answer: "Absolutely. CoopSetu is built specifically to coordinate complex delivery across hundreds of teams, offering advanced governance, security controls, and cross-team visibility."
+    answer: "Absolutely. CoopSetu is built specifically to coordinate complex training delivery across hundreds of institutes, offering advanced governance, security controls, and cross-institute visibility."
   },
   {
     question: "Can we use SSO?",
     answer: "Yes, Single Sign-On (SSO), SAML, and OpenID Connect, along with SCIM provisioning, are fully supported on the Enterprise plan to integrate seamlessly with your existing identity providers."
   },
   {
-    question: "Can we import from Jira?",
-    answer: "Yes, we offer dedicated import tools and scripts to migrate your projects, issues, and histories directly from Jira, Trello, and Asana into CoopSetu."
+    question: "Can we import from existing LMS?",
+    answer: "Yes, we offer dedicated import tools and scripts to migrate your trainee records, assessments, and histories directly from Moodle, Canvas, and Blackboard into CoopSetu."
   },
   {
-    question: "Does CoopSetu integrate with GitHub?",
-    answer: "Yes, CoopSetu features deep integrations with GitHub, GitLab, and Bitbucket. You can link branches, view pull requests, track CI/CD statuses, and block merges based on task approvals directly from your workspace."
+    question: "Does CoopSetu integrate with state portals?",
+    answer: "Yes, CoopSetu features deep integrations with NCCT portals, Skill India Digital, and state registries. You can link batches, track certifications, and synchronize attendance directly from your workspace."
   },
   {
     question: "Can we control AI access?",
@@ -103,10 +103,10 @@ export default function PricingPage() {
               PLANS_AND_PRICING
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-8 leading-[1.1]">
-              Pricing that scales with how your teams deliver.
+              Pricing that scales with how your institutes train.
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-              Start with core work management. Add enterprise governance, AI controls, and organization-wide reporting as your needs grow.
+              Start with core batch management. Add enterprise governance, AI career counseling, and state-wide reporting as your needs grow.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Button 
@@ -155,7 +155,7 @@ export default function PricingPage() {
             <div className="border border-border rounded bg-background p-8 flex flex-col relative">
               <div className="mb-8">
                 <h3 className="text-2xl font-bold tracking-tight mb-2">Team</h3>
-                <p className="text-sm text-muted-foreground">Growing product and engineering teams.</p>
+                <p className="text-sm text-muted-foreground">Growing cooperative training institutes.</p>
               </div>
               <div className="mb-8">
                 <div className="flex items-end gap-2 mb-1">
@@ -175,15 +175,15 @@ export default function PricingPage() {
               <div className="space-y-4 text-sm mt-auto">
                 <div className="font-bold text-xs uppercase tracking-widest mb-4 font-mono">Features</div>
                 {[
-                  'Projects and tasks',
-                  'Kanban boards',
-                  'Basic sprint planning',
-                  'Team workload view',
+                  'Batches and assessments',
+                  'Attendance tracking',
+                  'Basic course planning',
+                  'Trainer workload view',
                   'Basic dashboards',
-                  'Comments and attachments',
+                  'Forums and materials',
                   'Documents',
-                  'Standard integrations',
-                  'Basic CoopSetu AI summaries',
+                  'Standard LMS integrations',
+                  'Basic AI career counselor',
                   'Email support'
                 ].map((feature, i) => (
                   <div key={i} className="flex items-start gap-3">
@@ -201,7 +201,7 @@ export default function PricingPage() {
               </div>
               <div className="mb-8">
                 <h3 className="text-2xl font-bold tracking-tight mb-2">Business</h3>
-                <p className="text-sm text-muted-foreground">Multi-team engineering organizations.</p>
+                <p className="text-sm text-muted-foreground">Multi-institute cooperative organizations.</p>
               </div>
               <div className="mb-8">
                 <div className="flex items-end gap-2 mb-1">
@@ -220,15 +220,15 @@ export default function PricingPage() {
               <div className="space-y-4 text-sm mt-auto">
                 <div className="font-bold text-xs uppercase tracking-widest mb-4 font-mono">Everything in Team, plus:</div>
                 {[
-                  'Programs and portfolios',
-                  'Advanced sprint planning',
-                  'Capacity planning',
-                  'Roadmaps and dependencies',
-                  'Advanced reporting',
-                  'QA and bug tracking',
-                  'Release management',
-                  'GitHub and CI/CD integrations',
-                  'CoopSetu AI planning and analytics',
+                  'Training programs and curriculums',
+                  'Advanced batch scheduling',
+                  'Infrastructure capacity planning',
+                  'Skill roadmaps and prerequisites',
+                  'Advanced placement reporting',
+                  'Assessment moderation',
+                  'Certification management',
+                  'Payment gateway integrations',
+                  'CoopSetu AI skill matching',
                   'Scheduled reports',
                   'Priority support'
                 ].map((feature, i) => (
@@ -244,7 +244,7 @@ export default function PricingPage() {
             <div className="border border-border rounded bg-background p-8 flex flex-col relative">
               <div className="mb-8">
                 <h3 className="text-2xl font-bold tracking-tight mb-2">Enterprise</h3>
-                <p className="text-sm text-muted-foreground">Large technology, fintech, and regulated organizations.</p>
+                <p className="text-sm text-muted-foreground">National federations, state governments, and large cooperatives.</p>
               </div>
               <div className="mb-8">
                 <div className="flex items-end gap-2 mb-1">
@@ -352,15 +352,15 @@ export default function PricingPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {/* Work Management */}
-                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">Work Management</td></tr>
+                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">Training Management</td></tr>
                 <tr>
-                  <td className="p-4">Projects and tasks</td>
+                  <td className="p-4">Batches and assessments</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 <tr>
-                  <td className="p-4">Kanban & List views</td>
+                  <td className="p-4">Attendance & Grade views</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
@@ -372,10 +372,10 @@ export default function PricingPage() {
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 
-                {/* Agile Delivery */}
-                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">Agile Delivery</td></tr>
+                {/* Digital Training */}
+                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">Training Delivery</td></tr>
                 <tr>
-                  <td className="p-4">Sprint planning</td>
+                  <td className="p-4">Course planning</td>
                   <td className="p-4 text-center">Basic</td>
                   <td className="p-4 text-center">Advanced</td>
                   <td className="p-4 text-center">Advanced</td>
@@ -388,9 +388,9 @@ export default function PricingPage() {
                 </tr>
                 
                 {/* Portfolio Management */}
-                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">Portfolio Management</td></tr>
+                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">Curriculum Management</td></tr>
                 <tr>
-                  <td className="p-4">Programs and portfolios</td>
+                  <td className="p-4">Programs and syllabi</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
@@ -402,16 +402,16 @@ export default function PricingPage() {
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 
-                {/* Engineering Integration */}
-                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">Engineering Integration</td></tr>
+                {/* Portal Integration */}
+                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">Ecosystem Integration</td></tr>
                 <tr>
-                  <td className="p-4">GitHub / GitLab / Bitbucket</td>
+                  <td className="p-4">Moodle / Blackboard / Canvas</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 <tr>
-                  <td className="p-4">CI/CD tracking</td>
+                  <td className="p-4">Certification tracking</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
@@ -532,7 +532,7 @@ export default function PricingPage() {
         {/* SECTION 8 - Final CTA */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto text-center py-16 border-t border-border">
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-8 max-w-3xl mx-auto">
-            Build your delivery operating system.
+            Build your training operating system.
           </h2>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button 

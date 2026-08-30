@@ -1,11 +1,11 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 
 export const DEMO_PERSONAS = [
-  { role: 'ORG_ADMIN', email: 'demo-admin@handoff.local', name: 'Maya Patel', title: 'Organization Admin' },
-  { role: 'PROJECT_MANAGER', email: 'demo-pm@handoff.local', name: 'Arjun Mehta', title: 'Project Manager' },
-  { role: 'QA_ENGINEER', email: 'demo-qa@handoff.local', name: 'Nina Verma', title: 'QA Analyst' },
-  { role: 'DEVELOPER', email: 'demo-dev@handoff.local', name: 'Rohan Singh', title: 'Developer' },
-  { role: 'SECURITY_ENGINEER', email: 'demo-sec@handoff.local', name: 'Aisha Khan', title: 'Security Reviewer' },
+  { role: 'FEDERATION_ADMIN', email: 'demo-admin@coopsetu.local', name: 'Maya Patel', title: 'Federation Admin' },
+  { role: 'INSTITUTE_DIRECTOR', email: 'demo-director@coopsetu.local', name: 'Arjun Mehta', title: 'Institute Director' },
+  { role: 'MODERATOR', email: 'demo-moderator@coopsetu.local', name: 'Nina Verma', title: 'Moderator' },
+  { role: 'TRAINER', email: 'demo-trainer@coopsetu.local', name: 'Rohan Singh', title: 'Trainer' },
+  { role: 'ASSESSOR', email: 'demo-assessor@coopsetu.local', name: 'Aisha Khan', title: 'Assessor' },
 ];
 
 // Resolve an auth user by email across all pages of the admin user list.
@@ -155,17 +155,17 @@ async function seedDemoData(admin: any, orgId: string, dummyUserIds: Record<stri
     return orgMembers.find((m: any) => m.user_id === uid)?.id;
   };
 
-  const adminMember = resolveMember('ORG_ADMIN');
-  const pmMember = resolveMember('PROJECT_MANAGER');
-  const devMember = resolveMember('DEVELOPER');
-  const qaMember = resolveMember('QA_ENGINEER');
-  const secMember = resolveMember('SECURITY_ENGINEER');
+  const adminMember = resolveMember('FEDERATION_ADMIN');
+  const pmMember = resolveMember('INSTITUTE_DIRECTOR');
+  const devMember = resolveMember('TRAINER');
+  const qaMember = resolveMember('MODERATOR');
+  const secMember = resolveMember('ASSESSOR');
 
   // Seed Projects
   const { data: project, error: projectError } = await admin.from('projects').insert({
     organization_id: orgId,
-    name: 'Apex Web Portal',
-    code: 'APEX',
+    name: 'Rural Banking Diploma',
+    code: 'RBD',
     priority: 'HIGH',
     health: 'ON_TRACK',
     owner_member_id: adminMember,
@@ -177,17 +177,17 @@ async function seedDemoData(admin: any, orgId: string, dummyUserIds: Record<stri
 
   // Project Members
   await admin.from('project_members').insert([
-    { project_id: project.id, organization_member_id: pmMember, project_role: 'Manager', can_manage: true, can_view: true, can_edit: true, can_comment: true },
-    { project_id: project.id, organization_member_id: devMember, project_role: 'Developer', can_manage: false, can_view: true, can_edit: true, can_comment: true },
-    { project_id: project.id, organization_member_id: qaMember, project_role: 'QA', can_manage: false, can_view: true, can_edit: true, can_comment: true },
-    { project_id: project.id, organization_member_id: secMember, project_role: 'Security', can_manage: false, can_view: true, can_edit: false, can_comment: true }
+    { project_id: project.id, organization_member_id: pmMember, project_role: 'Director', can_manage: true, can_view: true, can_edit: true, can_comment: true },
+    { project_id: project.id, organization_member_id: devMember, project_role: 'Trainer', can_manage: false, can_view: true, can_edit: true, can_comment: true },
+    { project_id: project.id, organization_member_id: qaMember, project_role: 'Moderator', can_manage: false, can_view: true, can_edit: true, can_comment: true },
+    { project_id: project.id, organization_member_id: secMember, project_role: 'Assessor', can_manage: false, can_view: true, can_edit: false, can_comment: true }
   ]);
 
   // Sprint
   const { data: sprint, error: sprintError } = await admin.from('sprints').insert({
     organization_id: orgId,
     project_id: project.id,
-    name: 'Sprint 1',
+    name: 'Batch A',
     status: 'ACTIVE',
     start_date: new Date().toISOString(),
     end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
@@ -197,10 +197,10 @@ async function seedDemoData(admin: any, orgId: string, dummyUserIds: Record<stri
 
   // Tasks
   const tasksToSeed = [
-    { title: 'Implement login page', type: 'STORY', status: 'IN_PROGRESS', assignee: devMember },
-    { title: 'Fix mobile overflow', type: 'BUG', status: 'READY', assignee: devMember },
-    { title: 'Security review of Auth', type: 'SECURITY_TASK', status: 'IN_PROGRESS', assignee: secMember },
-    { title: 'Test checkout flow', type: 'TASK', status: 'QA_TESTING', assignee: qaMember }
+    { title: 'Conduct banking fundamentals class', type: 'STORY', status: 'IN_PROGRESS', assignee: devMember },
+    { title: 'Review attendance logs', type: 'BUG', status: 'READY', assignee: devMember },
+    { title: 'Finalize theory assessment', type: 'SECURITY_TASK', status: 'IN_PROGRESS', assignee: secMember },
+    { title: 'Grade practical assignments', type: 'TASK', status: 'QA_TESTING', assignee: qaMember }
   ];
 
   for (const t of tasksToSeed) {
@@ -230,7 +230,7 @@ async function seedDemoData(admin: any, orgId: string, dummyUserIds: Record<stri
   await admin.from('bugs').insert({
     organization_id: orgId,
     project_id: project.id,
-    title: 'Authentication token expiry issue',
+    title: 'Trainee login issue',
     severity: 'HIGH',
     status: 'OPEN',
     reporter_member_id: qaMember,
@@ -240,7 +240,7 @@ async function seedDemoData(admin: any, orgId: string, dummyUserIds: Record<stri
   await admin.from('security_reviews').insert({
     organization_id: orgId,
     project_id: project.id,
-    title: 'Q3 Security Audit',
+    title: 'Q3 Affiliation Audit',
     status: 'PENDING',
     risk_score: 45,
     reviewer_member_id: secMember

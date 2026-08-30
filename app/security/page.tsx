@@ -139,7 +139,7 @@ export default function SecurityPage() {
                       <span>2m ago</span>
                     </div>
                     <div className="flex justify-between items-center opacity-70">
-                      <span>s.jenkins approved release</span>
+                      <span>s.jenkins approved affiliation</span>
                       <span>15m ago</span>
                     </div>
                     <div className="flex justify-between items-center opacity-70 text-orange-500">
@@ -152,7 +152,7 @@ export default function SecurityPage() {
 
               <div className="col-span-2 border border-border rounded bg-background p-4">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2 flex justify-between">
-                  <span>Active Release Approvals</span>
+                  <span>Active Affiliation Approvals</span>
                   <span className="text-accent">PIPELINE-24</span>
                 </div>
                 
@@ -262,7 +262,7 @@ export default function SecurityPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="order-2 lg:order-1 border border-border rounded bg-surface p-8 shadow-xl">
                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-6 border-b border-border pb-2 flex justify-between">
-                 <span>Release Approval Pipeline</span>
+                 <span>Affiliation Approval Pipeline</span>
                  <span className="text-foreground font-bold">STRICT ENFORCEMENT</span>
                </div>
                
@@ -307,7 +307,7 @@ export default function SecurityPage() {
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> QA approvals</div>
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> Security approvals</div>
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> Compliance approvals</div>
-                <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> Release approvals</div>
+                <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> Affiliation approvals</div>
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> Multi-step approval chains</div>
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> Segregation of duties</div>
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> Required reviewer rules</div>
@@ -354,8 +354,8 @@ export default function SecurityPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {[
-                  { time: '2026-06-25 14:02:11Z', actor: 'sarah.jenkins', type: 'RELEASE_APPROVED', res: 'Release-2.4.0', det: 'Approved QA gate', ip: '192.168.1.42' },
-                  { time: '2026-06-25 13:45:00Z', actor: 'system.bot', type: 'AI_PROMPT_LOGGED', res: 'Project-Aura', det: 'Summarized sprint backlog', ip: '10.0.0.5' },
+                  { time: '2026-06-25 14:02:11Z', actor: 'sarah.jenkins', type: 'AFFILIATION_APPROVED', res: 'Affiliation-2026', det: 'Approved Inspection gate', ip: '192.168.1.42' },
+                  { time: '2026-06-25 13:45:00Z', actor: 'system.bot', type: 'AI_PROMPT_LOGGED', res: 'Batch-A', det: 'Summarized batch attendance', ip: '10.0.0.5' },
                   { time: '2026-06-25 11:20:33Z', actor: 'david.lee', type: 'PERMISSION_CHANGED', res: 'Workspace-Settings', det: 'Added Contractor role to j.smith', ip: '172.16.254.1' },
                   { time: '2026-06-25 09:15:22Z', actor: 'elena.rodriguez', type: 'DOC_UPDATED', res: 'Threat-Model-v2', det: 'Updated mitigation steps', ip: '192.168.1.105' },
                   { time: '2026-06-25 08:00:01Z', actor: 'admin.service', type: 'POLICY_ENFORCED', res: 'Org-Global', det: 'MFA requirement verified', ip: '10.0.0.1' },
@@ -377,7 +377,7 @@ export default function SecurityPage() {
             <div className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3" /> User activity history</div>
             <div className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3" /> Permission changes</div>
             <div className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3" /> AI usage records</div>
-            <div className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3" /> Release decisions</div>
+            <div className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3" /> Affiliation decisions</div>
           </div>
         </section>
 
@@ -435,7 +435,7 @@ export default function SecurityPage() {
             <AlertCircle className="w-10 h-10 mx-auto mb-6 text-foreground" />
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">Connect delivery risk to security action.</h2>
             <p className="text-muted-foreground text-lg">
-              Embed security directly into the software lifecycle, from threat modeling to vulnerability tracking and release gates.
+              Embed security directly into the training lifecycle, from data privacy to identity tracking and certification gates.
             </p>
           </div>
           

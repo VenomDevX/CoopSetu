@@ -128,36 +128,36 @@ export default function LandingPage() {
 
 
 
-  // Live sprint board
+  // Live sprint board (repurposed for Batches/Trainees)
   const board: SprintBoardColumn[] = [
     {
-      title: 'Backlog', count: 8, accent: false,
+      title: 'Registered', count: 8, accent: false,
       cards: [
-        { id: 'DEV-221', title: 'Webhook retry logic', tag: 'Core', who: 'JK' },
-        { id: 'DEV-218', title: 'Rate limit tuning', tag: 'API', who: 'ML' },
+        { id: 'TRN-221', title: 'Complete digital literacy test', tag: 'Core', who: 'JK' },
+        { id: 'TRN-218', title: 'Upload ID proof', tag: 'Admin', who: 'ML' },
       ],
     },
     {
-      title: 'In Progress', count: 3, accent: true,
+      title: 'In Training', count: 3, accent: true,
       cards: [
-        { id: 'DEV-204', title: 'Realtime sync engine', tag: 'Infra', who: 'AR', prio: true, progress: 64 },
-        { id: 'DEV-209', title: 'Audit log export', tag: 'Sec', who: 'TS', progress: 30 },
+        { id: 'TRN-204', title: 'Cooperative Management Module 2', tag: 'LMS', who: 'AR', prio: true, progress: 64 },
+        { id: 'TRN-209', title: 'Attend live workshop', tag: 'Live', who: 'TS', progress: 30 },
       ],
     },
     {
-      title: 'Shipped', count: 12, accent: false,
+      title: 'Certified', count: 12, accent: false,
       cards: [
-        { id: 'DEV-201', title: 'Dashboard v2', tag: 'UI', who: 'PS', done: true },
-        { id: 'DEV-198', title: 'SSO provider support', tag: 'Auth', who: 'DV', done: true },
+        { id: 'TRN-201', title: 'Passed Final Assessment', tag: 'Exam', who: 'PS', done: true },
+        { id: 'TRN-198', title: 'Skill Passport Updated', tag: 'Skill', who: 'DV', done: true },
       ],
     },
   ];
 
   // Overlay analytics widget — tabbed chart
   const charts = [
-    { label: 'Velocity', value: '142', unit: 'pts', delta: '+12%', up: true, data: [40, 55, 48, 62, 58, 72, 68, 85, 90] },
-    { label: 'Burndown', value: '38', unit: 'left', delta: '-24%', up: false, data: [95, 88, 80, 70, 64, 55, 48, 42, 38] },
-    { label: 'Coverage', value: '94', unit: '%', delta: '+3%', up: true, data: [70, 72, 75, 78, 80, 84, 88, 91, 94] },
+    { label: 'Attendance', value: '94', unit: '%', delta: '+12%', up: true, data: [40, 55, 48, 62, 58, 72, 68, 85, 90] },
+    { label: 'Dropouts', value: '12', unit: 'total', delta: '-24%', up: false, data: [95, 88, 80, 70, 64, 55, 48, 42, 38] },
+    { label: 'Placements', value: '88', unit: '%', delta: '+3%', up: true, data: [70, 72, 75, 78, 80, 84, 88, 91, 94] },
   ];
   const chart = charts[activeTab];
   const CW = 260, CH = 96, CPAD = 12;
@@ -287,7 +287,7 @@ export default function LandingPage() {
                 className="absolute -top-5 -right-3 z-20 hidden lg:flex items-center gap-2 bg-background px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-foreground shadow-xl"
               >
                 <Zap className="w-3 h-3 text-accent" />
-                +12% Velocity
+                +12% Attendance
               </motion.div>
 
               <div className="bg-background rounded backdrop-blur-sm relative overflow-hidden shadow-2xl">
@@ -295,12 +295,12 @@ export default function LandingPage() {
                 <div className="flex items-center justify-between px-5 h-12 border-b border-border-strong bg-background">
                   <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest">
                     <Layers className="w-3.5 h-3.5 text-accent" />
-                    <span className="text-foreground font-bold">Sprint 24</span>
-                    <span className="text-muted-foreground">{'// Board'}</span>
+                    <span className="text-foreground font-bold">Batch 24</span>
+                    <span className="text-muted-foreground">{'// Trainees'}</span>
                   </div>
                   <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                     <span className="w-1.5 h-1.5 bg-accent animate-pulse" />
-                    142 pts
+                    142 enrolled
                   </div>
                 </div>
 
@@ -357,7 +357,7 @@ export default function LandingPage() {
 
                 {/* Footer — sprint progress */}
                 <div className="border-t border-border px-5 py-4 flex items-center gap-4">
-                  <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground shrink-0">Sprint Progress</div>
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground shrink-0">Training Progress</div>
                   <div className="flex-1 h-1 bg-border overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
@@ -504,13 +504,13 @@ export default function LandingPage() {
                   <div>
                     <div className="flex items-center gap-3 mb-10 border-b border-border pb-6">
                       <Logo width={20} height={20} />
-                      <span className="font-mono text-xs uppercase tracking-widest font-bold">Apex_Fin</span>
+                      <span className="font-mono text-xs uppercase tracking-widest font-bold">VAMNICOM</span>
                     </div>
                     <div className="space-y-8">
                       <div>
-                        <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-4">Operations</div>
+                        <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-4">Training</div>
                         <div className="space-y-2">
-                          {['Projects', 'Sprints', 'Tasks'].map(i => (
+                          {['Institutions', 'Programmes', 'Batches'].map(i => (
                             <div key={i} className="text-sm font-mono uppercase tracking-wider py-2 px-3 text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded cursor-pointer transition-colors flex items-center justify-between group">
                               {i}
                               <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -519,9 +519,9 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <div>
-                        <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-4">Engineering</div>
+                        <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-4">Network</div>
                         <div className="space-y-2">
-                          {['Repositories', 'Releases', 'Incidents'].map(i => (
+                          {['Trainers', 'Trainees', 'Employers'].map(i => (
                             <div key={i} className="text-sm font-mono uppercase tracking-wider py-2 px-3 text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded cursor-pointer transition-colors flex items-center justify-between group">
                               {i}
                               <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -554,9 +554,9 @@ export default function LandingPage() {
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                       {[
-                        { label: 'Active Projects', value: '24', sub: 'Optimal', icon: <Layers className="w-4 h-4 text-foreground" /> },
-                        { label: 'Sprint Velocity', value: '142', sub: '+12% WoW', icon: <Zap className="w-4 h-4 text-foreground" /> },
-                        { label: 'Pending Approvals', value: '07', sub: 'Action Req', icon: <CheckCircle2 className="w-4 h-4 text-foreground" /> }
+                        { label: 'Active Programs', value: '24', sub: 'Optimal', icon: <Layers className="w-4 h-4 text-foreground" /> },
+                        { label: 'Avg Attendance', value: '88%', sub: '+12% YoY', icon: <Zap className="w-4 h-4 text-foreground" /> },
+                        { label: 'Job Openings', value: '312', sub: 'Action Req', icon: <CheckCircle2 className="w-4 h-4 text-foreground" /> }
                       ].map((stat, i) => (
                         <div key={i} className="bg-background p-6 border border-border rounded flex flex-col justify-between h-40 hover:border-foreground transition-colors group">
                           <div className="flex items-center justify-between text-muted-foreground">
@@ -574,7 +574,7 @@ export default function LandingPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                       <div className="lg:col-span-2 bg-background border border-border rounded p-6 flex flex-col justify-between">
                         <div className="flex justify-between items-center mb-8">
-                          <h3 className="font-mono text-xs uppercase tracking-widest text-foreground">Velocity Trend</h3>
+                          <h3 className="font-mono text-xs uppercase tracking-widest text-foreground">Attendance Trend</h3>
                           <div className="flex gap-2">
                             <div className="w-2 h-2 bg-foreground" />
                             <div className="w-2 h-2 bg-border" />
@@ -597,8 +597,8 @@ export default function LandingPage() {
                           ))}
                         </div>
                         <div className="flex justify-between mt-4 font-mono text-[10px] text-muted-foreground">
-                          <span>Sprint 10</span>
-                          <span>Sprint 21</span>
+                          <span>Week 1</span>
+                          <span>Week 12</span>
                         </div>
                       </div>
 
@@ -611,15 +611,15 @@ export default function LandingPage() {
                         <div className="space-y-4 font-mono text-xs flex-1">
                           <div className="p-3 border border-border rounded bg-surface-hover text-foreground">
                             <span className="text-accent mr-2">{'>'}</span>
-                            WARN: Mobile team over capacity.
+                            WARN: Batch 04 trainer not assigned.
                           </div>
                           <div className="p-3 border border-border rounded text-muted-foreground">
                             <span className="mr-2">{'>'}</span>
-                            INFO: 2 PRs blocked.
+                            INFO: 12 Trainees pending ID proof.
                           </div>
                           <div className="p-3 border border-border rounded text-muted-foreground">
                             <span className="mr-2">{'>'}</span>
-                            INFO: Deploy successful.
+                            INFO: Final assessments completed.
                           </div>
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground opacity-50 mt-4 text-xs font-mono">
@@ -643,13 +643,13 @@ export default function LandingPage() {
           >
             {[...Array(6)].map((_, i) => (
               <div key={i} className="flex items-center gap-12">
-                <span>Enterprise Grade</span>
+                <span>National Scale</span>
                 <div className="w-1.5 h-1.5 bg-background rounded" />
-                <span>Zero Compromise</span>
+                <span>Verified Skills</span>
                 <div className="w-1.5 h-1.5 bg-background rounded" />
-                <span>Absolute Precision</span>
+                <span>Cooperative Training</span>
                 <div className="w-1.5 h-1.5 bg-background rounded" />
-                <span>Maximum Velocity</span>
+                <span>Maximum Employability</span>
                 <div className="w-1.5 h-1.5 bg-background rounded" />
               </div>
             ))}
@@ -674,12 +674,12 @@ export default function LandingPage() {
                   <span className="w-2 h-2 bg-accent" /> Core Infrastructure // 06 Modules
                 </div>
                 <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter uppercase leading-[0.9]">
-                  Absolute<br />Precision.
+                  Empower<br />Cooperatives.
                 </h2>
               </div>
               <div className="max-w-sm">
                 <p className="text-muted-foreground text-base leading-relaxed mb-6">
-                  One platform to plan, ship, secure, and analyze — engineered for teams that can&apos;t afford to slow down.
+                  One platform to register, train, certify, and employ — built for institutions aiming to transform cooperative education.
                 </p>
                 <Link href="/product" className="inline-flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-foreground border-b border-accent pb-1 group w-fit">
                   Explore all modules <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -690,10 +690,10 @@ export default function LandingPage() {
             {/* Social-proof metrics strip */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-[1px] bg-border border border-border rounded mb-3">
               {[
-                { v: '10x', l: 'Faster Delivery' },
+                { v: '25K+', l: 'Trainees Certified' },
                 { v: '99.9%', l: 'Platform Uptime' },
-                { v: '24', l: 'Edge Regions' },
-                { v: 'SOC 2', l: 'Type II Certified' },
+                { v: '200+', l: 'Institutions' },
+                { v: '100%', l: 'Digital Records' },
               ].map((m, i) => (
                 <div key={i} className="bg-background p-6 md:p-8 group hover:bg-surface transition-colors">
                   <div className="text-3xl md:text-4xl font-bold tracking-tighter mb-2 group-hover:text-accent transition-colors">{m.v}</div>
@@ -716,14 +716,14 @@ export default function LandingPage() {
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_01</span>
                   </div>
-                  <h3 className="text-3xl md:text-4xl font-bold uppercase tracking-tighter mb-4 text-foreground">Enterprise Visibility.</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed max-w-md">Track portfolios, programs, and projects across departments with real-time health metrics and dependency mapping.</p>
+                  <h3 className="text-3xl md:text-4xl font-bold uppercase tracking-tighter mb-4 text-foreground">Institutional Visibility.</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed max-w-md">Monitor programs, batches, and trainees across multiple institutes with real-time attendance and assessment metrics.</p>
                 </div>
 
                 {/* Visible animated chart */}
                 <div className="relative z-10 w-full bg-background border border-border rounded p-6 mt-8">
                   <div className="flex items-center justify-between mb-4 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                    <span>Portfolio Health</span>
+                    <span>Overall Attendance</span>
                     <span className="text-accent">+18% QoQ</span>
                   </div>
                   <div className="flex gap-2 md:gap-2.5 items-end h-28">
@@ -751,11 +751,11 @@ export default function LandingPage() {
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_02</span>
                   </div>
-                  <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">Agile Delivery.</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">Run sprints, manage backlogs, and track velocity for cross-functional teams.</p>
+                  <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">Digital Training.</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">Host online courses, track trainee progress, and conduct live virtual classes effortlessly.</p>
                 </div>
                 <div className="space-y-4 mt-8">
-                  {[{ l: 'Sprint 24', v: 72 }, { l: 'Backlog', v: 40 }, { l: 'In Review', v: 90 }].map((r, i) => (
+                  {[{ l: 'Batch 24', v: 85 }, { l: 'Completed', v: 60 }, { l: 'Assessments', v: 90 }].map((r, i) => (
                     <div key={i}>
                       <div className="flex justify-between font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
                         <span>{r.l}</span><span className="text-foreground">{r.v}%</span>
@@ -783,11 +783,11 @@ export default function LandingPage() {
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_03</span>
                   </div>
-                  <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">Security Control.</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">Enforce release approvals, manage audit logs, and track security reviews.</p>
+                  <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">Access Control.</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">Enforce institution-level access, manage trainer roles, and verify certifications securely.</p>
                 </div>
                 <div className="space-y-2 mt-8 font-mono text-[10px] uppercase tracking-widest">
-                  {['Release approved', 'Audit log sealed', '2FA enforced'].map((t, i) => (
+                  {['Institute onboarded', 'Trainer verified', '2FA enforced'].map((t, i) => (
                     <div key={i} className="flex items-center justify-between border border-border rounded p-2.5 group-hover:border-border-strong transition-colors">
                       <span className="text-muted-foreground flex items-center gap-2"><Lock className="w-3 h-3 text-accent" />{t}</span>
                       <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
@@ -805,8 +805,8 @@ export default function LandingPage() {
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_04</span>
                   </div>
-                  <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">Live Collaboration.</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">Reviews, comments, and CoopSetus that keep every team in perfect sync.</p>
+                  <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">Live Learning.</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">Doubt clearing, forums, and live classrooms that keep every trainee engaged.</p>
                 </div>
                 <div className="mt-8 flex items-center justify-between border border-border rounded p-4">
                   <div className="flex -space-x-2">
@@ -830,18 +830,18 @@ export default function LandingPage() {
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_05</span>
                   </div>
-                  <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">Native Integrations.</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">Connect your stack — CI, repos, chat, and cloud — in a single click.</p>
+                  <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">Ecosystem Integrations.</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">Connect your tools — LMS, ERP, payment gateways, and state portals.</p>
                 </div>
                 <div className="mt-8">
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { n: 'GitHub', k: 'GH', on: true },
-                      { n: 'Slack', k: 'SL', on: false },
-                      { n: 'Jira', k: 'JR', on: false },
-                      { n: 'AWS', k: 'AW', on: true },
-                      { n: 'Linear', k: 'LN', on: false },
-                      { n: 'Docker', k: 'DK', on: false },
+                      { n: 'Moodle', k: 'MD', on: true },
+                      { n: 'Zoom', k: 'ZM', on: false },
+                      { n: 'Tally', k: 'TL', on: false },
+                      { n: 'Gov ID', k: 'GV', on: true },
+                      { n: 'Razorpay', k: 'RP', on: false },
+                      { n: 'SMS', k: 'SM', on: false },
                     ].map((it) => (
                       <div key={it.n} className="flex items-center gap-2.5 border border-border rounded p-2.5 group-hover:border-border-strong transition-colors">
                         <span className={`w-7 h-7 shrink-0 flex items-center justify-center font-mono text-[9px] font-bold border ${it.on ? 'border-accent text-accent' : 'border-border text-muted-foreground'}`}>{it.k}</span>
@@ -869,7 +869,7 @@ export default function LandingPage() {
                     <span className="font-mono text-[10px] uppercase tracking-widest text-background/50">Module_06 // Core</span>
                   </div>
                   <h3 className="text-3xl md:text-5xl font-bold uppercase tracking-tighter mb-4">AI Intelligence.</h3>
-                  <p className="text-background/70 text-sm leading-relaxed mb-8 max-w-md">Summarize PRs, generate test cases, and surface delivery bottlenecks automatically — your senior engineer that never sleeps.</p>
+                  <p className="text-background/70 text-sm leading-relaxed mb-8 max-w-md">Recommend courses, identify skill gaps, and match trainees to jobs automatically — your virtual career counselor.</p>
                   <Button
                     onClick={() => handleNavigate('/dashboard', 'ai')}
                     disabled={isNavigating}
@@ -880,9 +880,9 @@ export default function LandingPage() {
                 </div>
                 <div className="relative z-10 w-full md:w-96 shrink-0 border border-background/20 bg-background/5 backdrop-blur-sm p-5 font-mono text-xs space-y-3">
                   {[
-                    { tag: 'PR #482', msg: 'Summarized · ready to merge' },
-                    { tag: 'TESTS', msg: '14 edge cases generated' },
-                    { tag: 'RISK', msg: 'Bottleneck flagged in API' },
+                    { tag: 'COURSE', msg: 'Recommended · Data Science Basics' },
+                    { tag: 'SKILL', msg: '3 missing skills identified' },
+                    { tag: 'JOB', msg: 'High match found in local org' },
                   ].map((l) => (
                     <div key={l.tag} className="flex items-center gap-3">
                       <span className="text-accent shrink-0">{'>'}</span>
@@ -940,28 +940,28 @@ export default function LandingPage() {
                     }`}>
                     <div className="w-full min-w-[220px]">
                       <div className="font-mono text-[10px] uppercase tracking-widest text-accent mb-6 whitespace-nowrap">Extraction Complete // 100%</div>
-                      <h3 className="text-3xl font-bold mb-6">Cryptographic Ledger</h3>
+                      <h3 className="text-3xl font-bold mb-6">Immutable Skill Passport</h3>
                       <p className="text-muted-foreground text-sm leading-relaxed mb-8">
-                        Our proprietary consensus algorithm ensures zero data loss even during severe network partitions. Every byte is checksummed, encrypted at rest using AES-256-GCM, and replicated synchronously.
+                        Every certificate, assessment score, and course completion is cryptographically signed and securely stored, ensuring verifiable digital credentials.
                       </p>
                       <div className="space-y-6">
                         <div>
                           <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-2">
-                            <span>Validation Node A</span>
+                            <span>Institute A</span>
                             <span className="text-green-400">SYNCED</span>
                           </div>
                           <div className="w-full h-1 bg-border overflow-hidden"><div className="w-full h-full bg-green-500" /></div>
                         </div>
                         <div>
                           <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-2">
-                            <span>Validation Node B</span>
+                            <span>Institute B</span>
                             <span className="text-green-400">SYNCED</span>
                           </div>
                           <div className="w-full h-1 bg-border overflow-hidden"><div className="w-[98%] h-full bg-green-500" /></div>
                         </div>
                         <div>
                           <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-2">
-                            <span>Failover Node C</span>
+                            <span>Trainee Vault</span>
                             <span className="text-amber-400">STANDBY</span>
                           </div>
                           <div className="w-full h-1 bg-border overflow-hidden"><div className="w-[45%] h-full bg-amber-500" /></div>
@@ -993,9 +993,9 @@ export default function LandingPage() {
                     }`}>
                     <div className="w-full min-w-[220px]">
                       <div className="font-mono text-[10px] uppercase tracking-widest text-accent mb-6 whitespace-nowrap">Extraction Complete // 100%</div>
-                      <h3 className="text-3xl font-bold mb-6">Global Anycast Network</h3>
+                      <h3 className="text-3xl font-bold mb-6">National Training Network</h3>
                       <p className="text-muted-foreground text-sm leading-relaxed mb-8">
-                        We utilize a globally distributed edge network with smart routing. Our active-active architecture automatically shifts traffic during regional outages without manual intervention.
+                        We connect thousands of cooperative institutions across India, ensuring localized content delivery and high availability.
                       </p>
                       <div className="grid grid-cols-2 gap-4">
                         {['us-east', 'eu-west', 'ap-south', 'sa-east'].map(region => (
@@ -1032,9 +1032,9 @@ export default function LandingPage() {
                     }`}>
                     <div className="w-full min-w-[220px]">
                       <div className="font-mono text-[10px] uppercase tracking-widest text-accent mb-6 whitespace-nowrap">Extraction Complete // 100%</div>
-                      <h3 className="text-3xl font-bold mb-6">CRDT Sync Engine</h3>
+                      <h3 className="text-3xl font-bold mb-6">Real-Time Attendance Sync</h3>
                       <p className="text-muted-foreground text-sm leading-relaxed mb-8">
-                        Our custom Conflict-Free Replicated Data Type engine resolves simultaneous edits deterministically without locking. Delta state is pushed over secure WebSockets in sub-10ms.
+                        Offline-first QR attendance allows trainers to mark presence without internet. Data syncs automatically the moment connectivity is restored.
                       </p>
                       <div className="bg-surface border border-border rounded p-6 font-mono text-[10px] text-muted-foreground space-y-3 relative overflow-hidden h-64">
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-surface pointer-events-none z-10" />

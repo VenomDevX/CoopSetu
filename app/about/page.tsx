@@ -37,10 +37,10 @@ export default function AboutPage() {
               ABOUT_CoopSetu
             </div>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-8 leading-[1.1] max-w-4xl">
-              Operational clarity for teams building critical software.
+              Operational clarity for institutions providing cooperative training.
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl leading-relaxed">
-              CoopSetu is a role-aware workspace for planning work, assigning teams, managing delivery, tracking approvals, and keeping project data connected in real time.
+              CoopSetu is a role-aware workspace for managing training batches, tracking trainee attendance, conducting assessments, and connecting trainees with potential employers in real time.
             </p>
           </section>
 
@@ -49,35 +49,35 @@ export default function AboutPage() {
             <div className="border border-border rounded p-8 flex flex-col gap-4">
               <span className="font-mono text-xs text-muted-foreground">01 — WHAT CoopSetu DOES</span>
               <p className="text-base text-foreground leading-relaxed">
-                Project, task, sprint, team, QA, security, approval, and release coordination in one controlled workspace.
+                Institutions, batches, assessments, attendance, and job placements managed in one unified workspace.
               </p>
             </div>
 
             <div className="border border-border rounded p-8 flex flex-col gap-4">
               <span className="font-mono text-xs text-muted-foreground">02 — BUILT FOR ACCOUNTABILITY</span>
               <p className="text-base text-foreground leading-relaxed">
-                Every action is connected to the right organization, project, team, role, and audit trail.
+                Every action is connected to the right institute, trainer, trainee, role, and digital skill passport.
               </p>
             </div>
 
             <div className="border border-border rounded p-8 flex flex-col gap-4">
               <span className="font-mono text-xs text-muted-foreground">03 — ROLE-AWARE BY DESIGN</span>
               <p className="text-base text-foreground leading-relaxed">
-                Owners, Admins, Project Managers, Team Managers, Developers, QA, Security, Auditors, and Client Viewers see only what they are authorized to access.
+                NCCT Admins, Institute Admins, Trainers, Trainees, and Employers see only what they are authorized to access.
               </p>
             </div>
 
             <div className="border border-border rounded p-8 flex flex-col gap-4">
-              <span className="font-mono text-xs text-muted-foreground">04 — REALTIME DELIVERY OPERATIONS</span>
+              <span className="font-mono text-xs text-muted-foreground">04 — REALTIME OPERATIONS</span>
               <p className="text-base text-foreground leading-relaxed">
-                Task assignments, updates, comments, notifications, workload, blockers, and delivery signals update without manual refresh.
+                Course assignments, attendance updates, assessment results, and job applications update in real-time without manual refresh.
               </p>
             </div>
 
             <div className="border border-border rounded p-8 md:col-span-2 flex flex-col gap-4">
               <span className="font-mono text-xs text-muted-foreground">05 — TRUSTED DATA, NOT FABRICATED DASHBOARDS</span>
               <p className="text-base text-foreground leading-relaxed">
-                Show truthful data and accurate empty states. Do not invent projects, employees, alerts, metrics, or delivery risks.
+                Show truthful training data and verifiable digital records. Do not invent batches, trainees, metrics, or completion certificates.
               </p>
             </div>
           </section>
@@ -93,7 +93,7 @@ export default function AboutPage() {
                 animate={{ x: [0, "-50%"] }}
                 transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
               >
-                {[...['Technology', 'Fintech', 'SaaS', 'Engineering Organizations', 'Product Teams', 'QA & Security Teams', 'Operations Teams'], ...['Technology', 'Fintech', 'SaaS', 'Engineering Organizations', 'Product Teams', 'QA & Security Teams', 'Operations Teams']].map((item, index) => (
+                {[...['Cooperative Institutes', 'Trainees', 'Trainers', 'Employers', 'NCCT Administrators', 'Skill Development Councils', 'Placement Agencies'], ...['Cooperative Institutes', 'Trainees', 'Trainers', 'Employers', 'NCCT Administrators', 'Skill Development Councils', 'Placement Agencies']].map((item, index) => (
                   <div key={index} className="flex items-center gap-x-8 whitespace-nowrap">
                     <span>{item}</span>
                     <span className="text-border">/</span>
@@ -113,7 +113,7 @@ export default function AboutPage() {
                     CoopSetu is designed and developed by VenomDevX.
                   </h2>
                   <p className="text-muted-foreground leading-relaxed text-sm">
-                    Focused on building secure, role-aware workflow software for teams managing complex software delivery.
+                    Focused on building secure, role-aware digital infrastructure for the cooperative training ecosystem.
                   </p>
                 </div>
               </div>
@@ -154,7 +154,7 @@ export default function AboutPage() {
 
           {/* CALL TO ACTION */}
           <section className="text-center border-t border-border pt-16">
-            <h2 className="text-2xl md:text-3xl font-bold mb-8 uppercase tracking-wide">Ready to gain operational clarity?</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-8 uppercase tracking-wide">Ready to transform cooperative training?</h2>
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
               <Button 
                 onClick={() => handleNavigate('/dashboard', 'demo')}
@@ -168,7 +168,7 @@ export default function AboutPage() {
                 className="border border-border rounded bg-transparent text-foreground hover:bg-surface rounded h-12 px-8 font-mono uppercase tracking-widest text-xs w-full sm:w-auto"
                 disabled={isNavigating}
               >
-                Create Workspace <ArrowRight className="ml-2 w-4 h-4" />
+                Register Institute <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
               <Button 
                 onClick={() => handleNavigate('/dashboard', 'signin')}

@@ -10,11 +10,11 @@ import { createClient } from '@/lib/supabase/client';
 import { Checkbox } from '@/components/ui/checkbox';
 
 const DEMO_ACCOUNTS = [
-  { label: 'Org Admin', email: 'admin@apexfintech.test' },
-  { label: 'Project Manager', email: 'pm@apexfintech.test' },
-  { label: 'Team Manager', email: 'tm@apexfintech.test' },
-  { label: 'Developer', email: 'dev@apexfintech.test' },
-  { label: 'QA Engineer', email: 'qa@apexfintech.test' },
+  { label: 'NCCT Admin', email: 'admin@apexfintech.test' },
+  { label: 'Institute Admin', email: 'pm@apexfintech.test' },
+  { label: 'Trainer', email: 'tm@apexfintech.test' },
+  { label: 'Trainee', email: 'dev@apexfintech.test' },
+  { label: 'Employer', email: 'qa@apexfintech.test' },
 ];
 
 export default function LoginPage() {
@@ -134,16 +134,16 @@ function LoginInner() {
             SECURE_WORKSPACE_ACCESS
           </h2>
           <h1 className="text-4xl font-semibold leading-tight mb-6 tracking-tight">
-            Enter your delivery workspace.
+            Enter your training workspace.
           </h1>
           <p className="text-muted-foreground text-lg mb-12 max-w-md leading-relaxed">
-            Sign in to manage projects, tasks, teams, approvals, and real-time delivery work.
+            Sign in to manage batches, trainees, assessments, attendance, and real-time training work.
           </p>
 
           <div className="space-y-4 font-mono text-xs text-muted-foreground tracking-widest uppercase">
-            <div className="flex items-center gap-3"><Building2 className="w-4 h-4 text-foreground" /> ORG_SCOPED_ACCESS</div>
+            <div className="flex items-center gap-3"><Building2 className="w-4 h-4 text-foreground" /> INSTITUTE_SCOPED_ACCESS</div>
             <div className="flex items-center gap-3"><Users className="w-4 h-4 text-foreground" /> ROLE_AWARE_WORKSPACE</div>
-            <div className="flex items-center gap-3"><Zap className="w-4 h-4 text-foreground" /> REALTIME_DELIVERY_SYNC</div>
+            <div className="flex items-center gap-3"><Zap className="w-4 h-4 text-foreground" /> REALTIME_TRAINING_SYNC</div>
           </div>
         </div>
 
@@ -164,7 +164,7 @@ function LoginInner() {
 
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight">Sign In</h1>
-            <p className="text-xs text-muted-foreground">Authenticate to access your organization.</p>
+            <p className="text-xs text-muted-foreground">Authenticate to access your institution.</p>
           </div>
 
           <form onSubmit={signIn} className="space-y-4">
@@ -263,11 +263,11 @@ function LoginInner() {
 
           <div className="pt-4 border-t border-border space-y-3">
             <Link href="/signup" className="flex items-center justify-between p-3 rounded bg-surface hover:bg-surface-hover group transition-colors">
-              <span className="text-xs font-medium">Sign up — Create a new workspace</span>
+              <span className="text-xs font-medium">Sign up — Register a new institution</span>
               <span className="text-muted-foreground group-hover:text-foreground transition-colors">→</span>
             </Link>
             <Link href="/signup?mode=join" className="flex items-center justify-between p-3 rounded bg-surface hover:bg-surface-hover group transition-colors">
-              <span className="text-xs font-medium">Join a team — Accept an invitation</span>
+              <span className="text-xs font-medium">Join an institution — Accept an invitation</span>
               <span className="text-muted-foreground group-hover:text-foreground transition-colors">→</span>
             </Link>
           </div>
