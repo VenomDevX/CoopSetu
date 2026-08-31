@@ -55,7 +55,7 @@ export function OnboardingShell({
         <div className="p-12 relative z-10">
           <div className="flex items-center gap-3 mb-16">
             <Logo width={32} height={32} />
-            <span className="uppercase tracking-widest text-base font-bold">CoopSetu</span>
+            <span className="uppercase tracking-widest text-base font-bold mt-1">CoopSetu</span>
           </div>
 
           <h1 className="text-4xl font-semibold leading-tight mb-6 tracking-tight">
@@ -101,8 +101,8 @@ export function OnboardingShell({
         <div className="flex-1 flex flex-col justify-center max-w-lg w-full mx-auto px-6 py-24 min-h-full">
           {/* Mobile Header */}
           <div className="flex lg:hidden items-center gap-3 mb-12">
-            <Logo width={24} height={24} />
-            <span className="uppercase tracking-widest text-sm font-bold">CoopSetu</span>
+            <Logo width={28} height={28} />
+            <span className="uppercase tracking-widest text-sm font-bold mt-1">CoopSetu</span>
           </div>
 
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
