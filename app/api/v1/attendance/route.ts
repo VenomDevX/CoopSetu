@@ -34,9 +34,17 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const batchId = searchParams.get('batch_id');
     const traineeId = searchParams.get('trainee_id');
+    const sessionId = searchParams.get('session_id');
+    const wantRecords = searchParams.get('records');
 
     const supabase = await createClient();
     const svc = new AttendanceService(supabase);
+
+    // Fetch records for a specific session (used by live feed)
+    if (sessionId && wantRecords) {
+      const records = await svc.getSessionRecords(sessionId);
+      return NextResponse.json({ data: { records } });
+    }
 
     if (batchId) {
       const sessions = await svc.getBatchSessions(batchId);

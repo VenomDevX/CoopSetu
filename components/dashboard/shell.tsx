@@ -108,6 +108,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
       { name: 'Trainees', href: '/dashboard/trainees', icon: UserCheck, perm: 'trainee:view' },
       { name: 'Trainers', href: '/dashboard/trainers', icon: User, perm: 'trainer:view' },
       { name: 'Attendance', href: '/dashboard/attendance', icon: QrCode, perm: 'attendance:view' },
+      { name: 'Digital ID', href: '/dashboard/id-card', icon: ShieldCheck },
     ]},
     { title: 'Learning_LMS', items: [
       { name: 'Courses', href: '/dashboard/courses', icon: BookOpen, perm: 'course:view' },
@@ -122,29 +123,9 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
     { title: 'Cooperative_AI', items: [
       { name: 'Career AI', href: '/dashboard/career-ai', icon: Bot },
     ]},
-    { title: 'Ops_MGT', items: [
-      { name: 'Projects', href: '/dashboard/projects', icon: Layers, perm: 'project:view' },
-      { name: 'Sprints', href: '/dashboard/sprints', icon: KanbanSquare, perm: 'sprint:view' },
-      { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare, perm: 'task:view' },
-    ]},
-    { title: 'Eng_Core', items: [
-      { name: 'Repositories', href: '/dashboard/repositories', icon: GitBranch, perm: 'integration:view' },
-      { name: 'QA & Security', href: '/dashboard/qa-security', icon: ShieldCheck, perm: 'qa:view' },
-      { name: 'Incidents', href: '/dashboard/incidents', icon: AlertCircle },
-    ]},
-    { title: 'Data_Knowledge', items: [
-      { name: 'Documents', href: '/dashboard/documents', icon: FileText, perm: 'document:view' },
-      { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, perm: 'analytics:view' },
-    ]},
     { title: 'Admin_Level', items: [
       { name: 'Teams', href: '/dashboard/teams', icon: Users, perm: 'team:view' },
       { name: 'Settings', href: '/dashboard/settings', icon: Settings },
-    ]},
-    { title: 'Legal & Info', items: [
-      { name: 'About', href: '/about', icon: Info },
-      { name: 'Contact', href: '/contact', icon: Mail },
-      { name: 'Privacy', href: '/privacy', icon: Shield },
-      { name: 'Terms', href: '/terms', icon: FileSignature },
     ]},
   ].map((g) => ({ ...g, items: g.items.filter((it) => can((it as { perm?: string }).perm)) }))
    .filter((g) => g.items.length > 0);

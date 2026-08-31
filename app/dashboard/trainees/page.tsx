@@ -2,9 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UserCheck, Search, GraduationCap, MapPin, Briefcase } from 'lucide-react';
+import { UserCheck, Search, GraduationCap, MapPin, Briefcase, Plus } from 'lucide-react';
 import { useEffect, useState, useCallback } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
 interface Trainee {
   id: string;
@@ -25,6 +25,17 @@ export default function TraineesPage() {
   const [stats, setStats] = useState<Stats>({ total: 0, active: 0, graduated: 0, employed: 0 });
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
+  
+  // Note: in a real app, user_id would be selected from a list of users or generated via invite. 
+  // For this prototype, we'll allow passing a mock user_id or a generic one.
+  const [form, setForm] = useState({ 
+    user_id: '00000000-0000-0000-0000-000000000000', 
+    education: '', 
+    location: '', 
+    digital_literacy_level: 'INTERMEDIATE', 
+    employment_status: 'UNEMPLOYED' 
+  });
 
   const load = useCallback(() => {
     const params = new URLSearchParams();
@@ -36,6 +47,13 @@ export default function TraineesPage() {
   }, [statusFilter, search]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleCreate = async () => {
+    await fetch('/api/v1/trainees', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+    setShowCreate(false);
+    setForm({ user_id: '00000000-0000-0000-0000-000000000000', education: '', location: '', digital_literacy_level: 'INTERMEDIATE', employment_status: 'UNEMPLOYED' });
+    load();
+  };
 
   const statusColor = (s: string) => {
     switch (s) { case 'ACTIVE': return 'border-green-500/40 text-green-500 bg-green-500/10'; case 'GRADUATED': return 'border-blue-500/40 text-blue-500 bg-blue-500/10'; default: return 'border-border text-muted-foreground'; }
@@ -55,6 +73,9 @@ export default function TraineesPage() {
           </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">Registered Trainees</h1>
         </div>
+        <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => setShowCreate(!showCreate)}>
+          <Plus className="w-4 h-4 mr-2" /> Add Trainee
+        </Button>
       </motion.div>
 
       {/* Stats */}
@@ -73,6 +94,38 @@ export default function TraineesPage() {
           </Card>
         ))}
       </div>
+
+      {/* Create Form */}
+      <AnimatePresence>
+        {showCreate && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+            <Card className="shadow-none border-border rounded bg-background mb-8">
+              <CardHeader className="border-b border-border pb-4"><CardTitle className="text-xs font-mono uppercase tracking-widest">Register New Trainee</CardTitle></CardHeader>
+              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" placeholder="User ID (UUID)" value={form.user_id} onChange={e => setForm({ ...form, user_id: e.target.value })} />
+                <input className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" placeholder="Education (e.g. B.Tech)" value={form.education} onChange={e => setForm({ ...form, education: e.target.value })} />
+                <input className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" placeholder="Location (e.g. Pune)" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} />
+                
+                <select className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" value={form.digital_literacy_level} onChange={e => setForm({ ...form, digital_literacy_level: e.target.value })}>
+                  <option value="BEGINNER">Beginner</option>
+                  <option value="INTERMEDIATE">Intermediate</option>
+                  <option value="ADVANCED">Advanced</option>
+                </select>
+                
+                <select className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" value={form.employment_status} onChange={e => setForm({ ...form, employment_status: e.target.value })}>
+                  <option value="UNEMPLOYED">Unemployed</option>
+                  <option value="EMPLOYED">Employed</option>
+                  <option value="SELF_EMPLOYED">Self-Employed</option>
+                  <option value="STUDENT">Student</option>
+                </select>
+                <div className="flex items-end md:col-span-1">
+                  <Button onClick={handleCreate} className="rounded font-mono text-xs uppercase w-full">Register Trainee</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Search & Filter */}
       <div className="flex flex-col sm:flex-row gap-4">
