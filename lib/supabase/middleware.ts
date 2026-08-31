@@ -18,6 +18,8 @@ function isPublic(pathname: string) {
     pathname.startsWith('/api/v1/auth/') ||
     pathname.startsWith('/api/v1/dev/') ||
     pathname.startsWith('/api/v1/demo/') ||
+    pathname.startsWith('/api/v1/hardware/') ||
+    pathname.startsWith('/api/v1/attendance/totp') ||
     pathname.startsWith('/auth/') ||
     /\.[a-zA-Z0-9]+$/.test(pathname) // static assets
   );
