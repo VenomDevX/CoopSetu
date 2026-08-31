@@ -156,17 +156,17 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
   // remount it each render; reused in both the desktop and mobile sidebars.
   const sidebarContent = (
     <>
-      <div className="h-16 flex items-center px-6 border-b border-border text-foreground shrink-0">
+      <div className="h-16 flex items-center px-6 text-foreground shrink-0">
         <Link href="/" className="font-bold text-sm tracking-tight flex items-center gap-3">
-          <Logo width={24} height={24} />
-          <span className="uppercase tracking-widest text-xs">CoopSetu</span>
+          <Logo width={28} height={28} />
+          <span className="uppercase tracking-widest text-xs mt-1">CoopSetu</span>
         </Link>
       </div>
 
-      <div className="flex-1 overflow-y-auto py-6 px-4 space-y-8 scrollbar-thin">
+      <div className="flex-1 overflow-y-auto py-6 px-2 space-y-8 scrollbar-thin">
         {navGroups.map((group, i) => (
           <div key={i}>
-            <div className="font-mono text-[10px] font-bold uppercase tracking-widest mb-3 px-2 text-muted-foreground">
+            <div className="text-xs font-semibold mb-2 px-4 text-muted-foreground">
               {group.title}
             </div>
             <div className="space-y-1">
@@ -176,7 +176,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
                 if (item.name === 'Settings' && membership.isDemo) {
                   return (
                     <button key={j} onClick={() => window.dispatchEvent(new CustomEvent('demo-alert'))}
-                      className={`w-full flex items-center justify-start text-left gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest transition-colors rounded-[4px] hover:bg-surface-hover text-muted-foreground hover:text-foreground border border-transparent`}>
+                      className={`w-full flex items-center justify-start text-left gap-3 px-4 py-2 text-sm font-medium transition-colors rounded-md text-muted-foreground hover:bg-surface-hover hover:text-foreground`}>
                       <item.icon className="w-4 h-4 shrink-0" />
                       <span className="truncate">{item.name}</span>
                     </button>
@@ -185,10 +185,10 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
 
                 return (
                   <Link key={j} href={item.href} prefetch={false}
-                    className={`flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest transition-colors rounded-[4px] ${
+                    className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors rounded-md ${
                       active
-                        ? 'bg-foreground text-background font-bold border border-foreground'
-                        : 'hover:bg-surface-hover text-muted-foreground hover:text-foreground border border-transparent'
+                        ? 'bg-surface-elevated text-foreground'
+                        : 'text-muted-foreground hover:bg-surface-hover hover:text-foreground'
                     }`}>
                     <item.icon className="w-4 h-4 shrink-0" />
                     <span className="truncate">{item.name}</span>
