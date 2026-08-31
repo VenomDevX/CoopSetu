@@ -47,8 +47,8 @@ export function MarketingHeader({ animated = false }: { animated?: boolean }) {
     <div className="w-full px-6 md:px-12 h-16 flex items-center justify-between">
       <div className="flex items-center gap-12">
         <Link href="/" className="font-bold text-lg tracking-tight flex items-center gap-3">
-          <Logo width={24} height={24} />
-          <span className="uppercase tracking-widest text-xs">CoopSetu</span>
+          <Logo width={28} height={28} />
+          <span className="uppercase tracking-widest text-xs mt-1">CoopSetu</span>
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-xs font-mono uppercase tracking-widest text-muted-foreground">
           <Link href="/product" className={`${pathname === '/product' ? 'text-foreground' : 'hover:text-foreground'} transition-colors`}>Product</Link>
