@@ -47,14 +47,24 @@ if %errorlevel% neq 0 (
 )
 echo.
 
-:: 4. Start Next.js Frontend
-echo [4/5] Starting Next.js frontend...
+:: 4. Clear Next.js cache (ensures new assets like logo always load fresh)
+echo [4/6] Clearing Next.js cache...
+if exist ".next" (
+    rmdir /s /q ".next"
+    echo Cache cleared.
+) else (
+    echo No cache found, skipping.
+)
+echo.
+
+:: 5. Start Next.js Frontend
+echo [5/6] Starting Next.js frontend...
 start "CoopSetu Frontend" cmd /k "npm run dev"
 echo Frontend is starting in a new window.
 echo.
 
-:: 5. Wait a moment and open browser
-echo [5/5] Waiting for frontend to initialize...
+:: 6. Wait a moment and open browser
+echo [6/6] Waiting for frontend to initialize...
 timeout /t 8 /nobreak >nul
 echo Opening browser...
 start http://localhost:3000
