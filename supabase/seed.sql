@@ -53,8 +53,11 @@ begin
       'email', now(), now(), now())
     on conflict do nothing;
 
-    -- ensure profile job title
-    update public.profiles set job_title = v.value->>'title'
+    -- ensure profile job title, username, and completion status
+    update public.profiles 
+      set job_title = v.value->>'title',
+          username = split_part(v.value->>'email', '@', 1),
+          profile_completed_at = now()
       where id = (v.value->>'id')::uuid;
 
     -- GoTrue requires these token columns to be '' (not NULL) for password login
