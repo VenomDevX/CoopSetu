@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { getLegalStatus } from '@/lib/legal/get-legal-status';
 
 export default async function OnboardingIndex({
   searchParams,

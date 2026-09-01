@@ -23,6 +23,10 @@ for (const [key, email] of Object.entries(ACCOUNTS)) {
     const res = await page.request.post('/api/v1/auth/login', {
       data: { identifier: email, password: process.env.TEST_USER_PASSWORD ?? (() => { throw new Error('TEST_USER_PASSWORD is required'); })(), rememberDevice: true },
     });
+    if (!res.ok()) {
+      const text = await res.text();
+      console.error(`Login failed for ${email} with status ${res.status()}: ${text}`);
+    }
     expect(res.ok(), `login failed for ${email}: HTTP ${res.status()}`).toBeTruthy();
 
     // Confirm the session cookie grants dashboard access, then persist state.
