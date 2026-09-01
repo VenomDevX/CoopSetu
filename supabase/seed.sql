@@ -83,9 +83,9 @@ begin
   end loop;
 
   -- Organization (created_by now exists)
-  insert into public.organizations (id, name, slug, industry, timezone, created_by)
+  insert into public.organizations (id, name, slug, industry, timezone, created_by, initial_setup_completed_at)
   values (v_org, 'Apex Financial Technologies', 'apex-financial-technologies', 'Fintech', 'UTC',
-          '00000000-0000-0000-0000-000000000001')
+          '00000000-0000-0000-0000-000000000001', now())
   on conflict (id) do nothing;
 
   -- Pass 2: memberships + role assignments
