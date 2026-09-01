@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, GraduationCap, Briefcase, Search, Plus, Building2 } from 'lucide-react';
+import { User, GraduationCap, Briefcase, Search, Plus, Building2, Clock } from 'lucide-react';
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 

@@ -11,11 +11,7 @@
 -- schema-qualified, so the pinned paths below are safe.
 -- ============================================================================
 
--- Pure built-in SQL (string_agg/substr/random/generate_series live in pg_catalog).
-ALTER FUNCTION handoff.generate_join_code() SET search_path = pg_catalog;
 
--- Uses fully-qualified extensions.digest(); include extensions for safety.
-ALTER FUNCTION handoff.hash_join_code(text) SET search_path = pg_catalog, extensions;
 
 -- Trigger function; references public.projects/sprints/tasks/releases (qualified).
 ALTER FUNCTION public.check_project_deadline_tenant() SET search_path = public, pg_catalog;

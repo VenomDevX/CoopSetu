@@ -27,7 +27,7 @@ describe('Demo Workspace Integration', () => {
   });
 
   it('should provision a new demo workspace', async () => {
-    const result = await provisionDemoWorkspace(mockAuthUserId, 'PROJECT_MANAGER');
+    const result = await provisionDemoWorkspace(mockAuthUserId, 'INSTITUTE_DIRECTOR');
     
     expect(result.orgId).toBeDefined();
     expect(result.memberId).toBeDefined();
@@ -38,7 +38,7 @@ describe('Demo Workspace Integration', () => {
 
     const { data: session } = await admin.from('demo_sessions').select('*').eq('auth_user_id', mockAuthUserId).single();
     expect(session).toBeDefined();
-    expect(session?.active_demo_role).toBe('PROJECT_MANAGER');
+    expect(session?.active_demo_role).toBe('INSTITUTE_DIRECTOR');
   });
 
   it('should reset the demo workspace and retain the same org ID', async () => {
