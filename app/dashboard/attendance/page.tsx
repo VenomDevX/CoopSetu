@@ -42,7 +42,7 @@ export default function AttendancePage() {
   const load = useCallback(() => {
     if (!batchId) return;
     fetch(`/api/v1/attendance?batch_id=${batchId}`).then(r => r.json()).then(j => {
-      if (j?.data) { setSessions(j.data.sessions || []); setStats(j.data.stats || stats); }
+      if (j?.data) { setSessions(j.data.sessions || []); setStats(s => j.data.stats || s); }
     });
   }, [batchId]);
 
@@ -51,7 +51,7 @@ export default function AttendancePage() {
   // Live polling
   useEffect(() => {
     if (pollRef.current) clearInterval(pollRef.current);
-    if (!activeSession) { setLiveRecords([]); return; }
+    if (!activeSession) { return; }
     const poll = () => {
       fetch(`/api/v1/attendance?session_id=${activeSession.id}&records=true`).then(r => r.json()).then(j => {
         if (j?.data?.records) setLiveRecords(j.data.records);
@@ -65,7 +65,7 @@ export default function AttendancePage() {
   const createSession = async () => {
     const res = await fetch('/api/v1/attendance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'create_session', ...sessionForm }) });
     const j = await res.json();
-    if (j?.data) setActiveSession(j.data);
+    if (j?.data) { setActiveSession(j.data); setLiveRecords([]); }
     setShowCreateSession(false);
     if (sessionForm.batch_id) setBatchId(sessionForm.batch_id);
     load();
@@ -74,6 +74,7 @@ export default function AttendancePage() {
   const closeSession = async (sessionId: string) => {
     await fetch('/api/v1/attendance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'close_session', session_id: sessionId }) });
     setActiveSession(null);
+    setLiveRecords([]);
     load();
   };
 
@@ -233,7 +234,7 @@ export default function AttendancePage() {
             <span>Date</span><span>Type</span><span>Slot</span><span>Records</span><span>Active</span>
           </div>
           {sessions.map(s => (
-            <div key={s.id} className="grid grid-cols-1 md:grid-cols-[1fr_100px_100px_100px_80px] gap-2 md:gap-4 px-4 py-3 border-b border-border hover:bg-surface-hover transition-colors items-center cursor-pointer" onClick={() => { if (s.is_active) setActiveSession(s); }}>
+            <div key={s.id} className="grid grid-cols-1 md:grid-cols-[1fr_100px_100px_100px_80px] gap-2 md:gap-4 px-4 py-3 border-b border-border hover:bg-surface-hover transition-colors items-center cursor-pointer" onClick={() => { if (s.is_active) { setActiveSession(s); setLiveRecords([]); } }}>
               <span className="text-sm font-mono text-foreground">{new Date(s.date).toLocaleDateString()}</span>
               <span className="text-xs font-mono uppercase text-muted-foreground">{s.session_type}</span>
               <span className="text-xs font-mono uppercase text-muted-foreground">{s.session_slot}</span>
