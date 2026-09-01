@@ -38,11 +38,16 @@ export const getCurrentMembership = cache(async (
   async function resolve(orgId?: string) {
     let q = supabase
       .from('organization_members')
-      .select('id, organization_id, is_active, organizations(is_demo, ip_allowlist, workspace_type)')
+      .select('id, organization_id, is_active, organizations(is_demo, ip_allowlist)')
       .eq('user_id', user!.id)
       .eq('is_active', true);
     if (orgId) q = q.eq('organization_id', orgId);
-    return (await q.limit(1).maybeSingle()).data;
+    
+    const { data, error } = await q.limit(1).maybeSingle();
+    if (error) {
+      console.error(`[DEBUG] getCurrentMembership resolve() error:`, error);
+    }
+    return data;
   }
 
   let member = preferredOrg ? await resolve(preferredOrg) : null;
