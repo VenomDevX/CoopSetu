@@ -36,8 +36,3 @@ REVOKE EXECUTE ON FUNCTION public.create_test_plan(uuid, uuid, jsonb) FROM anon;
 REVOKE EXECUTE ON FUNCTION public.start_security_review(uuid, uuid, jsonb) FROM anon;
 REVOKE EXECUTE ON FUNCTION public.get_active_sessions() FROM anon;
 REVOKE EXECUTE ON FUNCTION public.revoke_session(uuid) FROM anon;
--- get_join_code_status: 0069 only granted `authenticated` and never revoked
--- PUBLIC, so `anon` retained EXECUTE via PUBLIC. Revoke PUBLIC (this also drops
--- the redundant anon grant) while keeping authenticated + service_role.
-REVOKE EXECUTE ON FUNCTION public.get_join_code_status(uuid) FROM anon, PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.record_legal_acceptance(uuid, uuid, uuid, text, text, text, text) FROM anon;
