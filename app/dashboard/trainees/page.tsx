@@ -42,7 +42,7 @@ export default function TraineesPage() {
     if (statusFilter) params.set('status', statusFilter);
     if (search) params.set('search', search);
     fetch(`/api/v1/trainees?${params}`).then(r => r.json()).then(j => {
-      if (j?.data) { setTrainees(j.data.trainees || []); setStats(j.data.stats || stats); }
+      if (j?.data) { setTrainees(j.data.trainees || []); setStats(s => j.data.stats || s); }
     });
   }, [statusFilter, search]);
 

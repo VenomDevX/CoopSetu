@@ -28,7 +28,7 @@ export default function CertificatesPage() {
 
   const load = useCallback(() => {
     fetch('/api/v1/certificates').then(r => r.json()).then(j => {
-      if (j?.data) { setCertificates(j.data.certificates || []); setStats(j.data.stats || stats); }
+      if (j?.data) { setCertificates(j.data.certificates || []); setStats(s => j.data.stats || s); }
     });
   }, []);
 

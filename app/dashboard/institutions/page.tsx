@@ -30,7 +30,7 @@ export default function InstitutionsPage() {
 
   const load = useCallback(() => {
     fetch('/api/v1/institutions').then(r => r.json()).then(j => {
-      if (j?.data) { setInstitutions(j.data.institutions || []); setStats(j.data.stats || stats); }
+      if (j?.data) { setInstitutions(j.data.institutions || []); setStats(s => j.data.stats || s); }
     });
   }, []);
 

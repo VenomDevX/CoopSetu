@@ -107,6 +107,7 @@ export default function DigitalIdCard() {
               
               <div className="w-full aspect-square bg-white rounded-xl p-4 flex items-center justify-center mb-6 shadow-xl relative">
                 {qrDataUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img src={qrDataUrl} alt="Live QR" className="w-full h-full object-contain" />
                 ) : (
                   <RefreshCw className="w-8 h-8 text-muted-foreground animate-spin" />
