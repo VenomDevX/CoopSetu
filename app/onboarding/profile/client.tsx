@@ -46,14 +46,13 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
   const [customSpecialization, setCustomSpecialization] = useState('');
   const [managerType, setManagerType] = useState('Not a Manager');
   const [description, setDescription] = useState('');
-  const [acceptedLegal, setAcceptedLegal] = useState(!needsLegalConsent);
 
   const isNameValid = nameSchema.safeParse(fullName).success;
   const isUsernameSyntaxValid = usernameSyntaxSchema.safeParse(username).success;
   const actualJobTitle = jobTitleSelect === 'Other' ? customJobTitle : jobTitleSelect;
   const actualSpec = specializationSelect === 'Other' ? customSpecialization : specializationSelect;
   const isJobValid = jobFamily !== '' && actualJobTitle.length >= 2 && actualSpec.length >= 2 && description.length <= 500;
-  const isFormValid = isNameValid && isUsernameSyntaxValid && usernameAvailable === true && isJobValid && acceptedLegal;
+  const isFormValid = isNameValid && isUsernameSyntaxValid && usernameAvailable === true && isJobValid;
 
   // Debounced Username
   const usernameCheckRef = useRef<NodeJS.Timeout>(null);
@@ -93,17 +92,7 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
     setLoading(true);
 
     try {
-      if (needsLegalConsent) {
-        const legalRes = await fetch('/api/v1/legal/accept', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ acceptedTerms: true, acceptedPrivacy: true, source: 'ONBOARDING_PROFILE' }),
-        });
-        if (!legalRes.ok) {
-          const legalData = await legalRes.json().catch(() => ({}));
-          throw new Error(legalData.error?.message || 'Failed to record legal acceptance.');
-        }
-      }
+
 
       const res = await fetch('/api/v1/onboarding/profile', {
         method: 'POST',
@@ -266,24 +255,7 @@ export default function ProfileClient({ initialFullName, initialUsername, connec
           </div>
         </div>
 
-        <label className="flex items-start gap-3 cursor-pointer select-none w-full group">
-          <Checkbox
-            checked={acceptedLegal}
-            onCheckedChange={(checked) => setAcceptedLegal(checked as boolean)}
-            className="mt-0.5"
-          />
-          <span className="text-sm text-foreground">
-            I agree to the{' '}
-            <Link href="/terms" target="_blank" className="underline hover:opacity-80">
-              Terms of Service
-            </Link>{' '}
-            and{' '}
-            <Link href="/privacy" target="_blank" className="underline hover:opacity-80">
-              Privacy Policy
-            </Link>
-            .
-          </span>
-        </label>
+
 
         <button type="submit" disabled={!isFormValid || checkingUsername || loading} className="w-full h-11 bg-foreground text-background rounded-[6px] text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-50">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continue <ChevronRight className="w-4 h-4" /></>}

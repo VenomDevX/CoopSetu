@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { getLegalStatus } from '@/lib/legal/get-legal-status';
 import ProfileClient from './client';
 
 export default async function OnboardingProfilePage() {
@@ -12,11 +11,7 @@ export default async function OnboardingProfilePage() {
     redirect('/login');
   }
 
-  let needsLegalConsent = false;
-  if (!user.is_anonymous) {
-    const status = await getLegalStatus(user, supabase);
-    needsLegalConsent = !status.isAccepted;
-  }
+  const needsLegalConsent = false;
 
   // Check if they are already complete?
   // We can just rely on the central resolver for strict checking,
