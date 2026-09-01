@@ -56,7 +56,16 @@ begin
     -- ensure profile job title, username, and completion status
     update public.profiles 
       set job_title = v.value->>'title',
-          username = split_part(v.value->>'email', '@', 1),
+          username = case
+            when length(split_part(v.value->>'email', '@', 1)) < 3
+            then split_part(v.value->>'email', '@', 1) || '-user'
+            else split_part(v.value->>'email', '@', 1)
+          end,
+          username_normalized = lower(case
+            when length(split_part(v.value->>'email', '@', 1)) < 3
+            then split_part(v.value->>'email', '@', 1) || '-user'
+            else split_part(v.value->>'email', '@', 1)
+          end),
           profile_completed_at = now()
       where id = (v.value->>'id')::uuid;
 
