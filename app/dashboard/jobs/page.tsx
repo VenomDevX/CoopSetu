@@ -38,7 +38,7 @@ export default function JobsPage() {
     if (statusFilter) params.set('status', statusFilter);
     if (search) params.set('search', search);
     fetch(`/api/v1/jobs?${params}`).then(r => r.json()).then(j => {
-      if (j?.data) { setJobs(j.data.jobs || []); setStats(j.data.stats || stats); }
+      if (j?.data) { setJobs(j.data.jobs || []); setStats(s => j.data.stats || s); }
     });
   }, [statusFilter, search]);
 

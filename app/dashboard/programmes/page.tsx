@@ -34,7 +34,7 @@ export default function ProgrammesPage() {
     if (statusFilter) params.set('status', statusFilter);
     if (search) params.set('search', search);
     fetch(`/api/v1/programmes?${params}`).then(r => r.json()).then(j => {
-      if (j?.data) { setProgrammes(j.data.programmes || []); setStats(j.data.stats || stats); }
+      if (j?.data) { setProgrammes(j.data.programmes || []); setStats(s => j.data.stats || s); }
     });
   }, [statusFilter, search]);
 
