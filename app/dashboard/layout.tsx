@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
-import { getLegalStatus } from '@/lib/legal/get-legal-status';
 import { DashboardShell } from '@/components/dashboard/shell';
 import { DemoBanner } from '@/components/demo/demo-banner';
 
@@ -13,12 +12,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const membership = await getCurrentMembership();
   if (!membership) redirect('/onboarding');
 
-  // Backstop against direct/bookmarked navigation bypassing the onboarding
-  // resolver's legal-consent gate. Demo (anonymous) sessions are exempt.
-  if (!user.is_anonymous) {
-    const legalStatus = await getLegalStatus(user, supabase);
-    if (!legalStatus.isAccepted) redirect('/onboarding');
-  }
+
 
   const [{ data: profile }, { data: org }] = await Promise.all([
     supabase.from('profiles').select('full_name, email, avatar_path').eq('id', user.id).maybeSingle(),
