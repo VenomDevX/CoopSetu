@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '@/types/supabase';
+
 import { TOTP } from 'totp-generator';
 import crypto from 'crypto';
 
@@ -292,7 +292,7 @@ export class AttendanceService {
     // Check if user is a trainee to mark attendance
     const { data: trainee } = await this.supabase
       .from('trainees')
-      .select('batch_id')
+      .select('id, batch_id')
       .eq('user_id', userId)
       .single();
 
@@ -318,7 +318,7 @@ export class AttendanceService {
     // Mark attendance
     return this.markAttendance({
       session_id: activeSession.id,
-      trainee_id: traineeId,
+      trainee_id: trainee.id,
       method: 'QR',
     });
   }

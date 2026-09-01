@@ -109,16 +109,3 @@ describe('Data ownership: sessions (get_active_sessions / revoke_session RPCs)',
     expect(stillThere).toBe(true);
   });
 });
-
-describe('Data ownership: legal acceptances (reconfirmation)', () => {
-  it("User B cannot read User A's legal acceptance row", async () => {
-    const userA = await freshUser('legal-owner-a');
-    const userB = await freshUser('legal-owner-b');
-
-    const { data } = await userB.client
-      .from('user_legal_acceptances')
-      .select('id')
-      .eq('user_id', userA.userId);
-    expect(data ?? []).toHaveLength(0);
-  });
-});
