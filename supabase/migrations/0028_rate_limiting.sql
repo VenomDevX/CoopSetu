@@ -1,4 +1,4 @@
--- Handoff — 0026 Rate Limiting
+-- CoopSetu — 0026 Rate Limiting
 
 create table if not exists public.rate_limits (
   ip text primary key,

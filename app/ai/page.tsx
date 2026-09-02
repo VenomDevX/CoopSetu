@@ -290,7 +290,7 @@ export default function AIPage() {
           </div>
         </section>
 
-        {/* SECTION 3 - AI for engineering */}
+        {/* SECTION 3 - AI for training operations */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32 border-t border-border pt-32">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
@@ -494,14 +494,14 @@ export default function AIPage() {
            <h2 className="text-2xl font-bold tracking-tight mb-12 text-center">What will you ask?</h2>
            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
              {[
-               "Which projects are at risk this week?",
-               "Summarize Sprint 14.",
-               "Show blocked work in Payments Platform.",
-               "Create subtasks for two-factor authentication.",
-               "Why did deployment 3.8.0 fail?",
-               "Generate a weekly executive update.",
-               "Find documentation related to refund validation.",
-               "Which engineers are above planned capacity?"
+               "Which programmes are at risk this week?",
+               "Summarize Batch 24 progress.",
+               "Show blocked work in the Dairy Co-op programme.",
+               "Draft the assessment plan for module 3.",
+               "Why did last week's attendance drop?",
+               "Generate a weekly institute update.",
+               "Find course material related to credit appraisal.",
+               "Which trainers are above planned capacity?"
              ].map((prompt, i) => (
                <div key={i} className="border border-border rounded bg-surface hover:bg-surface-hover transition-colors p-6 flex flex-col justify-between min-h-[140px] cursor-pointer group">
                  <MessageSquare className="w-5 h-5 text-muted-foreground group-hover:text-accent transition-colors mb-4" />

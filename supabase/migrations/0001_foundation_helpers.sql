@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0001 Foundation: extensions, shared utility functions, triggers
+-- CoopSetu — 0001 Foundation: extensions, shared utility functions, triggers
 -- ============================================================================
 
 create extension if not exists "pgcrypto";       -- gen_random_uuid()
