@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0048 Fix QA/Security Phase A permissions & RPCs
+-- CoopSetu — 0048 Fix QA/Security Phase A permissions & RPCs
 -- ============================================================================
 -- Adds missing permissions, grants them to appropriate roles, and rewrites
 -- the Phase A RPCs to accept the actor member ID as a parameter instead of

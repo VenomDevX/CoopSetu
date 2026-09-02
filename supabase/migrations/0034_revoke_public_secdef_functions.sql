@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0034 Revoke PUBLIC execute on SECURITY DEFINER functions
+-- CoopSetu — 0034 Revoke PUBLIC execute on SECURITY DEFINER functions
 -- PostgreSQL grants EXECUTE to PUBLIC by default on all functions.
 -- Must revoke from PUBLIC first, then re-grant only to the roles that need it.
 -- ============================================================================

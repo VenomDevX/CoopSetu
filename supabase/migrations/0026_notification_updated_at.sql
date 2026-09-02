@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0026 Add updated_at to notifications
+-- CoopSetu — 0026 Add updated_at to notifications
 -- ============================================================================
 
 alter table public.notifications 
