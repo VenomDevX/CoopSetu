@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0009 Epics, Sprints, Tasks, Boards
+-- CoopSetu — 0009 Epics, Sprints, Tasks, Boards
 -- ============================================================================
 
 create table if not exists public.epics (

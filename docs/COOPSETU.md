@@ -1,6 +1,15 @@
-# Handoff — Project Documentation
+# CoopSetu — Project Documentation
 
-Unified documentation for the Handoff enterprise project management platform.
+Unified engineering documentation for CoopSetu, the cooperative training hub
+(training ERP, e-learning, certification, skill passport and employment exchange)
+built on the delivery-management core described below.
+
+> **Naming note.** This project was previously called HANDOFF and the product is
+> now CoopSetu. One piece of the old name is still load-bearing: the Postgres
+> schema holding the RLS helper functions is literally named `handoff`, so the
+> `handoff.<fn>()` references below are the live object names, accurate as of
+> this branch. Renaming that schema touches every RLS policy and is a separate,
+> riskier change — not part of this PR.
 
 ---
 
@@ -29,7 +38,7 @@ Unified documentation for the Handoff enterprise project management platform.
 
 # 1. Local Development
 
-Handoff runs fully locally against a Dockerized Supabase stack. No cloud, Git,
+CoopSetu runs fully locally against a Dockerized Supabase stack. No cloud, Git,
 deployment, or external API credentials are required.
 
 ## 1.1 Required software
@@ -50,7 +59,7 @@ npm install
 
 ## 1.4 Initialise / start local Supabase
 
-The project is already initialised (`supabase/config.toml`, `project_id = "handoff"`).
+The project is already initialised (`supabase/config.toml`, `project_id = "sih26087"`).
 Start the stack:
 
 ```bash
@@ -66,9 +75,9 @@ local keys. The publishable key is already wired into `.env.local`.
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...   # from `supabase start`
-HANDOFF_AI_MODE=mock
-HANDOFF_ENABLE_MOCK_INTEGRATIONS=true
-HANDOFF_ENABLE_DEV_SEED=true
+COOPSETU_AI_MODE=mock
+COOPSETU_ENABLE_MOCK_INTEGRATIONS=true
+COOPSETU_ENABLE_DEV_SEED=true
 SUPABASE_SECRET_KEY=sb_secret_...                         # server only, never NEXT_PUBLIC_
 ```
 
@@ -134,7 +143,7 @@ Local data is preserved in a Docker volume between stops; `db reset` wipes it.
 
 ## 1.12 Public Demo Workspace
 
-Handoff includes a zero-friction public demo workspace. Visitors can explore the app instantly via the **Explore Demo** button on the sign-in/up pages.
+CoopSetu includes a zero-friction public demo workspace. Visitors can explore the app instantly via the **Explore Demo** button on the sign-in/up pages.
 
 - **Authentication**: Uses Supabase Anonymous Auth. Visitors do not need an email or password.
 - **Data Isolation**: A real organization is created behind the scenes with `is_demo = true`. The anonymous user is added as a member. Existing RLS policies enforce isolation automatically.
@@ -159,7 +168,7 @@ Handoff includes a zero-friction public demo workspace. Visitors can explore the
 ### Enforcement layers (defense in depth)
 
 1. **Database RLS** — the source of truth. Every business table has RLS enabled.
-   Policies call `SECURITY DEFINER` helper functions in the `handoff` schema:
+   Policies call `SECURITY DEFINER` helper functions in the `coopsetu` schema:
    - `handoff.is_org_member(org)` — active membership check
    - `handoff.has_permission(org, code)` — role/permission check (admins = all)
    - `handoff.has_role(org, codes[])`
@@ -592,10 +601,10 @@ audit log (and notifications where relevant).
 
 ## Security Hardening Plan
 
-This document outlines the systematic approach to executing the security hardening phase for the Handoff application.
+This document outlines the systematic approach to executing the security hardening phase for the CoopSetu application.
 
 ### Overview
-Handoff is a multi-company enterprise application. Every sensitive action must enforce:
+CoopSetu is a multi-company enterprise application. Every sensitive action must enforce:
 1. Authenticated user identity
 2. Active organization membership
 3. Role/permission validation
@@ -666,7 +675,7 @@ Results from `npm audit` and `npm audit --omit=dev`.
 **Vulnerability 1: PostCSS (Production Runtime)**
 - **Package:** `postcss` < 8.5.10, via `next` → `postcss`
 - **Severity:** Moderate — XSS via unescaped `</style>` in CSS stringify output.
-- **Production impact:** Unlikely. Handoff uses Tailwind CSS at build time and does not dynamically stringify user-provided CSS at runtime.
+- **Production impact:** Unlikely. CoopSetu uses Tailwind CSS at build time and does not dynamically stringify user-provided CSS at runtime.
 - **Status:** BLOCKED / PARTIAL — wait for Next.js to bump the underlying `postcss` dependency.
 
 **Vulnerability 2: UUID (Development Tooling)**
@@ -936,7 +945,7 @@ Status legend: `WORKING` · `PARTIAL` · `UI_ONLY` · `BROKEN` · `NOT_IMPLEMENT
 | Reports / Analytics | Export CSV | Server-side authorized CSV export for report/page data | report:export | report export API, `report_exports` | Yes | WORKING |  |
 | Reports / Analytics | Create Report | Save report configuration and generate authorized preview | report:create | `reports`, `report_runs` | Yes | WORKING |  |
 | Reports / Analytics | Schedule | Save schedule, calculate next run, local worker for dev | report:schedule | `report_schedules`, `report_deliveries` | Yes | WORKING |  |
-| All Dashboard Surfaces | Ask Handoff AI | Open real AI hub/panel with context, `ai:use`, streaming, stop, cited records | ai:use | `POST /api/v1/ai/stream`, `ai_requests`, Gemini provider | Yes | WORKING |  |
+| All Dashboard Surfaces | Ask CoopSetu AI | Open real AI hub/panel with context, `ai:use`, streaming, stop, cited records | ai:use | `POST /api/v1/ai/stream`, `ai_requests`, Gemini provider | Yes | WORKING |  |
 
 ---
 
@@ -1233,7 +1242,7 @@ role sessions (Owner, PM, Team Manager, Developer) and an unauthorized org.
    ```
    If auth returns 502 right after a reset (Kong cached the old container IP):
    ```bash
-   docker restart supabase_kong_handoff supabase_rest_handoff supabase_edge_runtime_handoff
+   docker restart supabase_kong_sih26087 supabase_rest_sih26087 supabase_edge_runtime_sih26087
    ```
 2. Browsers installed once: `npx playwright install chromium`
 
@@ -1294,10 +1303,10 @@ Security Audit B — Complete the Phase 1 Comprehensive Audit Logging Implementa
 
 ## Project Status
 
-- Product: Handoff
+- Product: CoopSetu
 - Environment: Local development only
 - Frontend: Next.js (App Router, TS)
-- Backend: Local Supabase + PostgreSQL (project id `handoff`)
+- Backend: Local Supabase + PostgreSQL (project id `sih26087`)
 - Realtime: Supabase Realtime
 - Current overall status: IN PROGRESS
 - Last updated: 2026-06-29
@@ -1506,7 +1515,7 @@ Baseline checks: **`npm run lint` = 0 problems · `npx vitest run` = 21/21 passe
 
 ### Already implemented
 - Multi-tenant schema, 12 migrations, every business table has `organization_id`, `created_at/updated_at` + triggers, archive fields.
-- RLS enabled on all business tables. Helpers in `handoff` schema.
+- RLS enabled on all business tables. Helpers in `coopsetu` schema.
 - Auth (signup/login/onboarding/signout), middleware route guard, browser/server/admin Supabase clients.
 - ~70 API routes under `app/api/v1`.
 - Realtime hooks + live Kanban + notification bell. Two-browser + headless verified.
@@ -1642,6 +1651,16 @@ Responsive Layout, Screen Adaptation, and Scroll Usability
 ---
 
 # 10. Student Workspaces
+
+> **REMOVED — historical record only.** The student/hackathon workspace path was
+> dropped during the CoopSetu rebrand. `app/onboarding/workspace-path` now
+> auto-redirects to `/onboarding/company`, and the APIs described below
+> (`/api/v1/student-workspaces/solo`, `/api/v1/student-teams`, `/api/v1/join-team`)
+> no longer exist. `tests/e2e/student-team.spec.ts` was deleted with them.
+> `lib/validation/student-team.ts` is still present but is now orphaned — only
+> `tests/unit/student-team.test.ts` imports it. This section is retained for the
+> design rationale and audit trail.
+
 
 Phase 1 of a Student Workspace system, added alongside the existing enterprise
 Organization system rather than as a parallel tenant model. Students get a
@@ -2112,7 +2131,7 @@ repository through the real UI form).
 
 ## 11.1 Performance architecture
 
-To survive the first 100-500 users without database connection exhaustion or slow APIs, Handoff will implement a shared caching layer (Redis/Upstash in production, in-memory for local development) to alleviate database read pressure for frequently accessed, permission-scoped queries. Load testing via k6 will validate latency (p95 < 800ms-1200ms) and ensure no connection exhaustion or cross-org data leaks occur under load.
+To survive the first 100-500 users without database connection exhaustion or slow APIs, CoopSetu will implement a shared caching layer (Redis/Upstash in production, in-memory for local development) to alleviate database read pressure for frequently accessed, permission-scoped queries. Load testing via k6 will validate latency (p95 < 800ms-1200ms) and ensure no connection exhaustion or cross-org data leaks occur under load.
 
 ## 11.2 Connection pooling status
 
@@ -2186,9 +2205,9 @@ Ensure logs **never include**:
 ## 11.6 Load test scripts & safety
 
 We will implement k6 load testing scripts in `tests/load/k6/`:
-1. `handoff-smoke.js`: Public and auth routes (/, /login, /signup, /demo)
-2. `handoff-authenticated.js`: Authenticated API routes (/dashboard, /api/v1/dashboard/overview, tasks, projects, notifications)
-3. `handoff-student-team.js`: Student workspace flows (join-code, team overview, notifications)
+1. `coopsetu-smoke.js`: Public and auth routes (/, /login, /signup, /demo)
+2. `coopsetu-authenticated.js`: Authenticated API routes (/dashboard, /api/v1/dashboard/overview, tasks, projects, notifications)
+3. `coopsetu-student-team.js`: Student workspace flows (join-code, team overview, notifications)
 
 Scripts will use environment variables: `LOAD_BASE_URL`, `LOAD_TEST_EMAIL`, `LOAD_TEST_PASSWORD`, `LOAD_STUDENT_EMAIL`, `LOAD_STUDENT_PASSWORD`. 
 
@@ -2239,7 +2258,7 @@ the "no internal error" (`status < 500`) check passing on **100% of the
 6,485 checked requests** — the app never returned a 5xx under 100 concurrent
 VUs. The elevated `http_req_failed` rate only appears at high concurrency
 and is consistent with 100 virtual users sharing one single literal session
-cookie (as the existing `handoff-authenticated.js` script is written) hammering
+cookie (as the existing `coopsetu-authenticated.js` script is written) hammering
 the same Supabase Auth session/token-refresh path simultaneously — a load
 pattern no real deployment would produce (100 real users each have their own
 session). Next step if this needs tighter verification: give each VU its own
@@ -2253,7 +2272,7 @@ login in `setup()`/`init` context instead of one shared cookie, then re-run.
 
 - **Dashboard Overview (`/api/v1/dashboard/overview`)**: Aggregates multiple tables (tasks, incidents, approvals, bugs). Susceptible to slow queries without proper indexes on `organization_id` + `status`.
 - **Inbox/Notifications (`/api/v1/notifications`)**: Aggregates notification counts per category. 
-- **`handoff-authenticated.js`'s single shared session** across all VUs is unrealistic for a true 100-real-user simulation (see §11.7 note) — fine for exercising API/DB throughput, but not for validating per-user session/auth behavior under concurrency.
+- **`coopsetu-authenticated.js`'s single shared session** across all VUs is unrealistic for a true 100-real-user simulation (see §11.7 note) — fine for exercising API/DB throughput, but not for validating per-user session/auth behavior under concurrency.
 
 ## 11.9 Production/staging requirements & CI Cadence
 
@@ -2323,9 +2342,9 @@ Steps 2–3 validation:
 BLOCKED BY DOCKER DESKTOP NOT RUNNING
 
 **k6 files added:**
-- `tests/load/k6/handoff-smoke.js`
-- `tests/load/k6/handoff-authenticated.js`
-- `tests/load/k6/handoff-student-team.js`
+- `tests/load/k6/coopsetu-smoke.js`
+- `tests/load/k6/coopsetu-authenticated.js`
+- `tests/load/k6/coopsetu-student-team.js`
 
 **Commands added to `package.json`:**
 - `npm run load:smoke`
@@ -2397,7 +2416,7 @@ slowest endpoints: /api/v1/dashboard/overview (DB fallback)
 
 ### CSS Regression Fix
 
-- **Root cause**: Tailwind CSS v4 automatically detects content files starting from the directory where `globals.css` lives. Because `app/globals.css` is in the `app/` directory, Tailwind only scanned `app/` and completely ignored the Handoff theme logic and UI components located in `components/` and `lib/`. 
+- **Root cause**: Tailwind CSS v4 automatically detects content files starting from the directory where `globals.css` lives. Because `app/globals.css` is in the `app/` directory, Tailwind only scanned `app/` and completely ignored the CoopSetu theme logic and UI components located in `components/` and `lib/`. 
 - **Files changed**: `app/globals.css` (Added `@source "../components";` and `@source "../lib";`).
 - **Tests run**: `npm run lint` and `npx vitest run`.
 - **Build result**: `npm run build` compiled successfully. The generated CSS chunk size increased from 92KB (broken) to 130KB (fixed), correctly including the component utility classes.
@@ -2816,11 +2835,11 @@ reason.
 ## 13.8 Load validation for concurrent users
 
 See §11.7 for full results and the critical `next dev`-vs-production-build
-finding. Summary: `handoff-smoke.js` passed cleanly at 25 VUs against a
-production build (p95=33ms, 0% errors). `handoff-authenticated.js` was bumped
+finding. Summary: `coopsetu-smoke.js` passed cleanly at 25 VUs against a
+production build (p95=33ms, 0% errors). `coopsetu-authenticated.js` was bumped
 to ramp to 100 VUs and passed the "no 5xx" check on 100% of 6,485 checked
 requests at 100 concurrent VUs — the app does not crash or error under 100
-concurrent users. `handoff-student-team.js` was not run (no seeded student
+concurrent users. `coopsetu-student-team.js` was not run (no seeded student
 demo account exists yet to supply credentials).
 
 ## 13.9 Tests added
@@ -2855,7 +2874,7 @@ demo account exists yet to supply credentials).
 - No seeded `STUDENT_SOLO`/`STUDENT_TEAM` demo account exists for
   `load:student` — creating one is the natural next step if a student-specific
   load baseline is needed.
-- `handoff-authenticated.js` shares one literal session cookie across all
+- `coopsetu-authenticated.js` shares one literal session cookie across all
   simulated VUs (see §11.7) — fine for API/DB throughput measurement, not a
   faithful simulation of 100 independent real users each with their own
   session.
@@ -2870,7 +2889,7 @@ demo account exists yet to supply credentials).
 
 Await instructions for the next phase. Candidates surfaced by this work:
 seed a student demo account for `load:student`; consider per-VU sessions in
-`handoff-authenticated.js` for a more realistic 100-independent-users
+`coopsetu-authenticated.js` for a more realistic 100-independent-users
 baseline; decide whether `/security`'s aspirational enterprise claims should
 be scoped back or the features actually built before any public launch.
 
@@ -2922,7 +2941,7 @@ pattern is consistent throughout:
   airtight**: it always re-queries `organization_members` filtered by
   `user_id = auth.uid() AND is_active = true` (and `organization_id` if an id
   was requested) using the caller's own RLS-scoped client — a forged
-  `handoff_active_org` cookie or a client-supplied `organizationId` path
+  `coopsetu_active_org` cookie or a client-supplied `organizationId` path
   param cannot grant access to an org the caller isn't really an active
   member of. Every route in the codebase that gates on this function
   inherits its correctness.

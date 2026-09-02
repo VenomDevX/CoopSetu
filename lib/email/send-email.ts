@@ -47,6 +47,6 @@ function getTransport() {
 
 /** Sends an email. Throws on failure — callers that want fire-and-forget should catch. */
 export async function sendEmail({ to, subject, html }: SendEmailInput): Promise<void> {
-  const from = process.env.SMTP_FROM ?? 'notifications@handoff.local';
+  const from = process.env.SMTP_FROM ?? 'notifications@coopsetu.local';
   await getTransport().sendMail({ from, to, subject, html });
 }

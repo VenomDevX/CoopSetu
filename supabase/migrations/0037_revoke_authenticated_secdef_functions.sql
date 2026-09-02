@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0037 Revoke authenticated from SECURITY DEFINER functions
+-- CoopSetu — 0037 Revoke authenticated from SECURITY DEFINER functions
 -- All these RPCs are now called via the service-role (admin) client in
 -- Next.js API routes. Revoking authenticated removes them from PostgREST's
 -- public API surface, eliminating the security advisor warnings.

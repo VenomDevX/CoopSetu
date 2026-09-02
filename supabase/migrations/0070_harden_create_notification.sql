@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0079 Harden create_notification against cross-tenant spoofing
+-- CoopSetu — 0079 Harden create_notification against cross-tenant spoofing
 -- ============================================================================
 -- create_notification is SECURITY DEFINER and (since 0051 restored the grant so
 -- the test suite passes) executable by `authenticated`. The prior body only
