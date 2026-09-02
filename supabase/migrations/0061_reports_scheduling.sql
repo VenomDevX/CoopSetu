@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0061 Reports and Scheduling (Security Phase E)
+-- CoopSetu — 0061 Reports and Scheduling (Security Phase E)
 -- ============================================================================
 
 create table if not exists public.reports (

@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0038 Fix auth.uid() in RLS policies
+-- CoopSetu — 0038 Fix auth.uid() in RLS policies
 -- Wrap bare auth.uid() calls in (SELECT auth.uid()) so Postgres evaluates
 -- the session value once per query instead of once per row.
 -- ============================================================================

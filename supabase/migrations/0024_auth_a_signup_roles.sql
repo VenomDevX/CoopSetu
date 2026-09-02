@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0024 Auth A: Database, username, roles, invite security
+-- CoopSetu — 0024 Auth A: Database, username, roles, invite security
 -- ============================================================================
 
 -- 1. Username constraints

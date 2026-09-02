@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0018 Grant ORG_OWNER project visibility/management
+-- CoopSetu — 0018 Grant ORG_OWNER project visibility/management
 -- ORG_OWNER was added in 0013 but not included in the project access helpers,
 -- so owners could not see projects/tasks. Add ORG_OWNER to both broad-role lists.
 -- ============================================================================

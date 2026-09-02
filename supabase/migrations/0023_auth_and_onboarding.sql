@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0023 Authentication & Onboarding Extensions
+-- CoopSetu — 0023 Authentication & Onboarding Extensions
 -- ============================================================================
 
 -- 1. Extend profiles

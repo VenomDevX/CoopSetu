@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0030 Tenant Isolation Triggers (Defense in Depth)
+-- CoopSetu — 0030 Tenant Isolation Triggers (Defense in Depth)
 -- ============================================================================
 -- Replaced composite foreign keys with BEFORE INSERT/UPDATE triggers. 
 -- Composite foreign keys break PostgREST's resource embedding (joins) because 
