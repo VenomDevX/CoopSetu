@@ -4,12 +4,12 @@ Unified engineering documentation for CoopSetu, the cooperative training hub
 (training ERP, e-learning, certification, skill passport and employment exchange)
 built on the delivery-management core described below.
 
-> **Naming note.** This project was previously called HANDOFF and the product is
-> now CoopSetu. One piece of the old name is still load-bearing: the Postgres
-> schema holding the RLS helper functions is literally named `handoff`, so the
-> `handoff.<fn>()` references below are the live object names, accurate as of
-> this branch. Renaming that schema touches every RLS policy and is a separate,
-> riskier change — not part of this PR.
+> **Naming note.** This project was previously called HANDOFF. The last trace of
+> that name was the Postgres schema holding the RLS helper functions, renamed
+> `handoff` → `coopsetu` by
+> `supabase/migrations/0075_rename_handoff_schema_to_coopsetu.sql`. The
+> `coopsetu.<fn>()` references below are the live object names once that
+> migration is applied; an environment still at 0074 has them as `coopsetu.<fn>()`.
 
 ---
 
@@ -169,11 +169,11 @@ CoopSetu includes a zero-friction public demo workspace. Visitors can explore th
 
 1. **Database RLS** — the source of truth. Every business table has RLS enabled.
    Policies call `SECURITY DEFINER` helper functions in the `coopsetu` schema:
-   - `handoff.is_org_member(org)` — active membership check
-   - `handoff.has_permission(org, code)` — role/permission check (admins = all)
-   - `handoff.has_role(org, codes[])`
-   - `handoff.can_view_project(project)` / `can_manage_project` / `is_project_member`
-   - `handoff.can_edit_task(task)` — managers, or the assignee
+   - `coopsetu.is_org_member(org)` — active membership check
+   - `coopsetu.has_permission(org, code)` — role/permission check (admins = all)
+   - `coopsetu.has_role(org, codes[])`
+   - `coopsetu.can_view_project(project)` / `can_manage_project` / `is_project_member`
+   - `coopsetu.can_edit_task(task)` — managers, or the assignee
    These are `SECURITY DEFINER` to avoid policy recursion on their own tables.
 2. **API guards** — `requireUser`, `requireOrganization`, `requirePermission`
    reject early with `401`/`403` before touching the DB.
@@ -262,10 +262,10 @@ UI: Create Task modal (components/tasks/create-task-modal.tsx) → "Create Task"
 → DB writes:
      · tasks                     (insert; organization_id + reporter_member_id from session)
      · task_assignees            (insert active PRIMARY assignment history row)
-     · task_activity             (trigger handoff.log_task_change on later updates; create logs audit)
+     · task_activity             (trigger coopsetu.log_task_change on later updates; create logs audit)
      · audit_logs                (action 'task.created')
 → notification:
-     · trigger handoff.notify_task_assigned (AFTER INSERT task_assignees)
+     · trigger coopsetu.notify_task_assigned (AFTER INSERT task_assignees)
        → create_notification(... 'TASK_ASSIGNED', 'You were assigned to UPI-116', title, project_id)
        → notifications (insert; recipient_member_id = assignee, actor from auth.uid())
 → realtime:
@@ -293,7 +293,7 @@ UI: Task Drawer assignee select (data-testid="task-assignee-select"), shown only
 → realtime: notifications → new assignee; tasks changes → boards/drawers
 ```
 
-Private-task note: task rows and task-adjacent rows now use `handoff.can_view_task(...)` RLS. Project membership alone does not reveal private tasks.
+Private-task note: task rows and task-adjacent rows now use `coopsetu.can_view_task(...)` RLS. Project membership alone does not reveal private tasks.
 
 #### Flow 3 — Employee updates task status  ✅ WORKING
 
@@ -711,7 +711,7 @@ Results from `npm audit` and `npm audit --omit=dev`.
 
 #### 3. API-Layer Defense in Depth (Tenant Checks)
 - **Finding:** In endpoints like `PATCH /api/v1/projects/[projectId]`, the application checks permissions against the user's active organization (`m.organizationId`) but executes the database update without explicitly filtering `eq('organization_id', m.organizationId)`.
-- **Mitigation in Place:** Supabase Row Level Security (RLS) successfully catches this and prevents the cross-tenant update because `handoff.can_manage_project(id)` evaluates to false for out-of-tenant resources.
+- **Mitigation in Place:** Supabase Row Level Security (RLS) successfully catches this and prevents the cross-tenant update because `coopsetu.can_manage_project(id)` evaluates to false for out-of-tenant resources.
 - **Recommendation:** Implement Defense in Depth. The backend service methods (e.g., `updateProject` in `services/project.service.ts`) should explicitly include `.eq('organization_id', orgId)` on all update/delete queries so the application actively rejects out-of-bounds requests before relying solely on RLS.
 
 #### 4. CSRF and XSS
@@ -749,8 +749,8 @@ Results from `npm audit` and `npm audit --omit=dev`.
 **Status:** IMPLEMENTED / INTEGRATION BLOCKED
 
 #### 1. Project Membership No Longer Implies Private Task Access
-- **Finding fixed:** `tasks_select` and task-adjacent policies previously used `handoff.can_view_project(project_id)`, so any user with project visibility could read private task rows, comments, activity, assignment rows, and attachments.
-- **Fix:** `supabase/migrations/0042_private_task_visibility.sql` adds `handoff.can_view_task(task_id)` and rewires task, assignment, comment, mention, attachment, activity, checklist, label, dependency, watcher, and time-entry policies to use it.
+- **Finding fixed:** `tasks_select` and task-adjacent policies previously used `coopsetu.can_view_project(project_id)`, so any user with project visibility could read private task rows, comments, activity, assignment rows, and attachments.
+- **Fix:** `supabase/migrations/0042_private_task_visibility.sql` adds `coopsetu.can_view_task(task_id)` and rewires task, assignment, comment, mention, attachment, activity, checklist, label, dependency, watcher, and time-entry policies to use it.
 - **Result:** Private tasks are visible only by direct task relationship, explicit grant, responsible manager/admin authority, or managed-assignee authority.
 
 #### 2. Assignment History Integrity
@@ -795,12 +795,12 @@ Project membership alone no longer grants access to private tasks. Regular devel
   - Extends `task_assignees` with org/project metadata, `assignment_type`, `assigned_by_member_id`, `removed_at`, and `removed_by_member_id`.
   - Replaces active assignment uniqueness with a partial unique index so removed assignments remain as history.
   - Adds tenant guards for assignment and explicit visibility rows.
-  - Replaces task, comments, attachments, activity, checklist, label, dependency, watcher, and time-entry RLS policies to use `handoff.can_view_task(...)`.
+  - Replaces task, comments, attachments, activity, checklist, label, dependency, watcher, and time-entry RLS policies to use `coopsetu.can_view_task(...)`.
 - `supabase/migrations/0043_fix_tasks_rls_snapshot.sql`
   - Inlines tasks_select policy to fix PostgREST snapshot isolation (INSERT RETURNING was failing).
 - `supabase/migrations/0044_visibility_scope_permission_guard.sql`
-  - Tightens `handoff.can_create_task_with_visibility`: only PRIVATE_ASSIGNMENT is open to any task:create holder; PROJECT_SHARED and ORGANIZATION_VISIBLE require admin/owner or project-responsible-manager.
-  - Adds `handoff.can_set_task_visibility` helper for the UPDATE path.
+  - Tightens `coopsetu.can_create_task_with_visibility`: only PRIVATE_ASSIGNMENT is open to any task:create holder; PROJECT_SHARED and ORGANIZATION_VISIBLE require admin/owner or project-responsible-manager.
+  - Adds `coopsetu.can_set_task_visibility` helper for the UPDATE path.
 
 ## Application Changes
 
@@ -826,16 +826,16 @@ Project membership alone no longer grants access to private tasks. Regular devel
 
 | Helper | Location |
 |--------|----------|
-| `handoff.can_view_task` | migration 0042 |
-| `handoff.can_edit_task` | migration 0042 |
-| `handoff.can_assign_task` | migration 0042 |
-| `handoff.can_assign_to` | migration 0042 |
-| `handoff.can_view_task_assignment_history` | migration 0042 |
-| `handoff.can_create_task_with_visibility` | migration 0042, tightened in 0044 |
-| `handoff.can_set_task_visibility` | migration 0044, wired into UPDATE policy in 0045 |
+| `coopsetu.can_view_task` | migration 0042 |
+| `coopsetu.can_edit_task` | migration 0042 |
+| `coopsetu.can_assign_task` | migration 0042 |
+| `coopsetu.can_assign_to` | migration 0042 |
+| `coopsetu.can_view_task_assignment_history` | migration 0042 |
+| `coopsetu.can_create_task_with_visibility` | migration 0042, tightened in 0044 |
+| `coopsetu.can_set_task_visibility` | migration 0044, wired into UPDATE policy in 0045 |
 | `tasks_select` sub-query fix | migration 0046 — explicit `tasks.id` qualifiers |
-| `handoff.is_project_responsible_manager` | migration 0042 |
-| `handoff.manages_task_assignee` | migration 0042 |
+| `coopsetu.is_project_responsible_manager` | migration 0042 |
+| `coopsetu.manages_task_assignee` | migration 0042 |
 
 ## Realtime Channel Changes
 
@@ -892,7 +892,7 @@ Tests run via Chrome MCP against the running local Supabase instance using real 
 | 15 | Task drawer shows `PRIVATE ASSIGNMENT` visibility + assignment history (`PRIMARY - Dev Rao by Pat Manager - active`) | ✅ confirmed in screenshot |
 | 16 | UPI-106 appears in PM's Kanban board under IN_PROGRESS column | ✅ confirmed in screenshot |
 
-**Bug found and fixed during live testing:** migration 0044 added `handoff.can_set_task_visibility()` but did not wire it into the `tasks_update` WITH CHECK clause. An assignee (dev@) could bypass the restriction via direct Supabase REST PATCH. Fixed in migration 0045 (`supabase/migrations/0045_wire_visibility_scope_into_update_policy.sql`).
+**Bug found and fixed during live testing:** migration 0044 added `coopsetu.can_set_task_visibility()` but did not wire it into the `tasks_update` WITH CHECK clause. An assignee (dev@) could bypass the restriction via direct Supabase REST PATCH. Fixed in migration 0045 (`supabase/migrations/0045_wire_visibility_scope_into_update_policy.sql`).
 
 ### Realtime leak test (2026-06-29)
 qa@ subscribed to Supabase Realtime `public:tasks` channel filtered to UPI-106 (PRIVATE_ASSIGNMENT, qa not assigned). pm@ updated the task title via Supabase REST. qa received **0 data events** — only the initial `system` join acknowledgment. ✅ PASS
@@ -953,10 +953,10 @@ Status legend: `WORKING` · `PARTIAL` · `UI_ONLY` · `BROKEN` · `NOT_IMPLEMENT
 
 | Surface | Expected Behavior | Current Status | Backend / DB | Permission | Notes |
 |---------|-------------------|----------------|--------------|------------|-------|
-| Tasks RLS | Private tasks do not appear to unrelated project members | IMPLEMENTED / INTEGRATION BLOCKED | `handoff.can_view_task`, `tasks.visibility_scope` | `task:view` plus record grant | Migration applied via DB reset; focused integration blocked by local Supabase HTTP timeout after reset. |
+| Tasks RLS | Private tasks do not appear to unrelated project members | IMPLEMENTED / INTEGRATION BLOCKED | `coopsetu.can_view_task`, `tasks.visibility_scope` | `task:view` plus record grant | Migration applied via DB reset; focused integration blocked by local Supabase HTTP timeout after reset. |
 | Task detail URL | Hidden task ID shows generic forbidden state | IMPLEMENTED | RLS-backed task query | `task:view` | Avoids helpful record-existence signals for inaccessible tasks. |
 | Create task | Private by default, optional broader visibility | IMPLEMENTED | `visibility_scope` persisted | `task:create`; `task:assign` when assigning | UI selector added; DB default is `PRIVATE_ASSIGNMENT`. |
-| Broader visibility scope | Only admin/owner/PM may set PROJECT_SHARED or ORGANIZATION_VISIBLE | IMPLEMENTED | `handoff.can_create_task_with_visibility` (0044), API route guard | role check in POST and PATCH routes | Regular employees get 403 before hitting RLS. |
+| Broader visibility scope | Only admin/owner/PM may set PROJECT_SHARED or ORGANIZATION_VISIBLE | IMPLEMENTED | `coopsetu.can_create_task_with_visibility` (0044), API route guard | role check in POST and PATCH routes | Regular employees get 403 before hitting RLS. |
 | Reassign task | Preserve old assignment row and add/promote new primary row | IMPLEMENTED | `task_assignees.removed_at`, `assignment_type` | `task:update` + `task:assign` | Bulk reassignment disabled to prevent history bypass. |
 | My Work / AI focus | Use the same RLS-visible private-task set | IMPLEMENTED | Supabase RLS on `tasks` | caller permissions | Includes additional/reviewer/explicit/manager/admin-visible work. |
 | Task drawer | Show visibility and assignment history | IMPLEMENTED | `task_assignees` embed | `task:view` | Hidden by RLS when caller cannot view the task. |
@@ -1397,9 +1397,9 @@ Security Audit B — Complete the Phase 1 Comprehensive Audit Logging Implementa
 
 ### 2026-06-30 — Security Phase 1: Comprehensive Audit Logging Implementation
 
-- **Architecture Decisions:** Implemented synchronous database triggers (`handoff.audit_trigger()`) attached to 8 critical core tables (`projects`, `tasks`, `organization_members`, `member_roles`, `bugs`, `security_reviews`, `releases`, `approval_requests`). This enforces 100% audit coverage, overriding silent application-layer omissions. Transitioned from application-side diffing to DB-side row-level JSONB `before_state` and `after_state`.
+- **Architecture Decisions:** Implemented synchronous database triggers (`coopsetu.audit_trigger()`) attached to 8 critical core tables (`projects`, `tasks`, `organization_members`, `member_roles`, `bugs`, `security_reviews`, `releases`, `approval_requests`). This enforces 100% audit coverage, overriding silent application-layer omissions. Transitioned from application-side diffing to DB-side row-level JSONB `before_state` and `after_state`.
 - **Changed Files:** Refactored 22 `service.ts` files to transition manual audit tracking terms (`resourceType` to `entityType`, `oldValue` to `beforeState`) and adopt the unified request payload wrapper. Created `lib/security/request-context.ts` for safe HMAC hashing of client IP and User-Agent.
-- **Migrations:** Created `0055_comprehensive_audit_logging.sql`. Added new columns to `audit_logs` (`actor_type`, `request_id`, `project_id`, `before_state`, `after_state`). Implemented the `handoff.audit_trigger()` SECURITY DEFINER function to extract generic JSONB fields securely and resolve actor identities automatically via `handoff.current_member_id(v_org_id)`. Attached triggers to core operational tables.
+- **Migrations:** Created `0055_comprehensive_audit_logging.sql`. Added new columns to `audit_logs` (`actor_type`, `request_id`, `project_id`, `before_state`, `after_state`). Implemented the `coopsetu.audit_trigger()` SECURITY DEFINER function to extract generic JSONB fields securely and resolve actor identities automatically via `coopsetu.current_member_id(v_org_id)`. Attached triggers to core operational tables.
 - **RLS Changes:** Enforced append-only `audit_logs` policies. Added strict DB constraints preventing updates (`UPDATE` blocked) and deletions (`DELETE` blocked) by normal users and ensuring only system actors can modify audit states if ever required.
 - **API Routes:** Updated fallback API behaviors in `lib/audit/create-audit-log.ts` to seamlessly handle new fields like `request_id` context and `actor_type`.
 - **Security Assumptions:** Trigger assumes valid JWT `auth.uid()` during operations to map back to `current_member_id`. Operations lacking JWT (e.g. CLI resets, local migrations) resolve to `NULL` user context and gracefully record the entity changes. Triggers proactively strip `user_id` on `organization_members` tables to avoid PII leaks in audit payloads.
@@ -1417,7 +1417,7 @@ Security Audit B — Complete the Phase 1 Comprehensive Audit Logging Implementa
 - Confirmed API-layer defense in depth: `project.service.ts`, `task.service.ts`, `sprint.service.ts` correctly append `.eq('organization_id', orgId)` for all updates and deletes.
 - **Security Audit B Final Acceptance**:
   - **Migrations & SECURITY DEFINER**: Added `0053_security_acceptance_fixes.sql` to rewrite `release_can_deploy`, `create_project`, and `create_project_team` to securely derive caller identity from `auth.uid()`, enforce `search_path`, and revoke `PUBLIC` execution. Added `0054_mutation_rpc_security.sql` to securely derive actor for `create_bug`, `create_test_plan`, and `start_security_review`.
-  - **RLS Changes**: Updated `appr_req_select` policy in `0053_security_acceptance_fixes.sql` to restrict visibility strictly based on linked entities (`project_id`, `task_id`, `release_id`) leveraging `handoff.current_member_id`.
+  - **RLS Changes**: Updated `appr_req_select` policy in `0053_security_acceptance_fixes.sql` to restrict visibility strictly based on linked entities (`project_id`, `task_id`, `release_id`) leveraging `coopsetu.current_member_id`.
   - **Routes & Services**: Audited and secured mutations by replacing `createAdminClient()` with the standard `supabase` authenticated client in `test-plan.service.ts`, `security-review.service.ts`, `bug.service.ts`, `project-import.service.ts`, and `release.service.ts`. Verified that `createAuditLog` fallback remains secure via server-side actor derivation.
   - **Test Evidence**: Created `tests/integration/secdef-rpcs.test.ts`, `approval-visibility.test.ts`, and `incidents-actions.test.ts` to validate these boundaries. All 12/12 integration tests pass; overall suite is 100% green.
   - **Known Limitations**: E2E Playwright tests for incidents (`tests/e2e/incidents.spec.ts`) are still pending implementation.
@@ -1444,7 +1444,7 @@ Browser-verified the complete private-task visibility feature against the runnin
 - **PROJECT_SHARED** flip: QA can see the task; reset to PRIVATE blocks them again — ✅
 - **Task drawer** shows `PRIVATE ASSIGNMENT` visibility scope + assignment history — ✅
 
-**Bug found and fixed:** migration 0044 added `handoff.can_set_task_visibility()` but did NOT wire it into the `tasks_update` WITH CHECK. Fixed in `supabase/migrations/0045_wire_visibility_scope_into_update_policy.sql`.
+**Bug found and fixed:** migration 0044 added `coopsetu.can_set_task_visibility()` but did NOT wire it into the `tasks_update` WITH CHECK. Fixed in `supabase/migrations/0045_wire_visibility_scope_into_update_policy.sql`.
 
 **Second bug found and fixed (migration 0046):** migration 0043 used unqualified `id` inside sub-queries. Fixed with explicit `tasks.id` qualifiers.
 
@@ -1702,7 +1702,7 @@ generic codes — `project:*`, `task:*`, `comment:*`, etc. — plus new
 management).
 
 **Critical**: none of these roles were added to the admin-bypass lists —
-neither `handoff.has_permission()`'s SQL bypass (`SUPER_ADMIN, ORG_ADMIN,
+neither `coopsetu.has_permission()`'s SQL bypass (`SUPER_ADMIN, ORG_ADMIN,
 ORG_OWNER`) nor the client-side `ADMIN_ROLES` mirror in
 `lib/permissions/context.tsx`. A student role only has exactly the
 permissions explicitly granted to it — it can never implicitly gain access to
@@ -1724,7 +1724,7 @@ layer, but **never** grant permissions under any circumstance.
 
 ## 10.3 Join-code security model
 
-- Codes are generated server-side (`handoff.generate_join_code()`) in the
+- Codes are generated server-side (`coopsetu.generate_join_code()`) in the
   human-friendly format `TEAM-XXXX-XXXX` from a 32-symbol alphabet that
   excludes visually ambiguous characters (`0/O/1/I/L`).
 - Only `code_hash` (SHA-256 of the normalized code) is ever stored; the raw
@@ -1749,7 +1749,7 @@ layer, but **never** grant permissions under any circumstance.
 - `/api/v1/join-team/preview` and `/api/v1/join-team` are both rate-limited
   (5 attempts / 5 min per IP via `checkRateLimit`) against brute-force code
   guessing.
-- The generic `handoff.audit_trigger()` is **deliberately not attached** to
+- The generic `coopsetu.audit_trigger()` is **deliberately not attached** to
   `student_team_join_codes` (migration `0070`) — the trigger's
   before/after-state JSON capture would put `code_hash` into `audit_logs`,
   an unnecessary secondary exposure even though it's a hash, not a raw code.
@@ -1856,7 +1856,7 @@ All follow the existing `handle()`/`ok()`/`Errors.*` envelope and
   (`create_student_solo_workspace`, `create_student_team`,
   `redeem_student_team_join_code`, `preview_join_code`, `rotate_join_code`,
   `revoke_join_code`, `transfer_team_leadership`, `get_join_code_status`,
-  plus the `handoff.generate_join_code()`/`handoff.hash_join_code()` helpers).
+  plus the `coopsetu.generate_join_code()`/`coopsetu.hash_join_code()` helpers).
 - `0070_student_team_audit_triggers.sql` — attaches `audit_trigger()` to
   `student_team_settings`/`student_team_member_labels` (not join codes, see 10.3).
 - `0071_student_team_service_role_grant.sql` — grants `service_role` on the 3
@@ -2063,7 +2063,7 @@ not just leads).
 
 No application code changes were needed: nav gating
 (`components/dashboard/shell.tsx`), RLS policies (`0012_knowledge_incidents_eng.sql`,
-generic `handoff.is_org_member()`/`handoff.has_permission()` checks), and the
+generic `coopsetu.is_org_member()`/`coopsetu.has_permission()` checks), and the
 API routes (`app/api/v1/repositories/*`, `requirePermission(m, 'integration:*')`)
 were already org-type-agnostic — this was a pure permission-grant change.
 
@@ -2622,7 +2622,7 @@ scoping rules):
   unauthorized callers — the added redirect happens only after a real
   authenticated session exists, so it does not leak invite existence/details
   to anonymous or unauthorized visitors.
-- Private-task RLS (`handoff.can_view_task`), cross-org 404/403 behavior, and
+- Private-task RLS (`coopsetu.can_view_task`), cross-org 404/403 behavior, and
   demo-tenant isolation are untouched DB-level/route-level controls; the full
   integration suite (128/128, including all pre-existing RLS/isolation tests)
   passed after this feature was added, confirming no regression.
@@ -3012,7 +3012,7 @@ All 6 pass. Full integration suite: **134/134** (128 pre-existing + 6 new).
 
 ## 14.4 Known limitations / notes
 
-- `storage.objects`'s `handoff.storage_org_ok(name)` policy treats the first
+- `storage.objects`'s `coopsetu.storage_org_ok(name)` policy treats the first
   path folder segment as an organization id (`is_org_member(foldername[1])`).
   Avatar files are stored at `avatars/{userId}.{ext}` (first segment literally
   `"avatars"`, not an org id) — this policy would not evaluate sensibly for a
