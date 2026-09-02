@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0016 Invite acceptance RPCs (SECURITY DEFINER)
+-- Handoff — 0016 Invite acceptance RPCs (SECURITY DEFINER)
 -- A pending invitee is not yet an org member, so RLS would block reading the
 -- invite or inserting membership. These definer functions handle it safely.
 -- ============================================================================

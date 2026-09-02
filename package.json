@@ -13,9 +13,9 @@
     "test:e2e": "playwright test",
     "clean": "next clean",
     "worker:reports": "node scripts/report-worker.js",
-    "load:smoke": "k6 run tests/load/k6/coopsetu-smoke.js",
-    "load:auth": "k6 run tests/load/k6/coopsetu-authenticated.js",
-    "load:student": "k6 run tests/load/k6/coopsetu-student-team.js"
+    "load:smoke": "k6 run tests/load/k6/handoff-smoke.js",
+    "load:auth": "k6 run tests/load/k6/handoff-authenticated.js",
+    "load:student": "k6 run tests/load/k6/handoff-student-team.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

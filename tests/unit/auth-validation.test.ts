@@ -5,7 +5,7 @@ describe('Auth Validation - Reserved Identifiers', () => {
   it('rejects reserved workspace slugs', () => {
     expect(isReservedWorkspaceSlug('admin')).toBe(true);
     expect(isReservedWorkspaceSlug('api')).toBe(true);
-    expect(isReservedWorkspaceSlug('coopsetu-support')).toBe(true);
+    expect(isReservedWorkspaceSlug('handoff-support')).toBe(true);
     expect(isReservedWorkspaceSlug('  Admin  ')).toBe(true); // check normalization
   });
 

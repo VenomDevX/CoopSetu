@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0043 Fix Tasks RLS Snapshot Isolation
+-- Handoff — 0043 Fix Tasks RLS Snapshot Isolation
 -- ============================================================================
 -- Bug: inserting a task via PostgREST fails with
 --   "new row violates row-level security policy for table tasks"

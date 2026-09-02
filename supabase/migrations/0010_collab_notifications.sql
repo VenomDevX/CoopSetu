@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0010 Comments, mentions, attachments, notifications, presence
+-- Handoff — 0010 Comments, mentions, attachments, notifications, presence
 -- ============================================================================
 
 create table if not exists public.task_comments (

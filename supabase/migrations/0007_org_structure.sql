@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0007 Departments, Teams, Skills, Employee data
+-- Handoff — 0007 Departments, Teams, Skills, Employee data
 -- ============================================================================
 
 create table if not exists public.departments (

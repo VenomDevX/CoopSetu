@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0052 Restore appr_req_select policy
+-- Handoff — 0052 Restore appr_req_select policy
 -- ============================================================================
 -- Migration 0032 mistakenly dropped the appr_req_select policy, assuming it 
 -- was redundant with appr_req_manage. However, appr_req_manage restricts
