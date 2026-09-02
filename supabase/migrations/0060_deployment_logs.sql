@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0060 Deployment Logs (Security Phase D)
+-- CoopSetu — 0060 Deployment Logs (Security Phase D)
 -- ============================================================================
 
 create table if not exists public.deployment_logs (

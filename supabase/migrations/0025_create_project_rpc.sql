@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0025 create_project RPC
+-- CoopSetu — 0025 create_project RPC
 -- ============================================================================
 -- Bug: creating a project via PostgREST always failed with
 --   "new row violates row-level security policy for table projects"
