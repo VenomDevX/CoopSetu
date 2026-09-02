@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0017 New company creator becomes ORG_OWNER (was ORG_ADMIN)
+-- CoopSetu — 0017 New company creator becomes ORG_OWNER (was ORG_ADMIN)
 -- ============================================================================
 
 create or replace function public.create_organization(

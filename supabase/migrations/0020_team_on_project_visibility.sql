@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0020 Team-on-project visibility
+-- CoopSetu — 0020 Team-on-project visibility
 -- A user can view a project if their team is assigned to it (project_teams →
 -- team_members), in addition to explicit project_members and broad roles.
 -- ============================================================================

@@ -1,4 +1,4 @@
--- Handoff — 0027 Storage Security (MIME type restrictions)
+-- CoopSetu — 0027 Storage Security (MIME type restrictions)
 
 -- Drop existing policies that we are going to replace
 drop policy if exists handoff_storage_insert on storage.objects;

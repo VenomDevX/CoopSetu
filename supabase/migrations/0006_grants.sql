@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0006 Table/function grants for the `authenticated` role.
+-- CoopSetu — 0006 Table/function grants for the `authenticated` role.
 -- RLS still governs which ROWS are visible; these grants govern table access.
 -- anon is intentionally left without DML on business tables.
 -- ============================================================================

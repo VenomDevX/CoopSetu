@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0032 Security Advisor Fixes
+-- CoopSetu — 0032 Security Advisor Fixes
 -- Fixes three categories of Supabase security advisor warnings:
 --   1. Auth RLS Initialization Plan  — use (select auth.uid()) in helper fns
 --   2. Function Search Path Mutable  — add SET search_path to all functions

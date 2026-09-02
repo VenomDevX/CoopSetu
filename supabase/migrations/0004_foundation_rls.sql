@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0004 RLS policies for foundation tables + create_organization RPC
+-- CoopSetu — 0004 RLS policies for foundation tables + create_organization RPC
 -- ============================================================================
 
 alter table public.profiles             enable row level security;

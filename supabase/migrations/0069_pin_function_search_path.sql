@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0078 Pin search_path on functions flagged as mutable
+-- CoopSetu — 0078 Pin search_path on functions flagged as mutable
 -- ============================================================================
 -- Fixes Supabase advisor: "function_search_path_mutable".
 --
