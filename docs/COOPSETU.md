@@ -1,6 +1,14 @@
-# Handoff — Project Documentation
+# CoopSetu — Project Documentation
 
-Unified documentation for the Handoff enterprise project management platform.
+Unified engineering documentation for CoopSetu, the cooperative training hub
+(training ERP, e-learning, certification, skill passport and employment exchange)
+built on the delivery-management core described below.
+
+> **Naming note.** This project was previously called HANDOFF. The Postgres schema
+> holding the RLS helper functions was renamed `handoff` → `coopsetu` by
+> `supabase/migrations/0075_rename_handoff_schema_to_coopsetu.sql`. References to
+> `coopsetu.<fn>()` below assume that migration has been applied; on an environment
+> still at 0074 those objects are named `handoff.<fn>()`.
 
 ---
 
@@ -29,7 +37,7 @@ Unified documentation for the Handoff enterprise project management platform.
 
 # 1. Local Development
 
-Handoff runs fully locally against a Dockerized Supabase stack. No cloud, Git,
+CoopSetu runs fully locally against a Dockerized Supabase stack. No cloud, Git,
 deployment, or external API credentials are required.
 
 ## 1.1 Required software
@@ -50,7 +58,7 @@ npm install
 
 ## 1.4 Initialise / start local Supabase
 
-The project is already initialised (`supabase/config.toml`, `project_id = "handoff"`).
+The project is already initialised (`supabase/config.toml`, `project_id = "sih26087"`).
 Start the stack:
 
 ```bash
@@ -66,9 +74,9 @@ local keys. The publishable key is already wired into `.env.local`.
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...   # from `supabase start`
-HANDOFF_AI_MODE=mock
-HANDOFF_ENABLE_MOCK_INTEGRATIONS=true
-HANDOFF_ENABLE_DEV_SEED=true
+COOPSETU_AI_MODE=mock
+COOPSETU_ENABLE_MOCK_INTEGRATIONS=true
+COOPSETU_ENABLE_DEV_SEED=true
 SUPABASE_SECRET_KEY=sb_secret_...                         # server only, never NEXT_PUBLIC_
 ```
 
@@ -134,7 +142,7 @@ Local data is preserved in a Docker volume between stops; `db reset` wipes it.
 
 ## 1.12 Public Demo Workspace
 
-Handoff includes a zero-friction public demo workspace. Visitors can explore the app instantly via the **Explore Demo** button on the sign-in/up pages.
+CoopSetu includes a zero-friction public demo workspace. Visitors can explore the app instantly via the **Explore Demo** button on the sign-in/up pages.
 
 - **Authentication**: Uses Supabase Anonymous Auth. Visitors do not need an email or password.
 - **Data Isolation**: A real organization is created behind the scenes with `is_demo = true`. The anonymous user is added as a member. Existing RLS policies enforce isolation automatically.
@@ -159,12 +167,12 @@ Handoff includes a zero-friction public demo workspace. Visitors can explore the
 ### Enforcement layers (defense in depth)
 
 1. **Database RLS** — the source of truth. Every business table has RLS enabled.
-   Policies call `SECURITY DEFINER` helper functions in the `handoff` schema:
-   - `handoff.is_org_member(org)` — active membership check
-   - `handoff.has_permission(org, code)` — role/permission check (admins = all)
-   - `handoff.has_role(org, codes[])`
-   - `handoff.can_view_project(project)` / `can_manage_project` / `is_project_member`
-   - `handoff.can_edit_task(task)` — managers, or the assignee
+   Policies call `SECURITY DEFINER` helper functions in the `coopsetu` schema:
+   - `coopsetu.is_org_member(org)` — active membership check
+   - `coopsetu.has_permission(org, code)` — role/permission check (admins = all)
+   - `coopsetu.has_role(org, codes[])`
+   - `coopsetu.can_view_project(project)` / `can_manage_project` / `is_project_member`
+   - `coopsetu.can_edit_task(task)` — managers, or the assignee
    These are `SECURITY DEFINER` to avoid policy recursion on their own tables.
 2. **API guards** — `requireUser`, `requireOrganization`, `requirePermission`
    reject early with `401`/`403` before touching the DB.
@@ -253,10 +261,10 @@ UI: Create Task modal (components/tasks/create-task-modal.tsx) → "Create Task"
 → DB writes:
      · tasks                     (insert; organization_id + reporter_member_id from session)
      · task_assignees            (insert active PRIMARY assignment history row)
-     · task_activity             (trigger handoff.log_task_change on later updates; create logs audit)
+     · task_activity             (trigger coopsetu.log_task_change on later updates; create logs audit)
      · audit_logs                (action 'task.created')
 → notification:
-     · trigger handoff.notify_task_assigned (AFTER INSERT task_assignees)
+     · trigger coopsetu.notify_task_assigned (AFTER INSERT task_assignees)
        → create_notification(... 'TASK_ASSIGNED', 'You were assigned to UPI-116', title, project_id)
        → notifications (insert; recipient_member_id = assignee, actor from auth.uid())
 → realtime:
@@ -284,7 +292,7 @@ UI: Task Drawer assignee select (data-testid="task-assignee-select"), shown only
 → realtime: notifications → new assignee; tasks changes → boards/drawers
 ```
 
-Private-task note: task rows and task-adjacent rows now use `handoff.can_view_task(...)` RLS. Project membership alone does not reveal private tasks.
+Private-task note: task rows and task-adjacent rows now use `coopsetu.can_view_task(...)` RLS. Project membership alone does not reveal private tasks.
 
 #### Flow 3 — Employee updates task status  ✅ WORKING
 
@@ -592,10 +600,10 @@ audit log (and notifications where relevant).
 
 ## Security Hardening Plan
 
-This document outlines the systematic approach to executing the security hardening phase for the Handoff application.
+This document outlines the systematic approach to executing the security hardening phase for the CoopSetu application.
 
 ### Overview
-Handoff is a multi-company enterprise application. Every sensitive action must enforce:
+CoopSetu is a multi-company enterprise application. Every sensitive action must enforce:
 1. Authenticated user identity
 2. Active organization membership
 3. Role/permission validation
@@ -666,7 +674,7 @@ Results from `npm audit` and `npm audit --omit=dev`.
 **Vulnerability 1: PostCSS (Production Runtime)**
 - **Package:** `postcss` < 8.5.10, via `next` → `postcss`
 - **Severity:** Moderate — XSS via unescaped `</style>` in CSS stringify output.
-- **Production impact:** Unlikely. Handoff uses Tailwind CSS at build time and does not dynamically stringify user-provided CSS at runtime.
+- **Production impact:** Unlikely. CoopSetu uses Tailwind CSS at build time and does not dynamically stringify user-provided CSS at runtime.
 - **Status:** BLOCKED / PARTIAL — wait for Next.js to bump the underlying `postcss` dependency.
 
 **Vulnerability 2: UUID (Development Tooling)**
@@ -702,7 +710,7 @@ Results from `npm audit` and `npm audit --omit=dev`.
 
 #### 3. API-Layer Defense in Depth (Tenant Checks)
 - **Finding:** In endpoints like `PATCH /api/v1/projects/[projectId]`, the application checks permissions against the user's active organization (`m.organizationId`) but executes the database update without explicitly filtering `eq('organization_id', m.organizationId)`.
-- **Mitigation in Place:** Supabase Row Level Security (RLS) successfully catches this and prevents the cross-tenant update because `handoff.can_manage_project(id)` evaluates to false for out-of-tenant resources.
+- **Mitigation in Place:** Supabase Row Level Security (RLS) successfully catches this and prevents the cross-tenant update because `coopsetu.can_manage_project(id)` evaluates to false for out-of-tenant resources.
 - **Recommendation:** Implement Defense in Depth. The backend service methods (e.g., `updateProject` in `services/project.service.ts`) should explicitly include `.eq('organization_id', orgId)` on all update/delete queries so the application actively rejects out-of-bounds requests before relying solely on RLS.
 
 #### 4. CSRF and XSS
@@ -740,8 +748,8 @@ Results from `npm audit` and `npm audit --omit=dev`.
 **Status:** IMPLEMENTED / INTEGRATION BLOCKED
 
 #### 1. Project Membership No Longer Implies Private Task Access
-- **Finding fixed:** `tasks_select` and task-adjacent policies previously used `handoff.can_view_project(project_id)`, so any user with project visibility could read private task rows, comments, activity, assignment rows, and attachments.
-- **Fix:** `supabase/migrations/0042_private_task_visibility.sql` adds `handoff.can_view_task(task_id)` and rewires task, assignment, comment, mention, attachment, activity, checklist, label, dependency, watcher, and time-entry policies to use it.
+- **Finding fixed:** `tasks_select` and task-adjacent policies previously used `coopsetu.can_view_project(project_id)`, so any user with project visibility could read private task rows, comments, activity, assignment rows, and attachments.
+- **Fix:** `supabase/migrations/0042_private_task_visibility.sql` adds `coopsetu.can_view_task(task_id)` and rewires task, assignment, comment, mention, attachment, activity, checklist, label, dependency, watcher, and time-entry policies to use it.
 - **Result:** Private tasks are visible only by direct task relationship, explicit grant, responsible manager/admin authority, or managed-assignee authority.
 
 #### 2. Assignment History Integrity
@@ -786,12 +794,12 @@ Project membership alone no longer grants access to private tasks. Regular devel
   - Extends `task_assignees` with org/project metadata, `assignment_type`, `assigned_by_member_id`, `removed_at`, and `removed_by_member_id`.
   - Replaces active assignment uniqueness with a partial unique index so removed assignments remain as history.
   - Adds tenant guards for assignment and explicit visibility rows.
-  - Replaces task, comments, attachments, activity, checklist, label, dependency, watcher, and time-entry RLS policies to use `handoff.can_view_task(...)`.
+  - Replaces task, comments, attachments, activity, checklist, label, dependency, watcher, and time-entry RLS policies to use `coopsetu.can_view_task(...)`.
 - `supabase/migrations/0043_fix_tasks_rls_snapshot.sql`
   - Inlines tasks_select policy to fix PostgREST snapshot isolation (INSERT RETURNING was failing).
 - `supabase/migrations/0044_visibility_scope_permission_guard.sql`
-  - Tightens `handoff.can_create_task_with_visibility`: only PRIVATE_ASSIGNMENT is open to any task:create holder; PROJECT_SHARED and ORGANIZATION_VISIBLE require admin/owner or project-responsible-manager.
-  - Adds `handoff.can_set_task_visibility` helper for the UPDATE path.
+  - Tightens `coopsetu.can_create_task_with_visibility`: only PRIVATE_ASSIGNMENT is open to any task:create holder; PROJECT_SHARED and ORGANIZATION_VISIBLE require admin/owner or project-responsible-manager.
+  - Adds `coopsetu.can_set_task_visibility` helper for the UPDATE path.
 
 ## Application Changes
 
@@ -817,16 +825,16 @@ Project membership alone no longer grants access to private tasks. Regular devel
 
 | Helper | Location |
 |--------|----------|
-| `handoff.can_view_task` | migration 0042 |
-| `handoff.can_edit_task` | migration 0042 |
-| `handoff.can_assign_task` | migration 0042 |
-| `handoff.can_assign_to` | migration 0042 |
-| `handoff.can_view_task_assignment_history` | migration 0042 |
-| `handoff.can_create_task_with_visibility` | migration 0042, tightened in 0044 |
-| `handoff.can_set_task_visibility` | migration 0044, wired into UPDATE policy in 0045 |
+| `coopsetu.can_view_task` | migration 0042 |
+| `coopsetu.can_edit_task` | migration 0042 |
+| `coopsetu.can_assign_task` | migration 0042 |
+| `coopsetu.can_assign_to` | migration 0042 |
+| `coopsetu.can_view_task_assignment_history` | migration 0042 |
+| `coopsetu.can_create_task_with_visibility` | migration 0042, tightened in 0044 |
+| `coopsetu.can_set_task_visibility` | migration 0044, wired into UPDATE policy in 0045 |
 | `tasks_select` sub-query fix | migration 0046 — explicit `tasks.id` qualifiers |
-| `handoff.is_project_responsible_manager` | migration 0042 |
-| `handoff.manages_task_assignee` | migration 0042 |
+| `coopsetu.is_project_responsible_manager` | migration 0042 |
+| `coopsetu.manages_task_assignee` | migration 0042 |
 
 ## Realtime Channel Changes
 
@@ -883,7 +891,7 @@ Tests run via Chrome MCP against the running local Supabase instance using real 
 | 15 | Task drawer shows `PRIVATE ASSIGNMENT` visibility + assignment history (`PRIMARY - Dev Rao by Pat Manager - active`) | ✅ confirmed in screenshot |
 | 16 | UPI-106 appears in PM's Kanban board under IN_PROGRESS column | ✅ confirmed in screenshot |
 
-**Bug found and fixed during live testing:** migration 0044 added `handoff.can_set_task_visibility()` but did not wire it into the `tasks_update` WITH CHECK clause. An assignee (dev@) could bypass the restriction via direct Supabase REST PATCH. Fixed in migration 0045 (`supabase/migrations/0045_wire_visibility_scope_into_update_policy.sql`).
+**Bug found and fixed during live testing:** migration 0044 added `coopsetu.can_set_task_visibility()` but did not wire it into the `tasks_update` WITH CHECK clause. An assignee (dev@) could bypass the restriction via direct Supabase REST PATCH. Fixed in migration 0045 (`supabase/migrations/0045_wire_visibility_scope_into_update_policy.sql`).
 
 ### Realtime leak test (2026-06-29)
 qa@ subscribed to Supabase Realtime `public:tasks` channel filtered to UPI-106 (PRIVATE_ASSIGNMENT, qa not assigned). pm@ updated the task title via Supabase REST. qa received **0 data events** — only the initial `system` join acknowledgment. ✅ PASS
@@ -936,7 +944,7 @@ Status legend: `WORKING` · `PARTIAL` · `UI_ONLY` · `BROKEN` · `NOT_IMPLEMENT
 | Reports / Analytics | Export CSV | Server-side authorized CSV export for report/page data | report:export | report export API, `report_exports` | Yes | WORKING |  |
 | Reports / Analytics | Create Report | Save report configuration and generate authorized preview | report:create | `reports`, `report_runs` | Yes | WORKING |  |
 | Reports / Analytics | Schedule | Save schedule, calculate next run, local worker for dev | report:schedule | `report_schedules`, `report_deliveries` | Yes | WORKING |  |
-| All Dashboard Surfaces | Ask Handoff AI | Open real AI hub/panel with context, `ai:use`, streaming, stop, cited records | ai:use | `POST /api/v1/ai/stream`, `ai_requests`, Gemini provider | Yes | WORKING |  |
+| All Dashboard Surfaces | Ask CoopSetu AI | Open real AI hub/panel with context, `ai:use`, streaming, stop, cited records | ai:use | `POST /api/v1/ai/stream`, `ai_requests`, Gemini provider | Yes | WORKING |  |
 
 ---
 
@@ -944,10 +952,10 @@ Status legend: `WORKING` · `PARTIAL` · `UI_ONLY` · `BROKEN` · `NOT_IMPLEMENT
 
 | Surface | Expected Behavior | Current Status | Backend / DB | Permission | Notes |
 |---------|-------------------|----------------|--------------|------------|-------|
-| Tasks RLS | Private tasks do not appear to unrelated project members | IMPLEMENTED / INTEGRATION BLOCKED | `handoff.can_view_task`, `tasks.visibility_scope` | `task:view` plus record grant | Migration applied via DB reset; focused integration blocked by local Supabase HTTP timeout after reset. |
+| Tasks RLS | Private tasks do not appear to unrelated project members | IMPLEMENTED / INTEGRATION BLOCKED | `coopsetu.can_view_task`, `tasks.visibility_scope` | `task:view` plus record grant | Migration applied via DB reset; focused integration blocked by local Supabase HTTP timeout after reset. |
 | Task detail URL | Hidden task ID shows generic forbidden state | IMPLEMENTED | RLS-backed task query | `task:view` | Avoids helpful record-existence signals for inaccessible tasks. |
 | Create task | Private by default, optional broader visibility | IMPLEMENTED | `visibility_scope` persisted | `task:create`; `task:assign` when assigning | UI selector added; DB default is `PRIVATE_ASSIGNMENT`. |
-| Broader visibility scope | Only admin/owner/PM may set PROJECT_SHARED or ORGANIZATION_VISIBLE | IMPLEMENTED | `handoff.can_create_task_with_visibility` (0044), API route guard | role check in POST and PATCH routes | Regular employees get 403 before hitting RLS. |
+| Broader visibility scope | Only admin/owner/PM may set PROJECT_SHARED or ORGANIZATION_VISIBLE | IMPLEMENTED | `coopsetu.can_create_task_with_visibility` (0044), API route guard | role check in POST and PATCH routes | Regular employees get 403 before hitting RLS. |
 | Reassign task | Preserve old assignment row and add/promote new primary row | IMPLEMENTED | `task_assignees.removed_at`, `assignment_type` | `task:update` + `task:assign` | Bulk reassignment disabled to prevent history bypass. |
 | My Work / AI focus | Use the same RLS-visible private-task set | IMPLEMENTED | Supabase RLS on `tasks` | caller permissions | Includes additional/reviewer/explicit/manager/admin-visible work. |
 | Task drawer | Show visibility and assignment history | IMPLEMENTED | `task_assignees` embed | `task:view` | Hidden by RLS when caller cannot view the task. |
@@ -1233,7 +1241,7 @@ role sessions (Owner, PM, Team Manager, Developer) and an unauthorized org.
    ```
    If auth returns 502 right after a reset (Kong cached the old container IP):
    ```bash
-   docker restart supabase_kong_handoff supabase_rest_handoff supabase_edge_runtime_handoff
+   docker restart supabase_kong_sih26087 supabase_rest_sih26087 supabase_edge_runtime_sih26087
    ```
 2. Browsers installed once: `npx playwright install chromium`
 
@@ -1294,10 +1302,10 @@ Security Audit B — Complete the Phase 1 Comprehensive Audit Logging Implementa
 
 ## Project Status
 
-- Product: Handoff
+- Product: CoopSetu
 - Environment: Local development only
 - Frontend: Next.js (App Router, TS)
-- Backend: Local Supabase + PostgreSQL (project id `handoff`)
+- Backend: Local Supabase + PostgreSQL (project id `sih26087`)
 - Realtime: Supabase Realtime
 - Current overall status: IN PROGRESS
 - Last updated: 2026-06-29
@@ -1388,9 +1396,9 @@ Security Audit B — Complete the Phase 1 Comprehensive Audit Logging Implementa
 
 ### 2026-06-30 — Security Phase 1: Comprehensive Audit Logging Implementation
 
-- **Architecture Decisions:** Implemented synchronous database triggers (`handoff.audit_trigger()`) attached to 8 critical core tables (`projects`, `tasks`, `organization_members`, `member_roles`, `bugs`, `security_reviews`, `releases`, `approval_requests`). This enforces 100% audit coverage, overriding silent application-layer omissions. Transitioned from application-side diffing to DB-side row-level JSONB `before_state` and `after_state`.
+- **Architecture Decisions:** Implemented synchronous database triggers (`coopsetu.audit_trigger()`) attached to 8 critical core tables (`projects`, `tasks`, `organization_members`, `member_roles`, `bugs`, `security_reviews`, `releases`, `approval_requests`). This enforces 100% audit coverage, overriding silent application-layer omissions. Transitioned from application-side diffing to DB-side row-level JSONB `before_state` and `after_state`.
 - **Changed Files:** Refactored 22 `service.ts` files to transition manual audit tracking terms (`resourceType` to `entityType`, `oldValue` to `beforeState`) and adopt the unified request payload wrapper. Created `lib/security/request-context.ts` for safe HMAC hashing of client IP and User-Agent.
-- **Migrations:** Created `0055_comprehensive_audit_logging.sql`. Added new columns to `audit_logs` (`actor_type`, `request_id`, `project_id`, `before_state`, `after_state`). Implemented the `handoff.audit_trigger()` SECURITY DEFINER function to extract generic JSONB fields securely and resolve actor identities automatically via `handoff.current_member_id(v_org_id)`. Attached triggers to core operational tables.
+- **Migrations:** Created `0055_comprehensive_audit_logging.sql`. Added new columns to `audit_logs` (`actor_type`, `request_id`, `project_id`, `before_state`, `after_state`). Implemented the `coopsetu.audit_trigger()` SECURITY DEFINER function to extract generic JSONB fields securely and resolve actor identities automatically via `coopsetu.current_member_id(v_org_id)`. Attached triggers to core operational tables.
 - **RLS Changes:** Enforced append-only `audit_logs` policies. Added strict DB constraints preventing updates (`UPDATE` blocked) and deletions (`DELETE` blocked) by normal users and ensuring only system actors can modify audit states if ever required.
 - **API Routes:** Updated fallback API behaviors in `lib/audit/create-audit-log.ts` to seamlessly handle new fields like `request_id` context and `actor_type`.
 - **Security Assumptions:** Trigger assumes valid JWT `auth.uid()` during operations to map back to `current_member_id`. Operations lacking JWT (e.g. CLI resets, local migrations) resolve to `NULL` user context and gracefully record the entity changes. Triggers proactively strip `user_id` on `organization_members` tables to avoid PII leaks in audit payloads.
@@ -1408,7 +1416,7 @@ Security Audit B — Complete the Phase 1 Comprehensive Audit Logging Implementa
 - Confirmed API-layer defense in depth: `project.service.ts`, `task.service.ts`, `sprint.service.ts` correctly append `.eq('organization_id', orgId)` for all updates and deletes.
 - **Security Audit B Final Acceptance**:
   - **Migrations & SECURITY DEFINER**: Added `0053_security_acceptance_fixes.sql` to rewrite `release_can_deploy`, `create_project`, and `create_project_team` to securely derive caller identity from `auth.uid()`, enforce `search_path`, and revoke `PUBLIC` execution. Added `0054_mutation_rpc_security.sql` to securely derive actor for `create_bug`, `create_test_plan`, and `start_security_review`.
-  - **RLS Changes**: Updated `appr_req_select` policy in `0053_security_acceptance_fixes.sql` to restrict visibility strictly based on linked entities (`project_id`, `task_id`, `release_id`) leveraging `handoff.current_member_id`.
+  - **RLS Changes**: Updated `appr_req_select` policy in `0053_security_acceptance_fixes.sql` to restrict visibility strictly based on linked entities (`project_id`, `task_id`, `release_id`) leveraging `coopsetu.current_member_id`.
   - **Routes & Services**: Audited and secured mutations by replacing `createAdminClient()` with the standard `supabase` authenticated client in `test-plan.service.ts`, `security-review.service.ts`, `bug.service.ts`, `project-import.service.ts`, and `release.service.ts`. Verified that `createAuditLog` fallback remains secure via server-side actor derivation.
   - **Test Evidence**: Created `tests/integration/secdef-rpcs.test.ts`, `approval-visibility.test.ts`, and `incidents-actions.test.ts` to validate these boundaries. All 12/12 integration tests pass; overall suite is 100% green.
   - **Known Limitations**: E2E Playwright tests for incidents (`tests/e2e/incidents.spec.ts`) are still pending implementation.
@@ -1435,7 +1443,7 @@ Browser-verified the complete private-task visibility feature against the runnin
 - **PROJECT_SHARED** flip: QA can see the task; reset to PRIVATE blocks them again — ✅
 - **Task drawer** shows `PRIVATE ASSIGNMENT` visibility scope + assignment history — ✅
 
-**Bug found and fixed:** migration 0044 added `handoff.can_set_task_visibility()` but did NOT wire it into the `tasks_update` WITH CHECK. Fixed in `supabase/migrations/0045_wire_visibility_scope_into_update_policy.sql`.
+**Bug found and fixed:** migration 0044 added `coopsetu.can_set_task_visibility()` but did NOT wire it into the `tasks_update` WITH CHECK. Fixed in `supabase/migrations/0045_wire_visibility_scope_into_update_policy.sql`.
 
 **Second bug found and fixed (migration 0046):** migration 0043 used unqualified `id` inside sub-queries. Fixed with explicit `tasks.id` qualifiers.
 
@@ -1506,7 +1514,7 @@ Baseline checks: **`npm run lint` = 0 problems · `npx vitest run` = 21/21 passe
 
 ### Already implemented
 - Multi-tenant schema, 12 migrations, every business table has `organization_id`, `created_at/updated_at` + triggers, archive fields.
-- RLS enabled on all business tables. Helpers in `handoff` schema.
+- RLS enabled on all business tables. Helpers in `coopsetu` schema.
 - Auth (signup/login/onboarding/signout), middleware route guard, browser/server/admin Supabase clients.
 - ~70 API routes under `app/api/v1`.
 - Realtime hooks + live Kanban + notification bell. Two-browser + headless verified.
@@ -1643,6 +1651,16 @@ Responsive Layout, Screen Adaptation, and Scroll Usability
 
 # 10. Student Workspaces
 
+> **REMOVED — historical record only.** The student/hackathon workspace path was
+> dropped during the CoopSetu rebrand. `app/onboarding/workspace-path` now
+> auto-redirects to `/onboarding/company`, and the APIs described below
+> (`/api/v1/student-workspaces/solo`, `/api/v1/student-teams`, `/api/v1/join-team`)
+> no longer exist. `tests/e2e/student-team.spec.ts` was deleted with them.
+> `lib/validation/student-team.ts` is still present but is now orphaned — only
+> `tests/unit/student-team.test.ts` imports it. This section is retained for the
+> design rationale and audit trail.
+
+
 Phase 1 of a Student Workspace system, added alongside the existing enterprise
 Organization system rather than as a parallel tenant model. Students get a
 second onboarding path (after Account + Profile, same as enterprise users)
@@ -1683,7 +1701,7 @@ generic codes — `project:*`, `task:*`, `comment:*`, etc. — plus new
 management).
 
 **Critical**: none of these roles were added to the admin-bypass lists —
-neither `handoff.has_permission()`'s SQL bypass (`SUPER_ADMIN, ORG_ADMIN,
+neither `coopsetu.has_permission()`'s SQL bypass (`SUPER_ADMIN, ORG_ADMIN,
 ORG_OWNER`) nor the client-side `ADMIN_ROLES` mirror in
 `lib/permissions/context.tsx`. A student role only has exactly the
 permissions explicitly granted to it — it can never implicitly gain access to
@@ -1705,7 +1723,7 @@ layer, but **never** grant permissions under any circumstance.
 
 ## 10.3 Join-code security model
 
-- Codes are generated server-side (`handoff.generate_join_code()`) in the
+- Codes are generated server-side (`coopsetu.generate_join_code()`) in the
   human-friendly format `TEAM-XXXX-XXXX` from a 32-symbol alphabet that
   excludes visually ambiguous characters (`0/O/1/I/L`).
 - Only `code_hash` (SHA-256 of the normalized code) is ever stored; the raw
@@ -1730,7 +1748,7 @@ layer, but **never** grant permissions under any circumstance.
 - `/api/v1/join-team/preview` and `/api/v1/join-team` are both rate-limited
   (5 attempts / 5 min per IP via `checkRateLimit`) against brute-force code
   guessing.
-- The generic `handoff.audit_trigger()` is **deliberately not attached** to
+- The generic `coopsetu.audit_trigger()` is **deliberately not attached** to
   `student_team_join_codes` (migration `0070`) — the trigger's
   before/after-state JSON capture would put `code_hash` into `audit_logs`,
   an unnecessary secondary exposure even though it's a hash, not a raw code.
@@ -1837,7 +1855,7 @@ All follow the existing `handle()`/`ok()`/`Errors.*` envelope and
   (`create_student_solo_workspace`, `create_student_team`,
   `redeem_student_team_join_code`, `preview_join_code`, `rotate_join_code`,
   `revoke_join_code`, `transfer_team_leadership`, `get_join_code_status`,
-  plus the `handoff.generate_join_code()`/`handoff.hash_join_code()` helpers).
+  plus the `coopsetu.generate_join_code()`/`coopsetu.hash_join_code()` helpers).
 - `0070_student_team_audit_triggers.sql` — attaches `audit_trigger()` to
   `student_team_settings`/`student_team_member_labels` (not join codes, see 10.3).
 - `0071_student_team_service_role_grant.sql` — grants `service_role` on the 3
@@ -2044,7 +2062,7 @@ not just leads).
 
 No application code changes were needed: nav gating
 (`components/dashboard/shell.tsx`), RLS policies (`0012_knowledge_incidents_eng.sql`,
-generic `handoff.is_org_member()`/`handoff.has_permission()` checks), and the
+generic `coopsetu.is_org_member()`/`coopsetu.has_permission()` checks), and the
 API routes (`app/api/v1/repositories/*`, `requirePermission(m, 'integration:*')`)
 were already org-type-agnostic — this was a pure permission-grant change.
 
@@ -2112,7 +2130,7 @@ repository through the real UI form).
 
 ## 11.1 Performance architecture
 
-To survive the first 100-500 users without database connection exhaustion or slow APIs, Handoff will implement a shared caching layer (Redis/Upstash in production, in-memory for local development) to alleviate database read pressure for frequently accessed, permission-scoped queries. Load testing via k6 will validate latency (p95 < 800ms-1200ms) and ensure no connection exhaustion or cross-org data leaks occur under load.
+To survive the first 100-500 users without database connection exhaustion or slow APIs, CoopSetu will implement a shared caching layer (Redis/Upstash in production, in-memory for local development) to alleviate database read pressure for frequently accessed, permission-scoped queries. Load testing via k6 will validate latency (p95 < 800ms-1200ms) and ensure no connection exhaustion or cross-org data leaks occur under load.
 
 ## 11.2 Connection pooling status
 
@@ -2186,9 +2204,9 @@ Ensure logs **never include**:
 ## 11.6 Load test scripts & safety
 
 We will implement k6 load testing scripts in `tests/load/k6/`:
-1. `handoff-smoke.js`: Public and auth routes (/, /login, /signup, /demo)
-2. `handoff-authenticated.js`: Authenticated API routes (/dashboard, /api/v1/dashboard/overview, tasks, projects, notifications)
-3. `handoff-student-team.js`: Student workspace flows (join-code, team overview, notifications)
+1. `coopsetu-smoke.js`: Public and auth routes (/, /login, /signup, /demo)
+2. `coopsetu-authenticated.js`: Authenticated API routes (/dashboard, /api/v1/dashboard/overview, tasks, projects, notifications)
+3. `coopsetu-student-team.js`: Student workspace flows (join-code, team overview, notifications)
 
 Scripts will use environment variables: `LOAD_BASE_URL`, `LOAD_TEST_EMAIL`, `LOAD_TEST_PASSWORD`, `LOAD_STUDENT_EMAIL`, `LOAD_STUDENT_PASSWORD`. 
 
@@ -2239,7 +2257,7 @@ the "no internal error" (`status < 500`) check passing on **100% of the
 6,485 checked requests** — the app never returned a 5xx under 100 concurrent
 VUs. The elevated `http_req_failed` rate only appears at high concurrency
 and is consistent with 100 virtual users sharing one single literal session
-cookie (as the existing `handoff-authenticated.js` script is written) hammering
+cookie (as the existing `coopsetu-authenticated.js` script is written) hammering
 the same Supabase Auth session/token-refresh path simultaneously — a load
 pattern no real deployment would produce (100 real users each have their own
 session). Next step if this needs tighter verification: give each VU its own
@@ -2253,7 +2271,7 @@ login in `setup()`/`init` context instead of one shared cookie, then re-run.
 
 - **Dashboard Overview (`/api/v1/dashboard/overview`)**: Aggregates multiple tables (tasks, incidents, approvals, bugs). Susceptible to slow queries without proper indexes on `organization_id` + `status`.
 - **Inbox/Notifications (`/api/v1/notifications`)**: Aggregates notification counts per category. 
-- **`handoff-authenticated.js`'s single shared session** across all VUs is unrealistic for a true 100-real-user simulation (see §11.7 note) — fine for exercising API/DB throughput, but not for validating per-user session/auth behavior under concurrency.
+- **`coopsetu-authenticated.js`'s single shared session** across all VUs is unrealistic for a true 100-real-user simulation (see §11.7 note) — fine for exercising API/DB throughput, but not for validating per-user session/auth behavior under concurrency.
 
 ## 11.9 Production/staging requirements & CI Cadence
 
@@ -2323,9 +2341,9 @@ Steps 2–3 validation:
 BLOCKED BY DOCKER DESKTOP NOT RUNNING
 
 **k6 files added:**
-- `tests/load/k6/handoff-smoke.js`
-- `tests/load/k6/handoff-authenticated.js`
-- `tests/load/k6/handoff-student-team.js`
+- `tests/load/k6/coopsetu-smoke.js`
+- `tests/load/k6/coopsetu-authenticated.js`
+- `tests/load/k6/coopsetu-student-team.js`
 
 **Commands added to `package.json`:**
 - `npm run load:smoke`
@@ -2397,7 +2415,7 @@ slowest endpoints: /api/v1/dashboard/overview (DB fallback)
 
 ### CSS Regression Fix
 
-- **Root cause**: Tailwind CSS v4 automatically detects content files starting from the directory where `globals.css` lives. Because `app/globals.css` is in the `app/` directory, Tailwind only scanned `app/` and completely ignored the Handoff theme logic and UI components located in `components/` and `lib/`. 
+- **Root cause**: Tailwind CSS v4 automatically detects content files starting from the directory where `globals.css` lives. Because `app/globals.css` is in the `app/` directory, Tailwind only scanned `app/` and completely ignored the CoopSetu theme logic and UI components located in `components/` and `lib/`. 
 - **Files changed**: `app/globals.css` (Added `@source "../components";` and `@source "../lib";`).
 - **Tests run**: `npm run lint` and `npx vitest run`.
 - **Build result**: `npm run build` compiled successfully. The generated CSS chunk size increased from 92KB (broken) to 130KB (fixed), correctly including the component utility classes.
@@ -2603,7 +2621,7 @@ scoping rules):
   unauthorized callers — the added redirect happens only after a real
   authenticated session exists, so it does not leak invite existence/details
   to anonymous or unauthorized visitors.
-- Private-task RLS (`handoff.can_view_task`), cross-org 404/403 behavior, and
+- Private-task RLS (`coopsetu.can_view_task`), cross-org 404/403 behavior, and
   demo-tenant isolation are untouched DB-level/route-level controls; the full
   integration suite (128/128, including all pre-existing RLS/isolation tests)
   passed after this feature was added, confirming no regression.
@@ -2816,11 +2834,11 @@ reason.
 ## 13.8 Load validation for concurrent users
 
 See §11.7 for full results and the critical `next dev`-vs-production-build
-finding. Summary: `handoff-smoke.js` passed cleanly at 25 VUs against a
-production build (p95=33ms, 0% errors). `handoff-authenticated.js` was bumped
+finding. Summary: `coopsetu-smoke.js` passed cleanly at 25 VUs against a
+production build (p95=33ms, 0% errors). `coopsetu-authenticated.js` was bumped
 to ramp to 100 VUs and passed the "no 5xx" check on 100% of 6,485 checked
 requests at 100 concurrent VUs — the app does not crash or error under 100
-concurrent users. `handoff-student-team.js` was not run (no seeded student
+concurrent users. `coopsetu-student-team.js` was not run (no seeded student
 demo account exists yet to supply credentials).
 
 ## 13.9 Tests added
@@ -2855,7 +2873,7 @@ demo account exists yet to supply credentials).
 - No seeded `STUDENT_SOLO`/`STUDENT_TEAM` demo account exists for
   `load:student` — creating one is the natural next step if a student-specific
   load baseline is needed.
-- `handoff-authenticated.js` shares one literal session cookie across all
+- `coopsetu-authenticated.js` shares one literal session cookie across all
   simulated VUs (see §11.7) — fine for API/DB throughput measurement, not a
   faithful simulation of 100 independent real users each with their own
   session.
@@ -2870,7 +2888,7 @@ demo account exists yet to supply credentials).
 
 Await instructions for the next phase. Candidates surfaced by this work:
 seed a student demo account for `load:student`; consider per-VU sessions in
-`handoff-authenticated.js` for a more realistic 100-independent-users
+`coopsetu-authenticated.js` for a more realistic 100-independent-users
 baseline; decide whether `/security`'s aspirational enterprise claims should
 be scoped back or the features actually built before any public launch.
 
@@ -2922,7 +2940,7 @@ pattern is consistent throughout:
   airtight**: it always re-queries `organization_members` filtered by
   `user_id = auth.uid() AND is_active = true` (and `organization_id` if an id
   was requested) using the caller's own RLS-scoped client — a forged
-  `handoff_active_org` cookie or a client-supplied `organizationId` path
+  `coopsetu_active_org` cookie or a client-supplied `organizationId` path
   param cannot grant access to an org the caller isn't really an active
   member of. Every route in the codebase that gates on this function
   inherits its correctness.
@@ -2993,7 +3011,7 @@ All 6 pass. Full integration suite: **134/134** (128 pre-existing + 6 new).
 
 ## 14.4 Known limitations / notes
 
-- `storage.objects`'s `handoff.storage_org_ok(name)` policy treats the first
+- `storage.objects`'s `coopsetu.storage_org_ok(name)` policy treats the first
   path folder segment as an organization id (`is_org_member(foldername[1])`).
   Avatar files are stored at `avatars/{userId}.{ext}` (first segment literally
   `"avatars"`, not an org id) — this policy would not evaluate sensibly for a
