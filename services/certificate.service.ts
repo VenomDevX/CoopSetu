@@ -44,22 +44,48 @@ export class CertificateService {
     return data as Certificate;
   }
 
+  /**
+   * Public certificate verification.
+   *
+   * Goes through the `verify_certificate` SECURITY DEFINER function rather than
+   * selecting from `certificates` directly: this endpoint is reachable
+   * unauthenticated, and `anon` holds no SELECT grant on the table (the only
+   * policy is org-scoped). Querying the table as anon silently returned no row,
+   * so valid certificates were reported as "not found". See migration 0077.
+   *
+   * The function returns a curated column list and never exposes the holder's
+   * email, which the previous `trainees(profiles:user_id(...))` join selected
+   * and no caller ever used.
+   */
   async verify(certNumber: string) {
     const { data, error } = await this.supabase
-      .from('certificates')
-      .select('*, programmes(title), trainees(id, profiles:user_id(full_name, email))')
-      .eq('certificate_number', certNumber)
-      .single();
-    
-    if (error || !data) return { valid: false, message: 'Certificate not found' };
-    
-    if (data.status === 'REVOKED') return { valid: false, message: 'Certificate has been revoked', certificate: data };
-    if (data.status === 'EXPIRED') return { valid: false, message: 'Certificate has expired', certificate: data };
-    if (data.valid_until && new Date(data.valid_until) < new Date()) {
-      return { valid: false, message: 'Certificate has expired', certificate: data };
+      .rpc('verify_certificate', { p_certificate_number: certNumber });
+
+    if (error) throw error;
+
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) return { valid: false, message: 'Certificate not found' };
+
+    // Reshape to the response contract callers already depend on
+    // (`certificate.programmes.title` is rendered by the certificates page).
+    const certificate = {
+      certificate_number: row.certificate_number,
+      title: row.title,
+      issued_at: row.issued_at,
+      valid_until: row.valid_until,
+      status: row.status,
+      issuer_name: row.issuer_name,
+      holder_name: row.holder_name,
+      programmes: row.programme_title ? { title: row.programme_title } : null,
+    };
+
+    if (row.status === 'REVOKED') return { valid: false, message: 'Certificate has been revoked', certificate };
+    if (row.status === 'EXPIRED') return { valid: false, message: 'Certificate has expired', certificate };
+    if (row.valid_until && new Date(row.valid_until) < new Date()) {
+      return { valid: false, message: 'Certificate has expired', certificate };
     }
 
-    return { valid: true, message: 'Certificate is valid', certificate: data };
+    return { valid: true, message: 'Certificate is valid', certificate };
   }
 
   async listByTrainee(traineeId: string) {
