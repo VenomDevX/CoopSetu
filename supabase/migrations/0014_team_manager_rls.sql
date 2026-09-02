@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0014 is_team_manager helper + team-scoped task assignment
+-- Handoff — 0014 is_team_manager helper + team-scoped task assignment
 -- ============================================================================
 
 -- Is the current user a manager of the given team?

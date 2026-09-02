@@ -18,7 +18,7 @@ async function freshUser(prefix: string): Promise<{ client: SupabaseClient; user
  * real local Supabase instance: User B, even when supplying User A's real
  * ids directly, can never read or mutate User A's personal data. This is
  * the concrete verification for the admin-client ownership audit performed
- * in this phase (docs/COOPSETU.md §14) — every site was already correct on
+ * in this phase (docs/HANDOFF.md §14) — every site was already correct on
  * inspection; these tests prove it at the DB/RLS layer too, not just by
  * code review.
  */

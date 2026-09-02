@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0045 Wire can_set_task_visibility into tasks UPDATE policy
+-- Handoff — 0045 Wire can_set_task_visibility into tasks UPDATE policy
 -- ============================================================================
 -- Bug found via live browser test (2026-06-29):
 -- Migration 0044 added handoff.can_set_task_visibility() but did not wire it

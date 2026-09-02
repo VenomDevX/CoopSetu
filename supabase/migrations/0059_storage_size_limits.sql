@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0059 Storage Size Limits (Security Phase D)
+-- Handoff — 0059 Storage Size Limits (Security Phase D)
 -- Enforces a 10MB (10485760 bytes) file size limit on public buckets to prevent DoS.
 -- ============================================================================
 

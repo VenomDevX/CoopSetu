@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0066 Fix audit_trigger FK violation on organization deletion
+-- Handoff — 0066 Fix audit_trigger FK violation on organization deletion
 -- ============================================================================
 -- Bug: deleting an organization cascades to organization_members (and, via
 -- that, member_roles), each of which has an AFTER DELETE audit_trigger that

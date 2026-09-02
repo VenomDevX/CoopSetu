@@ -103,7 +103,7 @@ describe('GitHub repo import + sync (service layer, GitHub API mocked)', () => {
       // directly from a bare vitest process (not a real request) — it fails
       // silently in that case (logs a warning, never throws), same
       // pre-existing environmental limitation documented for other
-      // createAuditLog callers (see docs/COOPSETU.md's group-a-actions.test.ts
+      // createAuditLog callers (see docs/HANDOFF.md's group-a-actions.test.ts
       // note). Audit-log content is exercised in the unit test suite instead
       // (tests/unit/github-sync.service.test.ts), where callers are mocked.
     });

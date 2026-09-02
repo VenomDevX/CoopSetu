@@ -11,13 +11,13 @@ test.describe('Reports & Analytics Exports', () => {
     const downloadPromisePdf = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export PDF' }).click();
     const downloadPdf = await downloadPromisePdf;
-    expect(downloadPdf.suggestedFilename()).toContain('coopsetu-global-analytics-');
+    expect(downloadPdf.suggestedFilename()).toContain('handoff-global-analytics-');
     expect(downloadPdf.suggestedFilename()).toContain('.pdf');
 
     const downloadPromiseCsv = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export CSV' }).click();
     const downloadCsv = await downloadPromiseCsv;
-    expect(downloadCsv.suggestedFilename()).toContain('coopsetu-global-analytics-');
+    expect(downloadCsv.suggestedFilename()).toContain('handoff-global-analytics-');
     expect(downloadCsv.suggestedFilename()).toContain('.csv');
   });
 });
