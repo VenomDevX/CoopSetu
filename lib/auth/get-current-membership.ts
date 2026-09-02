@@ -19,7 +19,7 @@ export interface Membership {
  * Resolve the caller's active membership, including effective roles and
  * permissions. Org selection precedence:
  *   1. explicit `organizationId` argument
- *   2. the `handoff_active_org` cookie (set by the org switcher)
+ *   2. the `coopsetu_active_org` cookie (set by the org switcher)
  *   3. the user's first active membership
  * The chosen org is always re-validated against `organization_members` (RLS +
  * this query), so a forged cookie cannot grant access to an org the user isn't

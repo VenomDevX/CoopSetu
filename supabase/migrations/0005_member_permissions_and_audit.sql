@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0005 member_permissions RPC + audit_logs foundation
+-- CoopSetu — 0005 member_permissions RPC + audit_logs foundation
 -- ============================================================================
 
 -- Flat permission list for a member (admins get all). Used for UI gating.
