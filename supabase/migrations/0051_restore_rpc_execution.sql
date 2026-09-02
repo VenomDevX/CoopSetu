@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0051 Restore authenticated execution rights for RPCs
+-- Handoff — 0051 Restore authenticated execution rights for RPCs
 -- ============================================================================
 -- Migration 0037 revoked authenticated execution rights from several RPCs, 
 -- breaking them because they rely on auth.uid() internally.

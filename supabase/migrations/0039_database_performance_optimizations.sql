@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0039 Database Performance Optimizations
+-- Handoff — 0039 Database Performance Optimizations
 -- This squashed migration combines multiple database linter fixes:
 -- 1. Wrap bare auth.uid() calls in (SELECT auth.uid()) for InitPlan optimization.
 -- 2. Dynamically split '_manage' (FOR ALL) policies into separate INSERT, UPDATE, DELETE policies.

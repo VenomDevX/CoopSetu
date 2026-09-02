@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0015 Tighten base employee (DEVELOPER) permissions
+-- Handoff — 0015 Tighten base employee (DEVELOPER) permissions
 -- Spec: employees see personal progress only — not company-wide analytics.
 -- Remove analytics:view from DEVELOPER so they get the personal overview.
 -- (QA/Security/PM/Manager/Admin keep analytics:view.)
