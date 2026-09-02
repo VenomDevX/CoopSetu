@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0019 Private storage buckets + org-scoped RLS on storage.objects
+-- Handoff — 0019 Private storage buckets + org-scoped RLS on storage.objects
 -- Object path convention: {organization_id}/<entity>/<id>/<filename>
 -- The first path segment is the organization id, used for access control.
 -- ============================================================================

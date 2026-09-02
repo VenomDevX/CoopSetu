@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0077 Revoke `anon` EXECUTE from SECURITY DEFINER functions
+-- Handoff — 0077 Revoke `anon` EXECUTE from SECURITY DEFINER functions
 -- ============================================================================
 -- Fixes Supabase advisor: "anon_security_definer_function_executable".
 --

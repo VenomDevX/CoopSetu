@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0049 Public Demo Workspace
+-- Handoff — 0049 Public Demo Workspace
 -- ============================================================================
 
 -- 1. Add demo tracking to organizations

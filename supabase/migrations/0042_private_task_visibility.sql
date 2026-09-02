@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu - Private task visibility, assignment history, and realtime-safe RLS
+-- Handoff - Private task visibility, assignment history, and realtime-safe RLS
 -- ============================================================================
 
 -- ---------------------------------------------------------------- permissions -

@@ -131,7 +131,7 @@ function buildTransport() {
 async function sendReportEmail(report, recipients, csv, fileName) {
   const transport = buildTransport();
   await transport.sendMail({
-    from: process.env.REPORTS_FROM_EMAIL || 'reports@coopsetu.local',
+    from: process.env.REPORTS_FROM_EMAIL || 'reports@handoff.local',
     to: recipients.join(', '),
     subject: `Scheduled report: ${report.name}`,
     text: `Your scheduled report "${report.name}" is attached.`,
