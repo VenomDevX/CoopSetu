@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0003 RLS helper functions, auth trigger, role/permission catalogue
+-- CoopSetu — 0003 RLS helper functions, auth trigger, role/permission catalogue
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------

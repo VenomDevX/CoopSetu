@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0033 Revoke anon/authenticated from SECURITY DEFINER functions
+-- CoopSetu — 0033 Revoke anon/authenticated from SECURITY DEFINER functions
 -- Fixes Supabase advisor: "Public Can Execute SECURITY DEFINER Function"
 --
 -- Strategy per function:

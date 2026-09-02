@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0012 Documents, Incidents, Engineering integrations, AI records
+-- CoopSetu — 0012 Documents, Incidents, Engineering integrations, AI records
 -- ============================================================================
 
 -- ------------------------------------------------------------- documents -----

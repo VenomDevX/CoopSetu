@@ -21,9 +21,9 @@ export const RESERVED_WORKSPACE_SLUGS = new Set([
   'root',
   'null',
   'undefined',
-  'handoff',
-  'handoff-admin',
-  'handoff-support',
+  'coopsetu',
+  'coopsetu-admin',
+  'coopsetu-support',
   'official'
 ]);
 
@@ -35,9 +35,9 @@ export const RESERVED_USERNAMES = new Set([
   'support',
   'security',
   'official',
-  'handoff',
-  'handoff-admin',
-  'handoff-support',
+  'coopsetu',
+  'coopsetu-admin',
+  'coopsetu-support',
   'api',
   'null',
   'undefined'
