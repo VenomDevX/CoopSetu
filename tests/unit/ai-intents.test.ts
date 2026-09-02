@@ -21,7 +21,7 @@ describe('AI intent registry', () => {
       const def = getIntent(intent);
       expect(def, intent).toBeTruthy();
       expect(typeof def!.build).toBe('function');
-      expect(systemFor(def!)).toMatch(/Handoff AI/);
+      expect(systemFor(def!)).toMatch(/CoopSetu AI/);
       // Grounding rule is always present in the system instruction.
       expect(systemFor(def!)).toMatch(/ONLY using the FACTS/);
     }

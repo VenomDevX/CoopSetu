@@ -13,10 +13,17 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 
-CREATE SCHEMA IF NOT EXISTS "handoff";
+CREATE SCHEMA IF NOT EXISTS "coopsetu";
 
 
-ALTER SCHEMA "handoff" OWNER TO "postgres";
+ALTER SCHEMA "coopsetu" OWNER TO "postgres";
+
+
+CREATE EXTENSION IF NOT EXISTS "pg_net" WITH SCHEMA "extensions";
+
+
+
+
 
 
 COMMENT ON SCHEMA "public" IS 'standard public schema';
@@ -73,7 +80,7 @@ CREATE TYPE "public"."user_session_info" AS (
 ALTER TYPE "public"."user_session_info" OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."assign_task_number"() RETURNS "trigger"
+CREATE OR REPLACE FUNCTION "coopsetu"."assign_task_number"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -94,10 +101,10 @@ end;
 $$;
 
 
-ALTER FUNCTION "handoff"."assign_task_number"() OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."assign_task_number"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."attach_updated_at"("p_table" "regclass") RETURNS "void"
+CREATE OR REPLACE FUNCTION "coopsetu"."attach_updated_at"("p_table" "regclass") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -107,17 +114,17 @@ BEGIN
   EXECUTE format('DROP TRIGGER IF EXISTS %I ON %s;', trig_name, p_table);
   EXECUTE format(
     'CREATE TRIGGER %I BEFORE UPDATE ON %s
-       FOR EACH ROW EXECUTE FUNCTION handoff.set_updated_at();',
+       FOR EACH ROW EXECUTE FUNCTION coopsetu.set_updated_at();',
     trig_name, p_table
   );
 END;
 $$;
 
 
-ALTER FUNCTION "handoff"."attach_updated_at"("p_table" "regclass") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."attach_updated_at"("p_table" "regclass") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."audit_trigger"() RETURNS "trigger"
+CREATE OR REPLACE FUNCTION "coopsetu"."audit_trigger"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -168,7 +175,7 @@ BEGIN
 
   v_actor_user_id := auth.uid();
   IF v_org_id IS NOT NULL AND v_actor_user_id IS NOT NULL THEN
-    v_actor_member_id := handoff.current_member_id(v_org_id);
+    v_actor_member_id := coopsetu.current_member_id(v_org_id);
   END IF;
 
   IF v_entity_type = 'organization_members' THEN
@@ -194,10 +201,10 @@ END;
 $$;
 
 
-ALTER FUNCTION "handoff"."audit_trigger"() OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."audit_trigger"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."can_assign_task"("p_task" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."can_assign_task"("p_task" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -206,23 +213,23 @@ CREATE OR REPLACE FUNCTION "handoff"."can_assign_task"("p_task" "uuid") RETURNS 
     FROM public.tasks
     WHERE id = p_task
   )
-  SELECT handoff.can_view_task(p_task)
-    AND handoff.has_permission((SELECT organization_id FROM t), 'task:assign')
+  SELECT coopsetu.can_view_task(p_task)
+    AND coopsetu.has_permission((SELECT organization_id FROM t), 'task:assign')
     AND (
-      handoff.is_org_admin_or_owner((SELECT organization_id FROM t))
-      OR handoff.is_project_responsible_manager((SELECT project_id FROM t))
+      coopsetu.is_org_admin_or_owner((SELECT organization_id FROM t))
+      OR coopsetu.is_project_responsible_manager((SELECT project_id FROM t))
       OR (
-        handoff.has_permission((SELECT organization_id FROM t), 'task:view_team_assignments')
-        AND handoff.manages_task_assignee(p_task)
+        coopsetu.has_permission((SELECT organization_id FROM t), 'task:view_team_assignments')
+        AND coopsetu.manages_task_assignee(p_task)
       )
     );
 $$;
 
 
-ALTER FUNCTION "handoff"."can_assign_task"("p_task" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."can_assign_task"("p_task" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."can_assign_to"("p_task" "uuid", "p_member" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."can_assign_to"("p_task" "uuid", "p_member" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -231,8 +238,8 @@ CREATE OR REPLACE FUNCTION "handoff"."can_assign_to"("p_task" "uuid", "p_member"
     FROM public.tasks
     WHERE id = p_task
   )
-  SELECT handoff.can_view_task(p_task)
-    AND handoff.has_permission((SELECT organization_id FROM t), 'task:assign')
+  SELECT coopsetu.can_view_task(p_task)
+    AND coopsetu.has_permission((SELECT organization_id FROM t), 'task:assign')
     AND EXISTS (
       SELECT 1
       FROM public.organization_members m
@@ -241,24 +248,24 @@ CREATE OR REPLACE FUNCTION "handoff"."can_assign_to"("p_task" "uuid", "p_member"
         AND m.is_active
     )
     AND (
-      handoff.is_org_admin_or_owner((SELECT organization_id FROM t))
-      OR handoff.is_project_responsible_manager((SELECT project_id FROM t))
+      coopsetu.is_org_admin_or_owner((SELECT organization_id FROM t))
+      OR coopsetu.is_project_responsible_manager((SELECT project_id FROM t))
       OR (
-        handoff.has_permission((SELECT organization_id FROM t), 'task:view_team_assignments')
-        AND handoff.manages_member_team(p_member)
+        coopsetu.has_permission((SELECT organization_id FROM t), 'task:view_team_assignments')
+        AND coopsetu.manages_member_team(p_member)
       )
     );
 $$;
 
 
-ALTER FUNCTION "handoff"."can_assign_to"("p_task" "uuid", "p_member" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."can_assign_to"("p_task" "uuid", "p_member" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."can_create_task_with_visibility"("p_org" "uuid", "p_project" "uuid", "p_visibility" "text") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."can_create_task_with_visibility"("p_org" "uuid", "p_project" "uuid", "p_visibility" "text") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
-  SELECT handoff.has_permission(p_org, 'task:create')
+  SELECT coopsetu.has_permission(p_org, 'task:create')
     AND EXISTS (
       SELECT 1
       FROM public.projects pr
@@ -269,16 +276,16 @@ CREATE OR REPLACE FUNCTION "handoff"."can_create_task_with_visibility"("p_org" "
       IN ('PRIVATE_ASSIGNMENT', 'PROJECT_SHARED', 'ORGANIZATION_VISIBLE')
     AND (
       COALESCE(p_visibility, 'PRIVATE_ASSIGNMENT') = 'PRIVATE_ASSIGNMENT'
-      OR handoff.is_org_admin_or_owner(p_org)
-      OR handoff.is_project_responsible_manager(p_project)
+      OR coopsetu.is_org_admin_or_owner(p_org)
+      OR coopsetu.is_project_responsible_manager(p_project)
     );
 $$;
 
 
-ALTER FUNCTION "handoff"."can_create_task_with_visibility"("p_org" "uuid", "p_project" "uuid", "p_visibility" "text") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."can_create_task_with_visibility"("p_org" "uuid", "p_project" "uuid", "p_visibility" "text") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."can_delete_task"("p_task" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."can_delete_task"("p_task" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -287,19 +294,19 @@ CREATE OR REPLACE FUNCTION "handoff"."can_delete_task"("p_task" "uuid") RETURNS 
     FROM public.tasks
     WHERE id = p_task
   )
-  SELECT handoff.can_view_task(p_task)
-    AND handoff.has_permission((SELECT organization_id FROM t), 'task:delete')
+  SELECT coopsetu.can_view_task(p_task)
+    AND coopsetu.has_permission((SELECT organization_id FROM t), 'task:delete')
     AND (
-      handoff.is_org_admin_or_owner((SELECT organization_id FROM t))
-      OR handoff.is_project_responsible_manager((SELECT project_id FROM t))
+      coopsetu.is_org_admin_or_owner((SELECT organization_id FROM t))
+      OR coopsetu.is_project_responsible_manager((SELECT project_id FROM t))
     );
 $$;
 
 
-ALTER FUNCTION "handoff"."can_delete_task"("p_task" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."can_delete_task"("p_task" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."can_edit_task"("p_task" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."can_edit_task"("p_task" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -309,13 +316,13 @@ CREATE OR REPLACE FUNCTION "handoff"."can_edit_task"("p_task" "uuid") RETURNS bo
     WHERE id = p_task
   ),
   me AS (
-    SELECT handoff.current_member_id((SELECT organization_id FROM t)) AS member_id
+    SELECT coopsetu.current_member_id((SELECT organization_id FROM t)) AS member_id
   )
-  SELECT handoff.can_view_task(p_task)
-    AND handoff.has_permission((SELECT organization_id FROM t), 'task:update')
+  SELECT coopsetu.can_view_task(p_task)
+    AND coopsetu.has_permission((SELECT organization_id FROM t), 'task:update')
     AND (
-      handoff.is_org_admin_or_owner((SELECT organization_id FROM t))
-      OR handoff.is_project_responsible_manager((SELECT project_id FROM t))
+      coopsetu.is_org_admin_or_owner((SELECT organization_id FROM t))
+      OR coopsetu.is_project_responsible_manager((SELECT project_id FROM t))
       OR (SELECT member_id FROM me) = (SELECT reporter_member_id FROM t)
       OR (SELECT member_id FROM me) = (SELECT primary_assignee_member_id FROM t)
       OR EXISTS (
@@ -326,24 +333,24 @@ CREATE OR REPLACE FUNCTION "handoff"."can_edit_task"("p_task" "uuid") RETURNS bo
           AND ta.removed_at IS NULL
       )
       OR (
-        handoff.has_permission((SELECT organization_id FROM t), 'task:view_team_assignments')
-        AND handoff.manages_task_assignee(p_task)
+        coopsetu.has_permission((SELECT organization_id FROM t), 'task:view_team_assignments')
+        AND coopsetu.manages_task_assignee(p_task)
       )
     );
 $$;
 
 
-ALTER FUNCTION "handoff"."can_edit_task"("p_task" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."can_edit_task"("p_task" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."can_manage_project"("p_project" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."can_manage_project"("p_project" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
   with p as (select organization_id from public.projects where id = p_project)
   select exists (select 1 from p)
     and (
-      handoff.has_role((select organization_id from p),
+      coopsetu.has_role((select organization_id from p),
         array['SUPER_ADMIN','ORG_OWNER','ORG_ADMIN','PROJECT_MANAGER','ENGINEERING_MANAGER'])
       or exists (
         select 1 from public.project_members pm
@@ -355,10 +362,10 @@ CREATE OR REPLACE FUNCTION "handoff"."can_manage_project"("p_project" "uuid") RE
 $$;
 
 
-ALTER FUNCTION "handoff"."can_manage_project"("p_project" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."can_manage_project"("p_project" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."can_set_task_visibility"("p_task" "uuid", "p_visibility" "text") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."can_set_task_visibility"("p_task" "uuid", "p_visibility" "text") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -367,27 +374,27 @@ CREATE OR REPLACE FUNCTION "handoff"."can_set_task_visibility"("p_task" "uuid", 
     FROM public.tasks
     WHERE id = p_task
   )
-  SELECT handoff.can_edit_task(p_task)
+  SELECT coopsetu.can_edit_task(p_task)
     AND (
       COALESCE(p_visibility, 'PRIVATE_ASSIGNMENT') = 'PRIVATE_ASSIGNMENT'
-      OR handoff.is_org_admin_or_owner((SELECT organization_id FROM t))
-      OR handoff.is_project_responsible_manager((SELECT project_id FROM t))
+      OR coopsetu.is_org_admin_or_owner((SELECT organization_id FROM t))
+      OR coopsetu.is_project_responsible_manager((SELECT project_id FROM t))
     );
 $$;
 
 
-ALTER FUNCTION "handoff"."can_set_task_visibility"("p_task" "uuid", "p_visibility" "text") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."can_set_task_visibility"("p_task" "uuid", "p_visibility" "text") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."can_view_project"("p_project" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."can_view_project"("p_project" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
   with p as (select organization_id from public.projects where id = p_project)
   select exists (select 1 from p)
-    and handoff.is_org_member((select organization_id from p))
+    and coopsetu.is_org_member((select organization_id from p))
     and (
-      handoff.has_role((select organization_id from p),
+      coopsetu.has_role((select organization_id from p),
         array['SUPER_ADMIN','ORG_OWNER','ORG_ADMIN','CEO','CTO','PROJECT_MANAGER',
               'ENGINEERING_MANAGER','AUDITOR','COMPLIANCE_REVIEWER'])
       or exists (
@@ -396,26 +403,26 @@ CREATE OR REPLACE FUNCTION "handoff"."can_view_project"("p_project" "uuid") RETU
         where pm.project_id = p_project and m.user_id = auth.uid()
           and m.is_active and pm.can_view
       )
-      or handoff.in_project_team(p_project)
+      or coopsetu.in_project_team(p_project)
     );
 $$;
 
 
-ALTER FUNCTION "handoff"."can_view_project"("p_project" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."can_view_project"("p_project" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."can_view_release"("p_release" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."can_view_release"("p_release" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
-  SELECT handoff.can_view_project(project_id) FROM public.releases WHERE id = p_release;
+  SELECT coopsetu.can_view_project(project_id) FROM public.releases WHERE id = p_release;
 $$;
 
 
-ALTER FUNCTION "handoff"."can_view_release"("p_release" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."can_view_release"("p_release" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."can_view_task"("p_task" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."can_view_task"("p_task" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -426,16 +433,16 @@ CREATE OR REPLACE FUNCTION "handoff"."can_view_task"("p_task" "uuid") RETURNS bo
     WHERE id = p_task
   ),
   me AS (
-    SELECT handoff.current_member_id((SELECT organization_id FROM t)) AS member_id
+    SELECT coopsetu.current_member_id((SELECT organization_id FROM t)) AS member_id
   )
   SELECT EXISTS (SELECT 1 FROM t)
     AND (SELECT member_id FROM me) IS NOT NULL
-    AND handoff.has_permission((SELECT organization_id FROM t), 'task:view')
+    AND coopsetu.has_permission((SELECT organization_id FROM t), 'task:view')
     AND (
-      handoff.is_org_admin_or_owner((SELECT organization_id FROM t))
+      coopsetu.is_org_admin_or_owner((SELECT organization_id FROM t))
       OR (SELECT visibility_scope FROM t) = 'ORGANIZATION_VISIBLE'
       OR ((SELECT visibility_scope FROM t) = 'PROJECT_SHARED'
-          AND handoff.can_view_project((SELECT project_id FROM t)))
+          AND coopsetu.can_view_project((SELECT project_id FROM t)))
       OR (SELECT member_id FROM me) = (SELECT reporter_member_id FROM t)
       OR (SELECT member_id FROM me) = (SELECT primary_assignee_member_id FROM t)
       OR EXISTS (
@@ -458,32 +465,32 @@ CREATE OR REPLACE FUNCTION "handoff"."can_view_task"("p_task" "uuid") RETURNS bo
           AND tvm.member_id = (SELECT member_id FROM me)
           AND tvm.revoked_at IS NULL
       )
-      OR handoff.is_project_responsible_manager((SELECT project_id FROM t))
+      OR coopsetu.is_project_responsible_manager((SELECT project_id FROM t))
       OR (
-        handoff.has_permission((SELECT organization_id FROM t), 'task:view_team_assignments')
-        AND handoff.manages_task_assignee(p_task)
+        coopsetu.has_permission((SELECT organization_id FROM t), 'task:view_team_assignments')
+        AND coopsetu.manages_task_assignee(p_task)
       )
     );
 $$;
 
 
-ALTER FUNCTION "handoff"."can_view_task"("p_task" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."can_view_task"("p_task" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."can_view_task_assignment_history"("p_task" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."can_view_task_assignment_history"("p_task" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
-  SELECT handoff.can_view_task(p_task);
+  SELECT coopsetu.can_view_task(p_task);
 $$;
 
 
-ALTER FUNCTION "handoff"."can_view_task_assignment_history"("p_task" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."can_view_task_assignment_history"("p_task" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."check_rate_limit"("p_ip" "text", "p_max_attempts" integer, "p_window_seconds" integer) RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."check_rate_limit"("p_ip" "text", "p_max_attempts" integer, "p_window_seconds" integer) RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public', 'handoff'
+    SET "search_path" TO 'public', 'coopsetu'
     AS $$
 declare
   v_count int;
@@ -507,10 +514,10 @@ end;
 $$;
 
 
-ALTER FUNCTION "handoff"."check_rate_limit"("p_ip" "text", "p_max_attempts" integer, "p_window_seconds" integer) OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."check_rate_limit"("p_ip" "text", "p_max_attempts" integer, "p_window_seconds" integer) OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."current_member_id"("p_org" "uuid") RETURNS "uuid"
+CREATE OR REPLACE FUNCTION "coopsetu"."current_member_id"("p_org" "uuid") RETURNS "uuid"
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -523,26 +530,10 @@ CREATE OR REPLACE FUNCTION "handoff"."current_member_id"("p_org" "uuid") RETURNS
 $$;
 
 
-ALTER FUNCTION "handoff"."current_member_id"("p_org" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."current_member_id"("p_org" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."generate_join_code"() RETURNS "text"
-    LANGUAGE "sql"
-    SET "search_path" TO 'pg_catalog'
-    AS $$
-  select 'TEAM-' ||
-    (select string_agg(substr(chars, (random() * length(chars))::int + 1, 1), '')
-       from (select '23456789ABCDEFGHJKMNPQRSTUVWXYZ' as chars) c, generate_series(1, 4)) ||
-    '-' ||
-    (select string_agg(substr(chars, (random() * length(chars))::int + 1, 1), '')
-       from (select '23456789ABCDEFGHJKMNPQRSTUVWXYZ' as chars) c, generate_series(1, 4));
-$$;
-
-
-ALTER FUNCTION "handoff"."generate_join_code"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "handoff"."handle_new_user"() RETURNS "trigger"
+CREATE OR REPLACE FUNCTION "coopsetu"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -559,10 +550,10 @@ end;
 $$;
 
 
-ALTER FUNCTION "handoff"."handle_new_user"() OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."handle_new_user"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."has_permission"("p_org" "uuid", "p_perm" "text") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."has_permission"("p_org" "uuid", "p_perm" "text") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -583,10 +574,10 @@ CREATE OR REPLACE FUNCTION "handoff"."has_permission"("p_org" "uuid", "p_perm" "
 $$;
 
 
-ALTER FUNCTION "handoff"."has_permission"("p_org" "uuid", "p_perm" "text") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."has_permission"("p_org" "uuid", "p_perm" "text") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."has_role"("p_org" "uuid", "p_roles" "text"[]) RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."has_role"("p_org" "uuid", "p_roles" "text"[]) RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -603,21 +594,10 @@ CREATE OR REPLACE FUNCTION "handoff"."has_role"("p_org" "uuid", "p_roles" "text"
 $$;
 
 
-ALTER FUNCTION "handoff"."has_role"("p_org" "uuid", "p_roles" "text"[]) OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."has_role"("p_org" "uuid", "p_roles" "text"[]) OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."hash_join_code"("p_raw_code" "text") RETURNS "text"
-    LANGUAGE "sql" IMMUTABLE
-    SET "search_path" TO 'pg_catalog', 'extensions'
-    AS $$
-  select encode(extensions.digest(upper(regexp_replace(p_raw_code, '[^A-Za-z0-9]', '', 'g')), 'sha256'), 'hex');
-$$;
-
-
-ALTER FUNCTION "handoff"."hash_join_code"("p_raw_code" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "handoff"."in_project_team"("p_project" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."in_project_team"("p_project" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -631,21 +611,21 @@ CREATE OR REPLACE FUNCTION "handoff"."in_project_team"("p_project" "uuid") RETUR
 $$;
 
 
-ALTER FUNCTION "handoff"."in_project_team"("p_project" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."in_project_team"("p_project" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."is_org_admin_or_owner"("p_org" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."is_org_admin_or_owner"("p_org" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
-  SELECT handoff.has_role(p_org, ARRAY['SUPER_ADMIN', 'ORG_ADMIN', 'ORG_OWNER']);
+  SELECT coopsetu.has_role(p_org, ARRAY['SUPER_ADMIN', 'ORG_ADMIN', 'ORG_OWNER']);
 $$;
 
 
-ALTER FUNCTION "handoff"."is_org_admin_or_owner"("p_org" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."is_org_admin_or_owner"("p_org" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."is_org_member"("p_org" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."is_org_member"("p_org" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -658,10 +638,10 @@ CREATE OR REPLACE FUNCTION "handoff"."is_org_member"("p_org" "uuid") RETURNS boo
 $$;
 
 
-ALTER FUNCTION "handoff"."is_org_member"("p_org" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."is_org_member"("p_org" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."is_project_member"("p_project" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."is_project_member"("p_project" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -673,10 +653,10 @@ CREATE OR REPLACE FUNCTION "handoff"."is_project_member"("p_project" "uuid") RET
 $$;
 
 
-ALTER FUNCTION "handoff"."is_project_member"("p_project" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."is_project_member"("p_project" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."is_project_responsible_manager"("p_project" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."is_project_responsible_manager"("p_project" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -687,7 +667,7 @@ CREATE OR REPLACE FUNCTION "handoff"."is_project_responsible_manager"("p_project
   )
   SELECT EXISTS (SELECT 1 FROM p)
     AND (
-      handoff.is_org_admin_or_owner((SELECT organization_id FROM p))
+      coopsetu.is_org_admin_or_owner((SELECT organization_id FROM p))
       OR EXISTS (
         SELECT 1
         FROM p
@@ -709,10 +689,10 @@ CREATE OR REPLACE FUNCTION "handoff"."is_project_responsible_manager"("p_project
 $$;
 
 
-ALTER FUNCTION "handoff"."is_project_responsible_manager"("p_project" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."is_project_responsible_manager"("p_project" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."is_team_manager"("p_team" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."is_team_manager"("p_team" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -720,7 +700,7 @@ CREATE OR REPLACE FUNCTION "handoff"."is_team_manager"("p_team" "uuid") RETURNS 
   select exists (select 1 from t)
     and (
       -- org-level managers always manage teams
-      handoff.has_role((select organization_id from t),
+      coopsetu.has_role((select organization_id from t),
         array['SUPER_ADMIN','ORG_OWNER','ORG_ADMIN','ENGINEERING_MANAGER'])
       or exists (  -- the team's designated lead
         select 1 from t
@@ -732,16 +712,16 @@ CREATE OR REPLACE FUNCTION "handoff"."is_team_manager"("p_team" "uuid") RETURNS 
         from public.team_members tm
         join public.organization_members m on m.id = tm.organization_member_id
         where tm.team_id = p_team and m.user_id = auth.uid() and m.is_active
-          and handoff.has_role((select organization_id from t), array['TEAM_MANAGER','TEAM_LEAD'])
+          and coopsetu.has_role((select organization_id from t), array['TEAM_MANAGER','TEAM_LEAD'])
       )
     );
 $$;
 
 
-ALTER FUNCTION "handoff"."is_team_manager"("p_team" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."is_team_manager"("p_team" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."log_task_change"() RETURNS "trigger"
+CREATE OR REPLACE FUNCTION "coopsetu"."log_task_change"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -764,10 +744,10 @@ end;
 $$;
 
 
-ALTER FUNCTION "handoff"."log_task_change"() OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."log_task_change"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."manages_member_team"("p_member" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."manages_member_team"("p_member" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -775,15 +755,15 @@ CREATE OR REPLACE FUNCTION "handoff"."manages_member_team"("p_member" "uuid") RE
     select 1
     from public.team_members tm
     where tm.organization_member_id = p_member
-      and handoff.is_team_manager(tm.team_id)
+      and coopsetu.is_team_manager(tm.team_id)
   );
 $$;
 
 
-ALTER FUNCTION "handoff"."manages_member_team"("p_member" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."manages_member_team"("p_member" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."manages_task_assignee"("p_task" "uuid") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."manages_task_assignee"("p_task" "uuid") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -793,7 +773,7 @@ CREATE OR REPLACE FUNCTION "handoff"."manages_task_assignee"("p_task" "uuid") RE
     WHERE id = p_task
   ),
   me AS (
-    SELECT handoff.current_member_id((SELECT organization_id FROM t)) AS member_id
+    SELECT coopsetu.current_member_id((SELECT organization_id FROM t)) AS member_id
   ),
   assigned AS (
     SELECT primary_assignee_member_id AS member_id FROM t WHERE primary_assignee_member_id IS NOT NULL
@@ -808,15 +788,15 @@ CREATE OR REPLACE FUNCTION "handoff"."manages_task_assignee"("p_task" "uuid") RE
       FROM assigned a
       JOIN public.organization_members m ON m.id = a.member_id
       WHERE m.manager_id = (SELECT member_id FROM me)
-         OR handoff.manages_member_team(a.member_id)
+         OR coopsetu.manages_member_team(a.member_id)
     );
 $$;
 
 
-ALTER FUNCTION "handoff"."manages_task_assignee"("p_task" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."manages_task_assignee"("p_task" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."notify_task_assigned"() RETURNS "trigger"
+CREATE OR REPLACE FUNCTION "coopsetu"."notify_task_assigned"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -834,10 +814,10 @@ end;
 $$;
 
 
-ALTER FUNCTION "handoff"."notify_task_assigned"() OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."notify_task_assigned"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."project_org"("p_project" "uuid") RETURNS "uuid"
+CREATE OR REPLACE FUNCTION "coopsetu"."project_org"("p_project" "uuid") RETURNS "uuid"
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -845,10 +825,10 @@ CREATE OR REPLACE FUNCTION "handoff"."project_org"("p_project" "uuid") RETURNS "
 $$;
 
 
-ALTER FUNCTION "handoff"."project_org"("p_project" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."project_org"("p_project" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."set_updated_at"() RETURNS "trigger"
+CREATE OR REPLACE FUNCTION "coopsetu"."set_updated_at"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -859,21 +839,21 @@ END;
 $$;
 
 
-ALTER FUNCTION "handoff"."set_updated_at"() OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."set_updated_at"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."storage_org_ok"("p_name" "text") RETURNS boolean
+CREATE OR REPLACE FUNCTION "coopsetu"."storage_org_ok"("p_name" "text") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'storage'
     AS $$
-  select handoff.is_org_member(((storage.foldername(p_name))[1])::uuid);
+  select coopsetu.is_org_member(((storage.foldername(p_name))[1])::uuid);
 $$;
 
 
-ALTER FUNCTION "handoff"."storage_org_ok"("p_name" "text") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."storage_org_ok"("p_name" "text") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."task_org"("p_task" "uuid") RETURNS "uuid"
+CREATE OR REPLACE FUNCTION "coopsetu"."task_org"("p_task" "uuid") RETURNS "uuid"
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -881,10 +861,10 @@ CREATE OR REPLACE FUNCTION "handoff"."task_org"("p_task" "uuid") RETURNS "uuid"
 $$;
 
 
-ALTER FUNCTION "handoff"."task_org"("p_task" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."task_org"("p_task" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."task_project"("p_task" "uuid") RETURNS "uuid"
+CREATE OR REPLACE FUNCTION "coopsetu"."task_project"("p_task" "uuid") RETURNS "uuid"
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -892,10 +872,10 @@ CREATE OR REPLACE FUNCTION "handoff"."task_project"("p_task" "uuid") RETURNS "uu
 $$;
 
 
-ALTER FUNCTION "handoff"."task_project"("p_task" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."task_project"("p_task" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "handoff"."team_org"("p_team" "uuid") RETURNS "uuid"
+CREATE OR REPLACE FUNCTION "coopsetu"."team_org"("p_team" "uuid") RETURNS "uuid"
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -903,7 +883,7 @@ CREATE OR REPLACE FUNCTION "handoff"."team_org"("p_team" "uuid") RETURNS "uuid"
 $$;
 
 
-ALTER FUNCTION "handoff"."team_org"("p_team" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "coopsetu"."team_org"("p_team" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."accept_invite"("p_token_hash" "text") RETURNS "uuid"
@@ -1325,7 +1305,7 @@ DECLARE
   v_task_id uuid;
   v_actor_member_id uuid;
 BEGIN
-  v_actor_member_id := handoff.current_member_id(auth.uid(), p_organization_id);
+  v_actor_member_id := coopsetu.current_member_id(auth.uid(), p_organization_id);
   IF v_actor_member_id IS NULL THEN
     RAISE EXCEPTION 'FORBIDDEN: not an active member';
   END IF;
@@ -1439,9 +1419,7 @@ CREATE TABLE IF NOT EXISTS "public"."organizations" (
     "is_demo" boolean DEFAULT false NOT NULL,
     "demo_session_id" "uuid",
     "ip_allowlist" "text"[] DEFAULT '{}'::"text"[],
-    "initial_setup_completed_at" timestamp with time zone,
-    "workspace_type" "text" DEFAULT 'ENTERPRISE'::"text" NOT NULL,
-    CONSTRAINT "organizations_workspace_type_check" CHECK (("workspace_type" = ANY (ARRAY['ENTERPRISE'::"text", 'STUDENT_SOLO'::"text", 'STUDENT_TEAM'::"text"])))
+    "initial_setup_completed_at" timestamp with time zone
 );
 
 
@@ -1536,8 +1514,8 @@ DECLARE
   v_pm uuid;
 BEGIN
   IF v_uid IS NULL THEN RAISE EXCEPTION 'NOT_AUTHENTICATED' USING errcode = '28000'; END IF;
-  IF NOT handoff.is_org_member(p_org) THEN RAISE EXCEPTION 'NOT_FOUND' USING errcode = 'P0002'; END IF;
-  IF NOT handoff.has_permission(p_org, 'project:create') THEN RAISE EXCEPTION 'FORBIDDEN: project:create' USING errcode = '42501'; END IF;
+  IF NOT coopsetu.is_org_member(p_org) THEN RAISE EXCEPTION 'NOT_FOUND' USING errcode = 'P0002'; END IF;
+  IF NOT coopsetu.has_permission(p_org, 'project:create') THEN RAISE EXCEPTION 'FORBIDDEN: project:create' USING errcode = '42501'; END IF;
 
   v_owner := (p_payload->>'owner_member_id')::uuid;
   v_pm := (p_payload->>'project_manager_member_id')::uuid;
@@ -1628,14 +1606,14 @@ BEGIN
 
   SELECT id INTO v_member_id FROM public.organization_members WHERE user_id = v_uid AND organization_id = v_org_id AND is_active = true;
   IF v_member_id IS NULL THEN
-    RAISE EXCEPTION 'NOT_FOUND';
+    RAISE EXCEPTION 'NOT_FOUND'; -- Disguise cross-org access as 404
   END IF;
 
-  IF NOT handoff.can_manage_project(p_project_id) THEN
+  IF NOT coopsetu.can_manage_project(p_project_id) THEN
     RAISE EXCEPTION 'NOT_PROJECT_MANAGER';
   END IF;
 
-  IF NOT handoff.has_permission(v_org_id, 'team:create_project_team') THEN
+  IF NOT coopsetu.has_permission(v_org_id, 'team:create_project_team') THEN
     RAISE EXCEPTION 'MISSING_PERMISSION_CREATE_PROJECT_TEAM';
   END IF;
 
@@ -1657,88 +1635,6 @@ $$;
 
 
 ALTER FUNCTION "public"."create_project_team"("p_project_id" "uuid", "p_team_name" "text", "p_team_code" "text", "p_description" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "public"."create_student_solo_workspace"("p_user_id" "uuid", "p_name" "text", "p_description" "text" DEFAULT NULL::"text") RETURNS "public"."organizations"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-declare
-  v_org public.organizations;
-  v_member_id uuid;
-  v_role_id uuid;
-  v_slug text;
-begin
-  if p_user_id is null then raise exception 'NOT_AUTHENTICATED'; end if;
-
-  v_slug := 'student-' || substr(gen_random_uuid()::text, 1, 12);
-
-  insert into public.organizations (name, slug, workspace_type, description, created_by, initial_setup_completed_at)
-  values (p_name, v_slug, 'STUDENT_SOLO', p_description, p_user_id, now())
-  returning * into v_org;
-
-  insert into public.organization_members (organization_id, user_id, employment_status, is_active)
-  values (v_org.id, p_user_id, 'ACTIVE', true)
-  returning id into v_member_id;
-
-  select id into v_role_id from public.roles where code = 'STUDENT_SOLO_OWNER' and organization_id is null;
-  insert into public.member_roles (organization_member_id, role_id) values (v_member_id, v_role_id);
-
-  return v_org;
-end;
-$$;
-
-
-ALTER FUNCTION "public"."create_student_solo_workspace"("p_user_id" "uuid", "p_name" "text", "p_description" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "public"."create_student_team"("p_user_id" "uuid", "p_name" "text", "p_event_name" "text" DEFAULT NULL::"text", "p_short_description" "text" DEFAULT NULL::"text", "p_expected_team_size" integer DEFAULT NULL::integer, "p_max_team_size" integer DEFAULT 10, "p_primary_team_role" "text" DEFAULT NULL::"text") RETURNS TABLE("out_organization_id" "uuid", "out_name" "text", "out_slug" "text", "raw_join_code" "text")
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-declare
-  v_org public.organizations;
-  v_member_id uuid;
-  v_role_id uuid;
-  v_slug text;
-  v_raw_code text;
-begin
-  if p_user_id is null then raise exception 'NOT_AUTHENTICATED'; end if;
-  if p_max_team_size is null or p_max_team_size <= 0 or p_max_team_size > 50 then
-    raise exception 'INVALID_MAX_TEAM_SIZE';
-  end if;
-
-  v_slug := 'student-team-' || substr(gen_random_uuid()::text, 1, 12);
-
-  insert into public.organizations (name, slug, workspace_type, created_by, initial_setup_completed_at)
-  values (p_name, v_slug, 'STUDENT_TEAM', p_user_id, now())
-  returning * into v_org;
-
-  insert into public.student_team_settings (
-    organization_id, event_name, short_description, expected_team_size,
-    max_team_size, primary_team_role
-  ) values (
-    v_org.id, p_event_name, p_short_description, p_expected_team_size,
-    p_max_team_size, p_primary_team_role
-  );
-
-  insert into public.organization_members (organization_id, user_id, employment_status, is_active)
-  values (v_org.id, p_user_id, 'ACTIVE', true)
-  returning id into v_member_id;
-
-  select id into v_role_id from public.roles where code = 'STUDENT_TEAM_LEAD' and organization_id is null;
-  insert into public.member_roles (organization_member_id, role_id) values (v_member_id, v_role_id);
-
-  v_raw_code := handoff.generate_join_code();
-  insert into public.student_team_join_codes (organization_id, code_hash, created_by)
-  values (v_org.id, handoff.hash_join_code(v_raw_code), v_member_id);
-
-  return query select v_org.id, v_org.name, v_org.slug, v_raw_code::text;
-end;
-$$;
-
-
-ALTER FUNCTION "public"."create_student_team"("p_user_id" "uuid", "p_name" "text", "p_event_name" "text", "p_short_description" "text", "p_expected_team_size" integer, "p_max_team_size" integer, "p_primary_team_role" "text") OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."test_plans" (
@@ -1772,7 +1668,7 @@ DECLARE
   v_test_case jsonb;
   v_actor_member_id uuid;
 BEGIN
-  v_actor_member_id := handoff.current_member_id(auth.uid(), p_organization_id);
+  v_actor_member_id := coopsetu.current_member_id(auth.uid(), p_organization_id);
   IF v_actor_member_id IS NULL THEN
     RAISE EXCEPTION 'FORBIDDEN: not an active member';
   END IF;
@@ -1880,25 +1776,6 @@ $$;
 ALTER FUNCTION "public"."get_invite"("p_token_hash" "text") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."get_join_code_status"("p_org" "uuid") RETURNS TABLE("id" "uuid", "organization_id" "uuid", "created_by" "uuid", "created_at" timestamp with time zone, "expires_at" timestamp with time zone, "max_uses" integer, "used_count" integer, "is_active" boolean, "revoked_at" timestamp with time zone, "last_rotated_at" timestamp with time zone)
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-  select jc.id, jc.organization_id, jc.created_by, jc.created_at,
-         jc.expires_at, jc.max_uses, jc.used_count, jc.is_active,
-         jc.revoked_at, jc.last_rotated_at
-  from public.student_team_join_codes jc
-  where jc.organization_id = p_org
-    and jc.is_active
-    and handoff.has_permission(p_org, 'student_team:manage_join_code')
-  order by jc.created_at desc
-  limit 1;
-$$;
-
-
-ALTER FUNCTION "public"."get_join_code_status"("p_org" "uuid") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."member_permissions"("p_member" "uuid") RETURNS TABLE("permission_code" "text")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -1925,28 +1802,6 @@ $$;
 
 
 ALTER FUNCTION "public"."member_permissions"("p_member" "uuid") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "public"."preview_join_code"("p_raw_code" "text") RETURNS TABLE("team_name" "text", "event_name" "text", "available_spots" integer)
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-  select o.name, s.event_name,
-         greatest(s.max_team_size - (
-           select count(*) from public.organization_members m
-           where m.organization_id = o.id and m.is_active
-         ), 0)
-  from public.student_team_join_codes jc
-  join public.organizations o on o.id = jc.organization_id and o.workspace_type = 'STUDENT_TEAM'
-  join public.student_team_settings s on s.organization_id = o.id
-  where jc.code_hash = handoff.hash_join_code(p_raw_code)
-    and jc.is_active
-    and (jc.expires_at is null or jc.expires_at > now())
-    and (jc.max_uses is null or jc.used_count < jc.max_uses);
-$$;
-
-
-ALTER FUNCTION "public"."preview_join_code"("p_raw_code" "text") OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."user_legal_acceptances" (
@@ -2025,75 +1880,6 @@ $$;
 ALTER FUNCTION "public"."record_legal_acceptance"("p_terms_document_id" "uuid", "p_privacy_document_id" "uuid", "p_cookies_document_id" "uuid", "p_acceptance_source" "text", "p_request_id" "text", "p_ip_hash" "text", "p_user_agent_hash" "text") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."redeem_student_team_join_code"("p_user_id" "uuid", "p_raw_code" "text") RETURNS "public"."organizations"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-declare
-  v_hash text;
-  v_jc record;
-  v_org record;
-  v_member_count int;
-  v_max_size int;
-  v_member_id uuid;
-  v_role_id uuid;
-begin
-  if p_user_id is null then raise exception 'NOT_AUTHENTICATED'; end if;
-  if p_raw_code is null or length(trim(p_raw_code)) = 0 then raise exception 'INVALID_CODE'; end if;
-
-  v_hash := handoff.hash_join_code(p_raw_code);
-
-  select * into v_jc from public.student_team_join_codes
-    where code_hash = v_hash and is_active
-    for update;
-
-  if not found then raise exception 'INVALID_CODE'; end if;
-  if v_jc.expires_at is not null and v_jc.expires_at < now() then raise exception 'INVALID_CODE'; end if;
-  if v_jc.max_uses is not null and v_jc.used_count >= v_jc.max_uses then raise exception 'INVALID_CODE'; end if;
-
-  select * into v_org from public.organizations
-    where id = v_jc.organization_id and workspace_type = 'STUDENT_TEAM';
-  if not found then raise exception 'INVALID_CODE'; end if;
-
-  select id into v_member_id from public.organization_members
-    where organization_id = v_org.id and user_id = p_user_id;
-
-  if v_member_id is not null and exists (
-    select 1 from public.organization_members where id = v_member_id and is_active
-  ) then
-    raise exception 'ALREADY_MEMBER';
-  end if;
-
-  select max_team_size into v_max_size from public.student_team_settings where organization_id = v_org.id;
-  select count(*) into v_member_count from public.organization_members
-    where organization_id = v_org.id and is_active;
-  if v_member_count >= v_max_size then raise exception 'TEAM_FULL'; end if;
-
-  if v_member_id is not null then
-    -- rejoining after a prior departure: reactivate the existing row
-    update public.organization_members set is_active = true, employment_status = 'ACTIVE'
-      where id = v_member_id;
-  else
-    insert into public.organization_members (organization_id, user_id, employment_status, is_active)
-    values (v_org.id, p_user_id, 'ACTIVE', true)
-    returning id into v_member_id;
-  end if;
-
-  select id into v_role_id from public.roles where code = 'STUDENT_MEMBER' and organization_id is null;
-  insert into public.member_roles (organization_member_id, role_id)
-  values (v_member_id, v_role_id)
-  on conflict do nothing;
-
-  update public.student_team_join_codes set used_count = used_count + 1 where id = v_jc.id;
-
-  return v_org;
-end;
-$$;
-
-
-ALTER FUNCTION "public"."redeem_student_team_join_code"("p_user_id" "uuid", "p_raw_code" "text") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."release_can_deploy"("p_release" "uuid") RETURNS boolean
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -2112,8 +1898,8 @@ BEGIN
   WHERE r.id = p_release;
 
   IF v_org_id IS NULL THEN RETURN false; END IF;
-  IF NOT handoff.is_org_member(v_org_id) THEN RETURN false; END IF;
-  IF NOT handoff.can_view_release(p_release) THEN RETURN false; END IF;
+  IF NOT coopsetu.is_org_member(v_org_id) THEN RETURN false; END IF;
+  IF NOT coopsetu.can_view_release(p_release) THEN RETURN false; END IF;
 
   FOR v_req IN SELECT unnest(
     CASE WHEN v_req_comp THEN array['QA','SECURITY','COMPLIANCE','RELEASE_MANAGER']
@@ -2135,34 +1921,6 @@ $$;
 ALTER FUNCTION "public"."release_can_deploy"("p_release" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."revoke_join_code"("p_org" "uuid", "p_caller_user_id" "uuid") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-declare
-  v_member_id uuid;
-begin
-  select id into v_member_id from public.organization_members
-    where organization_id = p_org and user_id = p_caller_user_id and is_active;
-
-  if v_member_id is null or not exists (
-    select 1 from public.member_roles mr join public.roles r on r.id = mr.role_id
-    join public.role_permissions rp on rp.role_id = r.id
-    where mr.organization_member_id = v_member_id and rp.permission_code = 'student_team:manage_join_code'
-  ) then
-    raise exception 'FORBIDDEN';
-  end if;
-
-  update public.student_team_join_codes
-    set is_active = false, revoked_at = now()
-    where organization_id = p_org and is_active;
-end;
-$$;
-
-
-ALTER FUNCTION "public"."revoke_join_code"("p_org" "uuid", "p_caller_user_id" "uuid") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."revoke_session"("p_session_id" "uuid") RETURNS "void"
     LANGUAGE "sql" SECURITY DEFINER
     SET "search_path" TO 'public', 'auth'
@@ -2175,39 +1933,17 @@ $$;
 ALTER FUNCTION "public"."revoke_session"("p_session_id" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."rotate_join_code"("p_org" "uuid", "p_caller_user_id" "uuid") RETURNS "text"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
+CREATE OR REPLACE FUNCTION "public"."set_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
     AS $$
-declare
-  v_member_id uuid;
-  v_raw_code text;
-begin
-  select id into v_member_id from public.organization_members
-    where organization_id = p_org and user_id = p_caller_user_id and is_active;
-
-  if v_member_id is null or not exists (
-    select 1 from public.member_roles mr join public.roles r on r.id = mr.role_id
-    join public.role_permissions rp on rp.role_id = r.id
-    where mr.organization_member_id = v_member_id and rp.permission_code = 'student_team:manage_join_code'
-  ) then
-    raise exception 'FORBIDDEN';
-  end if;
-
-  update public.student_team_join_codes
-    set is_active = false, revoked_at = now()
-    where organization_id = p_org and is_active;
-
-  v_raw_code := handoff.generate_join_code();
-  insert into public.student_team_join_codes (organization_id, code_hash, created_by, last_rotated_at)
-  values (p_org, handoff.hash_join_code(v_raw_code), v_member_id, now());
-
-  return v_raw_code;
-end;
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
 $$;
 
 
-ALTER FUNCTION "public"."rotate_join_code"("p_org" "uuid", "p_caller_user_id" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "public"."set_updated_at"() OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."security_reviews" (
@@ -2245,7 +1981,7 @@ DECLARE
   v_reviewer_id uuid;
   v_actor_member_id uuid;
 BEGIN
-  v_actor_member_id := handoff.current_member_id(auth.uid(), p_organization_id);
+  v_actor_member_id := coopsetu.current_member_id(auth.uid(), p_organization_id);
   IF v_actor_member_id IS NULL THEN
     RAISE EXCEPTION 'FORBIDDEN: not an active member';
   END IF;
@@ -2328,7 +2064,7 @@ BEGIN
   );
 
   IF NEW.removed_at IS NOT NULL AND NEW.removed_by_member_id IS NULL THEN
-    v_actor := handoff.current_member_id(v_task.organization_id);
+    v_actor := coopsetu.current_member_id(v_task.organization_id);
     NEW.removed_by_member_id := v_actor;
   END IF;
 
@@ -2340,54 +2076,6 @@ $$;
 ALTER FUNCTION "public"."sync_task_assignee_access_fields"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."transfer_team_leadership"("p_org" "uuid", "p_from_user_id" "uuid", "p_to_member_id" "uuid", "p_demote_to" "text" DEFAULT 'STUDENT_CO_LEAD'::"text") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-declare
-  v_from_member_id uuid;
-  v_lead_role_id uuid;
-  v_demote_role_id uuid;
-begin
-  if p_demote_to not in ('STUDENT_CO_LEAD','STUDENT_MEMBER') then
-    raise exception 'INVALID_DEMOTE_ROLE';
-  end if;
-
-  select id into v_from_member_id from public.organization_members
-    where organization_id = p_org and user_id = p_from_user_id and is_active;
-  if v_from_member_id is null then raise exception 'FORBIDDEN'; end if;
-
-  if not exists (
-    select 1 from public.member_roles mr join public.roles r on r.id = mr.role_id
-    where mr.organization_member_id = v_from_member_id and r.code = 'STUDENT_TEAM_LEAD'
-  ) then
-    raise exception 'FORBIDDEN';
-  end if;
-
-  if not exists (
-    select 1 from public.organization_members
-    where id = p_to_member_id and organization_id = p_org and is_active
-  ) then
-    raise exception 'INVALID_TARGET_MEMBER';
-  end if;
-
-  select id into v_lead_role_id from public.roles where code = 'STUDENT_TEAM_LEAD' and organization_id is null;
-  select id into v_demote_role_id from public.roles where code = p_demote_to and organization_id is null;
-
-  delete from public.member_roles where organization_member_id = v_from_member_id and role_id = v_lead_role_id;
-  delete from public.member_roles where organization_member_id = p_to_member_id
-    and role_id in (select id from public.roles where code in ('STUDENT_CO_LEAD','STUDENT_MEMBER') and organization_id is null);
-
-  insert into public.member_roles (organization_member_id, role_id) values (p_to_member_id, v_lead_role_id);
-  insert into public.member_roles (organization_member_id, role_id) values (v_from_member_id, v_demote_role_id)
-    on conflict do nothing;
-end;
-$$;
-
-
-ALTER FUNCTION "public"."transfer_team_leadership"("p_org" "uuid", "p_from_user_id" "uuid", "p_to_member_id" "uuid", "p_demote_to" "text") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."write_audit_log"("p_org" "uuid", "p_action" "text", "p_entity_type" "text", "p_entity_id" "uuid" DEFAULT NULL::"uuid", "p_project_id" "uuid" DEFAULT NULL::"uuid", "p_before" "jsonb" DEFAULT NULL::"jsonb", "p_after" "jsonb" DEFAULT NULL::"jsonb", "p_metadata" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "uuid"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -2396,6 +2084,7 @@ DECLARE
   v_actor uuid;
   v_id uuid;
 BEGIN
+  -- Resolves actor member based on current user session
   select id into v_actor from public.organization_members
    where organization_id = p_org and user_id = auth.uid() and is_active limit 1;
 
@@ -2499,6 +2188,61 @@ CREATE TABLE IF NOT EXISTS "public"."approvals" (
 ALTER TABLE "public"."approvals" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."assessment_questions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "assessment_id" "uuid" NOT NULL,
+    "question_text" "text" NOT NULL,
+    "question_type" "text" DEFAULT 'MCQ'::"text" NOT NULL,
+    "options" "jsonb" DEFAULT '[]'::"jsonb",
+    "correct_answer" "text",
+    "marks" integer DEFAULT 1,
+    "order_index" integer DEFAULT 0,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "assessment_questions_question_type_check" CHECK (("question_type" = ANY (ARRAY['MCQ'::"text", 'SHORT_ANSWER'::"text", 'TRUE_FALSE'::"text", 'ESSAY'::"text"])))
+);
+
+
+ALTER TABLE "public"."assessment_questions" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."assessment_results" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "assessment_id" "uuid" NOT NULL,
+    "trainee_id" "uuid" NOT NULL,
+    "score" integer DEFAULT 0 NOT NULL,
+    "max_score" integer DEFAULT 100 NOT NULL,
+    "passed" boolean DEFAULT false,
+    "answers" "jsonb" DEFAULT '{}'::"jsonb",
+    "attempt_number" integer DEFAULT 1,
+    "submitted_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "graded_at" timestamp with time zone,
+    "graded_by" "uuid"
+);
+
+
+ALTER TABLE "public"."assessment_results" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."assessments" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "course_id" "uuid" NOT NULL,
+    "title" "text" NOT NULL,
+    "description" "text",
+    "type" "text" DEFAULT 'QUIZ'::"text" NOT NULL,
+    "max_score" integer DEFAULT 100 NOT NULL,
+    "passing_score" integer DEFAULT 40 NOT NULL,
+    "duration_minutes" integer DEFAULT 60,
+    "attempts_allowed" integer DEFAULT 1,
+    "is_published" boolean DEFAULT false,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "assessments_type_check" CHECK (("type" = ANY (ARRAY['QUIZ'::"text", 'ASSIGNMENT'::"text", 'EXAM'::"text", 'PRACTICAL'::"text"])))
+);
+
+
+ALTER TABLE "public"."assessments" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."attachments" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "organization_id" "uuid" NOT NULL,
@@ -2520,6 +2264,41 @@ CREATE TABLE IF NOT EXISTS "public"."attachments" (
 
 
 ALTER TABLE "public"."attachments" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."attendance_records" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "session_id" "uuid" NOT NULL,
+    "trainee_id" "uuid" NOT NULL,
+    "method" "text" DEFAULT 'MANUAL'::"text" NOT NULL,
+    "status" "text" DEFAULT 'PRESENT'::"text" NOT NULL,
+    "marked_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "verified_by" "uuid",
+    CONSTRAINT "attendance_records_method_check" CHECK (("method" = ANY (ARRAY['QR'::"text", 'FACE'::"text", 'MANUAL'::"text"]))),
+    CONSTRAINT "attendance_records_status_check" CHECK (("status" = ANY (ARRAY['PRESENT'::"text", 'ABSENT'::"text", 'LATE'::"text", 'EXCUSED'::"text"])))
+);
+
+
+ALTER TABLE "public"."attendance_records" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."attendance_sessions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "batch_id" "uuid" NOT NULL,
+    "date" "date" DEFAULT CURRENT_DATE NOT NULL,
+    "session_type" "text" DEFAULT 'LECTURE'::"text" NOT NULL,
+    "session_slot" "text" DEFAULT 'MORNING'::"text",
+    "qr_token" "text",
+    "qr_expires_at" timestamp with time zone,
+    "trainer_id" "uuid",
+    "is_active" boolean DEFAULT true,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "attendance_sessions_session_slot_check" CHECK (("session_slot" = ANY (ARRAY['MORNING'::"text", 'AFTERNOON'::"text", 'EVENING'::"text", 'FULL_DAY'::"text"]))),
+    CONSTRAINT "attendance_sessions_session_type_check" CHECK (("session_type" = ANY (ARRAY['LECTURE'::"text", 'LAB'::"text", 'WORKSHOP'::"text", 'EXAM'::"text"])))
+);
+
+
+ALTER TABLE "public"."attendance_sessions" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."audit_logs" (
@@ -2547,6 +2326,26 @@ CREATE TABLE IF NOT EXISTS "public"."audit_logs" (
 
 
 ALTER TABLE "public"."audit_logs" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."batches" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "organization_id" "uuid" NOT NULL,
+    "programme_id" "uuid" NOT NULL,
+    "name" "text" NOT NULL,
+    "trainer_id" "uuid",
+    "start_date" "date",
+    "end_date" "date",
+    "capacity" integer DEFAULT 30,
+    "room" "text",
+    "status" "text" DEFAULT 'UPCOMING'::"text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "batches_status_check" CHECK (("status" = ANY (ARRAY['UPCOMING'::"text", 'ACTIVE'::"text", 'COMPLETED'::"text", 'CANCELLED'::"text"])))
+);
+
+
+ALTER TABLE "public"."batches" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."bug_activity" (
@@ -2594,6 +2393,26 @@ CREATE TABLE IF NOT EXISTS "public"."bug_attachments" (
 
 
 ALTER TABLE "public"."bug_attachments" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."certificates" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "trainee_id" "uuid" NOT NULL,
+    "programme_id" "uuid" NOT NULL,
+    "certificate_number" "text" NOT NULL,
+    "title" "text" NOT NULL,
+    "issued_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "valid_until" timestamp with time zone,
+    "issuer_name" "text" DEFAULT 'NCCT'::"text",
+    "qr_code" "text",
+    "status" "text" DEFAULT 'ACTIVE'::"text" NOT NULL,
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "certificates_status_check" CHECK (("status" = ANY (ARRAY['ACTIVE'::"text", 'REVOKED'::"text", 'EXPIRED'::"text"])))
+);
+
+
+ALTER TABLE "public"."certificates" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."ci_jobs" (
@@ -2684,6 +2503,90 @@ CREATE TABLE IF NOT EXISTS "public"."compliance_evidence" (
 
 
 ALTER TABLE "public"."compliance_evidence" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."contact_requests" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "full_name" "text" NOT NULL,
+    "work_email" "text" NOT NULL,
+    "company_name" "text" NOT NULL,
+    "company_size" "text" NOT NULL,
+    "role" "text" NOT NULL,
+    "topic" "text" NOT NULL,
+    "message" "text" NOT NULL,
+    "status" "text" DEFAULT 'pending'::"text" NOT NULL,
+    "source" "text" DEFAULT 'website'::"text" NOT NULL,
+    "ip_hash" "text",
+    "user_agent_hash" "text",
+    "honeypot_triggered" boolean DEFAULT false NOT NULL,
+    "request_id" "uuid" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "company_name_length_check" CHECK ((("char_length"("company_name") >= 2) AND ("char_length"("company_name") <= 120))),
+    CONSTRAINT "company_size_check" CHECK (("company_size" = ANY (ARRAY['1-10'::"text", '11-50'::"text", '51-200'::"text", '201-500'::"text", '501-1000'::"text", '1000+'::"text"]))),
+    CONSTRAINT "email_format_check" CHECK (("work_email" ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'::"text")),
+    CONSTRAINT "message_length_check" CHECK ((("char_length"("message") >= 10) AND ("char_length"("message") <= 3000))),
+    CONSTRAINT "name_length_check" CHECK ((("char_length"("full_name") >= 2) AND ("char_length"("full_name") <= 100))),
+    CONSTRAINT "role_length_check" CHECK ((("char_length"("role") >= 2) AND ("char_length"("role") <= 100))),
+    CONSTRAINT "status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'reviewed'::"text", 'responded'::"text", 'closed'::"text"]))),
+    CONSTRAINT "topic_check" CHECK (("topic" = ANY (ARRAY['Request a Demo'::"text", 'Enterprise Sales'::"text", 'Product Question'::"text", 'Security Question'::"text", 'Partnership'::"text", 'Technical Support'::"text", 'Other'::"text"])))
+);
+
+
+ALTER TABLE "public"."contact_requests" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."course_modules" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "course_id" "uuid" NOT NULL,
+    "title" "text" NOT NULL,
+    "type" "text" NOT NULL,
+    "content_url" "text",
+    "content_text" "text",
+    "duration_minutes" integer DEFAULT 0,
+    "order_index" integer DEFAULT 0,
+    "is_mandatory" boolean DEFAULT true,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "course_modules_type_check" CHECK (("type" = ANY (ARRAY['VIDEO'::"text", 'PDF'::"text", 'DOCUMENT'::"text", 'QUIZ'::"text", 'ASSIGNMENT'::"text"])))
+);
+
+
+ALTER TABLE "public"."course_modules" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."course_progress" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "trainee_id" "uuid" NOT NULL,
+    "course_id" "uuid" NOT NULL,
+    "module_id" "uuid",
+    "progress_pct" integer DEFAULT 0,
+    "completed" boolean DEFAULT false,
+    "completed_at" timestamp with time zone,
+    "last_accessed_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "course_progress_progress_pct_check" CHECK ((("progress_pct" >= 0) AND ("progress_pct" <= 100)))
+);
+
+
+ALTER TABLE "public"."course_progress" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."courses" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "programme_id" "uuid" NOT NULL,
+    "trainer_id" "uuid",
+    "title" "text" NOT NULL,
+    "description" "text",
+    "duration_hours" integer DEFAULT 1,
+    "order_index" integer DEFAULT 0,
+    "status" "text" DEFAULT 'ACTIVE'::"text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "courses_status_check" CHECK (("status" = ANY (ARRAY['ACTIVE'::"text", 'DRAFT'::"text", 'ARCHIVED'::"text"])))
+);
+
+
+ALTER TABLE "public"."courses" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."demo_sessions" (
@@ -2840,6 +2743,44 @@ CREATE TABLE IF NOT EXISTS "public"."employee_skills" (
 ALTER TABLE "public"."employee_skills" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."employers" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "organization_id" "uuid" NOT NULL,
+    "company_name" "text" NOT NULL,
+    "industry" "text",
+    "company_size" "text",
+    "location" "text",
+    "website" "text",
+    "description" "text",
+    "logo_url" "text",
+    "status" "text" DEFAULT 'ACTIVE'::"text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "employers_status_check" CHECK (("status" = ANY (ARRAY['ACTIVE'::"text", 'INACTIVE'::"text", 'PENDING_VERIFICATION'::"text"])))
+);
+
+
+ALTER TABLE "public"."employers" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."enrollments" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "trainee_id" "uuid" NOT NULL,
+    "programme_id" "uuid" NOT NULL,
+    "batch_id" "uuid",
+    "status" "text" DEFAULT 'PENDING'::"text" NOT NULL,
+    "enrolled_at" timestamp with time zone,
+    "completed_at" timestamp with time zone,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "enrollments_status_check" CHECK (("status" = ANY (ARRAY['PENDING'::"text", 'APPROVED'::"text", 'REJECTED'::"text", 'ENROLLED'::"text", 'COMPLETED'::"text", 'DROPPED'::"text"])))
+);
+
+
+ALTER TABLE "public"."enrollments" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."environments" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "organization_id" "uuid" NOT NULL,
@@ -2977,6 +2918,29 @@ CREATE TABLE IF NOT EXISTS "public"."incidents" (
 ALTER TABLE "public"."incidents" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."institutions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "organization_id" "uuid" NOT NULL,
+    "name" "text" NOT NULL,
+    "code" "text" NOT NULL,
+    "type" "text" DEFAULT 'TRAINING_INSTITUTE'::"text" NOT NULL,
+    "address" "text",
+    "city" "text",
+    "state" "text",
+    "pincode" "text",
+    "contact_email" "text",
+    "contact_phone" "text",
+    "capacity" integer DEFAULT 0,
+    "status" "text" DEFAULT 'ACTIVE'::"text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "institutions_status_check" CHECK (("status" = ANY (ARRAY['ACTIVE'::"text", 'INACTIVE'::"text", 'SUSPENDED'::"text"])))
+);
+
+
+ALTER TABLE "public"."institutions" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."integrations" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "organization_id" "uuid" NOT NULL,
@@ -2991,6 +2955,61 @@ CREATE TABLE IF NOT EXISTS "public"."integrations" (
 
 
 ALTER TABLE "public"."integrations" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."job_applications" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "job_id" "uuid" NOT NULL,
+    "trainee_id" "uuid" NOT NULL,
+    "match_score" integer DEFAULT 0,
+    "status" "text" DEFAULT 'APPLIED'::"text" NOT NULL,
+    "cover_letter" "text",
+    "resume_url" "text",
+    "applied_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "job_applications_match_score_check" CHECK ((("match_score" >= 0) AND ("match_score" <= 100))),
+    CONSTRAINT "job_applications_status_check" CHECK (("status" = ANY (ARRAY['APPLIED'::"text", 'REVIEWED'::"text", 'SHORTLISTED'::"text", 'INTERVIEWED'::"text", 'OFFERED'::"text", 'ACCEPTED'::"text", 'REJECTED'::"text", 'WITHDRAWN'::"text"])))
+);
+
+
+ALTER TABLE "public"."job_applications" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."job_skills" (
+    "job_id" "uuid" NOT NULL,
+    "skill_id" "uuid" NOT NULL,
+    "importance" "text" DEFAULT 'REQUIRED'::"text",
+    CONSTRAINT "job_skills_importance_check" CHECK (("importance" = ANY (ARRAY['REQUIRED'::"text", 'PREFERRED'::"text", 'NICE_TO_HAVE'::"text"])))
+);
+
+
+ALTER TABLE "public"."job_skills" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."jobs" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "employer_id" "uuid" NOT NULL,
+    "title" "text" NOT NULL,
+    "description" "text",
+    "location" "text",
+    "salary_min" numeric(12,2),
+    "salary_max" numeric(12,2),
+    "employment_type" "text" DEFAULT 'FULL_TIME'::"text" NOT NULL,
+    "experience_min" integer DEFAULT 0,
+    "experience_max" integer,
+    "education_required" "text",
+    "is_remote" boolean DEFAULT false,
+    "vacancies" integer DEFAULT 1,
+    "deadline" "date",
+    "status" "text" DEFAULT 'OPEN'::"text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "jobs_employment_type_check" CHECK (("employment_type" = ANY (ARRAY['FULL_TIME'::"text", 'PART_TIME'::"text", 'CONTRACT'::"text", 'INTERNSHIP'::"text", 'FREELANCE'::"text"]))),
+    CONSTRAINT "jobs_status_check" CHECK (("status" = ANY (ARRAY['DRAFT'::"text", 'OPEN'::"text", 'CLOSED'::"text", 'FILLED'::"text", 'EXPIRED'::"text"])))
+);
+
+
+ALTER TABLE "public"."jobs" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."leave_requests" (
@@ -3238,6 +3257,27 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
 
 
 ALTER TABLE "public"."profiles" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."programmes" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "organization_id" "uuid" NOT NULL,
+    "institution_id" "uuid",
+    "title" "text" NOT NULL,
+    "description" "text",
+    "duration_days" integer DEFAULT 30 NOT NULL,
+    "start_date" "date",
+    "end_date" "date",
+    "capacity" integer DEFAULT 50,
+    "fee" numeric(10,2) DEFAULT 0,
+    "status" "text" DEFAULT 'DRAFT'::"text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "programmes_status_check" CHECK (("status" = ANY (ARRAY['DRAFT'::"text", 'ACTIVE'::"text", 'COMPLETED'::"text", 'CANCELLED'::"text"])))
+);
+
+
+ALTER TABLE "public"."programmes" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."programs" (
@@ -3627,7 +3667,8 @@ CREATE TABLE IF NOT EXISTS "public"."skills" (
     "organization_id" "uuid",
     "name" "text" NOT NULL,
     "category" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "description" "text"
 );
 
 
@@ -3654,57 +3695,6 @@ CREATE TABLE IF NOT EXISTS "public"."sprints" (
 
 
 ALTER TABLE "public"."sprints" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."student_team_join_codes" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "organization_id" "uuid" NOT NULL,
-    "code_hash" "text" NOT NULL,
-    "created_by" "uuid",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "expires_at" timestamp with time zone,
-    "max_uses" integer,
-    "used_count" integer DEFAULT 0 NOT NULL,
-    "is_active" boolean DEFAULT true NOT NULL,
-    "revoked_at" timestamp with time zone,
-    "last_rotated_at" timestamp with time zone,
-    CONSTRAINT "student_team_join_codes_max_uses_check" CHECK ((("max_uses" IS NULL) OR ("max_uses" > 0)))
-);
-
-
-ALTER TABLE "public"."student_team_join_codes" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."student_team_member_labels" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "organization_member_id" "uuid" NOT NULL,
-    "label" "text" NOT NULL,
-    "label_normalized" "text" NOT NULL,
-    "assigned_by" "uuid",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "student_team_member_labels_label_check" CHECK ((("length"("label") >= 1) AND ("length"("label") <= 60)))
-);
-
-
-ALTER TABLE "public"."student_team_member_labels" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."student_team_settings" (
-    "organization_id" "uuid" NOT NULL,
-    "event_name" "text",
-    "short_description" "text",
-    "expected_team_size" integer,
-    "max_team_size" integer NOT NULL,
-    "primary_team_role" "text",
-    "co_lead_can_manage_members" boolean DEFAULT false NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "student_team_settings_expected_team_size_check" CHECK (("expected_team_size" > 0)),
-    CONSTRAINT "student_team_settings_max_team_size_check" CHECK ((("max_team_size" > 0) AND ("max_team_size" <= 50)))
-);
-
-
-ALTER TABLE "public"."student_team_settings" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."task_activity" (
@@ -3995,6 +3985,69 @@ CREATE TABLE IF NOT EXISTS "public"."time_entries" (
 ALTER TABLE "public"."time_entries" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."trainee_skills" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "trainee_id" "uuid" NOT NULL,
+    "skill_id" "uuid" NOT NULL,
+    "proficiency" integer DEFAULT 0,
+    "verified" boolean DEFAULT false,
+    "source" "text" DEFAULT 'SELF_DECLARED'::"text",
+    "verified_at" timestamp with time zone,
+    CONSTRAINT "trainee_skills_proficiency_check" CHECK ((("proficiency" >= 0) AND ("proficiency" <= 100))),
+    CONSTRAINT "trainee_skills_source_check" CHECK (("source" = ANY (ARRAY['SELF_DECLARED'::"text", 'COURSE'::"text", 'ASSESSMENT'::"text", 'TRAINER'::"text", 'CERTIFICATE'::"text"])))
+);
+
+
+ALTER TABLE "public"."trainee_skills" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."trainees" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "organization_id" "uuid" NOT NULL,
+    "education" "text",
+    "location" "text",
+    "languages" "text"[] DEFAULT '{}'::"text"[],
+    "experience" "text",
+    "profile_photo" "text",
+    "digital_literacy_level" "text" DEFAULT 'BASIC'::"text",
+    "employment_status" "text" DEFAULT 'UNEMPLOYED'::"text",
+    "date_of_birth" "date",
+    "gender" "text",
+    "aadhaar_hash" "text",
+    "status" "text" DEFAULT 'ACTIVE'::"text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "face_embedding" "jsonb",
+    "totp_secret" "text",
+    CONSTRAINT "trainees_digital_literacy_level_check" CHECK (("digital_literacy_level" = ANY (ARRAY['BASIC'::"text", 'INTERMEDIATE'::"text", 'ADVANCED'::"text"]))),
+    CONSTRAINT "trainees_employment_status_check" CHECK (("employment_status" = ANY (ARRAY['UNEMPLOYED'::"text", 'EMPLOYED'::"text", 'SELF_EMPLOYED'::"text", 'STUDENT'::"text"]))),
+    CONSTRAINT "trainees_status_check" CHECK (("status" = ANY (ARRAY['ACTIVE'::"text", 'INACTIVE'::"text", 'GRADUATED'::"text"])))
+);
+
+
+ALTER TABLE "public"."trainees" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."trainers" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "organization_id" "uuid" NOT NULL,
+    "institution_id" "uuid",
+    "specialization" "text",
+    "qualification" "text",
+    "experience_years" integer DEFAULT 0,
+    "bio" "text",
+    "status" "text" DEFAULT 'ACTIVE'::"text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "trainers_status_check" CHECK (("status" = ANY (ARRAY['ACTIVE'::"text", 'INACTIVE'::"text"])))
+);
+
+
+ALTER TABLE "public"."trainers" OWNER TO "postgres";
+
+
 ALTER TABLE ONLY "public"."ai_requests"
     ADD CONSTRAINT "ai_requests_pkey" PRIMARY KEY ("id");
 
@@ -4020,13 +4073,53 @@ ALTER TABLE ONLY "public"."approvals"
 
 
 
+ALTER TABLE ONLY "public"."assessment_questions"
+    ADD CONSTRAINT "assessment_questions_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."assessment_results"
+    ADD CONSTRAINT "assessment_results_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."assessments"
+    ADD CONSTRAINT "assessments_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."attachments"
     ADD CONSTRAINT "attachments_pkey" PRIMARY KEY ("id");
 
 
 
+ALTER TABLE ONLY "public"."attendance_records"
+    ADD CONSTRAINT "attendance_records_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."attendance_records"
+    ADD CONSTRAINT "attendance_records_session_id_trainee_id_key" UNIQUE ("session_id", "trainee_id");
+
+
+
+ALTER TABLE ONLY "public"."attendance_sessions"
+    ADD CONSTRAINT "attendance_sessions_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."attendance_sessions"
+    ADD CONSTRAINT "attendance_sessions_qr_token_key" UNIQUE ("qr_token");
+
+
+
 ALTER TABLE ONLY "public"."audit_logs"
     ADD CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."batches"
+    ADD CONSTRAINT "batches_pkey" PRIMARY KEY ("id");
 
 
 
@@ -4050,6 +4143,16 @@ ALTER TABLE ONLY "public"."bugs"
 
 
 
+ALTER TABLE ONLY "public"."certificates"
+    ADD CONSTRAINT "certificates_certificate_number_key" UNIQUE ("certificate_number");
+
+
+
+ALTER TABLE ONLY "public"."certificates"
+    ADD CONSTRAINT "certificates_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."ci_jobs"
     ADD CONSTRAINT "ci_jobs_pkey" PRIMARY KEY ("id");
 
@@ -4070,6 +4173,11 @@ ALTER TABLE ONLY "public"."commits"
 
 
 
+ALTER TABLE ONLY "public"."commits"
+    ADD CONSTRAINT "commits_repository_id_external_hash_key" UNIQUE ("repository_id", "external_hash");
+
+
+
 ALTER TABLE ONLY "public"."compliance_controls"
     ADD CONSTRAINT "compliance_controls_pkey" PRIMARY KEY ("id");
 
@@ -4077,6 +4185,31 @@ ALTER TABLE ONLY "public"."compliance_controls"
 
 ALTER TABLE ONLY "public"."compliance_evidence"
     ADD CONSTRAINT "compliance_evidence_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."contact_requests"
+    ADD CONSTRAINT "contact_requests_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."course_modules"
+    ADD CONSTRAINT "course_modules_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."course_progress"
+    ADD CONSTRAINT "course_progress_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."course_progress"
+    ADD CONSTRAINT "course_progress_trainee_id_course_id_module_id_key" UNIQUE ("trainee_id", "course_id", "module_id");
+
+
+
+ALTER TABLE ONLY "public"."courses"
+    ADD CONSTRAINT "courses_pkey" PRIMARY KEY ("id");
 
 
 
@@ -4165,6 +4298,26 @@ ALTER TABLE ONLY "public"."employee_skills"
 
 
 
+ALTER TABLE ONLY "public"."employers"
+    ADD CONSTRAINT "employers_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."employers"
+    ADD CONSTRAINT "employers_user_id_organization_id_key" UNIQUE ("user_id", "organization_id");
+
+
+
+ALTER TABLE ONLY "public"."enrollments"
+    ADD CONSTRAINT "enrollments_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."enrollments"
+    ADD CONSTRAINT "enrollments_trainee_id_programme_id_key" UNIQUE ("trainee_id", "programme_id");
+
+
+
 ALTER TABLE ONLY "public"."environments"
     ADD CONSTRAINT "environments_organization_id_name_key" UNIQUE ("organization_id", "name");
 
@@ -4210,6 +4363,16 @@ ALTER TABLE ONLY "public"."incidents"
 
 
 
+ALTER TABLE ONLY "public"."institutions"
+    ADD CONSTRAINT "institutions_code_key" UNIQUE ("code");
+
+
+
+ALTER TABLE ONLY "public"."institutions"
+    ADD CONSTRAINT "institutions_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."integrations"
     ADD CONSTRAINT "integrations_organization_id_provider_key" UNIQUE ("organization_id", "provider");
 
@@ -4217,6 +4380,26 @@ ALTER TABLE ONLY "public"."integrations"
 
 ALTER TABLE ONLY "public"."integrations"
     ADD CONSTRAINT "integrations_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."job_applications"
+    ADD CONSTRAINT "job_applications_job_id_trainee_id_key" UNIQUE ("job_id", "trainee_id");
+
+
+
+ALTER TABLE ONLY "public"."job_applications"
+    ADD CONSTRAINT "job_applications_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."job_skills"
+    ADD CONSTRAINT "job_skills_pkey" PRIMARY KEY ("job_id", "skill_id");
+
+
+
+ALTER TABLE ONLY "public"."jobs"
+    ADD CONSTRAINT "jobs_pkey" PRIMARY KEY ("id");
 
 
 
@@ -4320,6 +4503,11 @@ ALTER TABLE ONLY "public"."profiles"
 
 
 
+ALTER TABLE ONLY "public"."programmes"
+    ADD CONSTRAINT "programmes_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."programs"
     ADD CONSTRAINT "programs_pkey" PRIMARY KEY ("id");
 
@@ -4377,6 +4565,11 @@ ALTER TABLE ONLY "public"."projects"
 
 ALTER TABLE ONLY "public"."pull_requests"
     ADD CONSTRAINT "pull_requests_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."pull_requests"
+    ADD CONSTRAINT "pull_requests_repository_id_external_id_key" UNIQUE ("repository_id", "external_id");
 
 
 
@@ -4471,32 +4664,17 @@ ALTER TABLE ONLY "public"."security_reviews"
 
 
 ALTER TABLE ONLY "public"."skills"
+    ADD CONSTRAINT "skills_name_key" UNIQUE ("name");
+
+
+
+ALTER TABLE ONLY "public"."skills"
     ADD CONSTRAINT "skills_pkey" PRIMARY KEY ("id");
 
 
 
 ALTER TABLE ONLY "public"."sprints"
     ADD CONSTRAINT "sprints_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."student_team_join_codes"
-    ADD CONSTRAINT "student_team_join_codes_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."student_team_member_labels"
-    ADD CONSTRAINT "student_team_member_labels_organization_member_id_label_nor_key" UNIQUE ("organization_member_id", "label_normalized");
-
-
-
-ALTER TABLE ONLY "public"."student_team_member_labels"
-    ADD CONSTRAINT "student_team_member_labels_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."student_team_settings"
-    ADD CONSTRAINT "student_team_settings_pkey" PRIMARY KEY ("organization_id");
 
 
 
@@ -4625,6 +4803,36 @@ ALTER TABLE ONLY "public"."time_entries"
 
 
 
+ALTER TABLE ONLY "public"."trainee_skills"
+    ADD CONSTRAINT "trainee_skills_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."trainee_skills"
+    ADD CONSTRAINT "trainee_skills_trainee_id_skill_id_key" UNIQUE ("trainee_id", "skill_id");
+
+
+
+ALTER TABLE ONLY "public"."trainees"
+    ADD CONSTRAINT "trainees_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."trainees"
+    ADD CONSTRAINT "trainees_user_id_organization_id_key" UNIQUE ("user_id", "organization_id");
+
+
+
+ALTER TABLE ONLY "public"."trainers"
+    ADD CONSTRAINT "trainers_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."trainers"
+    ADD CONSTRAINT "trainers_user_id_organization_id_key" UNIQUE ("user_id", "organization_id");
+
+
+
 ALTER TABLE ONLY "public"."user_legal_acceptances"
     ADD CONSTRAINT "user_legal_acceptances_pkey" PRIMARY KEY ("id");
 
@@ -4683,10 +4891,6 @@ CREATE INDEX "bug_attachments_bug_idx" ON "public"."bug_attachments" USING "btre
 
 
 CREATE INDEX "bugs_project_idx" ON "public"."bugs" USING "btree" ("project_id", "status");
-
-
-
-CREATE UNIQUE INDEX "commits_repo_external_uidx" ON "public"."commits" USING "btree" ("repository_id", "external_hash");
 
 
 
@@ -4758,6 +4962,14 @@ CREATE INDEX "idx_approvals_organization_id" ON "public"."approvals" USING "btre
 
 
 
+CREATE INDEX "idx_assessment_results_trainee" ON "public"."assessment_results" USING "btree" ("trainee_id");
+
+
+
+CREATE INDEX "idx_assessments_course" ON "public"."assessments" USING "btree" ("course_id");
+
+
+
 CREATE INDEX "idx_attachments_organization_id" ON "public"."attachments" USING "btree" ("organization_id");
 
 
@@ -4766,7 +4978,23 @@ CREATE INDEX "idx_attachments_uploaded_by_member_id" ON "public"."attachments" U
 
 
 
+CREATE INDEX "idx_attendance_records_session" ON "public"."attendance_records" USING "btree" ("session_id");
+
+
+
+CREATE INDEX "idx_attendance_records_trainee" ON "public"."attendance_records" USING "btree" ("trainee_id");
+
+
+
+CREATE INDEX "idx_attendance_sessions_batch" ON "public"."attendance_sessions" USING "btree" ("batch_id");
+
+
+
 CREATE INDEX "idx_audit_logs_actor_member_id" ON "public"."audit_logs" USING "btree" ("actor_member_id");
+
+
+
+CREATE INDEX "idx_batches_programme" ON "public"."batches" USING "btree" ("programme_id");
 
 
 
@@ -4791,6 +5019,14 @@ CREATE INDEX "idx_bugs_reporter_member_id" ON "public"."bugs" USING "btree" ("re
 
 
 CREATE INDEX "idx_bugs_task_id" ON "public"."bugs" USING "btree" ("task_id");
+
+
+
+CREATE INDEX "idx_certificates_number" ON "public"."certificates" USING "btree" ("certificate_number");
+
+
+
+CREATE INDEX "idx_certificates_trainee" ON "public"."certificates" USING "btree" ("trainee_id");
 
 
 
@@ -4858,6 +5094,14 @@ CREATE INDEX "idx_compliance_evidence_submitted_by_member_id" ON "public"."compl
 
 
 
+CREATE INDEX "idx_course_modules_course" ON "public"."course_modules" USING "btree" ("course_id");
+
+
+
+CREATE INDEX "idx_courses_programme" ON "public"."courses" USING "btree" ("programme_id");
+
+
+
 CREATE INDEX "idx_departments_head_member_id" ON "public"."departments" USING "btree" ("head_member_id");
 
 
@@ -4914,6 +5158,18 @@ CREATE INDEX "idx_employee_skills_skill_id" ON "public"."employee_skills" USING 
 
 
 
+CREATE INDEX "idx_employers_org" ON "public"."employers" USING "btree" ("organization_id");
+
+
+
+CREATE INDEX "idx_enrollments_programme" ON "public"."enrollments" USING "btree" ("programme_id");
+
+
+
+CREATE INDEX "idx_enrollments_trainee" ON "public"."enrollments" USING "btree" ("trainee_id");
+
+
+
 CREATE INDEX "idx_epics_organization_id" ON "public"."epics" USING "btree" ("organization_id");
 
 
@@ -4951,6 +5207,22 @@ CREATE INDEX "idx_incidents_project_id" ON "public"."incidents" USING "btree" ("
 
 
 CREATE INDEX "idx_incidents_release_id" ON "public"."incidents" USING "btree" ("release_id");
+
+
+
+CREATE INDEX "idx_institutions_org" ON "public"."institutions" USING "btree" ("organization_id");
+
+
+
+CREATE INDEX "idx_job_applications_job" ON "public"."job_applications" USING "btree" ("job_id");
+
+
+
+CREATE INDEX "idx_job_applications_trainee" ON "public"."job_applications" USING "btree" ("trainee_id");
+
+
+
+CREATE INDEX "idx_jobs_employer" ON "public"."jobs" USING "btree" ("employer_id");
 
 
 
@@ -5019,6 +5291,14 @@ CREATE INDEX "idx_postmortems_author_member_id" ON "public"."postmortems" USING 
 
 
 CREATE INDEX "idx_presence_sessions_organization_member_id" ON "public"."presence_sessions" USING "btree" ("organization_member_id");
+
+
+
+CREATE INDEX "idx_programmes_institution" ON "public"."programmes" USING "btree" ("institution_id");
+
+
+
+CREATE INDEX "idx_programmes_org" ON "public"."programmes" USING "btree" ("organization_id");
 
 
 
@@ -5302,6 +5582,22 @@ CREATE INDEX "idx_time_entries_task_id" ON "public"."time_entries" USING "btree"
 
 
 
+CREATE INDEX "idx_trainee_skills_trainee" ON "public"."trainee_skills" USING "btree" ("trainee_id");
+
+
+
+CREATE INDEX "idx_trainees_face_embedding" ON "public"."trainees" USING "gin" ("face_embedding") WHERE ("face_embedding" IS NOT NULL);
+
+
+
+CREATE INDEX "idx_trainees_org" ON "public"."trainees" USING "btree" ("organization_id");
+
+
+
+CREATE INDEX "idx_trainers_org" ON "public"."trainers" USING "btree" ("organization_id");
+
+
+
 CREATE INDEX "idx_user_legal_acceptances_user_id" ON "public"."user_legal_acceptances" USING "btree" ("user_id");
 
 
@@ -5398,10 +5694,6 @@ CREATE INDEX "projects_status_idx" ON "public"."projects" USING "btree" ("organi
 
 
 
-CREATE UNIQUE INDEX "pull_requests_repo_external_uidx" ON "public"."pull_requests" USING "btree" ("repository_id", "external_id");
-
-
-
 CREATE INDEX "pull_requests_repo_idx" ON "public"."pull_requests" USING "btree" ("repository_id");
 
 
@@ -5435,22 +5727,6 @@ CREATE INDEX "skills_org_idx" ON "public"."skills" USING "btree" ("organization_
 
 
 CREATE INDEX "sprints_project_idx" ON "public"."sprints" USING "btree" ("project_id");
-
-
-
-CREATE UNIQUE INDEX "student_team_join_codes_active_uniq" ON "public"."student_team_join_codes" USING "btree" ("organization_id") WHERE "is_active";
-
-
-
-CREATE INDEX "student_team_join_codes_hash_idx" ON "public"."student_team_join_codes" USING "btree" ("code_hash") WHERE "is_active";
-
-
-
-CREATE INDEX "student_team_join_codes_org_idx" ON "public"."student_team_join_codes" USING "btree" ("organization_id");
-
-
-
-CREATE INDEX "student_team_member_labels_member_idx" ON "public"."student_team_member_labels" USING "btree" ("organization_member_id");
 
 
 
@@ -5542,207 +5818,195 @@ CREATE UNIQUE INDEX "test_plan_tasks_unique_idx" ON "public"."test_plan_tasks" U
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_ai_settings" BEFORE UPDATE ON "public"."ai_settings" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_ai_settings" BEFORE UPDATE ON "public"."ai_settings" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_approval_requests" BEFORE UPDATE ON "public"."approval_requests" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_approval_requests" BEFORE UPDATE ON "public"."approval_requests" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_bug_assignees" BEFORE UPDATE ON "public"."bug_assignees" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_bug_assignees" BEFORE UPDATE ON "public"."bug_assignees" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_bugs" BEFORE UPDATE ON "public"."bugs" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_bugs" BEFORE UPDATE ON "public"."bugs" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_compliance_controls" BEFORE UPDATE ON "public"."compliance_controls" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_compliance_controls" BEFORE UPDATE ON "public"."compliance_controls" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_departments" BEFORE UPDATE ON "public"."departments" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_departments" BEFORE UPDATE ON "public"."departments" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_documents" BEFORE UPDATE ON "public"."documents" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_documents" BEFORE UPDATE ON "public"."documents" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_epics" BEFORE UPDATE ON "public"."epics" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_epics" BEFORE UPDATE ON "public"."epics" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_import_jobs" BEFORE UPDATE ON "public"."import_jobs" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_import_jobs" BEFORE UPDATE ON "public"."import_jobs" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_incidents" BEFORE UPDATE ON "public"."incidents" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_incidents" BEFORE UPDATE ON "public"."incidents" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_integrations" BEFORE UPDATE ON "public"."integrations" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_integrations" BEFORE UPDATE ON "public"."integrations" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_leave_requests" BEFORE UPDATE ON "public"."leave_requests" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_leave_requests" BEFORE UPDATE ON "public"."leave_requests" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_milestones" BEFORE UPDATE ON "public"."milestones" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_milestones" BEFORE UPDATE ON "public"."milestones" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_notifications" BEFORE UPDATE ON "public"."notifications" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_notifications" BEFORE UPDATE ON "public"."notifications" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_organization_invites" BEFORE UPDATE ON "public"."organization_invites" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_organization_invites" BEFORE UPDATE ON "public"."organization_invites" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_organization_members" BEFORE UPDATE ON "public"."organization_members" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_organization_members" BEFORE UPDATE ON "public"."organization_members" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_organizations" BEFORE UPDATE ON "public"."organizations" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_organizations" BEFORE UPDATE ON "public"."organizations" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_portfolios" BEFORE UPDATE ON "public"."portfolios" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_portfolios" BEFORE UPDATE ON "public"."portfolios" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_postmortems" BEFORE UPDATE ON "public"."postmortems" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_postmortems" BEFORE UPDATE ON "public"."postmortems" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_profiles" BEFORE UPDATE ON "public"."profiles" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_profiles" BEFORE UPDATE ON "public"."profiles" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_programs" BEFORE UPDATE ON "public"."programs" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_programs" BEFORE UPDATE ON "public"."programs" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_project_deadlines" BEFORE UPDATE ON "public"."project_deadlines" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_project_deadlines" BEFORE UPDATE ON "public"."project_deadlines" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_project_members" BEFORE UPDATE ON "public"."project_members" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_project_members" BEFORE UPDATE ON "public"."project_members" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_project_risks" BEFORE UPDATE ON "public"."project_risks" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_project_risks" BEFORE UPDATE ON "public"."project_risks" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_projects" BEFORE UPDATE ON "public"."projects" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_projects" BEFORE UPDATE ON "public"."projects" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_releases" BEFORE UPDATE ON "public"."releases" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_releases" BEFORE UPDATE ON "public"."releases" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_roles" BEFORE UPDATE ON "public"."roles" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_roles" BEFORE UPDATE ON "public"."roles" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_saved_views" BEFORE UPDATE ON "public"."saved_views" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_saved_views" BEFORE UPDATE ON "public"."saved_views" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_security_review_assignees" BEFORE UPDATE ON "public"."security_review_assignees" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_security_review_assignees" BEFORE UPDATE ON "public"."security_review_assignees" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_security_reviews" BEFORE UPDATE ON "public"."security_reviews" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_security_reviews" BEFORE UPDATE ON "public"."security_reviews" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_sprints" BEFORE UPDATE ON "public"."sprints" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_sprints" BEFORE UPDATE ON "public"."sprints" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_student_team_settings" BEFORE UPDATE ON "public"."student_team_settings" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_task_assignees" BEFORE UPDATE ON "public"."task_assignees" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_task_assignees" BEFORE UPDATE ON "public"."task_assignees" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_task_comments" BEFORE UPDATE ON "public"."task_comments" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_task_comments" BEFORE UPDATE ON "public"."task_comments" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_task_visibility_members" BEFORE UPDATE ON "public"."task_visibility_members" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_task_visibility_members" BEFORE UPDATE ON "public"."task_visibility_members" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_tasks" BEFORE UPDATE ON "public"."tasks" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_tasks" BEFORE UPDATE ON "public"."tasks" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_team_members" BEFORE UPDATE ON "public"."team_members" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_team_members" BEFORE UPDATE ON "public"."team_members" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_teams" BEFORE UPDATE ON "public"."teams" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_teams" BEFORE UPDATE ON "public"."teams" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_test_plan_assignments" BEFORE UPDATE ON "public"."test_plan_assignments" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_test_plan_assignments" BEFORE UPDATE ON "public"."test_plan_assignments" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "set_updated_at_test_plans" BEFORE UPDATE ON "public"."test_plans" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."set_updated_at"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at_test_plans" BEFORE UPDATE ON "public"."test_plans" FOR EACH ROW EXECUTE FUNCTION "handoff"."set_updated_at"();
+CREATE OR REPLACE TRIGGER "trg_assign_task_number" BEFORE INSERT ON "public"."tasks" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."assign_task_number"();
 
 
 
-CREATE OR REPLACE TRIGGER "trg_assign_task_number" BEFORE INSERT ON "public"."tasks" FOR EACH ROW EXECUTE FUNCTION "handoff"."assign_task_number"();
+CREATE OR REPLACE TRIGGER "trg_audit_approval_requests" AFTER INSERT OR DELETE OR UPDATE ON "public"."approval_requests" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."audit_trigger"();
 
 
 
-CREATE OR REPLACE TRIGGER "trg_audit_approval_requests" AFTER INSERT OR DELETE OR UPDATE ON "public"."approval_requests" FOR EACH ROW EXECUTE FUNCTION "handoff"."audit_trigger"();
+CREATE OR REPLACE TRIGGER "trg_audit_bugs" AFTER INSERT OR DELETE OR UPDATE ON "public"."bugs" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."audit_trigger"();
 
 
 
-CREATE OR REPLACE TRIGGER "trg_audit_bugs" AFTER INSERT OR DELETE OR UPDATE ON "public"."bugs" FOR EACH ROW EXECUTE FUNCTION "handoff"."audit_trigger"();
+CREATE OR REPLACE TRIGGER "trg_audit_member_roles" AFTER INSERT OR DELETE OR UPDATE ON "public"."member_roles" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."audit_trigger"();
 
 
 
-CREATE OR REPLACE TRIGGER "trg_audit_member_roles" AFTER INSERT OR DELETE OR UPDATE ON "public"."member_roles" FOR EACH ROW EXECUTE FUNCTION "handoff"."audit_trigger"();
+CREATE OR REPLACE TRIGGER "trg_audit_organization_members" AFTER INSERT OR DELETE OR UPDATE ON "public"."organization_members" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."audit_trigger"();
 
 
 
-CREATE OR REPLACE TRIGGER "trg_audit_organization_members" AFTER INSERT OR DELETE OR UPDATE ON "public"."organization_members" FOR EACH ROW EXECUTE FUNCTION "handoff"."audit_trigger"();
+CREATE OR REPLACE TRIGGER "trg_audit_projects" AFTER INSERT OR DELETE OR UPDATE ON "public"."projects" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."audit_trigger"();
 
 
 
-CREATE OR REPLACE TRIGGER "trg_audit_projects" AFTER INSERT OR DELETE OR UPDATE ON "public"."projects" FOR EACH ROW EXECUTE FUNCTION "handoff"."audit_trigger"();
+CREATE OR REPLACE TRIGGER "trg_audit_releases" AFTER INSERT OR DELETE OR UPDATE ON "public"."releases" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."audit_trigger"();
 
 
 
-CREATE OR REPLACE TRIGGER "trg_audit_releases" AFTER INSERT OR DELETE OR UPDATE ON "public"."releases" FOR EACH ROW EXECUTE FUNCTION "handoff"."audit_trigger"();
+CREATE OR REPLACE TRIGGER "trg_audit_security_reviews" AFTER INSERT OR DELETE OR UPDATE ON "public"."security_reviews" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."audit_trigger"();
 
 
 
-CREATE OR REPLACE TRIGGER "trg_audit_security_reviews" AFTER INSERT OR DELETE OR UPDATE ON "public"."security_reviews" FOR EACH ROW EXECUTE FUNCTION "handoff"."audit_trigger"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_audit_student_team_member_labels" AFTER INSERT OR DELETE OR UPDATE ON "public"."student_team_member_labels" FOR EACH ROW EXECUTE FUNCTION "handoff"."audit_trigger"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_audit_student_team_settings" AFTER INSERT OR DELETE OR UPDATE ON "public"."student_team_settings" FOR EACH ROW EXECUTE FUNCTION "handoff"."audit_trigger"();
-
-
-
-CREATE OR REPLACE TRIGGER "trg_audit_tasks" AFTER INSERT OR DELETE OR UPDATE ON "public"."tasks" FOR EACH ROW EXECUTE FUNCTION "handoff"."audit_trigger"();
+CREATE OR REPLACE TRIGGER "trg_audit_tasks" AFTER INSERT OR DELETE OR UPDATE ON "public"."tasks" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."audit_trigger"();
 
 
 
@@ -5778,15 +6042,19 @@ CREATE OR REPLACE TRIGGER "trg_check_task_visibility_member_tenant" BEFORE INSER
 
 
 
-CREATE OR REPLACE TRIGGER "trg_log_task_change" AFTER UPDATE ON "public"."tasks" FOR EACH ROW EXECUTE FUNCTION "handoff"."log_task_change"();
+CREATE OR REPLACE TRIGGER "trg_log_task_change" AFTER UPDATE ON "public"."tasks" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."log_task_change"();
 
 
 
-CREATE OR REPLACE TRIGGER "trg_notify_task_assigned" AFTER INSERT ON "public"."task_assignees" FOR EACH ROW EXECUTE FUNCTION "handoff"."notify_task_assigned"();
+CREATE OR REPLACE TRIGGER "trg_notify_task_assigned" AFTER INSERT ON "public"."task_assignees" FOR EACH ROW EXECUTE FUNCTION "coopsetu"."notify_task_assigned"();
 
 
 
 CREATE OR REPLACE TRIGGER "trg_sync_task_assignee_access_fields" BEFORE INSERT OR UPDATE ON "public"."task_assignees" FOR EACH ROW EXECUTE FUNCTION "public"."sync_task_assignee_access_fields"();
+
+
+
+CREATE OR REPLACE TRIGGER "trigger_set_updated_at" BEFORE UPDATE ON "public"."contact_requests" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
 
 
 
@@ -5860,6 +6128,31 @@ ALTER TABLE ONLY "public"."approvals"
 
 
 
+ALTER TABLE ONLY "public"."assessment_questions"
+    ADD CONSTRAINT "assessment_questions_assessment_id_fkey" FOREIGN KEY ("assessment_id") REFERENCES "public"."assessments"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."assessment_results"
+    ADD CONSTRAINT "assessment_results_assessment_id_fkey" FOREIGN KEY ("assessment_id") REFERENCES "public"."assessments"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."assessment_results"
+    ADD CONSTRAINT "assessment_results_graded_by_fkey" FOREIGN KEY ("graded_by") REFERENCES "public"."trainers"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."assessment_results"
+    ADD CONSTRAINT "assessment_results_trainee_id_fkey" FOREIGN KEY ("trainee_id") REFERENCES "public"."trainees"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."assessments"
+    ADD CONSTRAINT "assessments_course_id_fkey" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."attachments"
     ADD CONSTRAINT "attachments_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
 
@@ -5880,6 +6173,31 @@ ALTER TABLE ONLY "public"."attachments"
 
 
 
+ALTER TABLE ONLY "public"."attendance_records"
+    ADD CONSTRAINT "attendance_records_session_id_fkey" FOREIGN KEY ("session_id") REFERENCES "public"."attendance_sessions"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."attendance_records"
+    ADD CONSTRAINT "attendance_records_trainee_id_fkey" FOREIGN KEY ("trainee_id") REFERENCES "public"."trainees"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."attendance_records"
+    ADD CONSTRAINT "attendance_records_verified_by_fkey" FOREIGN KEY ("verified_by") REFERENCES "public"."trainers"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."attendance_sessions"
+    ADD CONSTRAINT "attendance_sessions_batch_id_fkey" FOREIGN KEY ("batch_id") REFERENCES "public"."batches"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."attendance_sessions"
+    ADD CONSTRAINT "attendance_sessions_trainer_id_fkey" FOREIGN KEY ("trainer_id") REFERENCES "public"."trainers"("id") ON DELETE SET NULL;
+
+
+
 ALTER TABLE ONLY "public"."audit_logs"
     ADD CONSTRAINT "audit_logs_actor_member_id_fkey" FOREIGN KEY ("actor_member_id") REFERENCES "public"."organization_members"("id") ON DELETE SET NULL;
 
@@ -5892,6 +6210,21 @@ ALTER TABLE ONLY "public"."audit_logs"
 
 ALTER TABLE ONLY "public"."audit_logs"
     ADD CONSTRAINT "audit_logs_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."batches"
+    ADD CONSTRAINT "batches_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."batches"
+    ADD CONSTRAINT "batches_programme_id_fkey" FOREIGN KEY ("programme_id") REFERENCES "public"."programmes"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."batches"
+    ADD CONSTRAINT "batches_trainer_id_fkey" FOREIGN KEY ("trainer_id") REFERENCES "public"."trainers"("id") ON DELETE SET NULL;
 
 
 
@@ -5985,6 +6318,16 @@ ALTER TABLE ONLY "public"."bugs"
 
 
 
+ALTER TABLE ONLY "public"."certificates"
+    ADD CONSTRAINT "certificates_programme_id_fkey" FOREIGN KEY ("programme_id") REFERENCES "public"."programmes"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."certificates"
+    ADD CONSTRAINT "certificates_trainee_id_fkey" FOREIGN KEY ("trainee_id") REFERENCES "public"."trainees"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."ci_jobs"
     ADD CONSTRAINT "ci_jobs_pipeline_id_fkey" FOREIGN KEY ("pipeline_id") REFERENCES "public"."ci_pipelines"("id") ON DELETE CASCADE;
 
@@ -6067,6 +6410,36 @@ ALTER TABLE ONLY "public"."compliance_evidence"
 
 ALTER TABLE ONLY "public"."compliance_evidence"
     ADD CONSTRAINT "compliance_evidence_submitted_by_member_id_fkey" FOREIGN KEY ("submitted_by_member_id") REFERENCES "public"."organization_members"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."course_modules"
+    ADD CONSTRAINT "course_modules_course_id_fkey" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."course_progress"
+    ADD CONSTRAINT "course_progress_course_id_fkey" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."course_progress"
+    ADD CONSTRAINT "course_progress_module_id_fkey" FOREIGN KEY ("module_id") REFERENCES "public"."course_modules"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."course_progress"
+    ADD CONSTRAINT "course_progress_trainee_id_fkey" FOREIGN KEY ("trainee_id") REFERENCES "public"."trainees"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."courses"
+    ADD CONSTRAINT "courses_programme_id_fkey" FOREIGN KEY ("programme_id") REFERENCES "public"."programmes"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."courses"
+    ADD CONSTRAINT "courses_trainer_id_fkey" FOREIGN KEY ("trainer_id") REFERENCES "public"."trainers"("id") ON DELETE SET NULL;
 
 
 
@@ -6200,6 +6573,31 @@ ALTER TABLE ONLY "public"."employee_skills"
 
 
 
+ALTER TABLE ONLY "public"."employers"
+    ADD CONSTRAINT "employers_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."employers"
+    ADD CONSTRAINT "employers_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."enrollments"
+    ADD CONSTRAINT "enrollments_batch_id_fkey" FOREIGN KEY ("batch_id") REFERENCES "public"."batches"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."enrollments"
+    ADD CONSTRAINT "enrollments_programme_id_fkey" FOREIGN KEY ("programme_id") REFERENCES "public"."programmes"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."enrollments"
+    ADD CONSTRAINT "enrollments_trainee_id_fkey" FOREIGN KEY ("trainee_id") REFERENCES "public"."trainees"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."environments"
     ADD CONSTRAINT "environments_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
 
@@ -6290,8 +6688,38 @@ ALTER TABLE ONLY "public"."incidents"
 
 
 
+ALTER TABLE ONLY "public"."institutions"
+    ADD CONSTRAINT "institutions_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."integrations"
     ADD CONSTRAINT "integrations_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."job_applications"
+    ADD CONSTRAINT "job_applications_job_id_fkey" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."job_applications"
+    ADD CONSTRAINT "job_applications_trainee_id_fkey" FOREIGN KEY ("trainee_id") REFERENCES "public"."trainees"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."job_skills"
+    ADD CONSTRAINT "job_skills_job_id_fkey" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."job_skills"
+    ADD CONSTRAINT "job_skills_skill_id_fkey" FOREIGN KEY ("skill_id") REFERENCES "public"."skills"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."jobs"
+    ADD CONSTRAINT "jobs_employer_id_fkey" FOREIGN KEY ("employer_id") REFERENCES "public"."employers"("id") ON DELETE CASCADE;
 
 
 
@@ -6442,6 +6870,16 @@ ALTER TABLE ONLY "public"."presence_sessions"
 
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."programmes"
+    ADD CONSTRAINT "programmes_institution_id_fkey" FOREIGN KEY ("institution_id") REFERENCES "public"."institutions"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."programmes"
+    ADD CONSTRAINT "programmes_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
 
 
 
@@ -6800,31 +7238,6 @@ ALTER TABLE ONLY "public"."sprints"
 
 
 
-ALTER TABLE ONLY "public"."student_team_join_codes"
-    ADD CONSTRAINT "student_team_join_codes_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."organization_members"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "public"."student_team_join_codes"
-    ADD CONSTRAINT "student_team_join_codes_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "public"."student_team_member_labels"
-    ADD CONSTRAINT "student_team_member_labels_assigned_by_fkey" FOREIGN KEY ("assigned_by") REFERENCES "public"."organization_members"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "public"."student_team_member_labels"
-    ADD CONSTRAINT "student_team_member_labels_organization_member_id_fkey" FOREIGN KEY ("organization_member_id") REFERENCES "public"."organization_members"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "public"."student_team_settings"
-    ADD CONSTRAINT "student_team_settings_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."task_activity"
     ADD CONSTRAINT "task_activity_actor_member_id_fkey" FOREIGN KEY ("actor_member_id") REFERENCES "public"."organization_members"("id") ON DELETE SET NULL;
 
@@ -7150,6 +7563,41 @@ ALTER TABLE ONLY "public"."time_entries"
 
 
 
+ALTER TABLE ONLY "public"."trainee_skills"
+    ADD CONSTRAINT "trainee_skills_skill_id_fkey" FOREIGN KEY ("skill_id") REFERENCES "public"."skills"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."trainee_skills"
+    ADD CONSTRAINT "trainee_skills_trainee_id_fkey" FOREIGN KEY ("trainee_id") REFERENCES "public"."trainees"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."trainees"
+    ADD CONSTRAINT "trainees_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."trainees"
+    ADD CONSTRAINT "trainees_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."trainers"
+    ADD CONSTRAINT "trainers_institution_id_fkey" FOREIGN KEY ("institution_id") REFERENCES "public"."institutions"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."trainers"
+    ADD CONSTRAINT "trainers_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."trainers"
+    ADD CONSTRAINT "trainers_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."user_legal_acceptances"
     ADD CONSTRAINT "user_legal_acceptances_cookies_document_id_fkey" FOREIGN KEY ("cookies_document_id") REFERENCES "public"."legal_documents"("id") ON DELETE RESTRICT;
 
@@ -7178,24 +7626,24 @@ CREATE POLICY "Users can view their own legal acceptances" ON "public"."user_leg
 
 
 
-CREATE POLICY "activity_insert" ON "public"."project_activity" FOR INSERT WITH CHECK ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "activity_insert" ON "public"."project_activity" FOR INSERT WITH CHECK ("coopsetu"."can_view_project"("project_id"));
 
 
 
-CREATE POLICY "activity_select" ON "public"."project_activity" FOR SELECT USING ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "activity_select" ON "public"."project_activity" FOR SELECT USING ("coopsetu"."can_view_project"("project_id"));
 
 
 
 ALTER TABLE "public"."ai_requests" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "ai_requests_insert" ON "public"."ai_requests" FOR INSERT WITH CHECK (("handoff"."has_permission"("organization_id", 'ai:use'::"text") AND (EXISTS ( SELECT 1
+CREATE POLICY "ai_requests_insert" ON "public"."ai_requests" FOR INSERT WITH CHECK (("coopsetu"."has_permission"("organization_id", 'ai:use'::"text") AND (EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
   WHERE (("m"."id" = "ai_requests"."requester_member_id") AND ("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")))))));
 
 
 
-CREATE POLICY "ai_requests_select" ON "public"."ai_requests" FOR SELECT USING (("handoff"."is_org_member"("organization_id") AND (EXISTS ( SELECT 1
+CREATE POLICY "ai_requests_select" ON "public"."ai_requests" FOR SELECT USING (("coopsetu"."is_org_member"("organization_id") AND (EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
   WHERE (("m"."id" = "ai_requests"."requester_member_id") AND ("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")))))));
 
@@ -7204,15 +7652,15 @@ CREATE POLICY "ai_requests_select" ON "public"."ai_requests" FOR SELECT USING ((
 ALTER TABLE "public"."ai_settings" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "ai_settings_delete" ON "public"."ai_settings" FOR DELETE USING ("handoff"."has_permission"("organization_id", 'organization:manage'::"text"));
+CREATE POLICY "ai_settings_delete" ON "public"."ai_settings" FOR DELETE USING ("coopsetu"."has_permission"("organization_id", 'organization:manage'::"text"));
 
 
 
-CREATE POLICY "ai_settings_insert" ON "public"."ai_settings" FOR INSERT WITH CHECK ("handoff"."has_permission"("organization_id", 'organization:manage'::"text"));
+CREATE POLICY "ai_settings_insert" ON "public"."ai_settings" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("organization_id", 'organization:manage'::"text"));
 
 
 
-CREATE POLICY "ai_settings_update" ON "public"."ai_settings" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'organization:manage'::"text")) WITH CHECK ("handoff"."has_permission"("organization_id", 'organization:manage'::"text"));
+CREATE POLICY "ai_settings_update" ON "public"."ai_settings" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'organization:manage'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'organization:manage'::"text"));
 
 
 
@@ -7221,31 +7669,31 @@ ALTER TABLE "public"."ai_sources" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "ai_sources_insert" ON "public"."ai_sources" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."ai_requests" "r"
-  WHERE (("r"."id" = "ai_sources"."ai_request_id") AND "handoff"."is_org_member"("r"."organization_id")))));
+  WHERE (("r"."id" = "ai_sources"."ai_request_id") AND "coopsetu"."is_org_member"("r"."organization_id")))));
 
 
 
 CREATE POLICY "ai_sources_select" ON "public"."ai_sources" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."ai_requests" "r"
-  WHERE (("r"."id" = "ai_sources"."ai_request_id") AND "handoff"."is_org_member"("r"."organization_id")))));
+  WHERE (("r"."id" = "ai_sources"."ai_request_id") AND "coopsetu"."is_org_member"("r"."organization_id")))));
 
 
 
-CREATE POLICY "appr_req_delete" ON "public"."approval_requests" FOR DELETE USING (("handoff"."has_permission"("organization_id", 'approval:create'::"text") OR "handoff"."has_permission"("organization_id", 'approval:decide'::"text")));
+CREATE POLICY "appr_req_delete" ON "public"."approval_requests" FOR DELETE USING (("coopsetu"."has_permission"("organization_id", 'approval:create'::"text") OR "coopsetu"."has_permission"("organization_id", 'approval:decide'::"text")));
 
 
 
-CREATE POLICY "appr_req_insert" ON "public"."approval_requests" FOR INSERT WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "appr_req_insert" ON "public"."approval_requests" FOR INSERT WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "appr_req_select" ON "public"."approval_requests" FOR SELECT USING (("handoff"."is_org_member"("organization_id") AND (("requested_by_member_id" = "handoff"."current_member_id"("organization_id")) OR (EXISTS ( SELECT 1
+CREATE POLICY "appr_req_select" ON "public"."approval_requests" FOR SELECT USING (("coopsetu"."is_org_member"("organization_id") AND (("requested_by_member_id" = "coopsetu"."current_member_id"("organization_id")) OR (EXISTS ( SELECT 1
    FROM "public"."approvals" "a"
-  WHERE (("a"."approval_request_id" = "a"."id") AND ("a"."approver_member_id" = "handoff"."current_member_id"("a"."organization_id"))))) OR ((("project_id" IS NULL) OR "handoff"."can_view_project"("project_id")) AND (("task_id" IS NULL) OR "handoff"."can_view_task"("task_id")) AND (("release_id" IS NULL) OR "handoff"."can_view_release"("release_id"))))));
+  WHERE (("a"."approval_request_id" = "a"."id") AND ("a"."approver_member_id" = "coopsetu"."current_member_id"("a"."organization_id"))))) OR ((("project_id" IS NULL) OR "coopsetu"."can_view_project"("project_id")) AND (("task_id" IS NULL) OR "coopsetu"."can_view_task"("task_id")) AND (("release_id" IS NULL) OR "coopsetu"."can_view_release"("release_id"))))));
 
 
 
-CREATE POLICY "appr_req_update" ON "public"."approval_requests" FOR UPDATE USING (("handoff"."has_permission"("organization_id", 'approval:create'::"text") OR "handoff"."has_permission"("organization_id", 'approval:decide'::"text"))) WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "appr_req_update" ON "public"."approval_requests" FOR UPDATE USING (("coopsetu"."has_permission"("organization_id", 'approval:create'::"text") OR "coopsetu"."has_permission"("organization_id", 'approval:decide'::"text"))) WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
 
 
@@ -7255,38 +7703,56 @@ ALTER TABLE "public"."approval_requests" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."approvals" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "approvals_insert" ON "public"."approvals" FOR INSERT WITH CHECK ("handoff"."has_permission"("organization_id", 'approval:decide'::"text"));
+CREATE POLICY "approvals_insert" ON "public"."approvals" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("organization_id", 'approval:decide'::"text"));
 
 
 
-CREATE POLICY "approvals_select" ON "public"."approvals" FOR SELECT USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "approvals_select" ON "public"."approvals" FOR SELECT USING ("coopsetu"."is_org_member"("organization_id"));
 
+
+
+ALTER TABLE "public"."assessment_questions" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."assessment_results" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."assessments" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."attachments" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "attachments_delete" ON "public"."attachments" FOR DELETE USING (((("task_id" IS NULL) OR "handoff"."can_view_task"("task_id")) AND ((EXISTS ( SELECT 1
+CREATE POLICY "attachments_delete" ON "public"."attachments" FOR DELETE USING (((("task_id" IS NULL) OR "coopsetu"."can_view_task"("task_id")) AND ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "attachments"."uploaded_by_member_id") AND ("m"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))) OR (("task_id" IS NOT NULL) AND "handoff"."can_assign_task"("task_id")))));
+  WHERE (("m"."id" = "attachments"."uploaded_by_member_id") AND ("m"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))) OR (("task_id" IS NOT NULL) AND "coopsetu"."can_assign_task"("task_id")))));
 
 
 
-CREATE POLICY "attachments_insert" ON "public"."attachments" FOR INSERT WITH CHECK (("handoff"."is_org_member"("organization_id") AND (("task_id" IS NULL) OR "handoff"."can_view_task"("task_id")) AND (("project_id" IS NULL) OR "handoff"."can_view_project"("project_id")) AND (EXISTS ( SELECT 1
+CREATE POLICY "attachments_insert" ON "public"."attachments" FOR INSERT WITH CHECK (("coopsetu"."is_org_member"("organization_id") AND (("task_id" IS NULL) OR "coopsetu"."can_view_task"("task_id")) AND (("project_id" IS NULL) OR "coopsetu"."can_view_project"("project_id")) AND (EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
   WHERE (("m"."id" = "attachments"."uploaded_by_member_id") AND ("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")))))));
 
 
 
-CREATE POLICY "attachments_select" ON "public"."attachments" FOR SELECT USING (("handoff"."is_org_member"("organization_id") AND (("task_id" IS NULL) OR "handoff"."can_view_task"("task_id")) AND (("project_id" IS NULL) OR "handoff"."can_view_project"("project_id"))));
+CREATE POLICY "attachments_select" ON "public"."attachments" FOR SELECT USING (("coopsetu"."is_org_member"("organization_id") AND (("task_id" IS NULL) OR "coopsetu"."can_view_task"("task_id")) AND (("project_id" IS NULL) OR "coopsetu"."can_view_project"("project_id"))));
 
+
+
+ALTER TABLE "public"."attendance_records" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."attendance_sessions" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."audit_logs" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "audit_logs_select" ON "public"."audit_logs" FOR SELECT USING ("handoff"."has_permission"("organization_id", 'audit:view'::"text"));
+CREATE POLICY "audit_logs_select" ON "public"."audit_logs" FOR SELECT USING ("coopsetu"."has_permission"("organization_id", 'audit:view'::"text"));
 
+
+
+ALTER TABLE "public"."batches" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."bug_activity" ENABLE ROW LEVEL SECURITY;
@@ -7294,7 +7760,7 @@ ALTER TABLE "public"."bug_activity" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "bug_activity_select" ON "public"."bug_activity" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."bugs"
-  WHERE (("bugs"."id" = "bug_activity"."bug_id") AND "handoff"."can_view_project"("bugs"."project_id") AND (("bugs"."task_id" IS NULL) OR "handoff"."can_view_task"("bugs"."task_id"))))));
+  WHERE (("bugs"."id" = "bug_activity"."bug_id") AND "coopsetu"."can_view_project"("bugs"."project_id") AND (("bugs"."task_id" IS NULL) OR "coopsetu"."can_view_task"("bugs"."task_id"))))));
 
 
 
@@ -7303,13 +7769,13 @@ ALTER TABLE "public"."bug_assignees" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "bug_assignees_manage" ON "public"."bug_assignees" USING ((EXISTS ( SELECT 1
    FROM "public"."bugs"
-  WHERE (("bugs"."id" = "bug_assignees"."bug_id") AND "handoff"."can_view_project"("bugs"."project_id") AND (("bugs"."task_id" IS NULL) OR "handoff"."can_view_task"("bugs"."task_id"))))));
+  WHERE (("bugs"."id" = "bug_assignees"."bug_id") AND "coopsetu"."can_view_project"("bugs"."project_id") AND (("bugs"."task_id" IS NULL) OR "coopsetu"."can_view_task"("bugs"."task_id"))))));
 
 
 
 CREATE POLICY "bug_assignees_select" ON "public"."bug_assignees" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."bugs"
-  WHERE (("bugs"."id" = "bug_assignees"."bug_id") AND "handoff"."can_view_project"("bugs"."project_id") AND (("bugs"."task_id" IS NULL) OR "handoff"."can_view_task"("bugs"."task_id"))))));
+  WHERE (("bugs"."id" = "bug_assignees"."bug_id") AND "coopsetu"."can_view_project"("bugs"."project_id") AND (("bugs"."task_id" IS NULL) OR "coopsetu"."can_view_task"("bugs"."task_id"))))));
 
 
 
@@ -7318,72 +7784,75 @@ ALTER TABLE "public"."bug_attachments" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "bug_attachments_select" ON "public"."bug_attachments" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."bugs"
-  WHERE (("bugs"."id" = "bug_attachments"."bug_id") AND "handoff"."can_view_project"("bugs"."project_id") AND (("bugs"."task_id" IS NULL) OR "handoff"."can_view_task"("bugs"."task_id"))))));
+  WHERE (("bugs"."id" = "bug_attachments"."bug_id") AND "coopsetu"."can_view_project"("bugs"."project_id") AND (("bugs"."task_id" IS NULL) OR "coopsetu"."can_view_task"("bugs"."task_id"))))));
 
 
 
 ALTER TABLE "public"."bugs" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "bugs_delete" ON "public"."bugs" FOR DELETE USING ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "bugs_delete" ON "public"."bugs" FOR DELETE USING ("coopsetu"."can_view_project"("project_id"));
 
 
 
-CREATE POLICY "bugs_insert" ON "public"."bugs" FOR INSERT WITH CHECK ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "bugs_insert" ON "public"."bugs" FOR INSERT WITH CHECK ("coopsetu"."can_view_project"("project_id"));
 
 
 
-CREATE POLICY "bugs_manage" ON "public"."bugs" USING (("handoff"."can_view_project"("project_id") AND (("task_id" IS NULL) OR "handoff"."can_view_task"("task_id")))) WITH CHECK (("handoff"."can_view_project"("project_id") AND (("task_id" IS NULL) OR "handoff"."can_view_task"("task_id"))));
+CREATE POLICY "bugs_manage" ON "public"."bugs" USING (("coopsetu"."can_view_project"("project_id") AND (("task_id" IS NULL) OR "coopsetu"."can_view_task"("task_id")))) WITH CHECK (("coopsetu"."can_view_project"("project_id") AND (("task_id" IS NULL) OR "coopsetu"."can_view_task"("task_id"))));
 
 
 
-CREATE POLICY "bugs_select" ON "public"."bugs" FOR SELECT USING (("handoff"."can_view_project"("project_id") AND (("task_id" IS NULL) OR "handoff"."can_view_task"("task_id"))));
+CREATE POLICY "bugs_select" ON "public"."bugs" FOR SELECT USING (("coopsetu"."can_view_project"("project_id") AND (("task_id" IS NULL) OR "coopsetu"."can_view_task"("task_id"))));
 
 
 
-CREATE POLICY "bugs_update" ON "public"."bugs" FOR UPDATE USING ("handoff"."can_view_project"("project_id")) WITH CHECK ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "bugs_update" ON "public"."bugs" FOR UPDATE USING ("coopsetu"."can_view_project"("project_id")) WITH CHECK ("coopsetu"."can_view_project"("project_id"));
 
+
+
+ALTER TABLE "public"."certificates" ENABLE ROW LEVEL SECURITY;
 
 
 CREATE POLICY "checklist_items_delete" ON "public"."task_checklist_items" FOR DELETE USING ((EXISTS ( SELECT 1
    FROM "public"."task_checklists" "c"
-  WHERE (("c"."id" = "task_checklist_items"."checklist_id") AND "handoff"."can_edit_task"("c"."task_id")))));
+  WHERE (("c"."id" = "task_checklist_items"."checklist_id") AND "coopsetu"."can_edit_task"("c"."task_id")))));
 
 
 
 CREATE POLICY "checklist_items_insert" ON "public"."task_checklist_items" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."task_checklists" "c"
-  WHERE (("c"."id" = "task_checklist_items"."checklist_id") AND "handoff"."can_edit_task"("c"."task_id")))));
+  WHERE (("c"."id" = "task_checklist_items"."checklist_id") AND "coopsetu"."can_edit_task"("c"."task_id")))));
 
 
 
 CREATE POLICY "checklist_items_select" ON "public"."task_checklist_items" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."task_checklists" "c"
-  WHERE (("c"."id" = "task_checklist_items"."checklist_id") AND "handoff"."can_view_task"("c"."task_id")))));
+  WHERE (("c"."id" = "task_checklist_items"."checklist_id") AND "coopsetu"."can_view_task"("c"."task_id")))));
 
 
 
 CREATE POLICY "checklist_items_update" ON "public"."task_checklist_items" FOR UPDATE USING ((EXISTS ( SELECT 1
    FROM "public"."task_checklists" "c"
-  WHERE (("c"."id" = "task_checklist_items"."checklist_id") AND "handoff"."can_edit_task"("c"."task_id"))))) WITH CHECK ((EXISTS ( SELECT 1
+  WHERE (("c"."id" = "task_checklist_items"."checklist_id") AND "coopsetu"."can_edit_task"("c"."task_id"))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."task_checklists" "c"
-  WHERE (("c"."id" = "task_checklist_items"."checklist_id") AND "handoff"."can_edit_task"("c"."task_id")))));
+  WHERE (("c"."id" = "task_checklist_items"."checklist_id") AND "coopsetu"."can_edit_task"("c"."task_id")))));
 
 
 
-CREATE POLICY "checklists_delete" ON "public"."task_checklists" FOR DELETE USING ("handoff"."can_edit_task"("task_id"));
+CREATE POLICY "checklists_delete" ON "public"."task_checklists" FOR DELETE USING ("coopsetu"."can_edit_task"("task_id"));
 
 
 
-CREATE POLICY "checklists_insert" ON "public"."task_checklists" FOR INSERT WITH CHECK ("handoff"."can_edit_task"("task_id"));
+CREATE POLICY "checklists_insert" ON "public"."task_checklists" FOR INSERT WITH CHECK ("coopsetu"."can_edit_task"("task_id"));
 
 
 
-CREATE POLICY "checklists_select" ON "public"."task_checklists" FOR SELECT USING ("handoff"."can_view_task"("task_id"));
+CREATE POLICY "checklists_select" ON "public"."task_checklists" FOR SELECT USING ("coopsetu"."can_view_task"("task_id"));
 
 
 
-CREATE POLICY "checklists_update" ON "public"."task_checklists" FOR UPDATE USING ("handoff"."can_edit_task"("task_id")) WITH CHECK ("handoff"."can_edit_task"("task_id"));
+CREATE POLICY "checklists_update" ON "public"."task_checklists" FOR UPDATE USING ("coopsetu"."can_edit_task"("task_id")) WITH CHECK ("coopsetu"."can_edit_task"("task_id"));
 
 
 
@@ -7392,27 +7861,27 @@ ALTER TABLE "public"."ci_jobs" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "ci_jobs_delete" ON "public"."ci_jobs" FOR DELETE USING ((EXISTS ( SELECT 1
    FROM "public"."ci_pipelines" "p"
-  WHERE (("p"."id" = "ci_jobs"."pipeline_id") AND "handoff"."has_permission"("p"."organization_id", 'integration:manage'::"text")))));
+  WHERE (("p"."id" = "ci_jobs"."pipeline_id") AND "coopsetu"."has_permission"("p"."organization_id", 'integration:manage'::"text")))));
 
 
 
 CREATE POLICY "ci_jobs_insert" ON "public"."ci_jobs" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."ci_pipelines" "p"
-  WHERE (("p"."id" = "ci_jobs"."pipeline_id") AND "handoff"."is_org_member"("p"."organization_id")))));
+  WHERE (("p"."id" = "ci_jobs"."pipeline_id") AND "coopsetu"."is_org_member"("p"."organization_id")))));
 
 
 
 CREATE POLICY "ci_jobs_select" ON "public"."ci_jobs" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."ci_pipelines" "p"
-  WHERE (("p"."id" = "ci_jobs"."pipeline_id") AND "handoff"."is_org_member"("p"."organization_id")))));
+  WHERE (("p"."id" = "ci_jobs"."pipeline_id") AND "coopsetu"."is_org_member"("p"."organization_id")))));
 
 
 
 CREATE POLICY "ci_jobs_update" ON "public"."ci_jobs" FOR UPDATE USING ((EXISTS ( SELECT 1
    FROM "public"."ci_pipelines" "p"
-  WHERE (("p"."id" = "ci_jobs"."pipeline_id") AND "handoff"."has_permission"("p"."organization_id", 'integration:manage'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
+  WHERE (("p"."id" = "ci_jobs"."pipeline_id") AND "coopsetu"."has_permission"("p"."organization_id", 'integration:manage'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."ci_pipelines" "p"
-  WHERE (("p"."id" = "ci_jobs"."pipeline_id") AND "handoff"."is_org_member"("p"."organization_id")))));
+  WHERE (("p"."id" = "ci_jobs"."pipeline_id") AND "coopsetu"."is_org_member"("p"."organization_id")))));
 
 
 
@@ -7422,19 +7891,19 @@ ALTER TABLE "public"."ci_pipelines" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."comment_mentions" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "comments_insert" ON "public"."task_comments" FOR INSERT WITH CHECK (("handoff"."can_view_task"("task_id") AND (EXISTS ( SELECT 1
+CREATE POLICY "comments_insert" ON "public"."task_comments" FOR INSERT WITH CHECK (("coopsetu"."can_view_task"("task_id") AND (EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
   WHERE (("m"."id" = "task_comments"."author_member_id") AND ("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")))))));
 
 
 
-CREATE POLICY "comments_select" ON "public"."task_comments" FOR SELECT USING ("handoff"."can_view_task"("task_id"));
+CREATE POLICY "comments_select" ON "public"."task_comments" FOR SELECT USING ("coopsetu"."can_view_task"("task_id"));
 
 
 
-CREATE POLICY "comments_update_own" ON "public"."task_comments" FOR UPDATE USING (("handoff"."can_view_task"("task_id") AND (EXISTS ( SELECT 1
+CREATE POLICY "comments_update_own" ON "public"."task_comments" FOR UPDATE USING (("coopsetu"."can_view_task"("task_id") AND (EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "task_comments"."author_member_id") AND ("m"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))))) WITH CHECK (("handoff"."can_view_task"("task_id") AND (EXISTS ( SELECT 1
+  WHERE (("m"."id" = "task_comments"."author_member_id") AND ("m"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))))) WITH CHECK (("coopsetu"."can_view_task"("task_id") AND (EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
   WHERE (("m"."id" = "task_comments"."author_member_id") AND ("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")))))));
 
@@ -7443,58 +7912,70 @@ CREATE POLICY "comments_update_own" ON "public"."task_comments" FOR UPDATE USING
 ALTER TABLE "public"."commits" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "commits_delete" ON "public"."commits" FOR DELETE USING ("handoff"."has_permission"("organization_id", 'integration:manage'::"text"));
+CREATE POLICY "commits_delete" ON "public"."commits" FOR DELETE USING ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text"));
 
 
 
-CREATE POLICY "commits_insert" ON "public"."commits" FOR INSERT WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "commits_insert" ON "public"."commits" FOR INSERT WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "commits_select" ON "public"."commits" FOR SELECT USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "commits_select" ON "public"."commits" FOR SELECT USING ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "commits_update" ON "public"."commits" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'integration:manage'::"text")) WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "commits_update" ON "public"."commits" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text")) WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "complianc_delete" ON "public"."compliance_controls" FOR DELETE USING (("handoff"."has_permission"("organization_id", 'document:approve'::"text") OR "handoff"."has_role"("organization_id", ARRAY['COMPLIANCE_REVIEWER'::"text", 'ORG_ADMIN'::"text", 'SUPER_ADMIN'::"text"])));
+CREATE POLICY "complianc_delete" ON "public"."compliance_controls" FOR DELETE USING (("coopsetu"."has_permission"("organization_id", 'document:approve'::"text") OR "coopsetu"."has_role"("organization_id", ARRAY['COMPLIANCE_REVIEWER'::"text", 'ORG_ADMIN'::"text", 'SUPER_ADMIN'::"text"])));
 
 
 
-CREATE POLICY "complianc_insert" ON "public"."compliance_controls" FOR INSERT WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "complianc_insert" ON "public"."compliance_controls" FOR INSERT WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "complianc_update" ON "public"."compliance_controls" FOR UPDATE USING (("handoff"."has_permission"("organization_id", 'document:approve'::"text") OR "handoff"."has_role"("organization_id", ARRAY['COMPLIANCE_REVIEWER'::"text", 'ORG_ADMIN'::"text", 'SUPER_ADMIN'::"text"]))) WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "complianc_update" ON "public"."compliance_controls" FOR UPDATE USING (("coopsetu"."has_permission"("organization_id", 'document:approve'::"text") OR "coopsetu"."has_role"("organization_id", ARRAY['COMPLIANCE_REVIEWER'::"text", 'ORG_ADMIN'::"text", 'SUPER_ADMIN'::"text"]))) WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
 
 
 ALTER TABLE "public"."compliance_controls" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "compliance_ev_delete" ON "public"."compliance_evidence" FOR DELETE USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "compliance_ev_delete" ON "public"."compliance_evidence" FOR DELETE USING ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "compliance_ev_insert" ON "public"."compliance_evidence" FOR INSERT WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "compliance_ev_insert" ON "public"."compliance_evidence" FOR INSERT WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "compliance_ev_select" ON "public"."compliance_evidence" FOR SELECT USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "compliance_ev_select" ON "public"."compliance_evidence" FOR SELECT USING ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "compliance_ev_update" ON "public"."compliance_evidence" FOR UPDATE USING ("handoff"."is_org_member"("organization_id")) WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "compliance_ev_update" ON "public"."compliance_evidence" FOR UPDATE USING ("coopsetu"."is_org_member"("organization_id")) WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
 
 
 ALTER TABLE "public"."compliance_evidence" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "compliance_select" ON "public"."compliance_controls" FOR SELECT USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "compliance_select" ON "public"."compliance_controls" FOR SELECT USING ("coopsetu"."is_org_member"("organization_id"));
 
+
+
+ALTER TABLE "public"."contact_requests" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."course_modules" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."course_progress" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."courses" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."demo_sessions" ENABLE ROW LEVEL SECURITY;
@@ -7519,94 +8000,94 @@ CREATE POLICY "deny_all" ON "public"."rate_limits" AS RESTRICTIVE USING (false);
 ALTER TABLE "public"."departments" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "departments_delete" ON "public"."departments" FOR DELETE USING ("handoff"."has_permission"("organization_id", 'team:create'::"text"));
+CREATE POLICY "departments_delete" ON "public"."departments" FOR DELETE USING ("coopsetu"."has_permission"("organization_id", 'team:create'::"text"));
 
 
 
-CREATE POLICY "departments_insert" ON "public"."departments" FOR INSERT WITH CHECK ("handoff"."has_permission"("organization_id", 'team:create'::"text"));
+CREATE POLICY "departments_insert" ON "public"."departments" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("organization_id", 'team:create'::"text"));
 
 
 
-CREATE POLICY "departments_select" ON "public"."departments" FOR SELECT USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "departments_select" ON "public"."departments" FOR SELECT USING ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "departments_update" ON "public"."departments" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'team:create'::"text")) WITH CHECK ("handoff"."has_permission"("organization_id", 'team:create'::"text"));
+CREATE POLICY "departments_update" ON "public"."departments" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'team:create'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'team:create'::"text"));
 
 
 
 ALTER TABLE "public"."deployment_logs" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "deployment_logs_manage" ON "public"."deployment_logs" USING ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "deployment_logs_manage" ON "public"."deployment_logs" USING ("coopsetu"."can_manage_project"("project_id"));
 
 
 
-CREATE POLICY "deployment_logs_select" ON "public"."deployment_logs" FOR SELECT USING ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "deployment_logs_select" ON "public"."deployment_logs" FOR SELECT USING ("coopsetu"."can_view_project"("project_id"));
 
 
 
 ALTER TABLE "public"."deployments" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "deployments_delete" ON "public"."deployments" FOR DELETE USING ("handoff"."has_permission"("organization_id", 'release:deploy'::"text"));
+CREATE POLICY "deployments_delete" ON "public"."deployments" FOR DELETE USING ("coopsetu"."has_permission"("organization_id", 'release:deploy'::"text"));
 
 
 
-CREATE POLICY "deployments_insert" ON "public"."deployments" FOR INSERT WITH CHECK ("handoff"."has_permission"("organization_id", 'release:deploy'::"text"));
+CREATE POLICY "deployments_insert" ON "public"."deployments" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("organization_id", 'release:deploy'::"text"));
 
 
 
-CREATE POLICY "deployments_select" ON "public"."deployments" FOR SELECT USING ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "deployments_select" ON "public"."deployments" FOR SELECT USING ("coopsetu"."can_view_project"("project_id"));
 
 
 
-CREATE POLICY "deployments_update" ON "public"."deployments" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'release:deploy'::"text")) WITH CHECK ("handoff"."has_permission"("organization_id", 'release:deploy'::"text"));
+CREATE POLICY "deployments_update" ON "public"."deployments" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'release:deploy'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'release:deploy'::"text"));
 
 
 
-CREATE POLICY "deps_delete" ON "public"."project_dependencies" FOR DELETE USING ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "deps_delete" ON "public"."project_dependencies" FOR DELETE USING ("coopsetu"."can_manage_project"("project_id"));
 
 
 
-CREATE POLICY "deps_insert" ON "public"."project_dependencies" FOR INSERT WITH CHECK ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "deps_insert" ON "public"."project_dependencies" FOR INSERT WITH CHECK ("coopsetu"."can_manage_project"("project_id"));
 
 
 
-CREATE POLICY "deps_update" ON "public"."project_dependencies" FOR UPDATE USING ("handoff"."can_manage_project"("project_id")) WITH CHECK ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "deps_update" ON "public"."project_dependencies" FOR UPDATE USING ("coopsetu"."can_manage_project"("project_id")) WITH CHECK ("coopsetu"."can_manage_project"("project_id"));
 
 
 
 CREATE POLICY "doc_comments_insert" ON "public"."document_comments" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM ("public"."documents" "d"
      JOIN "public"."organization_members" "m" ON (("m"."id" = "document_comments"."author_member_id")))
-  WHERE (("d"."id" = "document_comments"."document_id") AND ("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) AND "handoff"."is_org_member"("d"."organization_id")))));
+  WHERE (("d"."id" = "document_comments"."document_id") AND ("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) AND "coopsetu"."is_org_member"("d"."organization_id")))));
 
 
 
 CREATE POLICY "doc_comments_select" ON "public"."document_comments" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."documents" "d"
-  WHERE (("d"."id" = "document_comments"."document_id") AND "handoff"."is_org_member"("d"."organization_id")))));
+  WHERE (("d"."id" = "document_comments"."document_id") AND "coopsetu"."is_org_member"("d"."organization_id")))));
 
 
 
 CREATE POLICY "doc_links_all" ON "public"."document_links" USING ((EXISTS ( SELECT 1
    FROM "public"."documents" "d"
-  WHERE (("d"."id" = "document_links"."document_id") AND "handoff"."is_org_member"("d"."organization_id"))))) WITH CHECK ((EXISTS ( SELECT 1
+  WHERE (("d"."id" = "document_links"."document_id") AND "coopsetu"."is_org_member"("d"."organization_id"))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."documents" "d"
-  WHERE (("d"."id" = "document_links"."document_id") AND "handoff"."is_org_member"("d"."organization_id")))));
+  WHERE (("d"."id" = "document_links"."document_id") AND "coopsetu"."is_org_member"("d"."organization_id")))));
 
 
 
 CREATE POLICY "doc_versions_insert" ON "public"."document_versions" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."documents" "d"
-  WHERE (("d"."id" = "document_versions"."document_id") AND "handoff"."has_permission"("d"."organization_id", 'document:update'::"text")))));
+  WHERE (("d"."id" = "document_versions"."document_id") AND "coopsetu"."has_permission"("d"."organization_id", 'document:update'::"text")))));
 
 
 
 CREATE POLICY "doc_versions_select" ON "public"."document_versions" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."documents" "d"
-  WHERE (("d"."id" = "document_versions"."document_id") AND "handoff"."is_org_member"("d"."organization_id")))));
+  WHERE (("d"."id" = "document_versions"."document_id") AND "coopsetu"."is_org_member"("d"."organization_id")))));
 
 
 
@@ -7622,67 +8103,67 @@ ALTER TABLE "public"."document_versions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."documents" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "documents_insert" ON "public"."documents" FOR INSERT WITH CHECK ("handoff"."has_permission"("organization_id", 'document:create'::"text"));
+CREATE POLICY "documents_insert" ON "public"."documents" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("organization_id", 'document:create'::"text"));
 
 
 
-CREATE POLICY "documents_select" ON "public"."documents" FOR SELECT USING (("handoff"."is_org_member"("organization_id") AND (("classification" <> 'RESTRICTED'::"text") OR ("project_id" IS NULL) OR "handoff"."can_view_project"("project_id"))));
+CREATE POLICY "documents_select" ON "public"."documents" FOR SELECT USING (("coopsetu"."is_org_member"("organization_id") AND (("classification" <> 'RESTRICTED'::"text") OR ("project_id" IS NULL) OR "coopsetu"."can_view_project"("project_id"))));
 
 
 
-CREATE POLICY "documents_update" ON "public"."documents" FOR UPDATE USING (("handoff"."has_permission"("organization_id", 'document:update'::"text") OR "handoff"."has_permission"("organization_id", 'document:approve'::"text"))) WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "documents_update" ON "public"."documents" FOR UPDATE USING (("coopsetu"."has_permission"("organization_id", 'document:update'::"text") OR "coopsetu"."has_permission"("organization_id", 'document:approve'::"text"))) WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
 
 
 CREATE POLICY "emp_avail_delete" ON "public"."employee_availability" FOR DELETE USING ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "employee_availability"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "handoff"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
+  WHERE (("m"."id" = "employee_availability"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
 
 
 
 CREATE POLICY "emp_avail_insert" ON "public"."employee_availability" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "employee_availability"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "handoff"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
+  WHERE (("m"."id" = "employee_availability"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
 
 
 
 CREATE POLICY "emp_avail_select" ON "public"."employee_availability" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "employee_availability"."organization_member_id") AND "handoff"."is_org_member"("m"."organization_id")))));
+  WHERE (("m"."id" = "employee_availability"."organization_member_id") AND "coopsetu"."is_org_member"("m"."organization_id")))));
 
 
 
 CREATE POLICY "emp_avail_update" ON "public"."employee_availability" FOR UPDATE USING ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "employee_availability"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "handoff"."has_permission"("m"."organization_id", 'member:manage'::"text")))))) WITH CHECK ((EXISTS ( SELECT 1
+  WHERE (("m"."id" = "employee_availability"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."has_permission"("m"."organization_id", 'member:manage'::"text")))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "employee_availability"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "handoff"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
+  WHERE (("m"."id" = "employee_availability"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
 
 
 
 CREATE POLICY "emp_skills_delete" ON "public"."employee_skills" FOR DELETE USING ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "employee_skills"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "handoff"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
+  WHERE (("m"."id" = "employee_skills"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
 
 
 
 CREATE POLICY "emp_skills_insert" ON "public"."employee_skills" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "employee_skills"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "handoff"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
+  WHERE (("m"."id" = "employee_skills"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
 
 
 
 CREATE POLICY "emp_skills_select" ON "public"."employee_skills" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "employee_skills"."organization_member_id") AND "handoff"."is_org_member"("m"."organization_id")))));
+  WHERE (("m"."id" = "employee_skills"."organization_member_id") AND "coopsetu"."is_org_member"("m"."organization_id")))));
 
 
 
 CREATE POLICY "emp_skills_update" ON "public"."employee_skills" FOR UPDATE USING ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "employee_skills"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "handoff"."has_permission"("m"."organization_id", 'member:manage'::"text")))))) WITH CHECK ((EXISTS ( SELECT 1
+  WHERE (("m"."id" = "employee_skills"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."has_permission"("m"."organization_id", 'member:manage'::"text")))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "employee_skills"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "handoff"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
+  WHERE (("m"."id" = "employee_skills"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
 
 
 
@@ -7692,56 +8173,62 @@ ALTER TABLE "public"."employee_availability" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."employee_skills" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."employers" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."enrollments" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."environments" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "environments_delete" ON "public"."environments" FOR DELETE USING ("handoff"."has_permission"("organization_id", 'integration:manage'::"text"));
+CREATE POLICY "environments_delete" ON "public"."environments" FOR DELETE USING ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text"));
 
 
 
-CREATE POLICY "environments_insert" ON "public"."environments" FOR INSERT WITH CHECK ("handoff"."has_permission"("organization_id", 'integration:manage'::"text"));
+CREATE POLICY "environments_insert" ON "public"."environments" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text"));
 
 
 
-CREATE POLICY "environments_select" ON "public"."environments" FOR SELECT USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "environments_select" ON "public"."environments" FOR SELECT USING ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "environments_update" ON "public"."environments" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'integration:manage'::"text")) WITH CHECK ("handoff"."has_permission"("organization_id", 'integration:manage'::"text"));
+CREATE POLICY "environments_update" ON "public"."environments" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text"));
 
 
 
 ALTER TABLE "public"."epics" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "epics_delete" ON "public"."epics" FOR DELETE USING ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "epics_delete" ON "public"."epics" FOR DELETE USING ("coopsetu"."can_manage_project"("project_id"));
 
 
 
-CREATE POLICY "epics_insert" ON "public"."epics" FOR INSERT WITH CHECK ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "epics_insert" ON "public"."epics" FOR INSERT WITH CHECK ("coopsetu"."can_manage_project"("project_id"));
 
 
 
-CREATE POLICY "epics_select" ON "public"."epics" FOR SELECT USING ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "epics_select" ON "public"."epics" FOR SELECT USING ("coopsetu"."can_view_project"("project_id"));
 
 
 
-CREATE POLICY "epics_update" ON "public"."epics" FOR UPDATE USING ("handoff"."can_manage_project"("project_id")) WITH CHECK ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "epics_update" ON "public"."epics" FOR UPDATE USING ("coopsetu"."can_manage_project"("project_id")) WITH CHECK ("coopsetu"."can_manage_project"("project_id"));
 
 
 
 ALTER TABLE "public"."import_jobs" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "import_jobs_insert" ON "public"."import_jobs" FOR INSERT WITH CHECK ((("created_by_member_id" = "handoff"."current_member_id"("organization_id")) AND ((("import_type" = 'PROJECTS'::"text") AND "handoff"."has_permission"("organization_id", 'project:import'::"text")) OR (("import_type" = 'TASKS'::"text") AND "handoff"."has_permission"("organization_id", 'task:import'::"text")))));
+CREATE POLICY "import_jobs_insert" ON "public"."import_jobs" FOR INSERT WITH CHECK ((("created_by_member_id" = "coopsetu"."current_member_id"("organization_id")) AND ((("import_type" = 'PROJECTS'::"text") AND "coopsetu"."has_permission"("organization_id", 'project:import'::"text")) OR (("import_type" = 'TASKS'::"text") AND "coopsetu"."has_permission"("organization_id", 'task:import'::"text")))));
 
 
 
-CREATE POLICY "import_jobs_select" ON "public"."import_jobs" FOR SELECT USING ((("created_by_member_id" = "handoff"."current_member_id"("organization_id")) OR "handoff"."has_permission"("organization_id", 'project:import'::"text")));
+CREATE POLICY "import_jobs_select" ON "public"."import_jobs" FOR SELECT USING ((("created_by_member_id" = "coopsetu"."current_member_id"("organization_id")) OR "coopsetu"."has_permission"("organization_id", 'project:import'::"text")));
 
 
 
-CREATE POLICY "import_jobs_update" ON "public"."import_jobs" FOR UPDATE USING ((("created_by_member_id" = "handoff"."current_member_id"("organization_id")) AND ((("import_type" = 'PROJECTS'::"text") AND "handoff"."has_permission"("organization_id", 'project:import'::"text")) OR (("import_type" = 'TASKS'::"text") AND "handoff"."has_permission"("organization_id", 'task:import'::"text"))))) WITH CHECK ((("created_by_member_id" = "handoff"."current_member_id"("organization_id")) AND ((("import_type" = 'PROJECTS'::"text") AND "handoff"."has_permission"("organization_id", 'project:import'::"text")) OR (("import_type" = 'TASKS'::"text") AND "handoff"."has_permission"("organization_id", 'task:import'::"text")))));
+CREATE POLICY "import_jobs_update" ON "public"."import_jobs" FOR UPDATE USING ((("created_by_member_id" = "coopsetu"."current_member_id"("organization_id")) AND ((("import_type" = 'PROJECTS'::"text") AND "coopsetu"."has_permission"("organization_id", 'project:import'::"text")) OR (("import_type" = 'TASKS'::"text") AND "coopsetu"."has_permission"("organization_id", 'task:import'::"text"))))) WITH CHECK ((("created_by_member_id" = "coopsetu"."current_member_id"("organization_id")) AND ((("import_type" = 'PROJECTS'::"text") AND "coopsetu"."has_permission"("organization_id", 'project:import'::"text")) OR (("import_type" = 'TASKS'::"text") AND "coopsetu"."has_permission"("organization_id", 'task:import'::"text")))));
 
 
 
@@ -7750,43 +8237,43 @@ ALTER TABLE "public"."import_rows" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "import_rows_manage" ON "public"."import_rows" USING ((EXISTS ( SELECT 1
    FROM "public"."import_jobs" "j"
-  WHERE (("j"."id" = "import_rows"."import_job_id") AND ("j"."created_by_member_id" = "handoff"."current_member_id"("j"."organization_id")))))) WITH CHECK ((EXISTS ( SELECT 1
+  WHERE (("j"."id" = "import_rows"."import_job_id") AND ("j"."created_by_member_id" = "coopsetu"."current_member_id"("j"."organization_id")))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."import_jobs" "j"
-  WHERE (("j"."id" = "import_rows"."import_job_id") AND ("j"."created_by_member_id" = "handoff"."current_member_id"("j"."organization_id"))))));
+  WHERE (("j"."id" = "import_rows"."import_job_id") AND ("j"."created_by_member_id" = "coopsetu"."current_member_id"("j"."organization_id"))))));
 
 
 
 CREATE POLICY "import_rows_select" ON "public"."import_rows" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."import_jobs" "j"
-  WHERE (("j"."id" = "import_rows"."import_job_id") AND (("j"."created_by_member_id" = "handoff"."current_member_id"("j"."organization_id")) OR "handoff"."has_permission"("j"."organization_id", 'project:import'::"text") OR "handoff"."has_permission"("j"."organization_id", 'task:import'::"text"))))));
+  WHERE (("j"."id" = "import_rows"."import_job_id") AND (("j"."created_by_member_id" = "coopsetu"."current_member_id"("j"."organization_id")) OR "coopsetu"."has_permission"("j"."organization_id", 'project:import'::"text") OR "coopsetu"."has_permission"("j"."organization_id", 'task:import'::"text"))))));
 
 
 
 CREATE POLICY "inc_followups_all" ON "public"."incident_followups" USING ((EXISTS ( SELECT 1
    FROM "public"."incidents" "i"
-  WHERE (("i"."id" = "incident_followups"."incident_id") AND "handoff"."is_org_member"("i"."organization_id"))))) WITH CHECK ((EXISTS ( SELECT 1
+  WHERE (("i"."id" = "incident_followups"."incident_id") AND "coopsetu"."is_org_member"("i"."organization_id"))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."incidents" "i"
-  WHERE (("i"."id" = "incident_followups"."incident_id") AND "handoff"."is_org_member"("i"."organization_id")))));
+  WHERE (("i"."id" = "incident_followups"."incident_id") AND "coopsetu"."is_org_member"("i"."organization_id")))));
 
 
 
 CREATE POLICY "inc_part_all" ON "public"."incident_participants" USING ((EXISTS ( SELECT 1
    FROM "public"."incidents" "i"
-  WHERE (("i"."id" = "incident_participants"."incident_id") AND "handoff"."is_org_member"("i"."organization_id"))))) WITH CHECK ((EXISTS ( SELECT 1
+  WHERE (("i"."id" = "incident_participants"."incident_id") AND "coopsetu"."is_org_member"("i"."organization_id"))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."incidents" "i"
-  WHERE (("i"."id" = "incident_participants"."incident_id") AND "handoff"."is_org_member"("i"."organization_id")))));
+  WHERE (("i"."id" = "incident_participants"."incident_id") AND "coopsetu"."is_org_member"("i"."organization_id")))));
 
 
 
 CREATE POLICY "inc_timeline_insert" ON "public"."incident_timeline_events" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."incidents" "i"
-  WHERE (("i"."id" = "incident_timeline_events"."incident_id") AND "handoff"."is_org_member"("i"."organization_id")))));
+  WHERE (("i"."id" = "incident_timeline_events"."incident_id") AND "coopsetu"."is_org_member"("i"."organization_id")))));
 
 
 
 CREATE POLICY "inc_timeline_select" ON "public"."incident_timeline_events" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."incidents" "i"
-  WHERE (("i"."id" = "incident_timeline_events"."incident_id") AND "handoff"."is_org_member"("i"."organization_id")))));
+  WHERE (("i"."id" = "incident_timeline_events"."incident_id") AND "coopsetu"."is_org_member"("i"."organization_id")))));
 
 
 
@@ -7802,74 +8289,86 @@ ALTER TABLE "public"."incident_timeline_events" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."incidents" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "incidents_delete" ON "public"."incidents" FOR DELETE USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "incidents_delete" ON "public"."incidents" FOR DELETE USING ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "incidents_insert" ON "public"."incidents" FOR INSERT WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "incidents_insert" ON "public"."incidents" FOR INSERT WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "incidents_select" ON "public"."incidents" FOR SELECT USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "incidents_select" ON "public"."incidents" FOR SELECT USING ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "incidents_update" ON "public"."incidents" FOR UPDATE USING ("handoff"."is_org_member"("organization_id")) WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "incidents_update" ON "public"."incidents" FOR UPDATE USING ("coopsetu"."is_org_member"("organization_id")) WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
+
+
+ALTER TABLE "public"."institutions" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."integrations" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "integrations_delete" ON "public"."integrations" FOR DELETE USING ("handoff"."has_permission"("organization_id", 'integration:manage'::"text"));
+CREATE POLICY "integrations_delete" ON "public"."integrations" FOR DELETE USING ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text"));
 
 
 
-CREATE POLICY "integrations_insert" ON "public"."integrations" FOR INSERT WITH CHECK ("handoff"."has_permission"("organization_id", 'integration:manage'::"text"));
+CREATE POLICY "integrations_insert" ON "public"."integrations" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text"));
 
 
 
-CREATE POLICY "integrations_select" ON "public"."integrations" FOR SELECT USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "integrations_select" ON "public"."integrations" FOR SELECT USING ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "integrations_update" ON "public"."integrations" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'integration:manage'::"text")) WITH CHECK ("handoff"."has_permission"("organization_id", 'integration:manage'::"text"));
+CREATE POLICY "integrations_update" ON "public"."integrations" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text"));
 
 
 
-CREATE POLICY "invites_delete" ON "public"."organization_invites" FOR DELETE USING ("handoff"."has_permission"("organization_id", 'member:invite'::"text"));
+CREATE POLICY "invites_delete" ON "public"."organization_invites" FOR DELETE USING ("coopsetu"."has_permission"("organization_id", 'member:invite'::"text"));
 
 
 
-CREATE POLICY "invites_insert" ON "public"."organization_invites" FOR INSERT WITH CHECK ("handoff"."has_permission"("organization_id", 'member:invite'::"text"));
+CREATE POLICY "invites_insert" ON "public"."organization_invites" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("organization_id", 'member:invite'::"text"));
 
 
 
-CREATE POLICY "invites_select" ON "public"."organization_invites" FOR SELECT USING ("handoff"."has_permission"("organization_id", 'member:invite'::"text"));
+CREATE POLICY "invites_select" ON "public"."organization_invites" FOR SELECT USING ("coopsetu"."has_permission"("organization_id", 'member:invite'::"text"));
 
 
 
-CREATE POLICY "invites_update" ON "public"."organization_invites" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'member:invite'::"text")) WITH CHECK ("handoff"."has_permission"("organization_id", 'member:invite'::"text"));
+CREATE POLICY "invites_update" ON "public"."organization_invites" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'member:invite'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'member:invite'::"text"));
 
+
+
+ALTER TABLE "public"."job_applications" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."job_skills" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."jobs" ENABLE ROW LEVEL SECURITY;
 
 
 CREATE POLICY "leav_delete" ON "public"."leave_requests" FOR DELETE USING ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "leave_requests"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "handoff"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
+  WHERE (("m"."id" = "leave_requests"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
 
 
 
 CREATE POLICY "leav_insert" ON "public"."leave_requests" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "leave_requests"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "handoff"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
+  WHERE (("m"."id" = "leave_requests"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
 
 
 
 CREATE POLICY "leav_update" ON "public"."leave_requests" FOR UPDATE USING ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "leave_requests"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "handoff"."has_permission"("m"."organization_id", 'member:manage'::"text")))))) WITH CHECK ((EXISTS ( SELECT 1
+  WHERE (("m"."id" = "leave_requests"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."has_permission"("m"."organization_id", 'member:manage'::"text")))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "leave_requests"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "handoff"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
+  WHERE (("m"."id" = "leave_requests"."organization_member_id") AND (("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."has_permission"("m"."organization_id", 'member:manage'::"text"))))));
 
 
 
@@ -7878,7 +8377,7 @@ ALTER TABLE "public"."leave_requests" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "leave_select" ON "public"."leave_requests" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "leave_requests"."organization_member_id") AND "handoff"."is_org_member"("m"."organization_id")))));
+  WHERE (("m"."id" = "leave_requests"."organization_member_id") AND "coopsetu"."is_org_member"("m"."organization_id")))));
 
 
 
@@ -7890,59 +8389,59 @@ ALTER TABLE "public"."member_roles" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "member_roles_delete" ON "public"."member_roles" FOR DELETE USING ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "member_roles"."organization_member_id") AND "handoff"."has_permission"("m"."organization_id", 'member:manage'::"text")))));
+  WHERE (("m"."id" = "member_roles"."organization_member_id") AND "coopsetu"."has_permission"("m"."organization_id", 'member:manage'::"text")))));
 
 
 
 CREATE POLICY "member_roles_insert" ON "public"."member_roles" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "member_roles"."organization_member_id") AND "handoff"."has_permission"("m"."organization_id", 'member:manage'::"text")))));
+  WHERE (("m"."id" = "member_roles"."organization_member_id") AND "coopsetu"."has_permission"("m"."organization_id", 'member:manage'::"text")))));
 
 
 
 CREATE POLICY "member_roles_select" ON "public"."member_roles" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "member_roles"."organization_member_id") AND "handoff"."is_org_member"("m"."organization_id")))));
+  WHERE (("m"."id" = "member_roles"."organization_member_id") AND "coopsetu"."is_org_member"("m"."organization_id")))));
 
 
 
 CREATE POLICY "member_roles_update" ON "public"."member_roles" FOR UPDATE USING ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "member_roles"."organization_member_id") AND "handoff"."has_permission"("m"."organization_id", 'member:manage'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
+  WHERE (("m"."id" = "member_roles"."organization_member_id") AND "coopsetu"."has_permission"("m"."organization_id", 'member:manage'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
-  WHERE (("m"."id" = "member_roles"."organization_member_id") AND "handoff"."has_permission"("m"."organization_id", 'member:manage'::"text")))));
+  WHERE (("m"."id" = "member_roles"."organization_member_id") AND "coopsetu"."has_permission"("m"."organization_id", 'member:manage'::"text")))));
 
 
 
 CREATE POLICY "mentions_insert" ON "public"."comment_mentions" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM ("public"."task_comments" "c"
      JOIN "public"."organization_members" "m" ON (("m"."id" = "c"."author_member_id")))
-  WHERE (("c"."id" = "comment_mentions"."comment_id") AND ("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) AND "handoff"."can_view_task"("c"."task_id")))));
+  WHERE (("c"."id" = "comment_mentions"."comment_id") AND ("m"."user_id" = ( SELECT "auth"."uid"() AS "uid")) AND "coopsetu"."can_view_task"("c"."task_id")))));
 
 
 
 CREATE POLICY "mentions_select" ON "public"."comment_mentions" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."task_comments" "c"
-  WHERE (("c"."id" = "comment_mentions"."comment_id") AND "handoff"."can_view_task"("c"."task_id")))));
+  WHERE (("c"."id" = "comment_mentions"."comment_id") AND "coopsetu"."can_view_task"("c"."task_id")))));
 
 
 
 ALTER TABLE "public"."milestones" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "milestones_delete" ON "public"."milestones" FOR DELETE USING ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "milestones_delete" ON "public"."milestones" FOR DELETE USING ("coopsetu"."can_manage_project"("project_id"));
 
 
 
-CREATE POLICY "milestones_insert" ON "public"."milestones" FOR INSERT WITH CHECK ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "milestones_insert" ON "public"."milestones" FOR INSERT WITH CHECK ("coopsetu"."can_manage_project"("project_id"));
 
 
 
-CREATE POLICY "milestones_select" ON "public"."milestones" FOR SELECT USING ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "milestones_select" ON "public"."milestones" FOR SELECT USING ("coopsetu"."can_view_project"("project_id"));
 
 
 
-CREATE POLICY "milestones_update" ON "public"."milestones" FOR UPDATE USING ("handoff"."can_manage_project"("project_id")) WITH CHECK ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "milestones_update" ON "public"."milestones" FOR UPDATE USING ("coopsetu"."can_manage_project"("project_id")) WITH CHECK ("coopsetu"."can_manage_project"("project_id"));
 
 
 
@@ -7982,15 +8481,75 @@ CREATE POLICY "org_admins_can_view_invite_roles" ON "public"."organization_invit
 
 
 
-CREATE POLICY "org_members_insert" ON "public"."organization_members" FOR INSERT WITH CHECK ("handoff"."has_permission"("organization_id", 'member:manage'::"text"));
+CREATE POLICY "org_members_insert" ON "public"."organization_members" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("organization_id", 'member:manage'::"text"));
 
 
 
-CREATE POLICY "org_members_select" ON "public"."organization_members" FOR SELECT USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "org_members_select" ON "public"."organization_members" FOR SELECT USING ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "org_members_update" ON "public"."organization_members" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'member:manage'::"text")) WITH CHECK ("handoff"."has_permission"("organization_id", 'member:manage'::"text"));
+CREATE POLICY "org_members_update" ON "public"."organization_members" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'member:manage'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'member:manage'::"text"));
+
+
+
+CREATE POLICY "org_members_view_batches" ON "public"."batches" FOR SELECT USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."is_active" = true)))));
+
+
+
+CREATE POLICY "org_members_view_certificates" ON "public"."certificates" FOR SELECT USING (("trainee_id" IN ( SELECT "trainees"."id"
+   FROM "public"."trainees"
+  WHERE ("trainees"."organization_id" IN ( SELECT "organization_members"."organization_id"
+           FROM "public"."organization_members"
+          WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."is_active" = true)))))));
+
+
+
+CREATE POLICY "org_members_view_courses" ON "public"."courses" FOR SELECT USING (("programme_id" IN ( SELECT "programmes"."id"
+   FROM "public"."programmes"
+  WHERE ("programmes"."organization_id" IN ( SELECT "organization_members"."organization_id"
+           FROM "public"."organization_members"
+          WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."is_active" = true)))))));
+
+
+
+CREATE POLICY "org_members_view_employers" ON "public"."employers" FOR SELECT USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."is_active" = true)))));
+
+
+
+CREATE POLICY "org_members_view_institutions" ON "public"."institutions" FOR SELECT USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."is_active" = true)))));
+
+
+
+CREATE POLICY "org_members_view_jobs" ON "public"."jobs" FOR SELECT USING (("employer_id" IN ( SELECT "employers"."id"
+   FROM "public"."employers"
+  WHERE ("employers"."organization_id" IN ( SELECT "organization_members"."organization_id"
+           FROM "public"."organization_members"
+          WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."is_active" = true)))))));
+
+
+
+CREATE POLICY "org_members_view_programmes" ON "public"."programmes" FOR SELECT USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."is_active" = true)))));
+
+
+
+CREATE POLICY "org_members_view_trainees" ON "public"."trainees" FOR SELECT USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."is_active" = true)))));
+
+
+
+CREATE POLICY "org_members_view_trainers" ON "public"."trainers" FOR SELECT USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."is_active" = true)))));
 
 
 
@@ -8013,11 +8572,11 @@ CREATE POLICY "organizations_insert" ON "public"."organizations" FOR INSERT WITH
 
 
 
-CREATE POLICY "organizations_select" ON "public"."organizations" FOR SELECT USING ("handoff"."is_org_member"("id"));
+CREATE POLICY "organizations_select" ON "public"."organizations" FOR SELECT USING ("coopsetu"."is_org_member"("id"));
 
 
 
-CREATE POLICY "organizations_update" ON "public"."organizations" FOR UPDATE USING ("handoff"."has_permission"("id", 'organization:manage'::"text")) WITH CHECK ("handoff"."has_permission"("id", 'organization:manage'::"text"));
+CREATE POLICY "organizations_update" ON "public"."organizations" FOR UPDATE USING ("coopsetu"."has_permission"("id", 'organization:manage'::"text")) WITH CHECK ("coopsetu"."has_permission"("id", 'organization:manage'::"text"));
 
 
 
@@ -8028,38 +8587,38 @@ CREATE POLICY "permissions_select" ON "public"."permissions" FOR SELECT TO "auth
 
 
 
-CREATE POLICY "pipelines_delete" ON "public"."ci_pipelines" FOR DELETE USING ("handoff"."has_permission"("organization_id", 'integration:manage'::"text"));
+CREATE POLICY "pipelines_delete" ON "public"."ci_pipelines" FOR DELETE USING ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text"));
 
 
 
-CREATE POLICY "pipelines_insert" ON "public"."ci_pipelines" FOR INSERT WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "pipelines_insert" ON "public"."ci_pipelines" FOR INSERT WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "pipelines_select" ON "public"."ci_pipelines" FOR SELECT USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "pipelines_select" ON "public"."ci_pipelines" FOR SELECT USING ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "pipelines_update" ON "public"."ci_pipelines" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'integration:manage'::"text")) WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "pipelines_update" ON "public"."ci_pipelines" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text")) WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
 
 
 ALTER TABLE "public"."portfolios" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "portfolios_delete" ON "public"."portfolios" FOR DELETE USING ("handoff"."has_permission"("organization_id", 'project:create'::"text"));
+CREATE POLICY "portfolios_delete" ON "public"."portfolios" FOR DELETE USING ("coopsetu"."has_permission"("organization_id", 'project:create'::"text"));
 
 
 
-CREATE POLICY "portfolios_insert" ON "public"."portfolios" FOR INSERT WITH CHECK ("handoff"."has_permission"("organization_id", 'project:create'::"text"));
+CREATE POLICY "portfolios_insert" ON "public"."portfolios" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("organization_id", 'project:create'::"text"));
 
 
 
-CREATE POLICY "portfolios_select" ON "public"."portfolios" FOR SELECT USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "portfolios_select" ON "public"."portfolios" FOR SELECT USING ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "portfolios_update" ON "public"."portfolios" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'project:create'::"text")) WITH CHECK ("handoff"."has_permission"("organization_id", 'project:create'::"text"));
+CREATE POLICY "portfolios_update" ON "public"."portfolios" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'project:create'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'project:create'::"text"));
 
 
 
@@ -8068,9 +8627,9 @@ ALTER TABLE "public"."postmortems" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "postmortems_all" ON "public"."postmortems" USING ((EXISTS ( SELECT 1
    FROM "public"."incidents" "i"
-  WHERE (("i"."id" = "postmortems"."incident_id") AND "handoff"."is_org_member"("i"."organization_id"))))) WITH CHECK ((EXISTS ( SELECT 1
+  WHERE (("i"."id" = "postmortems"."incident_id") AND "coopsetu"."is_org_member"("i"."organization_id"))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."incidents" "i"
-  WHERE (("i"."id" = "postmortems"."incident_id") AND "handoff"."is_org_member"("i"."organization_id")))));
+  WHERE (("i"."id" = "postmortems"."incident_id") AND "coopsetu"."is_org_member"("i"."organization_id")))));
 
 
 
@@ -8099,18 +8658,21 @@ CREATE POLICY "profiles_update_self" ON "public"."profiles" FOR UPDATE USING (("
 
 
 
+ALTER TABLE "public"."programmes" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."programs" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "programs_delete" ON "public"."programs" FOR DELETE USING ("handoff"."has_permission"("organization_id", 'project:create'::"text"));
+CREATE POLICY "programs_delete" ON "public"."programs" FOR DELETE USING ("coopsetu"."has_permission"("organization_id", 'project:create'::"text"));
 
 
 
-CREATE POLICY "programs_insert" ON "public"."programs" FOR INSERT WITH CHECK ("handoff"."has_permission"("organization_id", 'project:create'::"text"));
+CREATE POLICY "programs_insert" ON "public"."programs" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("organization_id", 'project:create'::"text"));
 
 
 
-CREATE POLICY "programs_update" ON "public"."programs" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'project:create'::"text")) WITH CHECK ("handoff"."has_permission"("organization_id", 'project:create'::"text"));
+CREATE POLICY "programs_update" ON "public"."programs" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'project:create'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'project:create'::"text"));
 
 
 
@@ -8120,15 +8682,15 @@ ALTER TABLE "public"."project_activity" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."project_deadlines" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "project_deadlines_insert" ON "public"."project_deadlines" FOR INSERT WITH CHECK (("handoff"."can_view_project"("project_id") AND ("handoff"."has_permission"("organization_id", 'deadline:create'::"text") OR "handoff"."has_permission"("organization_id", 'project:update'::"text")) AND ("created_by_member_id" = "handoff"."current_member_id"("organization_id"))));
+CREATE POLICY "project_deadlines_insert" ON "public"."project_deadlines" FOR INSERT WITH CHECK (("coopsetu"."can_view_project"("project_id") AND ("coopsetu"."has_permission"("organization_id", 'deadline:create'::"text") OR "coopsetu"."has_permission"("organization_id", 'project:update'::"text")) AND ("created_by_member_id" = "coopsetu"."current_member_id"("organization_id"))));
 
 
 
-CREATE POLICY "project_deadlines_select" ON "public"."project_deadlines" FOR SELECT USING ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "project_deadlines_select" ON "public"."project_deadlines" FOR SELECT USING ("coopsetu"."can_view_project"("project_id"));
 
 
 
-CREATE POLICY "project_deadlines_update" ON "public"."project_deadlines" FOR UPDATE USING (("handoff"."can_view_project"("project_id") AND ("handoff"."has_permission"("organization_id", 'deadline:create'::"text") OR "handoff"."has_permission"("organization_id", 'project:update'::"text")))) WITH CHECK (("handoff"."can_view_project"("project_id") AND ("handoff"."has_permission"("organization_id", 'deadline:create'::"text") OR "handoff"."has_permission"("organization_id", 'project:update'::"text"))));
+CREATE POLICY "project_deadlines_update" ON "public"."project_deadlines" FOR UPDATE USING (("coopsetu"."can_view_project"("project_id") AND ("coopsetu"."has_permission"("organization_id", 'deadline:create'::"text") OR "coopsetu"."has_permission"("organization_id", 'project:update'::"text")))) WITH CHECK (("coopsetu"."can_view_project"("project_id") AND ("coopsetu"."has_permission"("organization_id", 'deadline:create'::"text") OR "coopsetu"."has_permission"("organization_id", 'project:update'::"text"))));
 
 
 
@@ -8138,19 +8700,19 @@ ALTER TABLE "public"."project_dependencies" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."project_members" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "project_members_delete" ON "public"."project_members" FOR DELETE USING ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "project_members_delete" ON "public"."project_members" FOR DELETE USING ("coopsetu"."can_manage_project"("project_id"));
 
 
 
-CREATE POLICY "project_members_insert" ON "public"."project_members" FOR INSERT WITH CHECK ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "project_members_insert" ON "public"."project_members" FOR INSERT WITH CHECK ("coopsetu"."can_manage_project"("project_id"));
 
 
 
-CREATE POLICY "project_members_select" ON "public"."project_members" FOR SELECT USING ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "project_members_select" ON "public"."project_members" FOR SELECT USING ("coopsetu"."can_view_project"("project_id"));
 
 
 
-CREATE POLICY "project_members_update" ON "public"."project_members" FOR UPDATE USING ("handoff"."can_manage_project"("project_id")) WITH CHECK ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "project_members_update" ON "public"."project_members" FOR UPDATE USING ("coopsetu"."can_manage_project"("project_id")) WITH CHECK ("coopsetu"."can_manage_project"("project_id"));
 
 
 
@@ -8160,50 +8722,50 @@ ALTER TABLE "public"."project_risks" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."project_teams" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "project_teams_delete" ON "public"."project_teams" FOR DELETE USING ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "project_teams_delete" ON "public"."project_teams" FOR DELETE USING ("coopsetu"."can_manage_project"("project_id"));
 
 
 
-CREATE POLICY "project_teams_insert" ON "public"."project_teams" FOR INSERT WITH CHECK ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "project_teams_insert" ON "public"."project_teams" FOR INSERT WITH CHECK ("coopsetu"."can_manage_project"("project_id"));
 
 
 
-CREATE POLICY "project_teams_select" ON "public"."project_teams" FOR SELECT USING ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "project_teams_select" ON "public"."project_teams" FOR SELECT USING ("coopsetu"."can_view_project"("project_id"));
 
 
 
-CREATE POLICY "project_teams_update" ON "public"."project_teams" FOR UPDATE USING ("handoff"."can_manage_project"("project_id")) WITH CHECK ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "project_teams_update" ON "public"."project_teams" FOR UPDATE USING ("coopsetu"."can_manage_project"("project_id")) WITH CHECK ("coopsetu"."can_manage_project"("project_id"));
 
 
 
 ALTER TABLE "public"."projects" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "projects_insert" ON "public"."projects" FOR INSERT WITH CHECK ("handoff"."has_permission"("organization_id", 'project:create'::"text"));
+CREATE POLICY "projects_insert" ON "public"."projects" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("organization_id", 'project:create'::"text"));
 
 
 
-CREATE POLICY "projects_select" ON "public"."projects" FOR SELECT USING ("handoff"."can_view_project"("id"));
+CREATE POLICY "projects_select" ON "public"."projects" FOR SELECT USING ("coopsetu"."can_view_project"("id"));
 
 
 
-CREATE POLICY "projects_update" ON "public"."projects" FOR UPDATE USING ("handoff"."can_manage_project"("id")) WITH CHECK ("handoff"."can_manage_project"("id"));
+CREATE POLICY "projects_update" ON "public"."projects" FOR UPDATE USING ("coopsetu"."can_manage_project"("id")) WITH CHECK ("coopsetu"."can_manage_project"("id"));
 
 
 
-CREATE POLICY "prs_delete" ON "public"."pull_requests" FOR DELETE USING ("handoff"."has_permission"("organization_id", 'integration:manage'::"text"));
+CREATE POLICY "prs_delete" ON "public"."pull_requests" FOR DELETE USING ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text"));
 
 
 
-CREATE POLICY "prs_insert" ON "public"."pull_requests" FOR INSERT WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "prs_insert" ON "public"."pull_requests" FOR INSERT WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "prs_select" ON "public"."pull_requests" FOR SELECT USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "prs_select" ON "public"."pull_requests" FOR SELECT USING ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "prs_update" ON "public"."pull_requests" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'integration:manage'::"text")) WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "prs_update" ON "public"."pull_requests" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text")) WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
 
 
@@ -8215,27 +8777,27 @@ ALTER TABLE "public"."rate_limits" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "rel_appr_delete" ON "public"."release_approvals" FOR DELETE USING ((EXISTS ( SELECT 1
    FROM "public"."releases" "r"
-  WHERE (("r"."id" = "release_approvals"."release_id") AND "handoff"."is_org_member"("r"."organization_id")))));
+  WHERE (("r"."id" = "release_approvals"."release_id") AND "coopsetu"."is_org_member"("r"."organization_id")))));
 
 
 
 CREATE POLICY "rel_appr_insert" ON "public"."release_approvals" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."releases" "r"
-  WHERE (("r"."id" = "release_approvals"."release_id") AND "handoff"."is_org_member"("r"."organization_id")))));
+  WHERE (("r"."id" = "release_approvals"."release_id") AND "coopsetu"."is_org_member"("r"."organization_id")))));
 
 
 
 CREATE POLICY "rel_appr_select" ON "public"."release_approvals" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."releases" "r"
-  WHERE (("r"."id" = "release_approvals"."release_id") AND "handoff"."can_view_project"("r"."project_id")))));
+  WHERE (("r"."id" = "release_approvals"."release_id") AND "coopsetu"."can_view_project"("r"."project_id")))));
 
 
 
 CREATE POLICY "rel_appr_update" ON "public"."release_approvals" FOR UPDATE USING ((EXISTS ( SELECT 1
    FROM "public"."releases" "r"
-  WHERE (("r"."id" = "release_approvals"."release_id") AND "handoff"."is_org_member"("r"."organization_id"))))) WITH CHECK ((EXISTS ( SELECT 1
+  WHERE (("r"."id" = "release_approvals"."release_id") AND "coopsetu"."is_org_member"("r"."organization_id"))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."releases" "r"
-  WHERE (("r"."id" = "release_approvals"."release_id") AND "handoff"."is_org_member"("r"."organization_id")))));
+  WHERE (("r"."id" = "release_approvals"."release_id") AND "coopsetu"."is_org_member"("r"."organization_id")))));
 
 
 
@@ -8245,15 +8807,15 @@ ALTER TABLE "public"."release_approvals" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."releases" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "releases_insert" ON "public"."releases" FOR INSERT WITH CHECK ("handoff"."has_permission"("organization_id", 'release:create'::"text"));
+CREATE POLICY "releases_insert" ON "public"."releases" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("organization_id", 'release:create'::"text"));
 
 
 
-CREATE POLICY "releases_select" ON "public"."releases" FOR SELECT USING ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "releases_select" ON "public"."releases" FOR SELECT USING ("coopsetu"."can_view_project"("project_id"));
 
 
 
-CREATE POLICY "releases_update" ON "public"."releases" FOR UPDATE USING (("handoff"."has_permission"("organization_id", 'release:create'::"text") OR "handoff"."has_permission"("organization_id", 'release:approve'::"text"))) WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "releases_update" ON "public"."releases" FOR UPDATE USING (("coopsetu"."has_permission"("organization_id", 'release:create'::"text") OR "coopsetu"."has_permission"("organization_id", 'release:approve'::"text"))) WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
 
 
@@ -8263,11 +8825,11 @@ ALTER TABLE "public"."report_deliveries" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."report_exports" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "report_exports_insert" ON "public"."report_exports" FOR INSERT WITH CHECK (("handoff"."has_permission"("organization_id", 'report:export'::"text") AND ("actor_member_id" = "handoff"."current_member_id"("organization_id"))));
+CREATE POLICY "report_exports_insert" ON "public"."report_exports" FOR INSERT WITH CHECK (("coopsetu"."has_permission"("organization_id", 'report:export'::"text") AND ("actor_member_id" = "coopsetu"."current_member_id"("organization_id"))));
 
 
 
-CREATE POLICY "report_exports_select" ON "public"."report_exports" FOR SELECT USING (("handoff"."has_permission"("organization_id", 'report:export'::"text") OR "handoff"."has_permission"("organization_id", 'audit:view'::"text")));
+CREATE POLICY "report_exports_select" ON "public"."report_exports" FOR SELECT USING (("coopsetu"."has_permission"("organization_id", 'report:export'::"text") OR "coopsetu"."has_permission"("organization_id", 'audit:view'::"text")));
 
 
 
@@ -8279,59 +8841,59 @@ ALTER TABLE "public"."report_schedules" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "report_schedules_manage" ON "public"."report_schedules" USING ((EXISTS ( SELECT 1
    FROM "public"."reports" "r"
-  WHERE (("r"."id" = "report_schedules"."report_id") AND "handoff"."has_permission"("r"."organization_id", 'report:schedule'::"text")))));
+  WHERE (("r"."id" = "report_schedules"."report_id") AND "coopsetu"."has_permission"("r"."organization_id", 'report:schedule'::"text")))));
 
 
 
 CREATE POLICY "report_schedules_select" ON "public"."report_schedules" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."reports" "r"
-  WHERE (("r"."id" = "report_schedules"."report_id") AND "handoff"."has_permission"("r"."organization_id", 'report:view'::"text")))));
+  WHERE (("r"."id" = "report_schedules"."report_id") AND "coopsetu"."has_permission"("r"."organization_id", 'report:view'::"text")))));
 
 
 
 ALTER TABLE "public"."reports" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "reports_manage" ON "public"."reports" USING ("handoff"."has_permission"("organization_id", 'report:create'::"text"));
+CREATE POLICY "reports_manage" ON "public"."reports" USING ("coopsetu"."has_permission"("organization_id", 'report:create'::"text"));
 
 
 
-CREATE POLICY "reports_select" ON "public"."reports" FOR SELECT USING ("handoff"."has_permission"("organization_id", 'report:view'::"text"));
+CREATE POLICY "reports_select" ON "public"."reports" FOR SELECT USING ("coopsetu"."has_permission"("organization_id", 'report:view'::"text"));
 
 
 
-CREATE POLICY "repos_delete" ON "public"."repositories" FOR DELETE USING ("handoff"."has_permission"("organization_id", 'integration:manage'::"text"));
+CREATE POLICY "repos_delete" ON "public"."repositories" FOR DELETE USING ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text"));
 
 
 
-CREATE POLICY "repos_insert" ON "public"."repositories" FOR INSERT WITH CHECK ("handoff"."has_permission"("organization_id", 'integration:manage'::"text"));
+CREATE POLICY "repos_insert" ON "public"."repositories" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text"));
 
 
 
-CREATE POLICY "repos_select" ON "public"."repositories" FOR SELECT USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "repos_select" ON "public"."repositories" FOR SELECT USING ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "repos_update" ON "public"."repositories" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'integration:manage'::"text")) WITH CHECK ("handoff"."has_permission"("organization_id", 'integration:manage'::"text"));
+CREATE POLICY "repos_update" ON "public"."repositories" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'integration:manage'::"text"));
 
 
 
 ALTER TABLE "public"."repositories" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "risks_delete" ON "public"."project_risks" FOR DELETE USING ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "risks_delete" ON "public"."project_risks" FOR DELETE USING ("coopsetu"."can_manage_project"("project_id"));
 
 
 
-CREATE POLICY "risks_insert" ON "public"."project_risks" FOR INSERT WITH CHECK ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "risks_insert" ON "public"."project_risks" FOR INSERT WITH CHECK ("coopsetu"."can_manage_project"("project_id"));
 
 
 
-CREATE POLICY "risks_select" ON "public"."project_risks" FOR SELECT USING ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "risks_select" ON "public"."project_risks" FOR SELECT USING ("coopsetu"."can_view_project"("project_id"));
 
 
 
-CREATE POLICY "risks_update" ON "public"."project_risks" FOR UPDATE USING ("handoff"."can_manage_project"("project_id")) WITH CHECK ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "risks_update" ON "public"."project_risks" FOR UPDATE USING ("coopsetu"."can_manage_project"("project_id")) WITH CHECK ("coopsetu"."can_manage_project"("project_id"));
 
 
 
@@ -8340,13 +8902,13 @@ ALTER TABLE "public"."role_permissions" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "role_permissions_delete" ON "public"."role_permissions" FOR DELETE USING ((EXISTS ( SELECT 1
    FROM "public"."roles" "r"
-  WHERE (("r"."id" = "role_permissions"."role_id") AND ("r"."organization_id" IS NOT NULL) AND "handoff"."has_permission"("r"."organization_id", 'member:manage'::"text")))));
+  WHERE (("r"."id" = "role_permissions"."role_id") AND ("r"."organization_id" IS NOT NULL) AND "coopsetu"."has_permission"("r"."organization_id", 'member:manage'::"text")))));
 
 
 
 CREATE POLICY "role_permissions_insert" ON "public"."role_permissions" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."roles" "r"
-  WHERE (("r"."id" = "role_permissions"."role_id") AND ("r"."organization_id" IS NOT NULL) AND "handoff"."has_permission"("r"."organization_id", 'member:manage'::"text")))));
+  WHERE (("r"."id" = "role_permissions"."role_id") AND ("r"."organization_id" IS NOT NULL) AND "coopsetu"."has_permission"("r"."organization_id", 'member:manage'::"text")))));
 
 
 
@@ -8356,28 +8918,28 @@ CREATE POLICY "role_permissions_select" ON "public"."role_permissions" FOR SELEC
 
 CREATE POLICY "role_permissions_update" ON "public"."role_permissions" FOR UPDATE USING ((EXISTS ( SELECT 1
    FROM "public"."roles" "r"
-  WHERE (("r"."id" = "role_permissions"."role_id") AND ("r"."organization_id" IS NOT NULL) AND "handoff"."has_permission"("r"."organization_id", 'member:manage'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
+  WHERE (("r"."id" = "role_permissions"."role_id") AND ("r"."organization_id" IS NOT NULL) AND "coopsetu"."has_permission"("r"."organization_id", 'member:manage'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."roles" "r"
-  WHERE (("r"."id" = "role_permissions"."role_id") AND ("r"."organization_id" IS NOT NULL) AND "handoff"."has_permission"("r"."organization_id", 'member:manage'::"text")))));
+  WHERE (("r"."id" = "role_permissions"."role_id") AND ("r"."organization_id" IS NOT NULL) AND "coopsetu"."has_permission"("r"."organization_id", 'member:manage'::"text")))));
 
 
 
 ALTER TABLE "public"."roles" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "roles_delete" ON "public"."roles" FOR DELETE USING ((("organization_id" IS NOT NULL) AND "handoff"."has_permission"("organization_id", 'member:manage'::"text")));
+CREATE POLICY "roles_delete" ON "public"."roles" FOR DELETE USING ((("organization_id" IS NOT NULL) AND "coopsetu"."has_permission"("organization_id", 'member:manage'::"text")));
 
 
 
-CREATE POLICY "roles_insert" ON "public"."roles" FOR INSERT WITH CHECK ((("organization_id" IS NOT NULL) AND "handoff"."has_permission"("organization_id", 'member:manage'::"text")));
+CREATE POLICY "roles_insert" ON "public"."roles" FOR INSERT WITH CHECK ((("organization_id" IS NOT NULL) AND "coopsetu"."has_permission"("organization_id", 'member:manage'::"text")));
 
 
 
-CREATE POLICY "roles_select" ON "public"."roles" FOR SELECT USING ((("organization_id" IS NULL) OR "handoff"."is_org_member"("organization_id")));
+CREATE POLICY "roles_select" ON "public"."roles" FOR SELECT USING ((("organization_id" IS NULL) OR "coopsetu"."is_org_member"("organization_id")));
 
 
 
-CREATE POLICY "roles_update" ON "public"."roles" FOR UPDATE USING ((("organization_id" IS NOT NULL) AND "handoff"."has_permission"("organization_id", 'member:manage'::"text"))) WITH CHECK ((("organization_id" IS NOT NULL) AND "handoff"."has_permission"("organization_id", 'member:manage'::"text")));
+CREATE POLICY "roles_update" ON "public"."roles" FOR UPDATE USING ((("organization_id" IS NOT NULL) AND "coopsetu"."has_permission"("organization_id", 'member:manage'::"text"))) WITH CHECK ((("organization_id" IS NOT NULL) AND "coopsetu"."has_permission"("organization_id", 'member:manage'::"text")));
 
 
 
@@ -8396,7 +8958,7 @@ CREATE POLICY "saved_views_insert" ON "public"."saved_views" FOR INSERT WITH CHE
 
 
 
-CREATE POLICY "saved_views_select" ON "public"."saved_views" FOR SELECT USING (("handoff"."is_org_member"("organization_id") AND ("is_shared" OR (EXISTS ( SELECT 1
+CREATE POLICY "saved_views_select" ON "public"."saved_views" FOR SELECT USING (("coopsetu"."is_org_member"("organization_id") AND ("is_shared" OR (EXISTS ( SELECT 1
    FROM "public"."organization_members" "m"
   WHERE (("m"."id" = "saved_views"."owner_member_id") AND ("m"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))))));
 
@@ -8412,71 +8974,71 @@ CREATE POLICY "saved_views_update" ON "public"."saved_views" FOR UPDATE USING ((
 
 CREATE POLICY "sec_checks_delete" ON "public"."security_review_checks" FOR DELETE USING ((EXISTS ( SELECT 1
    FROM "public"."security_reviews" "sr"
-  WHERE (("sr"."id" = "security_review_checks"."security_review_id") AND "handoff"."has_permission"("sr"."organization_id", 'security:review'::"text")))));
+  WHERE (("sr"."id" = "security_review_checks"."security_review_id") AND "coopsetu"."has_permission"("sr"."organization_id", 'security:review'::"text")))));
 
 
 
 CREATE POLICY "sec_checks_insert" ON "public"."security_review_checks" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."security_reviews" "sr"
-  WHERE (("sr"."id" = "security_review_checks"."security_review_id") AND "handoff"."has_permission"("sr"."organization_id", 'security:review'::"text")))));
+  WHERE (("sr"."id" = "security_review_checks"."security_review_id") AND "coopsetu"."has_permission"("sr"."organization_id", 'security:review'::"text")))));
 
 
 
 CREATE POLICY "sec_checks_select" ON "public"."security_review_checks" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."security_reviews" "sr"
-  WHERE (("sr"."id" = "security_review_checks"."security_review_id") AND "handoff"."can_view_project"("sr"."project_id")))));
+  WHERE (("sr"."id" = "security_review_checks"."security_review_id") AND "coopsetu"."can_view_project"("sr"."project_id")))));
 
 
 
 CREATE POLICY "sec_checks_update" ON "public"."security_review_checks" FOR UPDATE USING ((EXISTS ( SELECT 1
    FROM "public"."security_reviews" "sr"
-  WHERE (("sr"."id" = "security_review_checks"."security_review_id") AND "handoff"."has_permission"("sr"."organization_id", 'security:review'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
+  WHERE (("sr"."id" = "security_review_checks"."security_review_id") AND "coopsetu"."has_permission"("sr"."organization_id", 'security:review'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."security_reviews" "sr"
-  WHERE (("sr"."id" = "security_review_checks"."security_review_id") AND "handoff"."has_permission"("sr"."organization_id", 'security:review'::"text")))));
+  WHERE (("sr"."id" = "security_review_checks"."security_review_id") AND "coopsetu"."has_permission"("sr"."organization_id", 'security:review'::"text")))));
 
 
 
-CREATE POLICY "sec_findings_delete" ON "public"."security_findings" FOR DELETE USING ("handoff"."has_permission"("organization_id", 'security:review'::"text"));
+CREATE POLICY "sec_findings_delete" ON "public"."security_findings" FOR DELETE USING ("coopsetu"."has_permission"("organization_id", 'security:review'::"text"));
 
 
 
-CREATE POLICY "sec_findings_insert" ON "public"."security_findings" FOR INSERT WITH CHECK ("handoff"."has_permission"("organization_id", 'security:review'::"text"));
+CREATE POLICY "sec_findings_insert" ON "public"."security_findings" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("organization_id", 'security:review'::"text"));
 
 
 
-CREATE POLICY "sec_findings_select" ON "public"."security_findings" FOR SELECT USING ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "sec_findings_select" ON "public"."security_findings" FOR SELECT USING ("coopsetu"."can_view_project"("project_id"));
 
 
 
-CREATE POLICY "sec_findings_update" ON "public"."security_findings" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'security:review'::"text")) WITH CHECK ("handoff"."has_permission"("organization_id", 'security:review'::"text"));
+CREATE POLICY "sec_findings_update" ON "public"."security_findings" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'security:review'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'security:review'::"text"));
 
 
 
-CREATE POLICY "sec_review_assignees_manage" ON "public"."security_review_assignees" USING ("handoff"."can_view_project"(( SELECT "security_reviews"."project_id"
+CREATE POLICY "sec_review_assignees_manage" ON "public"."security_review_assignees" USING ("coopsetu"."can_view_project"(( SELECT "security_reviews"."project_id"
    FROM "public"."security_reviews"
   WHERE ("security_reviews"."id" = "security_review_assignees"."security_review_id"))));
 
 
 
-CREATE POLICY "sec_review_assignees_select" ON "public"."security_review_assignees" FOR SELECT USING ("handoff"."can_view_project"(( SELECT "security_reviews"."project_id"
+CREATE POLICY "sec_review_assignees_select" ON "public"."security_review_assignees" FOR SELECT USING ("coopsetu"."can_view_project"(( SELECT "security_reviews"."project_id"
    FROM "public"."security_reviews"
   WHERE ("security_reviews"."id" = "security_review_assignees"."security_review_id"))));
 
 
 
-CREATE POLICY "sec_reviews_delete" ON "public"."security_reviews" FOR DELETE USING ("handoff"."has_permission"("organization_id", 'security:review'::"text"));
+CREATE POLICY "sec_reviews_delete" ON "public"."security_reviews" FOR DELETE USING ("coopsetu"."has_permission"("organization_id", 'security:review'::"text"));
 
 
 
-CREATE POLICY "sec_reviews_insert" ON "public"."security_reviews" FOR INSERT WITH CHECK ("handoff"."has_permission"("organization_id", 'security:review'::"text"));
+CREATE POLICY "sec_reviews_insert" ON "public"."security_reviews" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("organization_id", 'security:review'::"text"));
 
 
 
-CREATE POLICY "sec_reviews_select" ON "public"."security_reviews" FOR SELECT USING ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "sec_reviews_select" ON "public"."security_reviews" FOR SELECT USING ("coopsetu"."can_view_project"("project_id"));
 
 
 
-CREATE POLICY "sec_reviews_update" ON "public"."security_reviews" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'security:review'::"text")) WITH CHECK ("handoff"."has_permission"("organization_id", 'security:review'::"text"));
+CREATE POLICY "sec_reviews_update" ON "public"."security_reviews" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'security:review'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'security:review'::"text"));
 
 
 
@@ -8495,91 +9057,72 @@ ALTER TABLE "public"."security_reviews" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."skills" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "skills_delete" ON "public"."skills" FOR DELETE USING ((("organization_id" IS NOT NULL) AND "handoff"."has_permission"("organization_id", 'member:manage'::"text")));
+CREATE POLICY "skills_delete" ON "public"."skills" FOR DELETE USING ((("organization_id" IS NOT NULL) AND "coopsetu"."has_permission"("organization_id", 'member:manage'::"text")));
 
 
 
-CREATE POLICY "skills_insert" ON "public"."skills" FOR INSERT WITH CHECK ((("organization_id" IS NOT NULL) AND "handoff"."has_permission"("organization_id", 'member:manage'::"text")));
+CREATE POLICY "skills_insert" ON "public"."skills" FOR INSERT WITH CHECK ((("organization_id" IS NOT NULL) AND "coopsetu"."has_permission"("organization_id", 'member:manage'::"text")));
 
 
 
-CREATE POLICY "skills_select" ON "public"."skills" FOR SELECT USING ((("organization_id" IS NULL) OR "handoff"."is_org_member"("organization_id")));
+CREATE POLICY "skills_public_read" ON "public"."skills" FOR SELECT USING (true);
 
 
 
-CREATE POLICY "skills_update" ON "public"."skills" FOR UPDATE USING ((("organization_id" IS NOT NULL) AND "handoff"."has_permission"("organization_id", 'member:manage'::"text"))) WITH CHECK ((("organization_id" IS NOT NULL) AND "handoff"."has_permission"("organization_id", 'member:manage'::"text")));
+CREATE POLICY "skills_select" ON "public"."skills" FOR SELECT USING ((("organization_id" IS NULL) OR "coopsetu"."is_org_member"("organization_id")));
+
+
+
+CREATE POLICY "skills_update" ON "public"."skills" FOR UPDATE USING ((("organization_id" IS NOT NULL) AND "coopsetu"."has_permission"("organization_id", 'member:manage'::"text"))) WITH CHECK ((("organization_id" IS NOT NULL) AND "coopsetu"."has_permission"("organization_id", 'member:manage'::"text")));
 
 
 
 ALTER TABLE "public"."sprints" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "sprints_delete" ON "public"."sprints" FOR DELETE USING ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "sprints_delete" ON "public"."sprints" FOR DELETE USING ("coopsetu"."can_manage_project"("project_id"));
 
 
 
-CREATE POLICY "sprints_insert" ON "public"."sprints" FOR INSERT WITH CHECK ("handoff"."can_manage_project"("project_id"));
+CREATE POLICY "sprints_insert" ON "public"."sprints" FOR INSERT WITH CHECK ("coopsetu"."can_manage_project"("project_id"));
 
 
 
-CREATE POLICY "sprints_select" ON "public"."sprints" FOR SELECT USING ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "sprints_select" ON "public"."sprints" FOR SELECT USING ("coopsetu"."can_view_project"("project_id"));
 
 
 
-CREATE POLICY "sprints_update" ON "public"."sprints" FOR UPDATE USING ("handoff"."can_manage_project"("project_id")) WITH CHECK ("handoff"."can_manage_project"("project_id"));
-
-
-
-ALTER TABLE "public"."student_team_join_codes" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "student_team_labels_select" ON "public"."student_team_member_labels" FOR SELECT USING ("handoff"."is_org_member"(( SELECT "organization_members"."organization_id"
-   FROM "public"."organization_members"
-  WHERE ("organization_members"."id" = "student_team_member_labels"."organization_member_id"))));
-
-
-
-ALTER TABLE "public"."student_team_member_labels" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."student_team_settings" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "student_team_settings_select" ON "public"."student_team_settings" FOR SELECT USING ("handoff"."is_org_member"("organization_id"));
-
-
-
-CREATE POLICY "student_team_settings_update" ON "public"."student_team_settings" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'student_team:manage_settings'::"text")) WITH CHECK ("handoff"."has_permission"("organization_id", 'student_team:manage_settings'::"text"));
+CREATE POLICY "sprints_update" ON "public"."sprints" FOR UPDATE USING ("coopsetu"."can_manage_project"("project_id")) WITH CHECK ("coopsetu"."can_manage_project"("project_id"));
 
 
 
 ALTER TABLE "public"."task_activity" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "task_activity_insert" ON "public"."task_activity" FOR INSERT WITH CHECK ("handoff"."can_view_task"("task_id"));
+CREATE POLICY "task_activity_insert" ON "public"."task_activity" FOR INSERT WITH CHECK ("coopsetu"."can_view_task"("task_id"));
 
 
 
-CREATE POLICY "task_activity_select" ON "public"."task_activity" FOR SELECT USING ("handoff"."can_view_task"("task_id"));
+CREATE POLICY "task_activity_select" ON "public"."task_activity" FOR SELECT USING ("coopsetu"."can_view_task"("task_id"));
 
 
 
 ALTER TABLE "public"."task_assignees" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "task_assignees_delete" ON "public"."task_assignees" FOR DELETE USING ("handoff"."can_assign_task"("task_id"));
+CREATE POLICY "task_assignees_delete" ON "public"."task_assignees" FOR DELETE USING ("coopsetu"."can_assign_task"("task_id"));
 
 
 
-CREATE POLICY "task_assignees_insert" ON "public"."task_assignees" FOR INSERT WITH CHECK ("handoff"."can_assign_to"("task_id", "organization_member_id"));
+CREATE POLICY "task_assignees_insert" ON "public"."task_assignees" FOR INSERT WITH CHECK ("coopsetu"."can_assign_to"("task_id", "organization_member_id"));
 
 
 
-CREATE POLICY "task_assignees_select" ON "public"."task_assignees" FOR SELECT USING ("handoff"."can_view_task_assignment_history"("task_id"));
+CREATE POLICY "task_assignees_select" ON "public"."task_assignees" FOR SELECT USING ("coopsetu"."can_view_task_assignment_history"("task_id"));
 
 
 
-CREATE POLICY "task_assignees_update" ON "public"."task_assignees" FOR UPDATE USING ("handoff"."can_assign_task"("task_id")) WITH CHECK ("handoff"."can_assign_to"("task_id", "organization_member_id"));
+CREATE POLICY "task_assignees_update" ON "public"."task_assignees" FOR UPDATE USING ("coopsetu"."can_assign_task"("task_id")) WITH CHECK ("coopsetu"."can_assign_to"("task_id", "organization_member_id"));
 
 
 
@@ -8595,76 +9138,76 @@ ALTER TABLE "public"."task_comments" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."task_dependencies" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "task_deps_delete" ON "public"."task_dependencies" FOR DELETE USING ("handoff"."can_edit_task"("task_id"));
+CREATE POLICY "task_deps_delete" ON "public"."task_dependencies" FOR DELETE USING ("coopsetu"."can_edit_task"("task_id"));
 
 
 
-CREATE POLICY "task_deps_insert" ON "public"."task_dependencies" FOR INSERT WITH CHECK (("handoff"."can_edit_task"("task_id") AND "handoff"."can_view_task"("depends_on_task_id")));
+CREATE POLICY "task_deps_insert" ON "public"."task_dependencies" FOR INSERT WITH CHECK (("coopsetu"."can_edit_task"("task_id") AND "coopsetu"."can_view_task"("depends_on_task_id")));
 
 
 
-CREATE POLICY "task_deps_select" ON "public"."task_dependencies" FOR SELECT USING (("handoff"."can_view_task"("task_id") AND "handoff"."can_view_task"("depends_on_task_id")));
+CREATE POLICY "task_deps_select" ON "public"."task_dependencies" FOR SELECT USING (("coopsetu"."can_view_task"("task_id") AND "coopsetu"."can_view_task"("depends_on_task_id")));
 
 
 
-CREATE POLICY "task_deps_update" ON "public"."task_dependencies" FOR UPDATE USING ("handoff"."can_edit_task"("task_id")) WITH CHECK (("handoff"."can_edit_task"("task_id") AND "handoff"."can_view_task"("depends_on_task_id")));
+CREATE POLICY "task_deps_update" ON "public"."task_dependencies" FOR UPDATE USING ("coopsetu"."can_edit_task"("task_id")) WITH CHECK (("coopsetu"."can_edit_task"("task_id") AND "coopsetu"."can_view_task"("depends_on_task_id")));
 
 
 
 ALTER TABLE "public"."task_label_links" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "task_label_links_delete" ON "public"."task_label_links" FOR DELETE USING ("handoff"."can_edit_task"("task_id"));
+CREATE POLICY "task_label_links_delete" ON "public"."task_label_links" FOR DELETE USING ("coopsetu"."can_edit_task"("task_id"));
 
 
 
-CREATE POLICY "task_label_links_insert" ON "public"."task_label_links" FOR INSERT WITH CHECK ("handoff"."can_edit_task"("task_id"));
+CREATE POLICY "task_label_links_insert" ON "public"."task_label_links" FOR INSERT WITH CHECK ("coopsetu"."can_edit_task"("task_id"));
 
 
 
-CREATE POLICY "task_label_links_select" ON "public"."task_label_links" FOR SELECT USING ("handoff"."can_view_task"("task_id"));
+CREATE POLICY "task_label_links_select" ON "public"."task_label_links" FOR SELECT USING ("coopsetu"."can_view_task"("task_id"));
 
 
 
-CREATE POLICY "task_label_links_update" ON "public"."task_label_links" FOR UPDATE USING ("handoff"."can_edit_task"("task_id")) WITH CHECK ("handoff"."can_edit_task"("task_id"));
+CREATE POLICY "task_label_links_update" ON "public"."task_label_links" FOR UPDATE USING ("coopsetu"."can_edit_task"("task_id")) WITH CHECK ("coopsetu"."can_edit_task"("task_id"));
 
 
 
 ALTER TABLE "public"."task_labels" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "task_labels_delete" ON "public"."task_labels" FOR DELETE USING ("handoff"."has_permission"("organization_id", 'task:create'::"text"));
+CREATE POLICY "task_labels_delete" ON "public"."task_labels" FOR DELETE USING ("coopsetu"."has_permission"("organization_id", 'task:create'::"text"));
 
 
 
-CREATE POLICY "task_labels_insert" ON "public"."task_labels" FOR INSERT WITH CHECK ("handoff"."has_permission"("organization_id", 'task:create'::"text"));
+CREATE POLICY "task_labels_insert" ON "public"."task_labels" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("organization_id", 'task:create'::"text"));
 
 
 
-CREATE POLICY "task_labels_select" ON "public"."task_labels" FOR SELECT USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "task_labels_select" ON "public"."task_labels" FOR SELECT USING ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "task_labels_update" ON "public"."task_labels" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'task:create'::"text")) WITH CHECK ("handoff"."has_permission"("organization_id", 'task:create'::"text"));
+CREATE POLICY "task_labels_update" ON "public"."task_labels" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'task:create'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'task:create'::"text"));
 
 
 
 ALTER TABLE "public"."task_visibility_members" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "task_visibility_members_delete" ON "public"."task_visibility_members" FOR DELETE USING ("handoff"."can_assign_task"("task_id"));
+CREATE POLICY "task_visibility_members_delete" ON "public"."task_visibility_members" FOR DELETE USING ("coopsetu"."can_assign_task"("task_id"));
 
 
 
-CREATE POLICY "task_visibility_members_insert" ON "public"."task_visibility_members" FOR INSERT WITH CHECK ("handoff"."can_assign_to"("task_id", "member_id"));
+CREATE POLICY "task_visibility_members_insert" ON "public"."task_visibility_members" FOR INSERT WITH CHECK ("coopsetu"."can_assign_to"("task_id", "member_id"));
 
 
 
-CREATE POLICY "task_visibility_members_select" ON "public"."task_visibility_members" FOR SELECT USING ("handoff"."can_view_task"("task_id"));
+CREATE POLICY "task_visibility_members_select" ON "public"."task_visibility_members" FOR SELECT USING ("coopsetu"."can_view_task"("task_id"));
 
 
 
-CREATE POLICY "task_visibility_members_update" ON "public"."task_visibility_members" FOR UPDATE USING ("handoff"."can_assign_task"("task_id")) WITH CHECK ("handoff"."can_assign_to"("task_id", "member_id"));
+CREATE POLICY "task_visibility_members_update" ON "public"."task_visibility_members" FOR UPDATE USING ("coopsetu"."can_assign_task"("task_id")) WITH CHECK ("coopsetu"."can_assign_to"("task_id", "member_id"));
 
 
 
@@ -8674,63 +9217,63 @@ ALTER TABLE "public"."task_watchers" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."tasks" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "tasks_delete" ON "public"."tasks" FOR DELETE USING ("handoff"."can_delete_task"("id"));
+CREATE POLICY "tasks_delete" ON "public"."tasks" FOR DELETE USING ("coopsetu"."can_delete_task"("id"));
 
 
 
-CREATE POLICY "tasks_insert" ON "public"."tasks" FOR INSERT WITH CHECK ("handoff"."can_create_task_with_visibility"("organization_id", "project_id", "visibility_scope"));
+CREATE POLICY "tasks_insert" ON "public"."tasks" FOR INSERT WITH CHECK ("coopsetu"."can_create_task_with_visibility"("organization_id", "project_id", "visibility_scope"));
 
 
 
-CREATE POLICY "tasks_select" ON "public"."tasks" FOR SELECT USING (((( SELECT "handoff"."current_member_id"("tasks"."organization_id") AS "current_member_id") IS NOT NULL) AND "handoff"."has_permission"("organization_id", 'task:view'::"text") AND ("handoff"."is_org_admin_or_owner"("organization_id") OR (COALESCE("visibility_scope", 'PRIVATE_ASSIGNMENT'::"text") = 'ORGANIZATION_VISIBLE'::"text") OR ((COALESCE("visibility_scope", 'PRIVATE_ASSIGNMENT'::"text") = 'PROJECT_SHARED'::"text") AND "handoff"."can_view_project"("project_id")) OR ("handoff"."current_member_id"("organization_id") = "reporter_member_id") OR ("handoff"."current_member_id"("organization_id") = "primary_assignee_member_id") OR (EXISTS ( SELECT 1
+CREATE POLICY "tasks_select" ON "public"."tasks" FOR SELECT USING (((( SELECT "coopsetu"."current_member_id"("tasks"."organization_id") AS "current_member_id") IS NOT NULL) AND "coopsetu"."has_permission"("organization_id", 'task:view'::"text") AND ("coopsetu"."is_org_admin_or_owner"("organization_id") OR (COALESCE("visibility_scope", 'PRIVATE_ASSIGNMENT'::"text") = 'ORGANIZATION_VISIBLE'::"text") OR ((COALESCE("visibility_scope", 'PRIVATE_ASSIGNMENT'::"text") = 'PROJECT_SHARED'::"text") AND "coopsetu"."can_view_project"("project_id")) OR ("coopsetu"."current_member_id"("organization_id") = "reporter_member_id") OR ("coopsetu"."current_member_id"("organization_id") = "primary_assignee_member_id") OR (EXISTS ( SELECT 1
    FROM "public"."task_assignees" "ta"
-  WHERE (("ta"."task_id" = "tasks"."id") AND ("ta"."organization_member_id" = "handoff"."current_member_id"("tasks"."organization_id")) AND ("ta"."removed_at" IS NULL)))) OR (EXISTS ( SELECT 1
+  WHERE (("ta"."task_id" = "tasks"."id") AND ("ta"."organization_member_id" = "coopsetu"."current_member_id"("tasks"."organization_id")) AND ("ta"."removed_at" IS NULL)))) OR (EXISTS ( SELECT 1
    FROM "public"."task_assignees" "ta"
-  WHERE (("ta"."task_id" = "tasks"."id") AND (COALESCE("ta"."assigned_by_member_id", "ta"."assigned_by") = "handoff"."current_member_id"("tasks"."organization_id"))))) OR (EXISTS ( SELECT 1
+  WHERE (("ta"."task_id" = "tasks"."id") AND (COALESCE("ta"."assigned_by_member_id", "ta"."assigned_by") = "coopsetu"."current_member_id"("tasks"."organization_id"))))) OR (EXISTS ( SELECT 1
    FROM "public"."task_visibility_members" "tvm"
-  WHERE (("tvm"."task_id" = "tasks"."id") AND ("tvm"."member_id" = "handoff"."current_member_id"("tasks"."organization_id")) AND ("tvm"."revoked_at" IS NULL)))) OR "handoff"."is_project_responsible_manager"("project_id") OR ("handoff"."has_permission"("organization_id", 'task:view_team_assignments'::"text") AND "handoff"."manages_task_assignee"("id")))));
+  WHERE (("tvm"."task_id" = "tasks"."id") AND ("tvm"."member_id" = "coopsetu"."current_member_id"("tasks"."organization_id")) AND ("tvm"."revoked_at" IS NULL)))) OR "coopsetu"."is_project_responsible_manager"("project_id") OR ("coopsetu"."has_permission"("organization_id", 'task:view_team_assignments'::"text") AND "coopsetu"."manages_task_assignee"("id")))));
 
 
 
-CREATE POLICY "tasks_update" ON "public"."tasks" FOR UPDATE USING ("handoff"."can_edit_task"("id")) WITH CHECK (("handoff"."can_edit_task"("id") AND "handoff"."can_set_task_visibility"("id", "visibility_scope")));
+CREATE POLICY "tasks_update" ON "public"."tasks" FOR UPDATE USING ("coopsetu"."can_edit_task"("id")) WITH CHECK (("coopsetu"."can_edit_task"("id") AND "coopsetu"."can_set_task_visibility"("id", "visibility_scope")));
 
 
 
 ALTER TABLE "public"."team_members" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "team_members_delete" ON "public"."team_members" FOR DELETE USING ("handoff"."has_permission"("handoff"."team_org"("team_id"), 'team:manage_members'::"text"));
+CREATE POLICY "team_members_delete" ON "public"."team_members" FOR DELETE USING ("coopsetu"."has_permission"("coopsetu"."team_org"("team_id"), 'team:manage_members'::"text"));
 
 
 
-CREATE POLICY "team_members_insert" ON "public"."team_members" FOR INSERT WITH CHECK ("handoff"."has_permission"("handoff"."team_org"("team_id"), 'team:manage_members'::"text"));
+CREATE POLICY "team_members_insert" ON "public"."team_members" FOR INSERT WITH CHECK ("coopsetu"."has_permission"("coopsetu"."team_org"("team_id"), 'team:manage_members'::"text"));
 
 
 
-CREATE POLICY "team_members_select" ON "public"."team_members" FOR SELECT USING ("handoff"."is_org_member"("handoff"."team_org"("team_id")));
+CREATE POLICY "team_members_select" ON "public"."team_members" FOR SELECT USING ("coopsetu"."is_org_member"("coopsetu"."team_org"("team_id")));
 
 
 
-CREATE POLICY "team_members_update" ON "public"."team_members" FOR UPDATE USING ("handoff"."has_permission"("handoff"."team_org"("team_id"), 'team:manage_members'::"text")) WITH CHECK ("handoff"."has_permission"("handoff"."team_org"("team_id"), 'team:manage_members'::"text"));
+CREATE POLICY "team_members_update" ON "public"."team_members" FOR UPDATE USING ("coopsetu"."has_permission"("coopsetu"."team_org"("team_id"), 'team:manage_members'::"text")) WITH CHECK ("coopsetu"."has_permission"("coopsetu"."team_org"("team_id"), 'team:manage_members'::"text"));
 
 
 
 ALTER TABLE "public"."teams" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "teams_delete" ON "public"."teams" FOR DELETE USING ("handoff"."has_permission"("organization_id", 'team:update'::"text"));
+CREATE POLICY "teams_delete" ON "public"."teams" FOR DELETE USING ("coopsetu"."has_permission"("organization_id", 'team:update'::"text"));
 
 
 
-CREATE POLICY "teams_insert" ON "public"."teams" FOR INSERT WITH CHECK ((("handoff"."has_permission"("organization_id", 'team:create'::"text") AND ("team_type" = 'ORGANIZATION_TEAM'::"text")) OR ("handoff"."has_permission"("organization_id", 'team:create_project_team'::"text") AND ("team_type" = 'PROJECT_TEAM'::"text"))));
+CREATE POLICY "teams_insert" ON "public"."teams" FOR INSERT WITH CHECK ((("coopsetu"."has_permission"("organization_id", 'team:create'::"text") AND ("team_type" = 'ORGANIZATION_TEAM'::"text")) OR ("coopsetu"."has_permission"("organization_id", 'team:create_project_team'::"text") AND ("team_type" = 'PROJECT_TEAM'::"text"))));
 
 
 
-CREATE POLICY "teams_select" ON "public"."teams" FOR SELECT USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "teams_select" ON "public"."teams" FOR SELECT USING ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "teams_update" ON "public"."teams" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'team:update'::"text")) WITH CHECK ("handoff"."has_permission"("organization_id", 'team:update'::"text"));
+CREATE POLICY "teams_update" ON "public"."teams" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'team:update'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'team:update'::"text"));
 
 
 
@@ -8739,40 +9282,40 @@ ALTER TABLE "public"."test_cases" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "test_cases_delete" ON "public"."test_cases" FOR DELETE USING ((EXISTS ( SELECT 1
    FROM "public"."test_plans" "tp"
-  WHERE (("tp"."id" = "test_cases"."test_plan_id") AND "handoff"."can_view_project"("tp"."project_id")))));
+  WHERE (("tp"."id" = "test_cases"."test_plan_id") AND "coopsetu"."can_view_project"("tp"."project_id")))));
 
 
 
 CREATE POLICY "test_cases_insert" ON "public"."test_cases" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."test_plans" "tp"
-  WHERE (("tp"."id" = "test_cases"."test_plan_id") AND "handoff"."can_view_project"("tp"."project_id")))));
+  WHERE (("tp"."id" = "test_cases"."test_plan_id") AND "coopsetu"."can_view_project"("tp"."project_id")))));
 
 
 
 CREATE POLICY "test_cases_select" ON "public"."test_cases" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."test_plans" "tp"
-  WHERE (("tp"."id" = "test_cases"."test_plan_id") AND "handoff"."can_view_project"("tp"."project_id")))));
+  WHERE (("tp"."id" = "test_cases"."test_plan_id") AND "coopsetu"."can_view_project"("tp"."project_id")))));
 
 
 
 CREATE POLICY "test_cases_update" ON "public"."test_cases" FOR UPDATE USING ((EXISTS ( SELECT 1
    FROM "public"."test_plans" "tp"
-  WHERE (("tp"."id" = "test_cases"."test_plan_id") AND "handoff"."can_view_project"("tp"."project_id"))))) WITH CHECK ((EXISTS ( SELECT 1
+  WHERE (("tp"."id" = "test_cases"."test_plan_id") AND "coopsetu"."can_view_project"("tp"."project_id"))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."test_plans" "tp"
-  WHERE (("tp"."id" = "test_cases"."test_plan_id") AND "handoff"."can_view_project"("tp"."project_id")))));
+  WHERE (("tp"."id" = "test_cases"."test_plan_id") AND "coopsetu"."can_view_project"("tp"."project_id")))));
 
 
 
 ALTER TABLE "public"."test_plan_assignments" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "test_plan_assignments_manage" ON "public"."test_plan_assignments" USING ("handoff"."can_view_project"(( SELECT "test_plans"."project_id"
+CREATE POLICY "test_plan_assignments_manage" ON "public"."test_plan_assignments" USING ("coopsetu"."can_view_project"(( SELECT "test_plans"."project_id"
    FROM "public"."test_plans"
   WHERE ("test_plans"."id" = "test_plan_assignments"."test_plan_id"))));
 
 
 
-CREATE POLICY "test_plan_assignments_select" ON "public"."test_plan_assignments" FOR SELECT USING ("handoff"."can_view_project"(( SELECT "test_plans"."project_id"
+CREATE POLICY "test_plan_assignments_select" ON "public"."test_plan_assignments" FOR SELECT USING ("coopsetu"."can_view_project"(( SELECT "test_plans"."project_id"
    FROM "public"."test_plans"
   WHERE ("test_plans"."id" = "test_plan_assignments"."test_plan_id"))));
 
@@ -8781,13 +9324,13 @@ CREATE POLICY "test_plan_assignments_select" ON "public"."test_plan_assignments"
 ALTER TABLE "public"."test_plan_tasks" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "test_plan_tasks_manage" ON "public"."test_plan_tasks" USING ("handoff"."can_view_project"(( SELECT "test_plans"."project_id"
+CREATE POLICY "test_plan_tasks_manage" ON "public"."test_plan_tasks" USING ("coopsetu"."can_view_project"(( SELECT "test_plans"."project_id"
    FROM "public"."test_plans"
   WHERE ("test_plans"."id" = "test_plan_tasks"."test_plan_id"))));
 
 
 
-CREATE POLICY "test_plan_tasks_select" ON "public"."test_plan_tasks" FOR SELECT USING ("handoff"."can_view_project"(( SELECT "test_plans"."project_id"
+CREATE POLICY "test_plan_tasks_select" ON "public"."test_plan_tasks" FOR SELECT USING ("coopsetu"."can_view_project"(( SELECT "test_plans"."project_id"
    FROM "public"."test_plans"
   WHERE ("test_plans"."id" = "test_plan_tasks"."test_plan_id"))));
 
@@ -8796,45 +9339,45 @@ CREATE POLICY "test_plan_tasks_select" ON "public"."test_plan_tasks" FOR SELECT 
 ALTER TABLE "public"."test_plans" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "test_plans_delete" ON "public"."test_plans" FOR DELETE USING (("handoff"."can_view_project"("project_id") AND "handoff"."has_permission"("organization_id", 'task:update'::"text")));
+CREATE POLICY "test_plans_delete" ON "public"."test_plans" FOR DELETE USING (("coopsetu"."can_view_project"("project_id") AND "coopsetu"."has_permission"("organization_id", 'task:update'::"text")));
 
 
 
-CREATE POLICY "test_plans_insert" ON "public"."test_plans" FOR INSERT WITH CHECK ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "test_plans_insert" ON "public"."test_plans" FOR INSERT WITH CHECK ("coopsetu"."can_view_project"("project_id"));
 
 
 
-CREATE POLICY "test_plans_select" ON "public"."test_plans" FOR SELECT USING ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "test_plans_select" ON "public"."test_plans" FOR SELECT USING ("coopsetu"."can_view_project"("project_id"));
 
 
 
-CREATE POLICY "test_plans_update" ON "public"."test_plans" FOR UPDATE USING (("handoff"."can_view_project"("project_id") AND "handoff"."has_permission"("organization_id", 'task:update'::"text"))) WITH CHECK ("handoff"."can_view_project"("project_id"));
+CREATE POLICY "test_plans_update" ON "public"."test_plans" FOR UPDATE USING (("coopsetu"."can_view_project"("project_id") AND "coopsetu"."has_permission"("organization_id", 'task:update'::"text"))) WITH CHECK ("coopsetu"."can_view_project"("project_id"));
 
 
 
 CREATE POLICY "test_results_delete" ON "public"."test_run_results" FOR DELETE USING ((EXISTS ( SELECT 1
    FROM "public"."test_runs" "tr"
-  WHERE (("tr"."id" = "test_run_results"."test_run_id") AND "handoff"."has_permission"("tr"."organization_id", 'task:update'::"text")))));
+  WHERE (("tr"."id" = "test_run_results"."test_run_id") AND "coopsetu"."has_permission"("tr"."organization_id", 'task:update'::"text")))));
 
 
 
 CREATE POLICY "test_results_insert" ON "public"."test_run_results" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."test_runs" "tr"
-  WHERE (("tr"."id" = "test_run_results"."test_run_id") AND "handoff"."is_org_member"("tr"."organization_id")))));
+  WHERE (("tr"."id" = "test_run_results"."test_run_id") AND "coopsetu"."is_org_member"("tr"."organization_id")))));
 
 
 
 CREATE POLICY "test_results_select" ON "public"."test_run_results" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."test_runs" "tr"
-  WHERE (("tr"."id" = "test_run_results"."test_run_id") AND "handoff"."is_org_member"("tr"."organization_id")))));
+  WHERE (("tr"."id" = "test_run_results"."test_run_id") AND "coopsetu"."is_org_member"("tr"."organization_id")))));
 
 
 
 CREATE POLICY "test_results_update" ON "public"."test_run_results" FOR UPDATE USING ((EXISTS ( SELECT 1
    FROM "public"."test_runs" "tr"
-  WHERE (("tr"."id" = "test_run_results"."test_run_id") AND "handoff"."has_permission"("tr"."organization_id", 'task:update'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
+  WHERE (("tr"."id" = "test_run_results"."test_run_id") AND "coopsetu"."has_permission"("tr"."organization_id", 'task:update'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."test_runs" "tr"
-  WHERE (("tr"."id" = "test_run_results"."test_run_id") AND "handoff"."is_org_member"("tr"."organization_id")))));
+  WHERE (("tr"."id" = "test_run_results"."test_run_id") AND "coopsetu"."is_org_member"("tr"."organization_id")))));
 
 
 
@@ -8844,67 +9387,72 @@ ALTER TABLE "public"."test_run_results" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."test_runs" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "test_runs_delete" ON "public"."test_runs" FOR DELETE USING ("handoff"."has_permission"("organization_id", 'task:update'::"text"));
+CREATE POLICY "test_runs_delete" ON "public"."test_runs" FOR DELETE USING ("coopsetu"."has_permission"("organization_id", 'task:update'::"text"));
 
 
 
-CREATE POLICY "test_runs_insert" ON "public"."test_runs" FOR INSERT WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "test_runs_insert" ON "public"."test_runs" FOR INSERT WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "test_runs_select" ON "public"."test_runs" FOR SELECT USING ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "test_runs_select" ON "public"."test_runs" FOR SELECT USING ("coopsetu"."is_org_member"("organization_id"));
 
 
 
-CREATE POLICY "test_runs_update" ON "public"."test_runs" FOR UPDATE USING ("handoff"."has_permission"("organization_id", 'task:update'::"text")) WITH CHECK ("handoff"."is_org_member"("organization_id"));
+CREATE POLICY "test_runs_update" ON "public"."test_runs" FOR UPDATE USING ("coopsetu"."has_permission"("organization_id", 'task:update'::"text")) WITH CHECK ("coopsetu"."is_org_member"("organization_id"));
 
 
 
 ALTER TABLE "public"."time_entries" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "time_entries_delete" ON "public"."time_entries" FOR DELETE USING ("handoff"."can_edit_task"("task_id"));
+CREATE POLICY "time_entries_delete" ON "public"."time_entries" FOR DELETE USING ("coopsetu"."can_edit_task"("task_id"));
 
 
 
-CREATE POLICY "time_entries_insert" ON "public"."time_entries" FOR INSERT WITH CHECK ("handoff"."can_edit_task"("task_id"));
+CREATE POLICY "time_entries_insert" ON "public"."time_entries" FOR INSERT WITH CHECK ("coopsetu"."can_edit_task"("task_id"));
 
 
 
-CREATE POLICY "time_entries_select" ON "public"."time_entries" FOR SELECT USING ("handoff"."can_view_task"("task_id"));
+CREATE POLICY "time_entries_select" ON "public"."time_entries" FOR SELECT USING ("coopsetu"."can_view_task"("task_id"));
 
 
 
-CREATE POLICY "time_entries_update" ON "public"."time_entries" FOR UPDATE USING ("handoff"."can_edit_task"("task_id")) WITH CHECK ("handoff"."can_edit_task"("task_id"));
+CREATE POLICY "time_entries_update" ON "public"."time_entries" FOR UPDATE USING ("coopsetu"."can_edit_task"("task_id")) WITH CHECK ("coopsetu"."can_edit_task"("task_id"));
 
+
+
+ALTER TABLE "public"."trainee_skills" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."trainees" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."trainers" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."user_legal_acceptances" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "watchers_delete" ON "public"."task_watchers" FOR DELETE USING ("handoff"."can_view_task"("task_id"));
+CREATE POLICY "watchers_delete" ON "public"."task_watchers" FOR DELETE USING ("coopsetu"."can_view_task"("task_id"));
 
 
 
-CREATE POLICY "watchers_insert" ON "public"."task_watchers" FOR INSERT WITH CHECK ("handoff"."can_view_task"("task_id"));
+CREATE POLICY "watchers_insert" ON "public"."task_watchers" FOR INSERT WITH CHECK ("coopsetu"."can_view_task"("task_id"));
 
 
 
-CREATE POLICY "watchers_select" ON "public"."task_watchers" FOR SELECT USING ("handoff"."can_view_task"("task_id"));
+CREATE POLICY "watchers_select" ON "public"."task_watchers" FOR SELECT USING ("coopsetu"."can_view_task"("task_id"));
 
 
 
-CREATE POLICY "watchers_update" ON "public"."task_watchers" FOR UPDATE USING ("handoff"."can_view_task"("task_id")) WITH CHECK ("handoff"."can_view_task"("task_id"));
+CREATE POLICY "watchers_update" ON "public"."task_watchers" FOR UPDATE USING ("coopsetu"."can_view_task"("task_id")) WITH CHECK ("coopsetu"."can_view_task"("task_id"));
 
 
 
 
 
 ALTER PUBLICATION "supabase_realtime" OWNER TO "postgres";
-
-
-
-
 
 
 ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."approval_requests";
@@ -8960,6 +9508,14 @@ ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."task_visibility_m
 
 
 ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."tasks";
+
+
+
+GRANT USAGE ON SCHEMA "coopsetu" TO "authenticated";
+GRANT USAGE ON SCHEMA "coopsetu" TO "service_role";
+
+
+
 
 
 
@@ -9117,37 +9673,39 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 
 
 
+
+
+
+
+
+
 REVOKE ALL ON FUNCTION "public"."accept_invite"("p_token_hash" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."accept_invite"("p_token_hash" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."accept_invite"("p_token_hash" "text") TO "service_role";
 GRANT ALL ON FUNCTION "public"."accept_invite"("p_token_hash" "text") TO "authenticated";
 
 
 
-GRANT ALL ON FUNCTION "public"."check_epic_tenant"() TO "anon";
 GRANT ALL ON FUNCTION "public"."check_epic_tenant"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_epic_tenant"() TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."check_project_deadline_tenant"() TO "anon";
 GRANT ALL ON FUNCTION "public"."check_project_deadline_tenant"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_project_deadline_tenant"() TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."check_project_member_tenant"() TO "anon";
 GRANT ALL ON FUNCTION "public"."check_project_member_tenant"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_project_member_tenant"() TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."check_project_tenant"() TO "anon";
 GRANT ALL ON FUNCTION "public"."check_project_tenant"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_project_tenant"() TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."check_sprint_tenant"() TO "anon";
 GRANT ALL ON FUNCTION "public"."check_sprint_tenant"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_sprint_tenant"() TO "service_role";
 
@@ -9158,7 +9716,6 @@ GRANT ALL ON FUNCTION "public"."check_task_assignee_tenant"() TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."check_task_tenant"() TO "anon";
 GRANT ALL ON FUNCTION "public"."check_task_tenant"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_task_tenant"() TO "service_role";
 
@@ -9169,7 +9726,7 @@ GRANT ALL ON FUNCTION "public"."check_task_visibility_member_tenant"() TO "servi
 
 
 
-GRANT ALL ON TABLE "public"."bugs" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."bugs" TO "anon";
 GRANT ALL ON TABLE "public"."bugs" TO "authenticated";
 GRANT ALL ON TABLE "public"."bugs" TO "service_role";
 
@@ -9177,7 +9734,6 @@ GRANT ALL ON TABLE "public"."bugs" TO "service_role";
 
 REVOKE ALL ON FUNCTION "public"."create_bug"("p_organization_id" "uuid", "p_project_id" "uuid", "p_payload" "jsonb") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."create_bug"("p_organization_id" "uuid", "p_project_id" "uuid", "p_payload" "jsonb") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."create_bug"("p_organization_id" "uuid", "p_project_id" "uuid", "p_payload" "jsonb") TO "service_role";
 
 
 
@@ -9187,7 +9743,7 @@ GRANT ALL ON FUNCTION "public"."create_notification"("p_org" "uuid", "p_recipien
 
 
 
-GRANT ALL ON TABLE "public"."organizations" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."organizations" TO "anon";
 GRANT ALL ON TABLE "public"."organizations" TO "authenticated";
 GRANT ALL ON TABLE "public"."organizations" TO "service_role";
 
@@ -9198,7 +9754,7 @@ GRANT ALL ON FUNCTION "public"."create_organization"("p_user_id" "uuid", "p_name
 
 
 
-GRANT ALL ON TABLE "public"."projects" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."projects" TO "anon";
 GRANT ALL ON TABLE "public"."projects" TO "authenticated";
 GRANT ALL ON TABLE "public"."projects" TO "service_role";
 
@@ -9210,7 +9766,7 @@ GRANT ALL ON FUNCTION "public"."create_project"("p_org" "uuid", "p_payload" "jso
 
 
 
-GRANT ALL ON TABLE "public"."teams" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."teams" TO "anon";
 GRANT ALL ON TABLE "public"."teams" TO "authenticated";
 GRANT ALL ON TABLE "public"."teams" TO "service_role";
 
@@ -9222,17 +9778,7 @@ GRANT ALL ON FUNCTION "public"."create_project_team"("p_project_id" "uuid", "p_t
 
 
 
-REVOKE ALL ON FUNCTION "public"."create_student_solo_workspace"("p_user_id" "uuid", "p_name" "text", "p_description" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."create_student_solo_workspace"("p_user_id" "uuid", "p_name" "text", "p_description" "text") TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "public"."create_student_team"("p_user_id" "uuid", "p_name" "text", "p_event_name" "text", "p_short_description" "text", "p_expected_team_size" integer, "p_max_team_size" integer, "p_primary_team_role" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."create_student_team"("p_user_id" "uuid", "p_name" "text", "p_event_name" "text", "p_short_description" "text", "p_expected_team_size" integer, "p_max_team_size" integer, "p_primary_team_role" "text") TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."test_plans" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."test_plans" TO "anon";
 GRANT ALL ON TABLE "public"."test_plans" TO "authenticated";
 GRANT ALL ON TABLE "public"."test_plans" TO "service_role";
 
@@ -9240,36 +9786,24 @@ GRANT ALL ON TABLE "public"."test_plans" TO "service_role";
 
 REVOKE ALL ON FUNCTION "public"."create_test_plan"("p_organization_id" "uuid", "p_project_id" "uuid", "p_payload" "jsonb") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."create_test_plan"("p_organization_id" "uuid", "p_project_id" "uuid", "p_payload" "jsonb") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."create_test_plan"("p_organization_id" "uuid", "p_project_id" "uuid", "p_payload" "jsonb") TO "service_role";
 
 
 
 REVOKE ALL ON FUNCTION "public"."get_active_sessions"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."get_active_sessions"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."get_active_sessions"() TO "service_role";
 
 
 
 REVOKE ALL ON FUNCTION "public"."get_invite"("p_token_hash" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_invite"("p_token_hash" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_invite"("p_token_hash" "text") TO "service_role";
 GRANT ALL ON FUNCTION "public"."get_invite"("p_token_hash" "text") TO "authenticated";
-
-
-
-REVOKE ALL ON FUNCTION "public"."get_join_code_status"("p_org" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."get_join_code_status"("p_org" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."get_join_code_status"("p_org" "uuid") TO "service_role";
 
 
 
 REVOKE ALL ON FUNCTION "public"."member_permissions"("p_member" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."member_permissions"("p_member" "uuid") TO "service_role";
 GRANT ALL ON FUNCTION "public"."member_permissions"("p_member" "uuid") TO "authenticated";
-
-
-
-REVOKE ALL ON FUNCTION "public"."preview_join_code"("p_raw_code" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."preview_join_code"("p_raw_code" "text") TO "service_role";
 
 
 
@@ -9285,34 +9819,23 @@ GRANT ALL ON FUNCTION "public"."record_legal_acceptance"("p_terms_document_id" "
 
 
 
-REVOKE ALL ON FUNCTION "public"."redeem_student_team_join_code"("p_user_id" "uuid", "p_raw_code" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."redeem_student_team_join_code"("p_user_id" "uuid", "p_raw_code" "text") TO "service_role";
-
-
-
 REVOKE ALL ON FUNCTION "public"."release_can_deploy"("p_release" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."release_can_deploy"("p_release" "uuid") TO "service_role";
 GRANT ALL ON FUNCTION "public"."release_can_deploy"("p_release" "uuid") TO "authenticated";
 
 
 
-REVOKE ALL ON FUNCTION "public"."revoke_join_code"("p_org" "uuid", "p_caller_user_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."revoke_join_code"("p_org" "uuid", "p_caller_user_id" "uuid") TO "service_role";
-
-
-
 REVOKE ALL ON FUNCTION "public"."revoke_session"("p_session_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."revoke_session"("p_session_id" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."revoke_session"("p_session_id" "uuid") TO "service_role";
 
 
 
-REVOKE ALL ON FUNCTION "public"."rotate_join_code"("p_org" "uuid", "p_caller_user_id" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."rotate_join_code"("p_org" "uuid", "p_caller_user_id" "uuid") TO "service_role";
+GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."security_reviews" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."security_reviews" TO "anon";
 GRANT ALL ON TABLE "public"."security_reviews" TO "authenticated";
 GRANT ALL ON TABLE "public"."security_reviews" TO "service_role";
 
@@ -9320,7 +9843,6 @@ GRANT ALL ON TABLE "public"."security_reviews" TO "service_role";
 
 REVOKE ALL ON FUNCTION "public"."start_security_review"("p_organization_id" "uuid", "p_project_id" "uuid", "p_payload" "jsonb") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."start_security_review"("p_organization_id" "uuid", "p_project_id" "uuid", "p_payload" "jsonb") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."start_security_review"("p_organization_id" "uuid", "p_project_id" "uuid", "p_payload" "jsonb") TO "service_role";
 
 
 
@@ -9329,13 +9851,7 @@ GRANT ALL ON FUNCTION "public"."sync_task_assignee_access_fields"() TO "service_
 
 
 
-REVOKE ALL ON FUNCTION "public"."transfer_team_leadership"("p_org" "uuid", "p_from_user_id" "uuid", "p_to_member_id" "uuid", "p_demote_to" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."transfer_team_leadership"("p_org" "uuid", "p_from_user_id" "uuid", "p_to_member_id" "uuid", "p_demote_to" "text") TO "service_role";
-
-
-
 REVOKE ALL ON FUNCTION "public"."write_audit_log"("p_org" "uuid", "p_action" "text", "p_entity_type" "text", "p_entity_id" "uuid", "p_project_id" "uuid", "p_before" "jsonb", "p_after" "jsonb", "p_metadata" "jsonb") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."write_audit_log"("p_org" "uuid", "p_action" "text", "p_entity_type" "text", "p_entity_id" "uuid", "p_project_id" "uuid", "p_before" "jsonb", "p_after" "jsonb", "p_metadata" "jsonb") TO "service_role";
 
 
 
@@ -9354,211 +9870,295 @@ GRANT ALL ON FUNCTION "public"."write_audit_log"("p_org" "uuid", "p_action" "tex
 
 
 
-GRANT ALL ON TABLE "public"."ai_requests" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."ai_requests" TO "anon";
 GRANT ALL ON TABLE "public"."ai_requests" TO "authenticated";
 GRANT ALL ON TABLE "public"."ai_requests" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."ai_settings" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."ai_settings" TO "anon";
 GRANT ALL ON TABLE "public"."ai_settings" TO "authenticated";
 GRANT ALL ON TABLE "public"."ai_settings" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."ai_sources" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."ai_sources" TO "anon";
 GRANT ALL ON TABLE "public"."ai_sources" TO "authenticated";
 GRANT ALL ON TABLE "public"."ai_sources" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."approval_requests" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."approval_requests" TO "anon";
 GRANT ALL ON TABLE "public"."approval_requests" TO "authenticated";
 GRANT ALL ON TABLE "public"."approval_requests" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."approvals" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."approvals" TO "anon";
 GRANT ALL ON TABLE "public"."approvals" TO "authenticated";
 GRANT ALL ON TABLE "public"."approvals" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."attachments" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."assessment_questions" TO "anon";
+GRANT ALL ON TABLE "public"."assessment_questions" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."assessment_questions" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."assessment_results" TO "anon";
+GRANT ALL ON TABLE "public"."assessment_results" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."assessment_results" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."assessments" TO "anon";
+GRANT ALL ON TABLE "public"."assessments" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."assessments" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."attachments" TO "anon";
 GRANT ALL ON TABLE "public"."attachments" TO "authenticated";
 GRANT ALL ON TABLE "public"."attachments" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."audit_logs" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."attendance_records" TO "anon";
+GRANT ALL ON TABLE "public"."attendance_records" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."attendance_records" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."attendance_sessions" TO "anon";
+GRANT ALL ON TABLE "public"."attendance_sessions" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."attendance_sessions" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."audit_logs" TO "anon";
 GRANT ALL ON TABLE "public"."audit_logs" TO "authenticated";
 GRANT ALL ON TABLE "public"."audit_logs" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."bug_activity" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."batches" TO "anon";
+GRANT ALL ON TABLE "public"."batches" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."batches" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."bug_activity" TO "anon";
 GRANT ALL ON TABLE "public"."bug_activity" TO "authenticated";
 GRANT ALL ON TABLE "public"."bug_activity" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."bug_assignees" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."bug_assignees" TO "anon";
 GRANT ALL ON TABLE "public"."bug_assignees" TO "authenticated";
 GRANT ALL ON TABLE "public"."bug_assignees" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."bug_attachments" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."bug_attachments" TO "anon";
 GRANT ALL ON TABLE "public"."bug_attachments" TO "authenticated";
 GRANT ALL ON TABLE "public"."bug_attachments" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."ci_jobs" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."certificates" TO "anon";
+GRANT ALL ON TABLE "public"."certificates" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."certificates" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."ci_jobs" TO "anon";
 GRANT ALL ON TABLE "public"."ci_jobs" TO "authenticated";
 GRANT ALL ON TABLE "public"."ci_jobs" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."ci_pipelines" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."ci_pipelines" TO "anon";
 GRANT ALL ON TABLE "public"."ci_pipelines" TO "authenticated";
 GRANT ALL ON TABLE "public"."ci_pipelines" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."comment_mentions" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."comment_mentions" TO "anon";
 GRANT ALL ON TABLE "public"."comment_mentions" TO "authenticated";
 GRANT ALL ON TABLE "public"."comment_mentions" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."commits" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."commits" TO "anon";
 GRANT ALL ON TABLE "public"."commits" TO "authenticated";
 GRANT ALL ON TABLE "public"."commits" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."compliance_controls" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."compliance_controls" TO "anon";
 GRANT ALL ON TABLE "public"."compliance_controls" TO "authenticated";
 GRANT ALL ON TABLE "public"."compliance_controls" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."compliance_evidence" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."compliance_evidence" TO "anon";
 GRANT ALL ON TABLE "public"."compliance_evidence" TO "authenticated";
 GRANT ALL ON TABLE "public"."compliance_evidence" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."demo_sessions" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."contact_requests" TO "anon";
+GRANT ALL ON TABLE "public"."contact_requests" TO "authenticated";
+GRANT ALL ON TABLE "public"."contact_requests" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."course_modules" TO "anon";
+GRANT ALL ON TABLE "public"."course_modules" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."course_modules" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."course_progress" TO "anon";
+GRANT ALL ON TABLE "public"."course_progress" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."course_progress" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."courses" TO "anon";
+GRANT ALL ON TABLE "public"."courses" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."courses" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."demo_sessions" TO "anon";
 GRANT ALL ON TABLE "public"."demo_sessions" TO "authenticated";
 GRANT ALL ON TABLE "public"."demo_sessions" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."departments" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."departments" TO "anon";
 GRANT ALL ON TABLE "public"."departments" TO "authenticated";
 GRANT ALL ON TABLE "public"."departments" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."deployment_logs" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."deployment_logs" TO "anon";
 GRANT ALL ON TABLE "public"."deployment_logs" TO "authenticated";
-GRANT ALL ON TABLE "public"."deployment_logs" TO "service_role";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."deployment_logs" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."deployments" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."deployments" TO "anon";
 GRANT ALL ON TABLE "public"."deployments" TO "authenticated";
 GRANT ALL ON TABLE "public"."deployments" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."document_comments" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."document_comments" TO "anon";
 GRANT ALL ON TABLE "public"."document_comments" TO "authenticated";
 GRANT ALL ON TABLE "public"."document_comments" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."document_links" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."document_links" TO "anon";
 GRANT ALL ON TABLE "public"."document_links" TO "authenticated";
 GRANT ALL ON TABLE "public"."document_links" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."document_versions" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."document_versions" TO "anon";
 GRANT ALL ON TABLE "public"."document_versions" TO "authenticated";
 GRANT ALL ON TABLE "public"."document_versions" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."documents" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."documents" TO "anon";
 GRANT ALL ON TABLE "public"."documents" TO "authenticated";
 GRANT ALL ON TABLE "public"."documents" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."employee_availability" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."employee_availability" TO "anon";
 GRANT ALL ON TABLE "public"."employee_availability" TO "authenticated";
 GRANT ALL ON TABLE "public"."employee_availability" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."employee_skills" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."employee_skills" TO "anon";
 GRANT ALL ON TABLE "public"."employee_skills" TO "authenticated";
 GRANT ALL ON TABLE "public"."employee_skills" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."environments" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."employers" TO "anon";
+GRANT ALL ON TABLE "public"."employers" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."employers" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."enrollments" TO "anon";
+GRANT ALL ON TABLE "public"."enrollments" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."enrollments" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."environments" TO "anon";
 GRANT ALL ON TABLE "public"."environments" TO "authenticated";
 GRANT ALL ON TABLE "public"."environments" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."epics" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."epics" TO "anon";
 GRANT ALL ON TABLE "public"."epics" TO "authenticated";
 GRANT ALL ON TABLE "public"."epics" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."import_jobs" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."import_jobs" TO "anon";
 GRANT ALL ON TABLE "public"."import_jobs" TO "authenticated";
 GRANT ALL ON TABLE "public"."import_jobs" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."import_rows" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."import_rows" TO "anon";
 GRANT ALL ON TABLE "public"."import_rows" TO "authenticated";
 GRANT ALL ON TABLE "public"."import_rows" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."incident_followups" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."incident_followups" TO "anon";
 GRANT ALL ON TABLE "public"."incident_followups" TO "authenticated";
 GRANT ALL ON TABLE "public"."incident_followups" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."incident_participants" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."incident_participants" TO "anon";
 GRANT ALL ON TABLE "public"."incident_participants" TO "authenticated";
 GRANT ALL ON TABLE "public"."incident_participants" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."incident_timeline_events" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."incident_timeline_events" TO "anon";
 GRANT ALL ON TABLE "public"."incident_timeline_events" TO "authenticated";
 GRANT ALL ON TABLE "public"."incident_timeline_events" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."incidents" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."incidents" TO "anon";
 GRANT ALL ON TABLE "public"."incidents" TO "authenticated";
 GRANT ALL ON TABLE "public"."incidents" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."integrations" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."institutions" TO "anon";
+GRANT ALL ON TABLE "public"."institutions" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."institutions" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."integrations" TO "anon";
 GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "public"."integrations" TO "authenticated";
 GRANT ALL ON TABLE "public"."integrations" TO "service_role";
 
@@ -9596,7 +10196,25 @@ GRANT SELECT("updated_at") ON TABLE "public"."integrations" TO "authenticated";
 
 
 
-GRANT ALL ON TABLE "public"."leave_requests" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."job_applications" TO "anon";
+GRANT ALL ON TABLE "public"."job_applications" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."job_applications" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."job_skills" TO "anon";
+GRANT ALL ON TABLE "public"."job_skills" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."job_skills" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."jobs" TO "anon";
+GRANT ALL ON TABLE "public"."jobs" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."jobs" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."leave_requests" TO "anon";
 GRANT ALL ON TABLE "public"."leave_requests" TO "authenticated";
 GRANT ALL ON TABLE "public"."leave_requests" TO "service_role";
 
@@ -9608,355 +10226,363 @@ GRANT ALL ON TABLE "public"."legal_documents" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."member_roles" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."member_roles" TO "anon";
 GRANT ALL ON TABLE "public"."member_roles" TO "authenticated";
 GRANT ALL ON TABLE "public"."member_roles" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."milestones" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."milestones" TO "anon";
 GRANT ALL ON TABLE "public"."milestones" TO "authenticated";
 GRANT ALL ON TABLE "public"."milestones" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."notification_preferences" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."notification_preferences" TO "anon";
 GRANT ALL ON TABLE "public"."notification_preferences" TO "authenticated";
 GRANT ALL ON TABLE "public"."notification_preferences" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."notifications" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."notifications" TO "anon";
 GRANT ALL ON TABLE "public"."notifications" TO "authenticated";
 GRANT ALL ON TABLE "public"."notifications" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."org_task_counters" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."org_task_counters" TO "anon";
 GRANT ALL ON TABLE "public"."org_task_counters" TO "authenticated";
 GRANT ALL ON TABLE "public"."org_task_counters" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."organization_invite_roles" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."organization_invite_roles" TO "anon";
 GRANT ALL ON TABLE "public"."organization_invite_roles" TO "authenticated";
 GRANT ALL ON TABLE "public"."organization_invite_roles" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."organization_invites" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."organization_invites" TO "anon";
 GRANT ALL ON TABLE "public"."organization_invites" TO "authenticated";
 GRANT ALL ON TABLE "public"."organization_invites" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."organization_members" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."organization_members" TO "anon";
 GRANT ALL ON TABLE "public"."organization_members" TO "authenticated";
 GRANT ALL ON TABLE "public"."organization_members" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."permissions" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."permissions" TO "anon";
 GRANT ALL ON TABLE "public"."permissions" TO "authenticated";
 GRANT ALL ON TABLE "public"."permissions" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."portfolios" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."portfolios" TO "anon";
 GRANT ALL ON TABLE "public"."portfolios" TO "authenticated";
 GRANT ALL ON TABLE "public"."portfolios" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."postmortems" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."postmortems" TO "anon";
 GRANT ALL ON TABLE "public"."postmortems" TO "authenticated";
 GRANT ALL ON TABLE "public"."postmortems" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."presence_sessions" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."presence_sessions" TO "anon";
 GRANT ALL ON TABLE "public"."presence_sessions" TO "authenticated";
 GRANT ALL ON TABLE "public"."presence_sessions" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."profiles" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."profiles" TO "anon";
 GRANT ALL ON TABLE "public"."profiles" TO "authenticated";
 GRANT ALL ON TABLE "public"."profiles" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."programs" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."programmes" TO "anon";
+GRANT ALL ON TABLE "public"."programmes" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."programmes" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."programs" TO "anon";
 GRANT ALL ON TABLE "public"."programs" TO "authenticated";
 GRANT ALL ON TABLE "public"."programs" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."project_activity" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."project_activity" TO "anon";
 GRANT ALL ON TABLE "public"."project_activity" TO "authenticated";
 GRANT ALL ON TABLE "public"."project_activity" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."project_deadlines" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."project_deadlines" TO "anon";
 GRANT ALL ON TABLE "public"."project_deadlines" TO "authenticated";
 GRANT ALL ON TABLE "public"."project_deadlines" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."project_dependencies" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."project_dependencies" TO "anon";
 GRANT ALL ON TABLE "public"."project_dependencies" TO "authenticated";
 GRANT ALL ON TABLE "public"."project_dependencies" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."project_members" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."project_members" TO "anon";
 GRANT ALL ON TABLE "public"."project_members" TO "authenticated";
 GRANT ALL ON TABLE "public"."project_members" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."project_risks" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."project_risks" TO "anon";
 GRANT ALL ON TABLE "public"."project_risks" TO "authenticated";
 GRANT ALL ON TABLE "public"."project_risks" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."project_teams" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."project_teams" TO "anon";
 GRANT ALL ON TABLE "public"."project_teams" TO "authenticated";
 GRANT ALL ON TABLE "public"."project_teams" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."pull_requests" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."pull_requests" TO "anon";
 GRANT ALL ON TABLE "public"."pull_requests" TO "authenticated";
 GRANT ALL ON TABLE "public"."pull_requests" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."rate_limits" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."rate_limits" TO "anon";
 GRANT ALL ON TABLE "public"."rate_limits" TO "authenticated";
 GRANT ALL ON TABLE "public"."rate_limits" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."release_approvals" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."release_approvals" TO "anon";
 GRANT ALL ON TABLE "public"."release_approvals" TO "authenticated";
 GRANT ALL ON TABLE "public"."release_approvals" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."releases" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."releases" TO "anon";
 GRANT ALL ON TABLE "public"."releases" TO "authenticated";
 GRANT ALL ON TABLE "public"."releases" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."report_deliveries" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."report_deliveries" TO "anon";
 GRANT ALL ON TABLE "public"."report_deliveries" TO "authenticated";
 GRANT ALL ON TABLE "public"."report_deliveries" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."report_exports" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."report_exports" TO "anon";
 GRANT ALL ON TABLE "public"."report_exports" TO "authenticated";
 GRANT ALL ON TABLE "public"."report_exports" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."report_runs" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."report_runs" TO "anon";
 GRANT ALL ON TABLE "public"."report_runs" TO "authenticated";
 GRANT ALL ON TABLE "public"."report_runs" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."report_schedules" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."report_schedules" TO "anon";
 GRANT ALL ON TABLE "public"."report_schedules" TO "authenticated";
 GRANT ALL ON TABLE "public"."report_schedules" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."reports" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."reports" TO "anon";
 GRANT ALL ON TABLE "public"."reports" TO "authenticated";
 GRANT ALL ON TABLE "public"."reports" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."repositories" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."repositories" TO "anon";
 GRANT ALL ON TABLE "public"."repositories" TO "authenticated";
 GRANT ALL ON TABLE "public"."repositories" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."role_permissions" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."role_permissions" TO "anon";
 GRANT ALL ON TABLE "public"."role_permissions" TO "authenticated";
 GRANT ALL ON TABLE "public"."role_permissions" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."roles" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."roles" TO "anon";
 GRANT ALL ON TABLE "public"."roles" TO "authenticated";
 GRANT ALL ON TABLE "public"."roles" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."saved_views" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."saved_views" TO "anon";
 GRANT ALL ON TABLE "public"."saved_views" TO "authenticated";
 GRANT ALL ON TABLE "public"."saved_views" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."security_findings" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."security_findings" TO "anon";
 GRANT ALL ON TABLE "public"."security_findings" TO "authenticated";
 GRANT ALL ON TABLE "public"."security_findings" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."security_review_assignees" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."security_review_assignees" TO "anon";
 GRANT ALL ON TABLE "public"."security_review_assignees" TO "authenticated";
 GRANT ALL ON TABLE "public"."security_review_assignees" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."security_review_checks" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."security_review_checks" TO "anon";
 GRANT ALL ON TABLE "public"."security_review_checks" TO "authenticated";
 GRANT ALL ON TABLE "public"."security_review_checks" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."skills" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."skills" TO "anon";
 GRANT ALL ON TABLE "public"."skills" TO "authenticated";
 GRANT ALL ON TABLE "public"."skills" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."sprints" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."sprints" TO "anon";
 GRANT ALL ON TABLE "public"."sprints" TO "authenticated";
 GRANT ALL ON TABLE "public"."sprints" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."student_team_join_codes" TO "service_role";
-
-
-
-GRANT SELECT,REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."student_team_member_labels" TO "anon";
-GRANT SELECT,REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."student_team_member_labels" TO "authenticated";
-GRANT ALL ON TABLE "public"."student_team_member_labels" TO "service_role";
-
-
-
-GRANT SELECT,REFERENCES,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "public"."student_team_settings" TO "anon";
-GRANT SELECT,REFERENCES,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE "public"."student_team_settings" TO "authenticated";
-GRANT ALL ON TABLE "public"."student_team_settings" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."task_activity" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."task_activity" TO "anon";
 GRANT ALL ON TABLE "public"."task_activity" TO "authenticated";
 GRANT ALL ON TABLE "public"."task_activity" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."task_assignees" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."task_assignees" TO "anon";
 GRANT ALL ON TABLE "public"."task_assignees" TO "authenticated";
 GRANT ALL ON TABLE "public"."task_assignees" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."task_checklist_items" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."task_checklist_items" TO "anon";
 GRANT ALL ON TABLE "public"."task_checklist_items" TO "authenticated";
 GRANT ALL ON TABLE "public"."task_checklist_items" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."task_checklists" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."task_checklists" TO "anon";
 GRANT ALL ON TABLE "public"."task_checklists" TO "authenticated";
 GRANT ALL ON TABLE "public"."task_checklists" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."task_comments" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."task_comments" TO "anon";
 GRANT ALL ON TABLE "public"."task_comments" TO "authenticated";
 GRANT ALL ON TABLE "public"."task_comments" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."task_dependencies" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."task_dependencies" TO "anon";
 GRANT ALL ON TABLE "public"."task_dependencies" TO "authenticated";
 GRANT ALL ON TABLE "public"."task_dependencies" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."task_label_links" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."task_label_links" TO "anon";
 GRANT ALL ON TABLE "public"."task_label_links" TO "authenticated";
 GRANT ALL ON TABLE "public"."task_label_links" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."task_labels" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."task_labels" TO "anon";
 GRANT ALL ON TABLE "public"."task_labels" TO "authenticated";
 GRANT ALL ON TABLE "public"."task_labels" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."task_visibility_members" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."task_visibility_members" TO "anon";
 GRANT ALL ON TABLE "public"."task_visibility_members" TO "authenticated";
 GRANT ALL ON TABLE "public"."task_visibility_members" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."task_watchers" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."task_watchers" TO "anon";
 GRANT ALL ON TABLE "public"."task_watchers" TO "authenticated";
 GRANT ALL ON TABLE "public"."task_watchers" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."tasks" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."tasks" TO "anon";
 GRANT ALL ON TABLE "public"."tasks" TO "authenticated";
 GRANT ALL ON TABLE "public"."tasks" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."team_members" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."team_members" TO "anon";
 GRANT ALL ON TABLE "public"."team_members" TO "authenticated";
 GRANT ALL ON TABLE "public"."team_members" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."test_cases" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."test_cases" TO "anon";
 GRANT ALL ON TABLE "public"."test_cases" TO "authenticated";
 GRANT ALL ON TABLE "public"."test_cases" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."test_plan_assignments" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."test_plan_assignments" TO "anon";
 GRANT ALL ON TABLE "public"."test_plan_assignments" TO "authenticated";
 GRANT ALL ON TABLE "public"."test_plan_assignments" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."test_plan_tasks" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."test_plan_tasks" TO "anon";
 GRANT ALL ON TABLE "public"."test_plan_tasks" TO "authenticated";
 GRANT ALL ON TABLE "public"."test_plan_tasks" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."test_run_results" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."test_run_results" TO "anon";
 GRANT ALL ON TABLE "public"."test_run_results" TO "authenticated";
 GRANT ALL ON TABLE "public"."test_run_results" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."test_runs" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."test_runs" TO "anon";
 GRANT ALL ON TABLE "public"."test_runs" TO "authenticated";
 GRANT ALL ON TABLE "public"."test_runs" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."time_entries" TO "anon";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."time_entries" TO "anon";
 GRANT ALL ON TABLE "public"."time_entries" TO "authenticated";
 GRANT ALL ON TABLE "public"."time_entries" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."trainee_skills" TO "anon";
+GRANT ALL ON TABLE "public"."trainee_skills" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."trainee_skills" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."trainees" TO "anon";
+GRANT ALL ON TABLE "public"."trainees" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."trainees" TO "service_role";
+
+
+
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."trainers" TO "anon";
+GRANT ALL ON TABLE "public"."trainers" TO "authenticated";
+GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."trainers" TO "service_role";
 
 
 
@@ -9967,9 +10593,9 @@ GRANT ALL ON TABLE "public"."time_entries" TO "service_role";
 
 
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "postgres";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT UPDATE ON SEQUENCES TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "authenticated";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "service_role";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT UPDATE ON SEQUENCES TO "service_role";
 
 
 
@@ -9977,9 +10603,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQ
 
 
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "postgres";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "authenticated";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "service_role";
 
 
 
@@ -9987,9 +10611,9 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUN
 
 
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "postgres";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "authenticated";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO "service_role";
 
 
 
