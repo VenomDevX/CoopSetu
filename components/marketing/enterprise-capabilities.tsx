@@ -49,7 +49,7 @@ const CAPABILITIES = [
     category: 'INTELLIGENCE',
     status: 'AI_CONTEXT_READY',
     title: 'CoopSetu AI',
-    description: 'Turn authorized delivery signals into risk summaries, task plans, workload insights, sprint forecasts, and evidence-backed next actions.',
+    description: 'Turn authorized training signals into risk summaries, task plans, workload insights, batch forecasts, and evidence-backed next actions.',
     features: [
       'Grounded workspace analysis',
       'Permission-aware summaries',
@@ -100,7 +100,7 @@ const CAPABILITIES = [
     category: 'GOVERNANCE',
     status: 'RECORDS_INDEXED',
     title: 'Audit & Knowledge Record',
-    description: 'Keep documents, decisions, task history, approvals, incidents, and delivery evidence connected and searchable.',
+    description: 'Keep documents, decisions, task history, approvals, incidents, and training evidence connected and searchable.',
     features: [
       'Audit history',
       'Project documents',

@@ -170,7 +170,7 @@ export default function TeamsPage() {
           </div>
 
           <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-widest">
-            {currentView === 'directory' && 'Manage delivery teams, skills, capacity, staffing, and workload allocation.'}
+            {currentView === 'directory' && 'Manage training teams, skills, capacity, staffing, and workload allocation.'}
             {currentView === 'team_detail' && 'Team performance, workload, and capacity oversight.'}
             {currentView === 'employee_profile' && 'Employee allocation, skills, and activity profile.'}
             {currentView === 'resource_planning' && 'Cross-team capacity forecasting and skill allocation.'}
