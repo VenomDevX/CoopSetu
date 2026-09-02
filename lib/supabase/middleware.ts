@@ -20,6 +20,11 @@ function isPublic(pathname: string) {
     pathname.startsWith('/api/v1/demo/') ||
     pathname.startsWith('/api/v1/hardware/') ||
     pathname.startsWith('/api/v1/attendance/totp') ||
+    // Public certificate verification: anyone holding a certificate number
+    // (e.g. an employer scanning its QR code) must be able to check it without
+    // an account. Scoped to the exact verify path — the rest of
+    // /api/v1/certificates (list/issue/revoke) stays authenticated.
+    pathname === '/api/v1/certificates/verify' ||
     pathname.startsWith('/auth/') ||
     /\.[a-zA-Z0-9]+$/.test(pathname) // static assets
   );

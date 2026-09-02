@@ -111,7 +111,7 @@ export async function exportProjectsCsv(
     'open_risks',
     'milestones',
   ];
-  const fileName = `handoff-project-report-${nowStamp()}.csv`;
+  const fileName = `coopsetu-project-report-${nowStamp()}.csv`;
   await recordExport(supabase, orgId, actorMemberId, 'PROJECT_REPORT', fileName, filters, rows.length);
   return { csv: toCsv(headers, rows), fileName, rowCount: rows.length };
 }
@@ -190,7 +190,7 @@ export async function exportSprintsCsv(
     'blocked_tasks',
     'task_story_points',
   ];
-  const fileName = `handoff-sprint-report-${nowStamp()}.csv`;
+  const fileName = `coopsetu-sprint-report-${nowStamp()}.csv`;
   await recordExport(supabase, orgId, actorMemberId, 'SPRINT_REPORT', fileName, filters, rows.length);
   return { csv: toCsv(headers, rows), fileName, rowCount: rows.length };
 }
@@ -224,7 +224,7 @@ export async function exportGlobalAnalytics(
     { Metric: 'Completed Tasks', Value: tasks.filter(t => t.status === 'DONE').length },
   ];
 
-  const fileName = `handoff-global-analytics-${nowStamp()}.${format}`;
+  const fileName = `coopsetu-global-analytics-${nowStamp()}.${format}`;
   await recordExport(supabase, orgId, actorMemberId, 'GLOBAL_ANALYTICS', fileName, {}, metrics.length);
 
   if (format === 'csv') {
@@ -240,7 +240,7 @@ export async function exportGlobalAnalytics(
       doc.on('end', () => resolve(Buffer.concat(buffers)));
     });
 
-    doc.fontSize(24).text('HANDOFF Global Analytics Report', { align: 'center' });
+    doc.fontSize(24).text('CoopSetu Global Analytics Report', { align: 'center' });
     doc.moveDown();
     doc.fontSize(12).text(`Generated at: ${new Date().toISOString()}`, { align: 'center' });
     doc.moveDown(3);

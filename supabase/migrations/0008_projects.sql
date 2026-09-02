@@ -1,5 +1,5 @@
 -- ============================================================================
--- Handoff — 0008 Portfolios, Programs, Projects, Milestones, Risks
+-- CoopSetu — 0008 Portfolios, Programs, Projects, Milestones, Risks
 -- ============================================================================
 
 create table if not exists public.portfolios (

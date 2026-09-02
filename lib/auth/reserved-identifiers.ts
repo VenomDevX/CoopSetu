@@ -21,6 +21,12 @@ export const RESERVED_WORKSPACE_SLUGS = new Set([
   'root',
   'null',
   'undefined',
+  'coopsetu',
+  'coopsetu-admin',
+  'coopsetu-support',
+  // The pre-rename brand stays reserved on purpose: releasing it would let
+  // someone register `handoff` and impersonate the project on old links,
+  // screenshots and documentation. Do not remove with the rest of the rename.
   'handoff',
   'handoff-admin',
   'handoff-support',
@@ -35,6 +41,10 @@ export const RESERVED_USERNAMES = new Set([
   'support',
   'security',
   'official',
+  'coopsetu',
+  'coopsetu-admin',
+  'coopsetu-support',
+  // Kept reserved after the rename — see RESERVED_WORKSPACE_SLUGS above.
   'handoff',
   'handoff-admin',
   'handoff-support',
