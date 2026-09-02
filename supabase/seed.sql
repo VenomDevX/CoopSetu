@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — seed.sql (local development data)
+-- Handoff — seed.sql (local development data)
 -- Demo password for every account: Password123!
 -- ============================================================================
 
