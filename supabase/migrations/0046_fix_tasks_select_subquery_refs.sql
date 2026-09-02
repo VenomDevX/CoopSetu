@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0046 Fix tasks_select sub-query column references
+-- Handoff — 0046 Fix tasks_select sub-query column references
 -- ============================================================================
 -- Bug in migration 0043: unqualified `id` and `organization_id` inside the
 -- task_assignees and task_visibility_members sub-queries in tasks_select were

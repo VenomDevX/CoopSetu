@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0064 Fix create_organization NOT_AUTHENTICATED regression
+-- Handoff — 0064 Fix create_organization NOT_AUTHENTICATED regression
 -- ============================================================================
 -- Bug: migration 0037 revoked EXECUTE on create_organization from `authenticated`,
 -- moving all callers to invoke it via the service-role (admin) client from

@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — 0021 RLS for managing org-scoped custom roles' permissions
+-- Handoff — 0021 RLS for managing org-scoped custom roles' permissions
 -- roles table already has roles_manage (member:manage) for org roles.
 -- role_permissions previously had only a select policy; add manage policies
 -- scoped to ORG-OWNED roles (system roles can never be edited from the client).
