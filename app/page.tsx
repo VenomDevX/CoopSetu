@@ -204,20 +204,7 @@ export default function LandingPage() {
               transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="flex-1"
             >
-              {/* Status chips */}
-              <div className="flex flex-wrap items-center gap-3 mb-6">
-                <div className="flex items-center gap-2.5 border border-border rounded bg-surface/40 backdrop-blur-sm px-3 py-1.5">
-                  <span className="relative flex w-2 h-2">
-                    <span className="absolute inline-flex w-full h-full bg-accent animate-ping opacity-75" />
-                    <span className="relative inline-flex w-2 h-2 bg-accent" />
-                  </span>
-                  <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">System Online // v2.0</span>
-                </div>
-                <div className="hidden sm:flex items-center gap-2 border border-border rounded bg-surface/40 backdrop-blur-sm px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  <Cpu className="w-3 h-3 text-accent" />
-                  Build 2.0.1
-                </div>
-              </div>
+              {/* Status chips removed per request */}
 
               <h1 className="text-5xl md:text-7xl lg:text-[96px] font-bold tracking-tighter mb-6 leading-[0.9] uppercase relative">
                 <div className="flex flex-col text-left">

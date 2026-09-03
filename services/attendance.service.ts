@@ -290,13 +290,13 @@ export class AttendanceService {
     }
 
     // Check if user is a trainee to mark attendance
-    const { data: trainee } = await this.supabase
+    const { data: traineeData } = await this.supabase
       .from('trainees')
       .select('id, batch_id')
       .eq('user_id', userId)
       .single();
 
-    if (!trainee || !trainee.batch_id) {
+    if (!traineeData || !traineeData.batch_id) {
       // User is authenticated but not a trainee (e.g. Trainer/Admin). Return success without marking batch attendance.
       return { status: 'PRESENT', recordId: null, message: 'Staff verified' };
     }
@@ -305,7 +305,7 @@ export class AttendanceService {
     const { data: activeSession, error: sessionError } = await this.supabase
       .from('attendance_sessions')
       .select('id')
-      .eq('batch_id', trainee.batch_id)
+      .eq('batch_id', traineeData.batch_id)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -318,7 +318,7 @@ export class AttendanceService {
     // Mark attendance
     return this.markAttendance({
       session_id: activeSession.id,
-      trainee_id: trainee.id,
+      trainee_id: traineeData.id,
       method: 'QR',
     });
   }
