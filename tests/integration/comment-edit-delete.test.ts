@@ -23,7 +23,7 @@ async function upiTask(c: SupabaseClient) {
 }
 
 let pm: SupabaseClient, dev: SupabaseClient;
-const PM_U = '00000000-0000-0000-0000-000000000002';
+const PM_U = '00000000-0000-0000-0000-000000000012';
 
 beforeAll(async () => {
   pm = await asUser('pm@apexfintech.test');

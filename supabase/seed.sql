@@ -20,10 +20,16 @@ declare
     {"id":"00000000-0000-0000-0000-000000000003","email":"trainer@coopsetu.test","name":"Expert Trainer","role":"TRAINER","title":"Senior Faculty"},
     {"id":"00000000-0000-0000-0000-000000000004","email":"trainee@coopsetu.test","name":"Student Trainee","role":"TRAINEE","title":"Batch 2026 Student"},
     {"id":"00000000-0000-0000-0000-000000000005","email":"employer@coopsetu.test","name":"Recruiting Employer","role":"EMPLOYER","title":"HR Director"},
-    {"id":"00000000-0000-0000-0000-000000000006","email":"audit@coopsetu.test","name":"Audrey Auditor","role":"AUDITOR","title":"Internal Auditor"},
-    {"id":"00000000-0000-0000-0000-000000000007","email":"client@coopsetu.test","name":"Cleo Client","role":"CLIENT_VIEWER","title":"Client Stakeholder"},
-    {"id":"00000000-0000-0000-0000-000000000008","email":"owner@coopsetu.test","name":"Olivia Owner","role":"ORG_OWNER","title":"Founder & CEO"},
-    {"id":"00000000-0000-0000-0000-000000000009","email":"tm@coopsetu.test","name":"Tomas Lead","role":"TEAM_MANAGER","title":"Payments Team Manager"}
+    
+    {"id":"00000000-0000-0000-0000-000000000011","email":"admin@apexfintech.test","name":"Ava Admin","role":"ORG_ADMIN","title":"Head of Operations"},
+    {"id":"00000000-0000-0000-0000-000000000012","email":"pm@apexfintech.test","name":"Pat Manager","role":"PROJECT_MANAGER","title":"Senior Project Manager"},
+    {"id":"00000000-0000-0000-0000-000000000013","email":"dev@apexfintech.test","name":"Dev Rao","role":"DEVELOPER","title":"Backend Engineer"},
+    {"id":"00000000-0000-0000-0000-000000000014","email":"qa@apexfintech.test","name":"Quinn Tester","role":"QA_ENGINEER","title":"QA Engineer"},
+    {"id":"00000000-0000-0000-0000-000000000015","email":"sec@apexfintech.test","name":"Sam Secure","role":"SECURITY_ENGINEER","title":"Security Engineer"},
+    {"id":"00000000-0000-0000-0000-000000000016","email":"audit@apexfintech.test","name":"Audrey Auditor","role":"AUDITOR","title":"Internal Auditor"},
+    {"id":"00000000-0000-0000-0000-000000000017","email":"client@apexfintech.test","name":"Cleo Client","role":"CLIENT_VIEWER","title":"Client Stakeholder"},
+    {"id":"00000000-0000-0000-0000-000000000018","email":"owner@apexfintech.test","name":"Olivia Owner","role":"ORG_OWNER","title":"Founder & CEO"},
+    {"id":"00000000-0000-0000-0000-000000000019","email":"tm@apexfintech.test","name":"Tomas Lead","role":"TEAM_MANAGER","title":"Payments Team Manager"}
   ]'::jsonb;
 begin
   -- Pass 1: create auth users + identities + profile job titles
@@ -58,13 +64,13 @@ begin
       set job_title = v.value->>'title',
           username = case
             when length(split_part(v.value->>'email', '@', 1)) < 3
-            then split_part(v.value->>'email', '@', 1) || '-user'
-            else split_part(v.value->>'email', '@', 1)
+            then split_part(v.value->>'email', '@', 1) || '-user-' || split_part(split_part(v.value->>'email', '@', 2), '.', 1)
+            else split_part(v.value->>'email', '@', 1) || '-' || split_part(split_part(v.value->>'email', '@', 2), '.', 1)
           end,
           username_normalized = lower(case
             when length(split_part(v.value->>'email', '@', 1)) < 3
-            then split_part(v.value->>'email', '@', 1) || '-user'
-            else split_part(v.value->>'email', '@', 1)
+            then split_part(v.value->>'email', '@', 1) || '-user-' || split_part(split_part(v.value->>'email', '@', 2), '.', 1)
+            else split_part(v.value->>'email', '@', 1) || '-' || split_part(split_part(v.value->>'email', '@', 2), '.', 1)
           end),
           profile_completed_at = now()
       where id = (v.value->>'id')::uuid;
@@ -134,11 +140,11 @@ declare
     {"name":"Internal Admin Portal","code":"ADMIN","priority":"LOW","health":"ON_TRACK"}
   ]'::jsonb;
 begin
-  select id into v_admin from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000001';
-  select id into v_pm    from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000002';
-  select id into v_dev   from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000003';
-  select id into v_qa    from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000004';
-  select id into v_sec   from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000005';
+  select id into v_admin from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000011';
+  select id into v_pm    from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000012';
+  select id into v_dev   from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000013';
+  select id into v_qa    from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000014';
+  select id into v_sec   from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000015';
 
   -- departments
   for i in 1..array_length(depts,1) loop
@@ -200,10 +206,10 @@ declare
   types text[] := array['TASK','STORY','BUG','IMPROVEMENT','SECURITY_TASK'];
   i int; st text; assignee uuid;
 begin
-  select id into v_pm  from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000002';
-  select id into v_dev from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000003';
-  select id into v_qa  from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000004';
-  select id into v_sec from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000005';
+  select id into v_pm  from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000012';
+  select id into v_dev from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000013';
+  select id into v_qa  from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000014';
+  select id into v_sec from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000015';
 
   for pr in select id, code from projects where organization_id=v_org loop
     -- one active sprint per project
@@ -253,11 +259,11 @@ declare
   v_pm uuid; v_dev uuid; v_qa uuid; v_sec uuid; v_admin uuid;
   pr record; v_rel uuid; v_repo uuid; v_inc uuid; v_pipe uuid; i int;
 begin
-  select id into v_admin from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000001';
-  select id into v_pm  from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000002';
-  select id into v_dev from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000003';
-  select id into v_qa  from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000004';
-  select id into v_sec from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000005';
+  select id into v_admin from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000011';
+  select id into v_pm  from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000012';
+  select id into v_dev from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000013';
+  select id into v_qa  from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000014';
+  select id into v_sec from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000015';
 
   -- environments
   insert into environments (organization_id, name, environment_type, is_production) values
@@ -354,8 +360,8 @@ declare
   v_org uuid := '00000000-0000-0000-0000-0000000000a0';
   v_tm uuid; v_dev uuid; v_team uuid;
 begin
-  select id into v_tm  from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000009';
-  select id into v_dev from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000003';
+  select id into v_tm  from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000019';
+  select id into v_dev from organization_members where organization_id=v_org and user_id='00000000-0000-0000-0000-000000000013';
   select id into v_team from teams where organization_id=v_org and name='Payments Platform';
 
   if v_team is not null then
