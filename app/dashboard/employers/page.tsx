@@ -17,21 +17,52 @@ interface Employer {
   status: string;
 }
 
+const EMPTY_FORM = { user_id: '', company_name: '', industry: '', company_size: '', location: '', website: '', description: '' };
+
 export default function EmployersPage() {
   const [employers, setEmployers] = useState<Employer[]>([]);
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ user_id: '', company_name: '', industry: '', company_size: '', location: '', website: '', description: '' });
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    fetch('/api/v1/jobs').then(r => r.json()).then(j => {
-      // Employers are loaded separately but for now we fetch from the jobs endpoint context
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    fetch(`/api/v1/employers?${params}`).then(r => r.json()).then(j => {
+      if (j?.data?.employers) setEmployers(j.data.employers);
     });
-  }, []);
+  }, [search]);
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = employers.filter(e => !search || e.company_name.toLowerCase().includes(search.toLowerCase()));
+  const handleRegister = async () => {
+    if (!form.user_id || !form.company_name) {
+      setError('User ID and Company Name are required.');
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/v1/employers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j?.error || 'Failed to register employer.');
+      setForm(EMPTY_FORM);
+      setShowCreate(false);
+      load();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const filtered = employers;
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-24">
@@ -43,7 +74,7 @@ export default function EmployersPage() {
           </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">Employer Directory</h1>
         </div>
-        <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => setShowCreate(!showCreate)}>
+        <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => { setShowCreate(!showCreate); setError(null); }}>
           <Plus className="w-4 h-4 mr-2" /> Register Employer
         </Button>
       </motion.div>
@@ -54,6 +85,8 @@ export default function EmployersPage() {
           <Card className="shadow-none border-border rounded bg-background">
             <CardHeader className="border-b border-border pb-4"><CardTitle className="text-xs font-mono uppercase tracking-widest">Register New Employer</CardTitle></CardHeader>
             <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {error && <div className="col-span-full text-xs font-mono text-destructive">{error}</div>}
+              <input className="px-3 py-2 border border-border rounded bg-background text-sm font-mono col-span-full" placeholder="User ID (UUID of the employer's account)" value={form.user_id} onChange={e => setForm({ ...form, user_id: e.target.value })} />
               <input className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" placeholder="Company Name" value={form.company_name} onChange={e => setForm({ ...form, company_name: e.target.value })} />
               <input className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" placeholder="Industry" value={form.industry} onChange={e => setForm({ ...form, industry: e.target.value })} />
               <input className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" placeholder="Location" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} />
@@ -62,7 +95,7 @@ export default function EmployersPage() {
                 <option value="">Company Size</option><option value="1-10">1-10</option><option value="11-50">11-50</option><option value="51-200">51-200</option><option value="201-500">201-500</option><option value="500+">500+</option>
               </select>
               <textarea className="px-3 py-2 border border-border rounded bg-background text-sm font-mono col-span-full h-20" placeholder="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
-              <div className="col-span-full"><Button className="rounded font-mono text-xs uppercase">Register Employer</Button></div>
+              <div className="col-span-full"><Button className="rounded font-mono text-xs uppercase" disabled={submitting} onClick={handleRegister}>{submitting ? 'Registering…' : 'Register Employer'}</Button></div>
             </CardContent>
           </Card>
         </motion.div>
