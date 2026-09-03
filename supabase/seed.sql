@@ -103,9 +103,11 @@ begin
 
     -- role assignment
     select id into v_role from public.roles where code = v.value->>'role' and organization_id is null;
-    insert into public.member_roles (organization_member_id, role_id)
-    values (v_member, v_role)
-    on conflict do nothing;
+    if v_role is not null then
+      insert into public.member_roles (organization_member_id, role_id)
+      values (v_member, v_role)
+      on conflict do nothing;
+    end if;
   end loop;
 end $$;
 
