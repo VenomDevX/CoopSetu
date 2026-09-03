@@ -169,14 +169,15 @@ async function seedDemoData(admin: any, orgId: string, dummyUserIds: Record<stri
   // ==========================================================================
   
   // Institution
-  const { data: inst } = await admin.from('institutions').insert({
+  const { data: inst, error: instError } = await admin.from('institutions').insert({
     organization_id: orgId,
     name: 'VAMNICOM - National Institute of Cooperative Management',
-    code: 'VAMNICOM-01',
+    code: `VAMNICOM-${orgId.substring(0, 8)}`,
     type: 'TRAINING_INSTITUTE',
     contact_email: 'admin@vamnicom.edu.in',
     status: 'ACTIVE'
   }).select().single();
+  if (instError) console.error("INST ERROR:", instError);
 
   // Programme
   const { data: prog } = await admin.from('programmes').insert({
@@ -209,13 +210,14 @@ async function seedDemoData(admin: any, orgId: string, dummyUserIds: Record<stri
   }).select().single();
 
   // Employer Persona
-  const { data: employerOrg } = await admin.from('employers').insert({
+  const { data: employerOrg, error: empError } = await admin.from('employers').insert({
+    user_id: employerUserId,
     organization_id: orgId,
     company_name: 'Apex Cooperative Bank Ltd.',
     industry: 'Banking',
-    contact_person_id: employerUserId,
-    status: 'VERIFIED'
+    status: 'ACTIVE'
   }).select().single();
+  if (empError) console.error("EMP ERROR:", empError);
 
   // ==========================================================================
   // 2. BATCHES & ENROLLMENTS
@@ -261,34 +263,33 @@ async function seedDemoData(admin: any, orgId: string, dummyUserIds: Record<stri
     type: 'QUIZ',
     max_score: 100,
     passing_score: 60,
-    status: 'PUBLISHED'
+    is_published: true
   }).select().single();
 
-  await admin.from('assessment_submissions').insert({
+  await admin.from('assessment_results').insert({
     assessment_id: assessment.id,
     trainee_id: trainee.id,
     score: 85,
-    status: 'GRADED'
+    max_score: 100,
+    passed: true
   });
 
-  await admin.from('skill_passports').insert([
-    { trainee_id: trainee.id, organization_id: orgId, skill_name: 'KYC Verification', proficiency_level: 'INTERMEDIATE', validation_source: 'ASSESSMENT' },
-    { trainee_id: trainee.id, organization_id: orgId, skill_name: 'Core Banking Systems', proficiency_level: 'BASIC', validation_source: 'SELF' }
-  ]);
+  // Skills omitted for now as table needs creating
 
   // ==========================================================================
   // 4. EMPLOYMENT EXCHANGE
   // ==========================================================================
 
-  const { data: job } = await admin.from('jobs').insert({
-    organization_id: orgId,
-    employer_id: employerOrg.id,
+  const { data: job, error: jobError } = await admin.from('jobs').insert({
+    employer_id: employerOrg?.id,
     title: 'Junior Cooperative Officer',
-    type: 'FULL_TIME',
+    employment_type: 'FULL_TIME',
     location: 'Mumbai, MH',
-    salary_range: '₹3,00,000 - ₹4,50,000',
-    status: 'PUBLISHED'
+    salary_min: 300000,
+    salary_max: 450000,
+    status: 'OPEN'
   }).select().single();
+  if (jobError) console.error("JOB ERROR:", jobError);
 
   await admin.from('job_applications').insert({
     job_id: job.id,
