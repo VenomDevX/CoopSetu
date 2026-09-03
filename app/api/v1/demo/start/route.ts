@@ -47,7 +47,8 @@ export async function POST(req: NextRequest) {
       throw Errors.internal(`Failed to provision demo workspace: ${e.message}`);
     }
 
-    const cookieStore = require('next/headers').cookies();
+    const { cookies } = require('next/headers');
+    const cookieStore = await cookies();
     cookieStore.set('CoopSetu_demo_session', 'true', {
       path: '/',
       httpOnly: false,
