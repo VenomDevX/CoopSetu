@@ -8367,6 +8367,10 @@ CREATE POLICY "employers_admin_delete" ON "public"."employers" FOR DELETE USING 
 
 
 
+CREATE POLICY "employers_admin_insert" ON "public"."employers" FOR INSERT WITH CHECK ("coopsetu"."is_org_admin_or_owner"("organization_id"));
+
+
+
 CREATE POLICY "employers_self_insert" ON "public"."employers" FOR INSERT WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
 
 
