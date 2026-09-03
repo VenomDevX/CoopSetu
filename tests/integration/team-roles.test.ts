@@ -24,9 +24,9 @@ async function upiTask(c: SupabaseClient, assigneeMemberId?: string) {
 }
 
 let pm: SupabaseClient, tm: SupabaseClient, dev: SupabaseClient, owner: SupabaseClient;
-const DEV_U = '00000000-0000-0000-0000-000000000003';
-const SEC_U = '00000000-0000-0000-0000-000000000005';
-const TM_U = '00000000-0000-0000-0000-000000000009';
+const DEV_U = '00000000-0000-0000-0000-000000000013';
+const SEC_U = '00000000-0000-0000-0000-000000000015';
+const TM_U = '00000000-0000-0000-0000-000000000019';
 
 beforeAll(async () => {
   pm = await asUser('pm@apexfintech.test');
@@ -37,7 +37,7 @@ beforeAll(async () => {
 
 describe('ORG_OWNER', () => {
   it('has every permission', async () => {
-    const ownerMem = await memberId(owner, '00000000-0000-0000-0000-000000000008');
+    const ownerMem = await memberId(owner, '00000000-0000-0000-0000-000000000018');
     const { data } = await owner.rpc('member_permissions', { p_member: ownerMem });
     expect((data as unknown[]).length).toBeGreaterThanOrEqual(48);
   });
