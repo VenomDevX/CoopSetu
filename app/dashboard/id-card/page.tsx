@@ -10,6 +10,7 @@ import { TOTP } from 'totp-generator';
 
 export default function DigitalIdCard() {
   const [userId, setUserId] = useState('');
+  const [userName, setUserName] = useState('');
   const [secret, setSecret] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(30);
@@ -28,6 +29,7 @@ export default function DigitalIdCard() {
           if (j?.data?.secret) {
             setSecret(j.data.secret);
             setUserId(j.data.userId);
+            setUserName(j.data.userName);
           } else {
             setError(j.error || 'Failed to load secret');
           }
@@ -98,9 +100,9 @@ export default function DigitalIdCard() {
         </Card>
       ) : secret ? (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-          <Card className="shadow-none border-2 border-foreground rounded bg-background overflow-hidden relative">
+          <Card className="shadow-none border border-border rounded bg-background overflow-hidden relative">
             {/* Hologram effect line */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 animate-pulse" />
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-foreground/20 to-transparent animate-pulse" />
             
             <CardContent className="p-8 flex flex-col items-center text-center">
               <ShieldCheck className="w-8 h-8 text-foreground mb-6" />
@@ -115,7 +117,7 @@ export default function DigitalIdCard() {
                 
                 {/* Scanner line overlay for aesthetic */}
                 <motion.div 
-                  className="absolute left-4 right-4 h-0.5 bg-blue-500/50 shadow-[0_0_8px_rgba(59,130,246,0.5)]"
+                  className="absolute left-4 right-4 h-0.5 bg-black/50 dark:bg-white/50 shadow-[0_0_8px_rgba(0,0,0,0.3)] dark:shadow-[0_0_8px_rgba(255,255,255,0.3)]"
                   animate={{ top: ['10%', '90%', '10%'] }}
                   transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
                 />
@@ -126,8 +128,8 @@ export default function DigitalIdCard() {
                 <span className="font-mono text-sm uppercase text-muted-foreground">Scan at door</span>
               </div>
               
-              <div className="text-xs font-mono text-muted-foreground">
-                ID: <span className="text-foreground font-bold">{userId.slice(0, 8)}...</span>
+              <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mt-4">
+                <span className="text-foreground font-bold text-sm">{userName || (userId.slice(0, 8) + '...')}</span>
               </div>
 
               <div className="mt-8 flex items-center gap-3 w-full border-t border-border pt-6">
@@ -141,7 +143,7 @@ export default function DigitalIdCard() {
                       <circle cx="20" cy="20" r="16" className="stroke-border fill-none" strokeWidth="2" />
                       <motion.circle 
                         cx="20" cy="20" r="16" 
-                        className={`${timeLeft < 5 ? 'stroke-red-500' : 'stroke-blue-500'} fill-none transition-colors duration-300`} 
+                        className={`${timeLeft < 5 ? 'stroke-red-500' : 'stroke-foreground'} fill-none transition-colors duration-300`} 
                         strokeWidth="2"
                         strokeDasharray="100"
                         strokeDashoffset={100 - (timeLeft / 30) * 100}

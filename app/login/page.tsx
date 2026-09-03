@@ -10,11 +10,11 @@ import { createClient } from '@/lib/supabase/client';
 import { Checkbox } from '@/components/ui/checkbox';
 
 const DEMO_ACCOUNTS = [
-  { label: 'NCCT Admin', email: 'admin@apexfintech.test' },
-  { label: 'Institute Admin', email: 'pm@apexfintech.test' },
-  { label: 'Trainer', email: 'tm@apexfintech.test' },
-  { label: 'Trainee', email: 'dev@apexfintech.test' },
-  { label: 'Employer', email: 'qa@apexfintech.test' },
+  { label: 'Super Admin', email: 'super@coopsetu.test' },
+  { label: 'Institute Admin', email: 'admin@coopsetu.test' },
+  { label: 'Trainer', email: 'trainer@coopsetu.test' },
+  { label: 'Trainee', email: 'trainee@coopsetu.test' },
+  { label: 'Employer', email: 'employer@coopsetu.test' },
 ];
 
 export default function LoginPage() {
@@ -225,6 +225,7 @@ function LoginInner() {
             </button>
 
             <div className="pt-4 pb-2 text-center flex flex-col items-center">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">No account required</span>
               <Link href="/demo" className="w-full h-10 bg-black border border-zinc-800 text-white text-xs font-mono uppercase tracking-widest hover:border-zinc-500 flex items-center justify-center gap-2 transition-colors rounded-[4px]">
                 EXPLORE DEMO
               </Link>

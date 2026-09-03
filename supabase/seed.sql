@@ -1,5 +1,5 @@
 -- ============================================================================
--- CoopSetu — seed.sql (local development data)
+-- CoopSetu â€” seed.sql (local development data)
 -- Demo password for every account: Password123!
 -- ============================================================================
 
@@ -15,15 +15,15 @@ declare
   v_member uuid;
   v_role uuid;
   users constant jsonb := '[
-    {"id":"00000000-0000-0000-0000-000000000001","email":"admin@apexfintech.test","name":"Ava Admin","role":"ORG_ADMIN","title":"Head of Operations"},
-    {"id":"00000000-0000-0000-0000-000000000002","email":"pm@apexfintech.test","name":"Pat Manager","role":"PROJECT_MANAGER","title":"Senior Project Manager"},
-    {"id":"00000000-0000-0000-0000-000000000003","email":"dev@apexfintech.test","name":"Dev Rao","role":"DEVELOPER","title":"Backend Engineer"},
-    {"id":"00000000-0000-0000-0000-000000000004","email":"qa@apexfintech.test","name":"Quinn Tester","role":"QA_ENGINEER","title":"QA Engineer"},
-    {"id":"00000000-0000-0000-0000-000000000005","email":"sec@apexfintech.test","name":"Sam Secure","role":"SECURITY_ENGINEER","title":"Security Engineer"},
-    {"id":"00000000-0000-0000-0000-000000000006","email":"audit@apexfintech.test","name":"Audrey Auditor","role":"AUDITOR","title":"Internal Auditor"},
-    {"id":"00000000-0000-0000-0000-000000000007","email":"client@apexfintech.test","name":"Cleo Client","role":"CLIENT_VIEWER","title":"Client Stakeholder"},
-    {"id":"00000000-0000-0000-0000-000000000008","email":"owner@apexfintech.test","name":"Olivia Owner","role":"ORG_OWNER","title":"Founder & CEO"},
-    {"id":"00000000-0000-0000-0000-000000000009","email":"tm@apexfintech.test","name":"Tomas Lead","role":"TEAM_MANAGER","title":"Payments Team Manager"}
+    {"id":"00000000-0000-0000-0000-000000000001","email":"super@coopsetu.test","name":"NCCT Super Admin","role":"SUPER_ADMIN","title":"NCCT Authority"},
+    {"id":"00000000-0000-0000-0000-000000000002","email":"admin@coopsetu.test","name":"Institute Admin","role":"INSTITUTE_ADMIN","title":"Institute Director"},
+    {"id":"00000000-0000-0000-0000-000000000003","email":"trainer@coopsetu.test","name":"Expert Trainer","role":"TRAINER","title":"Senior Faculty"},
+    {"id":"00000000-0000-0000-0000-000000000004","email":"trainee@coopsetu.test","name":"Student Trainee","role":"TRAINEE","title":"Batch 2026 Student"},
+    {"id":"00000000-0000-0000-0000-000000000005","email":"employer@coopsetu.test","name":"Recruiting Employer","role":"EMPLOYER","title":"HR Director"},
+    {"id":"00000000-0000-0000-0000-000000000006","email":"audit@coopsetu.test","name":"Audrey Auditor","role":"AUDITOR","title":"Internal Auditor"},
+    {"id":"00000000-0000-0000-0000-000000000007","email":"client@coopsetu.test","name":"Cleo Client","role":"CLIENT_VIEWER","title":"Client Stakeholder"},
+    {"id":"00000000-0000-0000-0000-000000000008","email":"owner@coopsetu.test","name":"Olivia Owner","role":"ORG_OWNER","title":"Founder & CEO"},
+    {"id":"00000000-0000-0000-0000-000000000009","email":"tm@coopsetu.test","name":"Tomas Lead","role":"TEAM_MANAGER","title":"Payments Team Manager"}
   ]'::jsonb;
 begin
   -- Pass 1: create auth users + identities + profile job titles
@@ -84,7 +84,7 @@ begin
 
   -- Organization (created_by now exists)
   insert into public.organizations (id, name, slug, industry, timezone, created_by, initial_setup_completed_at)
-  values (v_org, 'Apex Financial Technologies', 'apex-financial-technologies', 'Fintech', 'UTC',
+  values (v_org, 'CoopSetu Training Network', 'coopsetu', 'Education', 'UTC',
           '00000000-0000-0000-0000-000000000001', now())
   on conflict (id) do nothing;
 
@@ -234,7 +234,7 @@ begin
       -- a couple comments on the first task of each project
       if i = 1 then
         insert into task_comments (organization_id, task_id, author_member_id, body)
-        values (v_org, v_task, v_pm, 'Kicking this off — please prioritize.'),
+        values (v_org, v_task, v_pm, 'Kicking this off â€” please prioritize.'),
                (v_org, v_task, v_dev, 'On it, will update by EOD.');
       end if;
     end loop;
@@ -376,4 +376,15 @@ begin
     from projects p where p.organization_id = v_org and p.code = 'UPI'
     on conflict (project_id, team_id) do nothing;
   end if;
+end $$;
+
+-- Temporary fix: ensure dev@apexfintech.test is properly registered in trainees table so the demo button works
+do $$
+declare
+  v_org uuid := '00000000-0000-0000-0000-0000000000a0';
+  v_trainee uuid := '00000000-0000-0000-0000-000000000003'; -- dev@apexfintech.test
+begin
+  insert into public.trainees (user_id, organization_id, status)
+  values (v_trainee, v_org, 'ACTIVE')
+  on conflict do nothing;
 end $$;

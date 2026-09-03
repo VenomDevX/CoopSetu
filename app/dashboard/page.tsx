@@ -6,7 +6,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line
 } from 'recharts';
-import { Terminal, AlertTriangle, CheckCircle2, Clock, ShieldAlert, Plus, Users, FolderKanban, Calendar, ArrowRight } from 'lucide-react';
+import { Terminal, AlertTriangle, CheckCircle2, Clock, ShieldAlert, Plus, Users, FolderKanban, Calendar, ArrowRight, Activity, Server } from 'lucide-react';
 import { useTheme } from "next-themes";
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
@@ -92,21 +92,27 @@ export default function CommandCenter() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 border-b border-border pb-6"
+        className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 border-b border-border/50 pb-4"
       >
         <div>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono uppercase tracking-widest mb-3">
-            <div className="w-2 h-2 bg-foreground animate-pulse rounded" />
-            WORKSPACE: {membership.organizationName} {' // SYNC: ACTIVE // UPDATED: '}{lastSync}
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-mono uppercase tracking-widest mb-2 opacity-60">
+            MODULE_01 // WORKSPACE: {membership.organizationName}
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground mb-1">CoopSetu Command Center</h1>
-          <div className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tighter uppercase text-foreground mb-1">Command Center</h1>
+          <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest opacity-60">
             {startOfWeek} — {endOfWeek}
           </div>
         </div>
         
         {/* Actions based on Persona / Permissions */}
         <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 border border-border/50 rounded-sm bg-surface/20 px-3 py-1.5 mr-2">
+            <span className="relative flex w-2 h-2">
+              <span className="absolute inline-flex w-full h-full bg-accent animate-ping opacity-75" />
+              <span className="relative inline-flex w-2 h-2 bg-accent" />
+            </span>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Live Sync ({lastSync})</span>
+          </div>
           {persona === 'ADMIN' && (
             <>
               {has('project:create') && (
@@ -157,43 +163,7 @@ export default function CommandCenter() {
         </div>
       </motion.div>
 
-      {/* INTELLIGENCE FEED */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
-        <Card className="border border-border rounded shadow-none rounded bg-background relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-accent" />
-          <CardContent className="p-6 flex flex-col md:flex-row items-start gap-6">
-            <div className="p-3 bg-foreground text-background border border-foreground rounded shrink-0 md:mt-1 hidden md:block">
-              <Terminal className="w-6 h-6" />
-            </div>
-            <div className="flex-1 w-full">
-              <h3 className="font-mono text-sm font-bold mb-4 uppercase tracking-widest text-foreground">Intelligence_Feed</h3>
-              {signals.length === 0 ? (
-                <p className="text-sm text-muted-foreground font-mono uppercase tracking-widest">
-                  No active delivery signals require attention.
-                </p>
-              ) : (
-                <div className="flex flex-col divide-y divide-border border border-border rounded">
-                  {signals.map((s, idx) => (
-                    <Link key={idx} href={s.href} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 hover:bg-surface-hover transition-colors group">
-                      <div className="flex items-center gap-3">
-                        <span className={`uppercase text-[10px] font-mono px-1.5 py-0.5 border ${
-                          s.severity === 'critical' ? 'border-destructive/40 text-destructive bg-destructive/10' :
-                          s.severity === 'high' ? 'border-orange-500/40 text-orange-500 bg-orange-500/10' :
-                          'border-border text-muted-foreground bg-surface'
-                        }`}>
-                          {s.severity}
-                        </span>
-                        <span className="text-sm text-foreground">{s.label}</span>
-                      </div>
-                      <span className="font-mono text-[10px] text-muted-foreground group-hover:text-foreground hidden sm:block">VIEW →</span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+
 
       {/* KPI ROW */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -208,82 +178,160 @@ export default function CommandCenter() {
           { label: 'Blocked / Overdue', value: pad(metrics.blockedTasks + metrics.overdueTasks), sub: `${metrics.blockedTasks} Blocked · ${metrics.overdueTasks} Overdue`, icon: <Clock className="w-5 h-5" /> },
           { label: 'Pending Approvals', value: pad(metrics.pendingApprovals), sub: 'Release Gates', icon: <ShieldAlert className="w-5 h-5" /> },
         ]).map((stat, i) => (
-          <Card key={i} className="shadow-none border-border rounded bg-background hover:border-foreground transition-colors group relative">
+          <Card key={i} className="shadow-none border border-border/50 rounded-lg bg-card/10 relative overflow-hidden flex flex-col justify-between min-h-[160px] hover:border-foreground/30 transition-colors">
             <CardContent className="p-6 flex flex-col justify-between h-full">
-              <div className="flex items-center justify-between text-muted-foreground mb-8">
-                <span className="font-mono text-[10px] uppercase tracking-widest">{stat.label}</span>
-                <div className="p-2 border border-border rounded group-hover:bg-foreground group-hover:text-background transition-colors">{stat.icon}</div>
+              <div className="flex justify-between items-start mb-6">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70">
+                  {stat.label}
+                </span>
+                <div className="w-8 h-8 rounded border border-border/50 flex items-center justify-center opacity-60 text-foreground group-hover:bg-foreground group-hover:text-background transition-colors">
+                  {stat.icon}
+                </div>
               </div>
               <div>
-                <div className="text-4xl font-bold mb-2 text-foreground tracking-tighter">{stat.value}</div>
-                <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground truncate">{stat.sub}</div>
+                <div className="text-4xl font-bold tracking-tighter mb-1 text-foreground">{stat.value}</div>
+                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-50 truncate">{stat.sub}</div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      {/* AI SYSTEMS OVERVIEW */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        {[
+          { label: 'AI Requests Processed', value: '1.2M', sub: 'Last 30 Days', icon: <Terminal className="w-5 h-5" /> },
+          { label: 'Token Consumption', value: '450.5M', sub: 'Input / Output', icon: <Activity className="w-5 h-5" /> },
+          { label: 'Avg Model Latency', value: '245ms', sub: 'Across All Endpoints', icon: <Clock className="w-5 h-5" /> },
+          { label: 'Active LLM Endpoints', value: '3', sub: 'GPT-4 · Gemini · LLaMA', icon: <Server className="w-5 h-5" /> },
+        ].map((stat, i) => (
+          <Card key={`ai-stat-${i}`} className="shadow-none border border-border/50 rounded-lg bg-card/10 relative overflow-hidden flex flex-col justify-between min-h-[140px] hover:border-blue-500/30 transition-colors group">
+            <CardContent className="p-6 flex flex-col justify-between h-full">
+              <div className="flex justify-between items-start mb-6">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-blue-400 opacity-70">
+                  {stat.label}
+                </span>
+                <div className="w-8 h-8 rounded border border-blue-500/20 flex items-center justify-center opacity-60 text-blue-400 group-hover:bg-blue-500/10 group-hover:text-blue-300 transition-colors">
+                  {stat.icon}
+                </div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold tracking-tighter mb-1 text-foreground">{stat.value}</div>
+                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-50 truncate">{stat.sub}</div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* OPERATIONAL GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* OPERATIONAL GRID - ROW 1 */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         
-        {/* Delivery Trend */}
-        <Card className="shadow-none border-border rounded bg-background h-full flex flex-col">
-          <CardHeader className="border-b border-border pb-4 mb-4">
-            <CardTitle className="text-xs font-mono uppercase tracking-widest text-foreground">Delivery_Trend</CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 min-h-[300px]">
-            {velocity.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-6 py-12">
-                No completed sprint data is available yet.<br/>Create and complete a sprint to view delivery trend.
-              </div>
+        {/* Charts Container */}
+        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Delivery Trend */}
+          <Card className="shadow-none border border-border/50 rounded-lg bg-card/10 h-full flex flex-col">
+            <CardHeader className="border-b border-border/10 pb-4 mb-4">
+              <CardTitle className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70">Delivery_Trend</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 min-h-[300px]">
+              {velocity.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-6 py-12">
+                  No completed sprint data is available yet.<br/>Create and complete a sprint to view delivery trend.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={velocity} margin={{ top: 10, right: 10, bottom: 10, left: -20 }}>
+                    <CartesianGrid strokeDasharray="2 2" vertical={false} stroke={gridColor} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} dy={15} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: '0', border: `1px solid ${chartColor}`, fontSize: '12px', fontFamily: 'monospace', backgroundColor: tooltipBg, textTransform: 'uppercase' }}
+                      cursor={{ stroke: gridColor, strokeWidth: 1, strokeDasharray: '4 4' }}
+                    />
+                    <Line type="step" dataKey="points" stroke={chartColor} strokeWidth={2} dot={{ r: 4, fill: tooltipBg, stroke: chartColor, strokeWidth: 2 }} activeDot={{ r: 6, fill: chartColor }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Work by Project */}
+          <Card className="shadow-none border border-border/50 rounded-lg bg-card/10 h-full flex flex-col">
+            <CardHeader className="border-b border-border/10 pb-4 mb-4">
+              <CardTitle className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70">Work_By_Project</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 min-h-[300px]">
+              {workload.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-6 py-12">
+                  No active work found for accessible projects.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={workload} margin={{ top: 10, right: 10, bottom: 10, left: -20 }}>
+                    <CartesianGrid strokeDasharray="2 2" vertical={false} stroke={gridColor} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} dy={15} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} />
+                    <Tooltip
+                      cursor={{ fill: gridColor, opacity: 0.5 }}
+                      contentStyle={{ borderRadius: '0', border: `1px solid ${chartColor}`, fontSize: '12px', fontFamily: 'monospace', backgroundColor: tooltipBg, textTransform: 'uppercase' }}
+                    />
+                    <Bar dataKey="open" fill={chartColor} maxBarSize={40} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* INTELLIGENCE FEED (Right Sidebar) */}
+        <Card className="shadow-none border border-border/50 rounded-lg bg-card/10 relative overflow-hidden flex flex-col h-[400px] lg:h-auto lg:col-span-1">
+          <CardContent className="p-6 flex flex-col h-full">
+            <div className="font-mono text-xs font-bold uppercase tracking-widest mb-6 shrink-0">
+              &gt;_ AI Feed // Intelligence
+            </div>
+            {signals.length === 0 ? (
+              <p className="text-sm text-muted-foreground font-mono uppercase tracking-widest opacity-50">
+                No active delivery signals require attention.
+              </p>
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={velocity} margin={{ top: 10, right: 10, bottom: 10, left: -20 }}>
-                  <CartesianGrid strokeDasharray="2 2" vertical={false} stroke={gridColor} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} dy={15} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} />
-                  <Tooltip
-                    contentStyle={{ borderRadius: '0', border: `1px solid ${chartColor}`, fontSize: '12px', fontFamily: 'monospace', backgroundColor: tooltipBg, textTransform: 'uppercase' }}
-                    cursor={{ stroke: gridColor, strokeWidth: 1, strokeDasharray: '4 4' }}
-                  />
-                  <Line type="step" dataKey="points" stroke={chartColor} strokeWidth={2} dot={{ r: 4, fill: tooltipBg, stroke: chartColor, strokeWidth: 2 }} activeDot={{ r: 6, fill: chartColor }} />
-                </LineChart>
-              </ResponsiveContainer>
+              <div className="flex-1 space-y-3 overflow-y-auto pr-2">
+                {signals.map((s, idx) => (
+                  <Link key={idx} href={s.href} className="block p-4 border border-border/30 rounded bg-muted/5 hover:bg-muted/10 transition-colors">
+                    <p className="font-mono text-[11px] text-muted-foreground leading-relaxed flex flex-col sm:flex-row sm:items-center gap-2">
+                      <span className="flex items-center gap-2">
+                        <span className="text-blue-500 font-bold">&gt;</span>
+                        <span className={`uppercase font-bold ${
+                            s.severity === 'critical' ? 'text-destructive' :
+                            s.severity === 'high' ? 'text-orange-500' :
+                            'text-muted-foreground'
+                          }`}>
+                          {s.severity}:
+                        </span>
+                      </span>
+                      <span>{s.label}</span>
+                    </p>
+                  </Link>
+                ))}
+              </div>
             )}
+            <div className="pt-4 mt-4 border-t border-border/10 flex items-center gap-2 shrink-0">
+              <motion.div 
+                animate={{ opacity: [1, 0, 1] }} 
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                className="w-2 h-3 bg-muted-foreground" 
+              />
+              <span className="font-mono text-[10px] text-muted-foreground opacity-50">Ready</span>
+            </div>
           </CardContent>
         </Card>
+      </div>
 
-        {/* Work by Project */}
-        <Card className="shadow-none border-border rounded bg-background h-full flex flex-col">
-          <CardHeader className="border-b border-border pb-4 mb-4">
-            <CardTitle className="text-xs font-mono uppercase tracking-widest text-foreground">Work_By_Project</CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 min-h-[300px]">
-            {workload.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-6 py-12">
-                No active work found for accessible projects.
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={workload} margin={{ top: 10, right: 10, bottom: 10, left: -20 }}>
-                  <CartesianGrid strokeDasharray="2 2" vertical={false} stroke={gridColor} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} dy={15} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} />
-                  <Tooltip
-                    cursor={{ fill: gridColor, opacity: 0.5 }}
-                    contentStyle={{ borderRadius: '0', border: `1px solid ${chartColor}`, fontSize: '12px', fontFamily: 'monospace', backgroundColor: tooltipBg, textTransform: 'uppercase' }}
-                  />
-                  <Bar dataKey="open" fill={chartColor} maxBarSize={40} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-
+      {/* OPERATIONAL GRID - ROW 2 */}
+      <div className="grid grid-cols-1 gap-6 mb-6">
         {/* Attention Queue */}
-        <Card className="shadow-none border-border rounded bg-background h-full flex flex-col lg:col-span-2">
-          <CardHeader className="border-b border-border pb-4 bg-surface sticky top-0 z-10">
-            <CardTitle className="text-xs font-mono uppercase tracking-widest text-foreground">Attention_Queue</CardTitle>
+        <Card className="shadow-none border border-border/50 rounded-lg bg-card/10 h-full flex flex-col w-full">
+          <CardHeader className="border-b border-border/10 pb-4 sticky top-0 z-10">
+            <CardTitle className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70">Attention_Queue</CardTitle>
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
             {attentionQueue.length === 0 ? (
@@ -334,9 +382,9 @@ export default function CommandCenter() {
         </Card>
 
         {/* Upcoming Deadlines */}
-        <Card className="shadow-none border-border rounded bg-background h-full flex flex-col lg:col-span-2">
-          <CardHeader className="border-b border-border pb-4">
-            <CardTitle className="text-xs font-mono uppercase tracking-widest text-foreground">Upcoming_Deadlines</CardTitle>
+        <Card className="shadow-none border border-border/50 rounded-lg bg-card/10 h-full flex flex-col w-full">
+          <CardHeader className="border-b border-border/10 pb-4 sticky top-0 z-10">
+            <CardTitle className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70">Upcoming_Deadlines</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {upcomingDeadlines.length === 0 ? (
@@ -365,9 +413,9 @@ export default function CommandCenter() {
       </div>
 
       {/* RECENT ACTIVITY */}
-      <Card className="shadow-none border-border rounded bg-background">
-        <CardHeader className="border-b border-border pb-4">
-          <CardTitle className="text-xs font-mono uppercase tracking-widest text-foreground">Recent_Authorized_Activity</CardTitle>
+      <Card className="shadow-none border border-border/50 rounded-lg bg-card/10 w-full mb-8">
+        <CardHeader className="border-b border-border/10 pb-4 sticky top-0 z-10">
+          <CardTitle className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70">Recent_Authorized_Activity</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {recentActivity.length === 0 ? (

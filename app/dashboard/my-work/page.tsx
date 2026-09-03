@@ -122,25 +122,23 @@ export default function MyWorkPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border/50 pb-4">
         <div>
-          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
-            <span>Overview</span>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-foreground">My Work</span>
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-mono uppercase tracking-widest mb-2 opacity-60">
+            MODULE_02 // WORKSPACE: {membership.organizationName}
           </div>
-          <h1 className="text-3xl font-bold tracking-tight uppercase flex items-center gap-3">
-            <Briefcase className="w-8 h-8" />
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tighter uppercase text-foreground mb-1 flex items-center gap-3">
+            <Briefcase className="w-8 h-8 opacity-70" />
             My Work
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-widest">
-            {membership.organizationName} · Your assigned work, deadlines, and active delivery items.
+          <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest opacity-60">
+            Your assigned work, deadlines, and active delivery items.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/dashboard/tasks">
-            <Button className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
-              <Plus className="w-4 h-4" />
+            <Button className="h-8 px-4 rounded-sm text-[10px] font-mono uppercase tracking-widest border border-border/50 bg-surface/20 text-foreground hover:bg-foreground hover:text-background transition-colors gap-2">
+              <Plus className="w-3 h-3" />
               Go to Task Board
             </Button>
           </Link>
@@ -171,14 +169,21 @@ export default function MyWorkPage() {
           { label: 'Completed Pts', value: String(kpis.donePoints), icon: FileSignature, trend: 'Done' },
           { label: 'Total Points', value: `${kpis.donePoints}/${kpis.points}`, icon: TrendingUp, trend: `${completionPct}% completion` },
         ].map((kpi, i) => (
-          <div key={i} className={`p-4 border rounded ${kpi.error ? 'border-destructive/50 bg-destructive/5' : kpi.alert ? 'border-accent/50 bg-accent/5' : 'border-border bg-surface'} relative overflow-hidden group`}>
-            <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-100 transition-opacity">
-              <kpi.icon className={`w-12 h-12 ${kpi.error ? 'text-destructive' : kpi.alert ? 'text-accent' : 'text-muted-foreground'}`} />
+          <div key={i} className={`p-4 border border-border/50 rounded-lg bg-card/10 relative overflow-hidden group hover:border-foreground/30 transition-colors`}>
+            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-30 transition-opacity">
+              <kpi.icon className={`w-12 h-12 ${kpi.error ? 'text-destructive' : kpi.alert ? 'text-accent' : 'text-foreground'}`} />
             </div>
-            <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">{kpi.label}</div>
-            <div className="text-3xl font-bold tracking-tighter mb-1 relative z-10">{kpi.value}</div>
-            <div className={`font-mono text-[10px] uppercase tracking-widest ${kpi.error ? 'text-destructive' : kpi.alert ? 'text-accent' : 'text-muted-foreground'} relative z-10`}>
-              {kpi.trend}
+            <div className="flex justify-between items-start mb-4">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70">{kpi.label}</span>
+              <div className="w-6 h-6 rounded border border-border/50 flex items-center justify-center opacity-60 text-foreground">
+                <kpi.icon className={`w-3 h-3 ${kpi.error ? 'text-destructive' : kpi.alert ? 'text-accent' : ''}`} />
+              </div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold tracking-tighter mb-1 relative z-10 text-foreground">{kpi.value}</div>
+              <div className={`font-mono text-[10px] uppercase tracking-widest opacity-50 relative z-10 ${kpi.error ? 'text-destructive' : kpi.alert ? 'text-accent' : 'text-muted-foreground'}`}>
+                {kpi.trend}
+              </div>
             </div>
           </div>
         ))}
@@ -191,27 +196,27 @@ export default function MyWorkPage() {
         <div className="lg:col-span-2 space-y-8">
 
           {/* Priorities */}
-          <div className="border border-border rounded bg-background overflow-hidden">
-            <div className="p-4 border-b border-border flex items-center justify-between bg-surface-hover">
-              <h3 className="font-mono text-xs uppercase tracking-widest font-bold">
+          <div className="shadow-none border border-border/50 rounded-lg bg-card/10 overflow-hidden">
+            <div className="p-4 border-b border-border/10">
+              <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70">
                 Today&apos;s Priorities
               </h3>
             </div>
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-border/20">
               {priorities.map((t) => (
-                <div key={t.id} className="p-4 hover:bg-surface-hover transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer" onClick={() => setSelectedTask(t)}>
+                <div key={t.id} className="p-4 hover:bg-muted/5 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer" onClick={() => setSelectedTask(t)}>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-1">
-                      <span className="font-mono text-[10px] px-2 py-0.5 bg-surface rounded-[3px] text-muted-foreground">{t.task_key}</span>
-                      <span className={`font-mono text-[10px] px-2 py-0.5 rounded-[3px] ${t.priority === 'CRITICAL' || t.priority === 'HIGH' ? 'bg-destructive/10 text-destructive' : 'bg-surface text-foreground'}`}>
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="font-mono text-[10px] px-1.5 py-0.5 border border-border/50 rounded text-muted-foreground opacity-70">{t.task_key}</span>
+                      <span className={`font-mono text-[10px] px-1.5 py-0.5 border border-border/50 rounded opacity-70 ${t.priority === 'CRITICAL' || t.priority === 'HIGH' ? 'text-destructive' : 'text-foreground'}`}>
                         {t.priority}
                       </span>
-                      <span className="font-mono text-[10px] uppercase text-accent rounded-[3px] px-2 py-0.5 bg-surface flex items-center gap-1">
+                      <span className="font-mono text-[10px] uppercase text-accent border border-accent/20 rounded px-1.5 py-0.5 opacity-70 flex items-center gap-1">
                         <Clock className="w-3 h-3" /> Due {fmtDue(t.due_date)}
                       </span>
                     </div>
-                    <div className="text-sm font-bold truncate">{t.title}</div>
-                    <div className="text-xs text-muted-foreground mt-1 flex items-center gap-4 font-mono tracking-wider">
+                    <div className="text-sm font-bold truncate text-foreground/90">{t.title}</div>
+                    <div className="text-[10px] text-muted-foreground opacity-50 mt-1 flex items-center gap-4 font-mono tracking-wider uppercase">
                       <span>{t.project_code}</span>
                       <span>{STATUS_DISPLAY[t.status] ?? t.status}</span>
                     </div>
@@ -219,7 +224,7 @@ export default function MyWorkPage() {
                 </div>
               ))}
               {priorities.length === 0 && (
-                <div className="p-6 text-center text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                <div className="p-6 text-center text-[10px] font-mono text-muted-foreground opacity-50 uppercase tracking-widest">
                   No open tasks assigned to you.
                 </div>
               )}
@@ -227,30 +232,30 @@ export default function MyWorkPage() {
           </div>
 
           {/* My Tasks Data Table */}
-          <div className="border border-border rounded bg-background overflow-hidden">
-            <div className="p-4 border-b border-border bg-surface-hover flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <h3 className="font-mono text-xs uppercase tracking-widest font-bold">My Tasks</h3>
+          <div className="shadow-none border border-border/50 rounded-lg bg-card/10 overflow-hidden">
+            <div className="p-4 border-b border-border/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70">My Tasks</h3>
               <div className="flex items-center gap-2">
                 <div className="relative">
-                  <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground opacity-50" />
                   <input
                     type="text"
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setPage(0); }}
                     placeholder="FILTER TASKS..."
-                    className="h-7 pl-7 pr-3 bg-background border border-border text-[10px] font-mono uppercase w-48 focus:outline-none focus:border-foreground"
+                    className="h-7 pl-7 pr-3 bg-transparent border border-border/50 text-[10px] font-mono uppercase w-48 focus:outline-none focus:border-foreground/50 transition-colors"
                   />
                 </div>
-                <Button variant="outline" size="sm" disabled title="Not available yet" className="h-7 px-3 rounded text-[10px] font-mono uppercase border-border opacity-50">
+                <Button variant="outline" size="sm" disabled title="Not available yet" className="h-7 px-3 rounded text-[10px] font-mono uppercase tracking-widest border-border/50 opacity-50 bg-transparent">
                   <Filter className="w-3 h-3 mr-2" /> Filter
                 </Button>
               </div>
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-border overflow-x-auto scrollbar-none">
+            <div className="flex border-b border-border/10 overflow-x-auto scrollbar-none">
               {TABS.map((tab, i) => (
-                <button key={i} onClick={() => { setTabIndex(i); setPage(0); }} className={`px-4 py-3 text-xs font-mono uppercase tracking-widest whitespace-nowrap border-b-2 ${i === tabIndex ? 'border-foreground text-foreground font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+                <button key={i} onClick={() => { setTabIndex(i); setPage(0); }} className={`px-4 py-3 text-[10px] font-mono uppercase tracking-widest whitespace-nowrap border-b-2 transition-colors ${i === tabIndex ? 'border-foreground/50 text-foreground opacity-90' : 'border-transparent text-muted-foreground opacity-50 hover:opacity-100'}`}>
                   {tab.label}
                 </button>
               ))}
@@ -259,31 +264,31 @@ export default function MyWorkPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[800px] text-left text-sm font-mono border-collapse">
                 <thead>
-                  <tr className="border-b border-border bg-surface-hover/50">
-                    <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">ID</th>
-                    <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Title</th>
-                    <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Status</th>
-                    <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Due</th>
-                    <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Pts</th>
-                    <th className="p-3 text-[10px] uppercase tracking-widest text-muted-foreground font-normal">Actions</th>
+                  <tr className="border-b border-border/10 bg-muted/5">
+                    <th className="p-4 text-[10px] uppercase tracking-widest text-muted-foreground opacity-60 font-normal">ID</th>
+                    <th className="p-4 text-[10px] uppercase tracking-widest text-muted-foreground opacity-60 font-normal">Title</th>
+                    <th className="p-4 text-[10px] uppercase tracking-widest text-muted-foreground opacity-60 font-normal">Status</th>
+                    <th className="p-4 text-[10px] uppercase tracking-widest text-muted-foreground opacity-60 font-normal">Due</th>
+                    <th className="p-4 text-[10px] uppercase tracking-widest text-muted-foreground opacity-60 font-normal">Pts</th>
+                    <th className="p-4 text-[10px] uppercase tracking-widest text-muted-foreground opacity-60 font-normal">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-border/10">
                   {pageRows.map((t) => {
                     const display = STATUS_DISPLAY[t.status] ?? t.status;
                     return (
-                      <tr key={t.id} className="hover:bg-surface-hover group cursor-pointer" onClick={() => setSelectedTask(t)}>
-                        <td className="p-3 text-muted-foreground text-xs">{t.task_key}</td>
-                        <td className="p-3 text-xs font-sans font-medium truncate max-w-[200px]">{t.title}</td>
-                        <td className="p-3">
-                          <span className={`text-[10px] px-2 py-0.5 rounded-[3px] ${display === 'Blocked' ? 'bg-destructive/10 text-destructive' : display === 'In Progress' ? 'bg-accent/10 text-accent' : 'bg-surface text-muted-foreground'}`}>
+                      <tr key={t.id} className="hover:bg-muted/5 group cursor-pointer transition-colors" onClick={() => setSelectedTask(t)}>
+                        <td className="p-4 text-muted-foreground text-[10px] opacity-70 border-border/50">{t.task_key}</td>
+                        <td className="p-4 text-xs font-sans font-medium truncate max-w-[200px] text-foreground/80">{t.title}</td>
+                        <td className="p-4">
+                          <span className={`text-[10px] px-1.5 py-0.5 border rounded opacity-70 uppercase tracking-widest ${display === 'Blocked' ? 'border-destructive/40 text-destructive bg-destructive/10' : display === 'In Progress' ? 'border-accent/40 text-accent bg-accent/10' : 'border-border/50 text-muted-foreground'}`}>
                             {display}
                           </span>
                         </td>
-                        <td className="p-3 text-[10px] text-muted-foreground">{fmtDue(t.due_date)}</td>
-                        <td className="p-3 text-[10px] text-muted-foreground">{t.story_points ?? '—'}</td>
-                        <td className="p-3">
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                        <td className="p-4 text-[10px] text-muted-foreground opacity-70 uppercase">{fmtDue(t.due_date)}</td>
+                        <td className="p-4 text-[10px] text-muted-foreground opacity-70">{t.story_points ?? '—'}</td>
+                        <td className="p-4">
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded opacity-0 group-hover:opacity-100 transition-opacity bg-transparent border border-border/30 hover:border-foreground/50">
                             <MoreVertical className="w-3 h-3 text-muted-foreground" />
                           </Button>
                         </td>
@@ -292,7 +297,7 @@ export default function MyWorkPage() {
                   })}
                   {filtered.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="p-6 text-center text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                      <td colSpan={6} className="p-6 text-center text-[10px] font-mono text-muted-foreground opacity-50 uppercase tracking-widest">
                         No tasks in this view.
                       </td>
                     </tr>
@@ -301,12 +306,12 @@ export default function MyWorkPage() {
               </table>
             </div>
 
-            <div className="p-3 border-t border-border flex justify-between items-center text-[10px] font-mono text-muted-foreground bg-surface-hover">
+            <div className="p-3 border-t border-border/10 flex justify-between items-center text-[10px] font-mono text-muted-foreground bg-muted/5 opacity-70">
               <span>Showing {rangeStart}-{rangeEnd} of {filtered.length} tasks</span>
               <div className="flex gap-2 items-center">
-                <button className="hover:text-foreground disabled:opacity-40" disabled={safePage === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>Prev</button>
+                <button className="hover:text-foreground disabled:opacity-40 uppercase tracking-widest" disabled={safePage === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>Prev</button>
                 <span>{safePage + 1} / {pageCount}</span>
-                <button className="hover:text-foreground disabled:opacity-40" disabled={safePage >= pageCount - 1} onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}>Next</button>
+                <button className="hover:text-foreground disabled:opacity-40 uppercase tracking-widest" disabled={safePage >= pageCount - 1} onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}>Next</button>
               </div>
             </div>
           </div>
@@ -315,58 +320,58 @@ export default function MyWorkPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
             {/* My Sprint Work */}
-            <div className="border border-border rounded bg-background p-5 overflow-hidden">
-              <h3 className="font-mono text-xs uppercase tracking-widest font-bold mb-4">
+            <div className="shadow-none border border-border/50 rounded-lg bg-card/10 p-5 flex flex-col">
+              <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70 mb-4">
                 {data?.sprint ? data.sprint.name : 'My Sprint Work'}
               </h3>
               {data?.sprint ? (
                 <div className="space-y-4">
                   <div>
-                    <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-2 uppercase tracking-widest">
+                    <div className="flex justify-between text-[10px] font-mono text-muted-foreground opacity-70 mb-2 uppercase tracking-widest">
                       <span>Sprint Points Completed</span>
                       <span className="text-foreground">{data.sprint.completedPoints} / {data.sprint.plannedPoints}</span>
                     </div>
-                    <div className="h-2 w-full bg-surface border border-border overflow-hidden">
-                      <div className="h-full bg-foreground" style={{ width: `${sprintPct}%` }} />
+                    <div className="h-1 w-full bg-border/30 rounded overflow-hidden">
+                      <div className="h-full bg-foreground opacity-70" style={{ width: `${sprintPct}%` }} />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4 mt-6">
-                    <div className="p-3 border border-border bg-surface-hover">
-                      <div className="text-2xl font-bold">{data.sprint.myOpen}</div>
-                      <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">My Open Items</div>
+                    <div className="p-4 border border-border/30 bg-muted/5 rounded">
+                      <div className="text-2xl font-bold text-foreground/80">{data.sprint.myOpen}</div>
+                      <div className="text-[10px] font-mono text-muted-foreground opacity-50 uppercase tracking-widest mt-1">My Open Items</div>
                     </div>
-                    <div className="p-3 border border-border bg-surface-hover">
-                      <div className="text-2xl font-bold">{data.sprint.myPoints}</div>
-                      <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">My Points</div>
+                    <div className="p-4 border border-border/30 bg-muted/5 rounded">
+                      <div className="text-2xl font-bold text-foreground/80">{data.sprint.myPoints}</div>
+                      <div className="text-[10px] font-mono text-muted-foreground opacity-50 uppercase tracking-widest mt-1">My Points</div>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest py-6">
+                <div className="text-[10px] font-mono text-muted-foreground opacity-50 uppercase tracking-widest py-6">
                   No active sprint with work assigned to you.
                 </div>
               )}
             </div>
 
             {/* Recent Activity */}
-            <div className="border border-border rounded bg-background flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-border bg-surface-hover">
-                <h3 className="font-mono text-xs uppercase tracking-widest font-bold">Recent Activity</h3>
+            <div className="shadow-none border border-border/50 rounded-lg bg-card/10 flex flex-col overflow-hidden">
+              <div className="p-4 border-b border-border/10">
+                <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70">Recent Activity</h3>
               </div>
-              <div className="p-4 flex-1 overflow-y-auto space-y-4">
+              <div className="p-4 flex-1 overflow-y-auto space-y-4 max-h-[300px]">
                 {(data?.recentActivity ?? []).map((item, i) => (
                   <div key={i} className="flex gap-3 text-sm">
-                    <div className="w-6 h-6 bg-surface border border-border rounded flex items-center justify-center text-[10px] font-mono text-muted-foreground flex-shrink-0 mt-0.5">
+                    <div className="w-6 h-6 border border-border/50 rounded-full flex items-center justify-center text-[10px] font-mono text-muted-foreground opacity-70 flex-shrink-0 mt-0.5 bg-muted/10">
                       {item.actor.charAt(0)}
                     </div>
                     <div>
-                      <span className="font-bold text-xs">{item.actor}</span> <span className="text-muted-foreground text-xs">{item.activity}</span> <span className="font-mono text-[10px] px-1 bg-surface rounded-[3px] text-foreground">{item.taskKey}</span>
-                      <div className="text-[10px] font-mono text-muted-foreground mt-1">{relTime(item.at)}</div>
+                      <span className="font-bold text-xs text-foreground/80">{item.actor}</span> <span className="text-muted-foreground opacity-70 text-xs">{item.activity}</span> <span className="font-mono text-[10px] px-1 border border-border/30 rounded opacity-70 text-foreground ml-1 uppercase">{item.taskKey}</span>
+                      <div className="text-[10px] font-mono text-muted-foreground opacity-50 mt-1 uppercase">{relTime(item.at)}</div>
                     </div>
                   </div>
                 ))}
                 {(data?.recentActivity ?? []).length === 0 && (
-                  <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest py-2">
+                  <div className="text-[10px] font-mono text-muted-foreground opacity-50 uppercase tracking-widest py-2">
                     No recent activity on your tasks.
                   </div>
                 )}
@@ -386,21 +391,21 @@ export default function MyWorkPage() {
           <AiDailyBrief />
 
           {/* Blockers */}
-          <div className="border border-destructive/30 rounded bg-background overflow-hidden">
-            <div className="p-4 border-b border-destructive/30 bg-destructive/5 flex items-center justify-between">
-              <h3 className="font-mono text-xs uppercase tracking-widest font-bold text-destructive flex items-center gap-2">
+          <div className="shadow-none border border-destructive/30 rounded-lg bg-card/10 overflow-hidden">
+            <div className="p-4 border-b border-destructive/20 flex items-center justify-between">
+              <h3 className="font-mono text-[10px] uppercase tracking-widest text-destructive opacity-80 flex items-center gap-2">
                 <ShieldAlert className="w-4 h-4" /> My Blockers ({data?.blockers.length ?? 0})
               </h3>
             </div>
             <div className="p-4 space-y-4">
               {(data?.blockers ?? []).map((b, i) => (
                 <div key={i} className="space-y-1">
-                  <div className="text-sm font-bold">{b.task_key}: {b.title}</div>
-                  <div className="text-xs text-muted-foreground font-mono">{b.project?.code ?? ''}</div>
+                  <div className="text-sm font-bold text-foreground/80">{b.task_key}: <span className="font-normal">{b.title}</span></div>
+                  <div className="text-[10px] text-muted-foreground opacity-50 font-mono uppercase tracking-widest">{b.project?.code ?? ''}</div>
                 </div>
               ))}
               {(data?.blockers ?? []).length === 0 && (
-                <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                <div className="text-[10px] font-mono text-muted-foreground opacity-50 uppercase tracking-widest">
                   No blocked tasks assigned to you.
                 </div>
               )}
@@ -408,24 +413,24 @@ export default function MyWorkPage() {
           </div>
 
           {/* Upcoming Deadlines */}
-          <div className="border border-border rounded bg-background overflow-hidden">
-            <div className="p-4 border-b border-border bg-surface-hover flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              <h3 className="font-mono text-xs uppercase tracking-widest font-bold">Next 7 Days</h3>
+          <div className="shadow-none border border-border/50 rounded-lg bg-card/10 overflow-hidden">
+            <div className="p-4 border-b border-border/10 flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-muted-foreground opacity-70" />
+              <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70">Next 7 Days</h3>
             </div>
             <div className="p-4 space-y-4">
               {(data?.upcoming ?? []).map((item, i) => (
                 <div key={i} className="flex gap-4">
-                  <div className="w-16 font-mono text-[10px] uppercase text-muted-foreground text-right pt-1">{fmtDue(item.due_date)}</div>
-                  <div className="flex-1 border-l border-border pl-4 relative">
-                    <div className="absolute -left-1 top-1.5 w-2 h-2 bg-background border border-foreground" />
-                    <div className="text-xs font-bold">{item.title}</div>
-                    <div className="font-mono text-[10px] text-muted-foreground">{item.task_key}</div>
+                  <div className="w-16 font-mono text-[10px] uppercase text-muted-foreground opacity-70 pt-0.5 text-right">{fmtDue(item.due_date)}</div>
+                  <div className="flex-1 border-l border-border/30 pl-4 relative">
+                    <div className="absolute -left-1 top-1 w-2 h-2 bg-background border border-border/50 rounded-full" />
+                    <div className="text-xs font-bold text-foreground/80 mb-1">{item.title}</div>
+                    <div className="font-mono text-[10px] text-muted-foreground opacity-50 uppercase border border-border/30 inline-block px-1 rounded">{item.task_key}</div>
                   </div>
                 </div>
               ))}
               {(data?.upcoming ?? []).length === 0 && (
-                <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                <div className="text-[10px] font-mono text-muted-foreground opacity-50 uppercase tracking-widest">
                   No deadlines in the next 7 days.
                 </div>
               )}
@@ -433,25 +438,25 @@ export default function MyWorkPage() {
           </div>
 
           {/* Pending Approvals */}
-          <div className="border border-border rounded bg-background overflow-hidden">
-            <div className="p-4 border-b border-border bg-surface-hover flex items-center justify-between">
-              <h3 className="font-mono text-xs uppercase tracking-widest font-bold">Pending Approvals</h3>
-              <span className="font-mono text-[10px] px-2 py-0.5 bg-foreground text-background rounded-[3px]">{data?.approvals.length ?? 0} Pending</span>
+          <div className="shadow-none border border-border/50 rounded-lg bg-card/10 overflow-hidden">
+            <div className="p-4 border-b border-border/10 flex items-center justify-between">
+              <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70">Pending Approvals</h3>
+              <span className="font-mono text-[10px] px-2 py-0.5 border border-border/50 text-muted-foreground opacity-70 rounded">{data?.approvals.length ?? 0} Pending</span>
             </div>
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-border/10">
               {(data?.approvals ?? []).map((item) => (
-                <div key={item.id} className="p-4 hover:bg-surface-hover transition-colors">
-                  <div className="text-xs font-bold mb-1">{item.type}</div>
-                  <div className="flex justify-between items-center mt-2">
-                    <div className="text-[10px] font-mono text-muted-foreground uppercase">{item.project} • {item.requester}</div>
-                    <Link href="/dashboard/qa-security" className="h-6 px-2 text-[10px] font-mono uppercase hover:bg-foreground hover:text-background rounded flex items-center border border-border">
+                <div key={item.id} className="p-4 hover:bg-muted/5 transition-colors">
+                  <div className="text-xs font-bold mb-1 text-foreground/80">{item.type}</div>
+                  <div className="flex justify-between items-center mt-3">
+                    <div className="text-[10px] font-mono text-muted-foreground opacity-50 uppercase tracking-widest">{item.project} • {item.requester}</div>
+                    <Link href="/dashboard/qa-security" className="h-6 px-3 text-[10px] font-mono uppercase tracking-widest hover:bg-foreground/10 text-muted-foreground rounded flex items-center border border-border/50 transition-colors">
                       Review
                     </Link>
                   </div>
                 </div>
               ))}
               {(data?.approvals ?? []).length === 0 && (
-                <div className="p-4 text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                <div className="p-4 text-[10px] font-mono text-muted-foreground opacity-50 uppercase tracking-widest">
                   No pending approvals.
                 </div>
               )}

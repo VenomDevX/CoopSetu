@@ -1,11 +1,11 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 
 export const DEMO_PERSONAS = [
-  { role: 'FEDERATION_ADMIN', email: 'demo-admin@coopsetu.local', name: 'Maya Patel', title: 'Federation Admin' },
-  { role: 'INSTITUTE_DIRECTOR', email: 'demo-director@coopsetu.local', name: 'Arjun Mehta', title: 'Institute Director' },
-  { role: 'MODERATOR', email: 'demo-moderator@coopsetu.local', name: 'Nina Verma', title: 'Moderator' },
-  { role: 'TRAINER', email: 'demo-trainer@coopsetu.local', name: 'Rohan Singh', title: 'Trainer' },
-  { role: 'ASSESSOR', email: 'demo-assessor@coopsetu.local', name: 'Aisha Khan', title: 'Assessor' },
+  { role: 'SUPER_ADMIN', email: 'demo-super@coopsetu.local', name: 'NCCT Authority', title: 'Super Admin' },
+  { role: 'INSTITUTE_ADMIN', email: 'demo-admin@coopsetu.local', name: 'Institute Director', title: 'Institute Admin' },
+  { role: 'TRAINER', email: 'demo-trainer@coopsetu.local', name: 'Expert Trainer', title: 'Trainer' },
+  { role: 'TRAINEE', email: 'demo-trainee@coopsetu.local', name: 'Student Trainee', title: 'Trainee' },
+  { role: 'EMPLOYER', email: 'demo-employer@coopsetu.local', name: 'HR Director', title: 'Employer' },
 ];
 
 // Resolve an auth user by email across all pages of the admin user list.
@@ -143,98 +143,225 @@ export async function provisionDemoWorkspace(authUserId: string, requestedRole: 
 }
 
 async function seedDemoData(admin: any, orgId: string, dummyUserIds: Record<string, string>, visitorUserId: string, visitorRole: string, visitorMemberId: string) {
-  const getMember = (role: string) => {
-    return role === visitorRole ? visitorMemberId : dummyUserIds[role];
-  };
+  // Helpers to resolve UUIDs
+  const getUserId = (role: string) => role === visitorRole ? visitorUserId : dummyUserIds[role];
+  const getMemberId = (role: string) => role === visitorRole ? visitorMemberId : dummyUserIds[role]; // Wait, we need real member IDs
 
-  // We need to resolve the member UUIDs for these dummy users.
   const { data: orgMembers } = await admin.from('organization_members').select('id, user_id').eq('organization_id', orgId);
   
   const resolveMember = (role: string) => {
-    const uid = role === visitorRole ? visitorUserId : dummyUserIds[role];
+    const uid = getUserId(role);
     return orgMembers.find((m: any) => m.user_id === uid)?.id;
   };
 
-  const adminMember = resolveMember('FEDERATION_ADMIN');
-  const pmMember = resolveMember('INSTITUTE_DIRECTOR');
-  const devMember = resolveMember('TRAINER');
-  const qaMember = resolveMember('MODERATOR');
-  const secMember = resolveMember('ASSESSOR');
+  const superAdmin = resolveMember('SUPER_ADMIN');
+  const instituteAdmin = resolveMember('INSTITUTE_ADMIN');
+  const trainerMember = resolveMember('TRAINER');
+  const traineeMember = resolveMember('TRAINEE');
+  const employerMember = resolveMember('EMPLOYER');
 
-  // Seed Projects
-  const { data: project, error: projectError } = await admin.from('projects').insert({
+  const trainerUserId = getUserId('TRAINER');
+  const traineeUserId = getUserId('TRAINEE');
+  const employerUserId = getUserId('EMPLOYER');
+
+  // ==========================================================================
+  // 1. TRAINING ERP FOUNDATION
+  // ==========================================================================
+  
+  // Institution
+  const { data: inst } = await admin.from('institutions').insert({
     organization_id: orgId,
-    name: 'Rural Banking Diploma',
-    code: 'RBD',
-    priority: 'HIGH',
-    health: 'ON_TRACK',
-    owner_member_id: adminMember,
-    project_manager_member_id: pmMember,
+    name: 'VAMNICOM - National Institute of Cooperative Management',
+    code: 'VAMNICOM-01',
+    type: 'TRAINING_INSTITUTE',
+    contact_email: 'admin@vamnicom.edu.in',
     status: 'ACTIVE'
   }).select().single();
 
-  if (projectError || !project) throw new Error(`Failed to seed demo project: ${projectError?.message}`);
+  // Programme
+  const { data: prog } = await admin.from('programmes').insert({
+    organization_id: orgId,
+    institution_id: inst.id,
+    title: 'Diploma in Cooperative Banking & Management',
+    description: 'Comprehensive 12-week program covering banking ops, compliance, and cooperative principles.',
+    duration_days: 84,
+    status: 'ACTIVE'
+  }).select().single();
 
-  // Project Members
-  await admin.from('project_members').insert([
-    { project_id: project.id, organization_member_id: pmMember, project_role: 'Director', can_manage: true, can_view: true, can_edit: true, can_comment: true },
-    { project_id: project.id, organization_member_id: devMember, project_role: 'Trainer', can_manage: false, can_view: true, can_edit: true, can_comment: true },
-    { project_id: project.id, organization_member_id: qaMember, project_role: 'Moderator', can_manage: false, can_view: true, can_edit: true, can_comment: true },
-    { project_id: project.id, organization_member_id: secMember, project_role: 'Assessor', can_manage: false, can_view: true, can_edit: false, can_comment: true }
+  // Trainer Persona
+  const { data: trainer } = await admin.from('trainers').insert({
+    user_id: trainerUserId,
+    organization_id: orgId,
+    institution_id: inst.id,
+    specialization: 'Banking Operations & Risk Management',
+    experience_years: 12,
+    status: 'ACTIVE'
+  }).select().single();
+
+  // Trainee Persona
+  const { data: trainee } = await admin.from('trainees').insert({
+    user_id: traineeUserId,
+    organization_id: orgId,
+    education: 'B.Com Graduate',
+    digital_literacy_level: 'INTERMEDIATE',
+    employment_status: 'UNEMPLOYED',
+    status: 'ACTIVE'
+  }).select().single();
+
+  // Employer Persona
+  const { data: employerOrg } = await admin.from('employers').insert({
+    organization_id: orgId,
+    company_name: 'Apex Cooperative Bank Ltd.',
+    industry: 'Banking',
+    contact_person_id: employerUserId,
+    status: 'VERIFIED'
+  }).select().single();
+
+  // ==========================================================================
+  // 2. BATCHES & ENROLLMENTS
+  // ==========================================================================
+
+  const { data: batch } = await admin.from('batches').insert({
+    organization_id: orgId,
+    programme_id: prog.id,
+    name: 'Batch Alpha - Fall 2026',
+    trainer_id: trainer.id,
+    start_date: new Date().toISOString(),
+    status: 'ACTIVE'
+  }).select().single();
+
+  await admin.from('enrollments').insert({
+    trainee_id: trainee.id,
+    programme_id: prog.id,
+    batch_id: batch.id,
+    status: 'ENROLLED',
+    enrolled_at: new Date().toISOString()
+  });
+
+  // ==========================================================================
+  // 3. LEARNING LMS
+  // ==========================================================================
+
+  const { data: course1 } = await admin.from('courses').insert({
+    programme_id: prog.id,
+    trainer_id: trainer.id,
+    title: 'Core Banking Fundamentals',
+    duration_hours: 40,
+    status: 'ACTIVE'
+  }).select().single();
+
+  await admin.from('course_modules').insert([
+    { course_id: course1.id, title: 'Intro to Cooperative Banking', type: 'VIDEO', duration_minutes: 45, order_index: 1 },
+    { course_id: course1.id, title: 'Regulatory Compliance (KYC)', type: 'PDF', duration_minutes: 30, order_index: 2 }
   ]);
 
-  // Sprint
-  const { data: sprint, error: sprintError } = await admin.from('sprints').insert({
+  const { data: assessment } = await admin.from('assessments').insert({
+    course_id: course1.id,
+    title: 'Midterm Knowledge Check',
+    type: 'QUIZ',
+    max_score: 100,
+    passing_score: 60,
+    status: 'PUBLISHED'
+  }).select().single();
+
+  await admin.from('assessment_submissions').insert({
+    assessment_id: assessment.id,
+    trainee_id: trainee.id,
+    score: 85,
+    status: 'GRADED'
+  });
+
+  await admin.from('skill_passports').insert([
+    { trainee_id: trainee.id, organization_id: orgId, skill_name: 'KYC Verification', proficiency_level: 'INTERMEDIATE', validation_source: 'ASSESSMENT' },
+    { trainee_id: trainee.id, organization_id: orgId, skill_name: 'Core Banking Systems', proficiency_level: 'BASIC', validation_source: 'SELF' }
+  ]);
+
+  // ==========================================================================
+  // 4. EMPLOYMENT EXCHANGE
+  // ==========================================================================
+
+  const { data: job } = await admin.from('jobs').insert({
+    organization_id: orgId,
+    employer_id: employerOrg.id,
+    title: 'Junior Cooperative Officer',
+    type: 'FULL_TIME',
+    location: 'Mumbai, MH',
+    salary_range: '₹3,00,000 - ₹4,50,000',
+    status: 'PUBLISHED'
+  }).select().single();
+
+  await admin.from('job_applications').insert({
+    job_id: job.id,
+    trainee_id: trainee.id,
+    status: 'SHORTLISTED'
+  });
+
+  // ==========================================================================
+  // 5. EXISTING OPS_MGT & ENG_CORE
+  // ==========================================================================
+  const { data: project } = await admin.from('projects').insert({
+    organization_id: orgId,
+    name: 'Banking Platform Upgrade',
+    code: 'BPU',
+    priority: 'HIGH',
+    health: 'ON_TRACK',
+    owner_member_id: superAdmin,
+    project_manager_member_id: instituteAdmin,
+    status: 'ACTIVE'
+  }).select().single();
+
+  await admin.from('project_members').insert([
+    { project_id: project.id, organization_member_id: instituteAdmin, project_role: 'Director', can_manage: true, can_view: true, can_edit: true, can_comment: true },
+    { project_id: project.id, organization_member_id: trainerMember, project_role: 'Trainer', can_manage: false, can_view: true, can_edit: true, can_comment: true },
+    { project_id: project.id, organization_member_id: traineeMember, project_role: 'Trainee', can_manage: false, can_view: true, can_edit: false, can_comment: true },
+    { project_id: project.id, organization_member_id: employerMember, project_role: 'Employer', can_manage: false, can_view: true, can_edit: false, can_comment: true }
+  ]);
+
+  const { data: sprint } = await admin.from('sprints').insert({
     organization_id: orgId,
     project_id: project.id,
-    name: 'Batch A',
+    name: 'Iteration 1',
     status: 'ACTIVE',
     start_date: new Date().toISOString(),
     end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
   }).select().single();
 
-  if (sprintError || !sprint) throw new Error(`Failed to seed demo sprint: ${sprintError?.message}`);
-
-  // Tasks
   const tasksToSeed = [
-    { title: 'Conduct banking fundamentals class', type: 'STORY', status: 'IN_PROGRESS', assignee: devMember },
-    { title: 'Review attendance logs', type: 'BUG', status: 'READY', assignee: devMember },
-    { title: 'Finalize theory assessment', type: 'SECURITY_TASK', status: 'IN_PROGRESS', assignee: secMember },
-    { title: 'Grade practical assignments', type: 'TASK', status: 'QA_TESTING', assignee: qaMember }
+    { title: 'Define training modules', type: 'STORY', status: 'IN_PROGRESS', assignee: trainerMember },
+    { title: 'Fix applicant portal UI', type: 'BUG', status: 'READY', assignee: employerMember },
+    { title: 'Affiliation compliance check', type: 'SECURITY_TASK', status: 'IN_PROGRESS', assignee: instituteAdmin },
+    { title: 'Submit assignment 1', type: 'TASK', status: 'QA_TESTING', assignee: traineeMember }
   ];
 
   for (const t of tasksToSeed) {
-    const { data: task, error: taskError } = await admin.from('tasks').insert({
+    const { data: task } = await admin.from('tasks').insert({
       organization_id: orgId,
       project_id: project.id,
       sprint_id: sprint.id,
       title: t.title,
       task_type: t.type,
       status: t.status,
-      reporter_member_id: pmMember,
+      reporter_member_id: instituteAdmin,
       primary_assignee_member_id: t.assignee
     }).select().single();
-
-    if (taskError || !task) throw new Error(`Failed to seed demo task "${t.title}": ${taskError?.message}`);
 
     if (t.assignee) {
        await admin.from('task_assignees').insert({
          task_id: task.id,
          organization_member_id: t.assignee,
-         assigned_by: pmMember
+         assigned_by: instituteAdmin
        });
     }
   }
 
-  // Bugs and Reviews
   await admin.from('bugs').insert({
     organization_id: orgId,
     project_id: project.id,
-    title: 'Trainee login issue',
+    title: 'Trainee login timeout',
     severity: 'HIGH',
     status: 'OPEN',
-    reporter_member_id: qaMember,
-    assignee_member_id: devMember
+    reporter_member_id: traineeMember,
+    assignee_member_id: trainerMember
   });
 
   await admin.from('security_reviews').insert({
@@ -243,6 +370,6 @@ async function seedDemoData(admin: any, orgId: string, dummyUserIds: Record<stri
     title: 'Q3 Affiliation Audit',
     status: 'PENDING',
     risk_score: 45,
-    reviewer_member_id: secMember
+    reviewer_member_id: superAdmin
   });
 }
