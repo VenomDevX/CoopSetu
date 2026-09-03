@@ -127,9 +127,9 @@ const getPriorityColor = (priority: string) => {
   switch (priority) {
     case 'critical': return 'border-destructive text-destructive bg-destructive/10';
     case 'high': return 'border-orange-500/50 text-orange-500 bg-orange-500/10';
-    case 'medium': return 'border-border text-foreground bg-surface';
-    case 'low': return 'border-border text-muted-foreground bg-surface';
-    default: return 'border-border text-foreground bg-surface';
+    case 'medium': return 'border-border/50 text-foreground/80 bg-transparent';
+    case 'low': return 'border-border/30 text-muted-foreground opacity-70 bg-transparent';
+    default: return 'border-border/50 text-foreground bg-transparent';
   }
 };
 
@@ -254,28 +254,26 @@ export default function InboxPage() {
   return (
     <WorkspaceDataLayout className="animate-in fade-in duration-500 space-y-6 flex flex-col">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 flex-shrink-0">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 flex-shrink-0 border-b border-border/50 pb-4">
         <div>
-          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
-            <span>Overview</span>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-foreground">Inbox</span>
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-mono uppercase tracking-widest mb-2 opacity-60">
+            MODULE_04 // INBOX
           </div>
-          <h1 className="text-3xl font-bold tracking-tight uppercase flex items-center gap-3">
-            <InboxIcon className="w-8 h-8" />
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tighter uppercase text-foreground mb-1 flex items-center gap-3">
+            <InboxIcon className="w-8 h-8 opacity-70" />
             Inbox
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-widest">
+          <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest opacity-60">
             Track mentions, approvals, delivery alerts, incidents, and important updates.
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button onClick={handleMarkAllRead} variant="outline" className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
-            <CheckCircle2 className="w-4 h-4" />
+          <Button onClick={handleMarkAllRead} variant="outline" className="h-8 px-4 rounded-sm text-[10px] font-mono uppercase tracking-widest border border-border/50 bg-surface/20 text-foreground hover:bg-foreground hover:text-background transition-colors gap-2">
+            <CheckCircle2 className="w-3 h-3" />
             Mark All Read
           </Button>
-          <Button variant="outline" className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest border-border text-foreground hover:bg-surface-hover gap-2">
-            <Settings className="w-4 h-4" />
+          <Button variant="outline" className="h-8 px-4 rounded-sm text-[10px] font-mono uppercase tracking-widest border border-border/50 bg-surface/20 text-foreground hover:bg-foreground hover:text-background transition-colors gap-2">
+            <Settings className="w-3 h-3" />
             Configure
           </Button>
           <AskAiButton />
@@ -287,7 +285,7 @@ export default function InboxPage() {
 
         {/* Left Column - Categories */}
         <div className="lg:col-span-2 flex flex-col gap-1 lg:overflow-y-auto pr-2 scrollbar-none">
-          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 pl-2">Categories</div>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70 mb-4 pl-2">Categories</div>
           {CATEGORY_RAIL.map((cat) => {
             const Icon = CATEGORY_ICONS[cat.key] ?? InboxIcon;
             const count = counts[cat.key as keyof NotificationCounts] ?? 0;
@@ -295,17 +293,17 @@ export default function InboxPage() {
               <button
                 key={cat.key}
                 onClick={() => setActiveCategory(cat.key)}
-                className={`flex items-center justify-between w-full p-2 text-xs font-mono uppercase tracking-wider transition-colors ${activeCategory === cat.key
-                    ? 'bg-foreground text-background font-bold'
-                    : 'text-muted-foreground hover:bg-surface-hover hover:text-foreground'
+                className={`flex items-center justify-between w-full p-2 text-[10px] font-mono uppercase tracking-widest rounded-sm transition-colors ${activeCategory === cat.key
+                    ? 'bg-foreground/10 text-foreground font-bold'
+                    : 'text-muted-foreground opacity-70 hover:opacity-100 hover:bg-muted/5 hover:text-foreground'
                   }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className="w-4 h-4" />
+                  <Icon className="w-3 h-3" />
                   <span className="truncate">{cat.name}</span>
                 </div>
                 {count > 0 && (
-                  <span className={`px-1.5 py-0.5 text-[9px] ${activeCategory === cat.key ? 'bg-background text-foreground' : 'bg-surface border border-border rounded'}`}>
+                  <span className={`px-1.5 py-0.5 text-[9px] rounded-sm ${activeCategory === cat.key ? 'bg-foreground/20 text-foreground' : 'bg-transparent border border-border/50'}`}>
                     {count}
                   </span>
                 )}
@@ -315,24 +313,24 @@ export default function InboxPage() {
         </div>
 
         {/* Middle Column - Notification List */}
-        <DataViewport className="lg:col-span-6 border-0 lg:border border-border rounded">
+        <DataViewport className="lg:col-span-6 border-0 lg:border border-border/50 rounded-lg shadow-none bg-card/10">
 
           {/* Top Tools */}
-          <div className="p-3 border-b border-border bg-surface-hover flex flex-col md:flex-row md:items-center justify-between gap-3 flex-shrink-0">
+          <div className="p-3 border-b border-border/10 bg-muted/5 flex flex-col md:flex-row md:items-center justify-between gap-3 flex-shrink-0">
             <div className="flex items-center gap-2 flex-1">
               <div className="relative flex-1 max-w-xs">
-                <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input type="text" placeholder="SEARCH INBOX..." className="w-full h-8 pl-8 pr-3 bg-background border border-border rounded text-[10px] font-mono uppercase focus:outline-none focus:border-foreground transition-colors" />
+                <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground opacity-50" />
+                <input type="text" placeholder="SEARCH INBOX..." className="w-full h-8 pl-8 pr-3 bg-transparent border border-border/50 rounded-sm text-[10px] font-mono uppercase focus:outline-none focus:border-foreground/50 transition-colors" />
               </div>
-              <Button variant="outline" size="sm" className="h-8 px-3 rounded text-[10px] font-mono uppercase border-border">
+              <Button variant="outline" size="sm" className="h-8 px-3 rounded-sm text-[10px] font-mono uppercase tracking-widest border-border/50 bg-transparent text-muted-foreground hover:text-foreground">
                 <Filter className="w-3 h-3 mr-2" /> Filter
               </Button>
-              <Button variant="outline" size="sm" className="h-8 px-3 rounded text-[10px] font-mono uppercase border-border">
+              <Button variant="outline" size="sm" className="h-8 px-3 rounded-sm text-[10px] font-mono uppercase tracking-widest border-border/50 bg-transparent text-muted-foreground hover:text-foreground">
                 <ListOrdered className="w-3 h-3 mr-2" /> Sort
               </Button>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="h-8 px-2 rounded border-border">
+              <Button variant="outline" size="sm" className="h-8 px-2 rounded-sm border-border/50 bg-transparent text-muted-foreground hover:text-foreground">
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
             </div>
@@ -341,37 +339,37 @@ export default function InboxPage() {
           {/* List */}
           <div className="flex-1 overflow-y-auto">
             {visibleNotifications.length > 0 ? (
-              <div className="divide-y divide-border">
+              <div className="divide-y divide-border/10">
                 {visibleNotifications.map((notif) => (
                   <div
                     key={notif.id}
                     onClick={() => handleSelectNotif(notif.id)}
-                    className={`p-4 cursor-pointer transition-colors relative group ${selectedNotifId === notif.id ? 'bg-surface-hover border-l-2 border-l-foreground' : 'hover:bg-surface-hover border-l-2 border-l-transparent'
-                      } ${!notif.read ? 'bg-background' : 'bg-surface/30 opacity-70'}`}
+                    className={`p-4 cursor-pointer transition-colors relative group ${selectedNotifId === notif.id ? 'bg-muted/10 border-l-2 border-l-foreground' : 'hover:bg-muted/5 border-l-2 border-l-transparent'
+                      } ${!notif.read ? 'bg-transparent' : 'bg-transparent opacity-60'}`}
                   >
                     {!notif.read && (
-                      <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-accent animate-pulse" />
+                      <div className="absolute top-4 right-4 w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                     )}
                     <div className="flex items-start gap-4 pr-6">
-                      <div className="mt-1 flex-shrink-0 bg-surface border border-border rounded w-8 h-8 flex items-center justify-center">
+                      <div className="mt-1 flex-shrink-0 bg-transparent border border-border/30 rounded w-8 h-8 flex items-center justify-center opacity-80">
                         {getTypeIcon(notif.type)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="font-bold text-sm truncate">{notif.title}</span>
-                          <span className={`font-mono text-[9px] uppercase tracking-widest px-1.5 py-0.5 border ${getPriorityColor(notif.priority)}`}>
+                          <span className="font-bold text-sm truncate text-foreground/90 group-hover:text-foreground">{notif.title}</span>
+                          <span className={`font-mono text-[9px] uppercase tracking-widest px-1.5 py-0.5 border rounded-sm ${getPriorityColor(notif.priority)}`}>
                             {notif.priority}
                           </span>
                         </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed mb-2">
+                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed mb-2 opacity-80">
                           {notif.description}
                         </p>
-                        <div className="flex items-center gap-3 text-[10px] font-mono uppercase text-muted-foreground">
-                          <span className="text-foreground">{notif.sender}</span>
+                        <div className="flex items-center gap-3 text-[10px] font-mono uppercase text-muted-foreground opacity-70">
+                          <span className="text-foreground/80 font-bold">{notif.sender}</span>
                           <span>•</span>
                           <span>{notif.project}</span>
                           <span>•</span>
-                          <span className="border border-border rounded px-1 bg-surface">{notif.reference}</span>
+                          <span className="border border-border/50 rounded-sm px-1.5 py-0.5 bg-muted/5">{notif.reference}</span>
                           <span>•</span>
                           <span>{notif.timestamp}</span>
                         </div>
@@ -382,11 +380,11 @@ export default function InboxPage() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center p-8 opacity-50">
-                <CheckCircle2 className="w-12 h-12 text-muted-foreground mb-4" />
-                <h3 className="font-mono text-sm uppercase tracking-widest font-bold mb-2">
+                <CheckCircle2 className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
+                <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold mb-2">
                   {counts.all === 0 ? 'Inbox Zero' : 'Nothing Here'}
                 </h3>
-                <p className="text-xs text-muted-foreground max-w-sm">
+                <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground max-w-sm">
                   {counts.all === 0
                     ? 'You are all caught up. No notifications require action.'
                     : 'No notifications in this category.'}
@@ -397,69 +395,69 @@ export default function InboxPage() {
         </DataViewport>
 
         {/* Right Column - Detail Panel */}
-        <DataViewport className="lg:col-span-4 border-0 lg:border border-border rounded">
+        <DataViewport className="lg:col-span-4 border-0 lg:border border-border/50 rounded-lg shadow-none bg-card/10">
           {selectedNotif ? (
             <>
               {/* Detail Header */}
-              <div className="p-4 border-b border-border bg-surface flex flex-col gap-4 flex-shrink-0">
+              <div className="p-4 border-b border-border/10 bg-muted/5 flex flex-col gap-4 flex-shrink-0">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="bg-background border border-border rounded w-10 h-10 flex items-center justify-center">
+                    <div className="bg-transparent border border-border/50 rounded-md w-10 h-10 flex items-center justify-center">
                       {getTypeIcon(selectedNotif.type)}
                     </div>
                     <div>
-                      <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">
+                      <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground opacity-70 mb-1">
                         {selectedNotif.project} / {selectedNotif.reference}
                       </div>
-                      <h2 className="text-sm font-bold leading-tight">{selectedNotif.title}</h2>
+                      <h2 className="text-sm font-bold leading-tight text-foreground/90">{selectedNotif.title}</h2>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+                <div className="flex items-center gap-2 pt-2 border-t border-border/10">
                   {selectedNotif.entityType === 'approval_request' ? (
                     <>
-                      <Button onClick={() => handleDecide(selectedNotif, 'APPROVED')} disabled={actionBusy} size="sm" className="h-8 rounded text-[10px] font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 flex-1 disabled:opacity-50">
+                      <Button onClick={() => handleDecide(selectedNotif, 'APPROVED')} disabled={actionBusy} size="sm" className="h-8 rounded-sm text-[10px] font-mono uppercase tracking-widest bg-foreground/10 text-foreground hover:bg-foreground hover:text-background flex-1 disabled:opacity-50 transition-colors">
                         Approve
                       </Button>
-                      <Button onClick={() => handleDecide(selectedNotif, 'REJECTED')} disabled={actionBusy} variant="outline" size="sm" className="h-8 rounded text-[10px] font-mono uppercase tracking-widest border-destructive text-destructive hover:bg-destructive hover:text-background flex-1 disabled:opacity-50">
+                      <Button onClick={() => handleDecide(selectedNotif, 'REJECTED')} disabled={actionBusy} variant="outline" size="sm" className="h-8 rounded-sm text-[10px] font-mono uppercase tracking-widest border-destructive/50 text-destructive hover:bg-destructive hover:text-background flex-1 disabled:opacity-50 transition-colors bg-transparent">
                         Reject
                       </Button>
                     </>
                   ) : (
-                    <Button onClick={() => handleOpenItem(selectedNotif)} disabled={!selectedNotif.entityType} size="sm" className="h-8 rounded text-[10px] font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 flex-1 disabled:opacity-50" title={selectedNotif.entityType ? undefined : 'No linked item'}>
+                    <Button onClick={() => handleOpenItem(selectedNotif)} disabled={!selectedNotif.entityType} size="sm" className="h-8 rounded-sm text-[10px] font-mono uppercase tracking-widest border border-border/50 bg-surface/20 text-foreground hover:bg-foreground hover:text-background flex-1 disabled:opacity-50 transition-colors" title={selectedNotif.entityType ? undefined : 'No linked item'}>
                       Open Item
                     </Button>
                   )}
-                  <Button onClick={() => handleUpdate(selectedNotif.id, { snoozed_until: new Date(Date.now() + 86400000).toISOString() })} variant="outline" size="sm" className="h-8 px-3 rounded border-border hover:bg-surface-hover" title="Snooze 24h">
+                  <Button onClick={() => handleUpdate(selectedNotif.id, { snoozed_until: new Date(Date.now() + 86400000).toISOString() })} variant="outline" size="sm" className="h-8 px-3 rounded-sm border-border/50 bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/10 transition-colors" title="Snooze 24h">
                     <Clock className="w-4 h-4" />
                   </Button>
-                  <Button onClick={() => handleUpdate(selectedNotif.id, { archived: true })} variant="outline" size="sm" className="h-8 px-3 rounded border-border hover:bg-surface-hover" title="Archive">
+                  <Button onClick={() => handleUpdate(selectedNotif.id, { archived: true })} variant="outline" size="sm" className="h-8 px-3 rounded-sm border-border/50 bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/10 transition-colors" title="Archive">
                     <Archive className="w-4 h-4" />
                   </Button>
                 </div>
                 {actionError && (
-                  <div className="text-[10px] font-mono uppercase tracking-widest text-destructive border border-destructive/30 bg-destructive/10 px-2 py-1">
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-destructive border border-destructive/30 bg-destructive/10 px-2 py-1 rounded-sm">
                     {actionError}
                   </div>
                 )}
               </div>
 
               {/* Detail Content */}
-              <div className="flex-1 overflow-y-auto p-0">
+              <div className="flex-1 overflow-y-auto p-0 bg-transparent">
 
                 {/* Message / Description content */}
                 <div className="p-5">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-8 h-8 bg-surface border border-border rounded flex items-center justify-center text-xs font-mono font-bold">
+                    <div className="w-8 h-8 bg-muted/5 border border-border/50 rounded-full flex items-center justify-center text-[10px] font-mono font-bold text-muted-foreground opacity-80">
                       {selectedNotif.sender.charAt(0)}
                     </div>
                     <div>
-                      <div className="text-xs font-bold">{selectedNotif.sender}</div>
-                      <div className="text-[10px] font-mono text-muted-foreground">{selectedNotif.timestamp}</div>
+                      <div className="text-xs font-bold text-foreground/90">{selectedNotif.sender}</div>
+                      <div className="text-[10px] font-mono text-muted-foreground opacity-70 uppercase tracking-widest">{selectedNotif.timestamp}</div>
                     </div>
                   </div>
-                  <div className="text-sm leading-relaxed border-l-2 border-border pl-4 py-1 text-foreground/90">
+                  <div className="text-sm leading-relaxed border-l border-border/30 pl-4 py-1 text-foreground/80">
                     {selectedNotif.description}
                   </div>
                 </div>
@@ -467,7 +465,7 @@ export default function InboxPage() {
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground text-xs font-mono uppercase tracking-widest">
+            <div className="flex items-center justify-center h-full text-muted-foreground opacity-50 text-[10px] font-mono uppercase tracking-widest">
               Select an item to view details
             </div>
           )}

@@ -20,7 +20,17 @@ export function MarketingHeader({ animated = false }: { animated?: boolean }) {
   const [isNavigating, setIsNavigating] = useState(false);
   const [navType, setNavType] = useState<string | null>(null);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -192,14 +202,18 @@ export function MarketingHeader({ animated = false }: { animated?: boolean }) {
     </div>
   );
 
-  const className = "fixed top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl";
+  const className = `fixed top-0 z-50 w-full transition-all duration-300 ${
+    isScrolled 
+      ? 'border-b border-border bg-background/80 backdrop-blur-xl' 
+      : 'border-b-transparent bg-transparent'
+  }`;
 
   if (animated) {
     return (
       <motion.header
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className={className}
       >
         {headerContent}

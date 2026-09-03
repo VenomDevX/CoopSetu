@@ -114,7 +114,7 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 min-h-[calc(100vh-80px)]">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-card/10 border border-border/50 rounded-lg p-6 backdrop-blur-md">
         <div>
           <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
             <span>Analytics</span>

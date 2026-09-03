@@ -231,25 +231,23 @@ export default function CalendarPage() {
   return (
     <WorkspaceDataLayout className="flex flex-col animate-in fade-in duration-500">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 flex-shrink-0">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-6 flex-shrink-0 border-b border-border/50 pb-4">
         <div>
-          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
-            <span>Overview</span>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-foreground">Calendar</span>
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-mono uppercase tracking-widest mb-2 opacity-60">
+            MODULE_03 // CALENDAR
           </div>
-          <h1 className="text-3xl font-bold tracking-tight uppercase flex items-center gap-3">
-            <CalendarIcon className="w-8 h-8" />
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tighter uppercase text-foreground mb-1 flex items-center gap-3">
+            <CalendarIcon className="w-8 h-8 opacity-70" />
             Calendar
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-widest">
+          <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest opacity-60">
             Task deadlines, releases, and delivery milestones across the org.
           </p>
         </div>
         <div className="flex items-center gap-3">
           {canAddDeadline && (
-            <Button data-testid="add-deadline-button" onClick={() => setIsDeadlineOpen(true)} className="h-9 px-4 rounded text-xs font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 gap-2">
-              <Plus className="w-4 h-4" />
+            <Button data-testid="add-deadline-button" onClick={() => setIsDeadlineOpen(true)} className="h-8 px-4 rounded-sm text-[10px] font-mono uppercase tracking-widest border border-border/50 bg-surface/20 text-foreground hover:bg-foreground hover:text-background transition-colors gap-2">
+              <Plus className="w-3 h-3" />
               Add Deadline
             </Button>
           )}
@@ -258,25 +256,25 @@ export default function CalendarPage() {
       </div>
 
       {/* Top Controls */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 p-2 border border-border rounded bg-surface-hover flex-shrink-0">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 p-2 border border-border/50 rounded-lg bg-card/10 flex-shrink-0 shadow-none">
         <div className="flex items-center gap-2">
-          <Button onClick={goToday} variant="outline" size="sm" className="h-8 px-3 rounded text-xs font-mono uppercase tracking-widest border-border bg-background">
+          <Button onClick={goToday} variant="outline" size="sm" className="h-8 px-3 rounded-sm text-[10px] font-mono uppercase tracking-widest border-border/50 bg-transparent text-muted-foreground hover:text-foreground">
             Today
           </Button>
-          <div className="flex items-center gap-1 bg-background border border-border rounded px-2 h-8">
-            <button onClick={() => goMonth(-1)} className="p-1 hover:bg-surface"><ChevronLeft className="w-4 h-4" /></button>
-            <span className="font-mono text-xs uppercase px-2 font-bold min-w-[130px] text-center">{monthLabel}</span>
-            <button onClick={() => goMonth(1)} className="p-1 hover:bg-surface"><ChevronRight className="w-4 h-4" /></button>
+          <div className="flex items-center gap-1 bg-transparent border border-border/50 rounded-sm px-2 h-8">
+            <button onClick={() => goMonth(-1)} className="p-1 hover:text-foreground text-muted-foreground"><ChevronLeft className="w-4 h-4" /></button>
+            <span className="font-mono text-[10px] uppercase px-2 font-bold min-w-[130px] text-center tracking-widest text-foreground/80">{monthLabel}</span>
+            <button onClick={() => goMonth(1)} className="p-1 hover:text-foreground text-muted-foreground"><ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex border border-border rounded bg-background">
+          <div className="flex border border-border/50 rounded-sm bg-transparent">
             {['Month', 'Agenda'].map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
-                className={`h-8 px-4 text-[10px] font-mono uppercase tracking-widest transition-colors ${view === v ? 'bg-foreground text-background font-bold' : 'hover:bg-surface text-muted-foreground hover:text-foreground'
+                className={`h-8 px-4 text-[10px] font-mono uppercase tracking-widest transition-colors ${view === v ? 'bg-foreground/10 text-foreground font-bold' : 'hover:bg-foreground/5 text-muted-foreground opacity-60 hover:opacity-100'
                   }`}
               >
                 {v}
@@ -287,13 +285,13 @@ export default function CalendarPage() {
 
         <div className="flex items-center gap-2 flex-1 md:justify-end">
           <div className="relative w-48">
-            <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground opacity-50" />
             <input
               value={search} onChange={(e) => setSearch(e.target.value)}
               type="text" placeholder="SEARCH EVENTS..."
-              className="w-full h-8 pl-7 pr-3 bg-background border border-border rounded text-[10px] font-mono uppercase focus:outline-none focus:border-foreground" />
+              className="w-full h-8 pl-7 pr-3 bg-transparent border border-border/50 rounded-sm text-[10px] font-mono uppercase focus:outline-none focus:border-foreground/50 transition-colors" />
           </div>
-          <Button variant="outline" disabled title="Not available yet" size="sm" className="h-8 px-3 rounded text-[10px] font-mono uppercase border-border bg-background disabled:opacity-40">
+          <Button variant="outline" disabled title="Not available yet" size="sm" className="h-8 px-3 rounded-sm text-[10px] font-mono uppercase tracking-widest border-border/50 bg-transparent disabled:opacity-40">
             <Filter className="w-3 h-3 mr-2" /> Filter
           </Button>
         </div>
@@ -313,7 +311,7 @@ export default function CalendarPage() {
 
         {/* Left Column - Layers */}
         <div className="lg:col-span-2 flex flex-col gap-4 min-h-0 overflow-y-auto pr-2 scrollbar-none">
-          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70 flex items-center gap-2">
             <Layers className="w-3 h-3" /> Calendar Layers
           </div>
           <div className="space-y-1">
@@ -321,12 +319,12 @@ export default function CalendarPage() {
               const on = activeLayers.includes(layer.name);
               return (
                 <button key={layer.name} onClick={() => toggleLayer(layer.name)}
-                  className="w-full flex items-center gap-3 p-2 hover:bg-surface-hover cursor-pointer group text-left">
-                  <div className={`w-3 h-3 border flex items-center justify-center transition-colors ${on ? 'border-foreground bg-foreground' : 'border-border bg-background group-hover:border-foreground'}`}>
-                    {on && <div className="w-1.5 h-1.5 bg-background" />}
+                  className="w-full flex items-center gap-3 p-2 hover:bg-muted/5 rounded cursor-pointer group text-left transition-colors">
+                  <div className={`w-3 h-3 border rounded-sm flex items-center justify-center transition-colors ${on ? 'border-foreground/50 bg-foreground/20' : 'border-border/50 bg-transparent group-hover:border-foreground/50'}`}>
+                    {on && <div className="w-1.5 h-1.5 bg-foreground" />}
                   </div>
-                  <layer.icon className="w-3 h-3 text-muted-foreground" />
-                  <span className={`text-xs font-mono uppercase tracking-wider ${on ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  <layer.icon className="w-3 h-3 text-muted-foreground opacity-70" />
+                  <span className={`text-[10px] font-mono uppercase tracking-widest ${on ? 'text-foreground/90 font-bold' : 'text-muted-foreground opacity-70'}`}>
                     {layer.name}
                   </span>
                 </button>
@@ -337,23 +335,23 @@ export default function CalendarPage() {
 
         {/* Middle Column - Calendar Grid */}
         {view === 'Month' ? (
-          <div className="lg:col-span-7 flex flex-col border border-border rounded bg-background min-h-0">
-            <div className="grid grid-cols-7 border-b border-border bg-surface-hover">
+          <div className="lg:col-span-7 flex flex-col border border-border/50 rounded-lg bg-card/10 shadow-none min-h-0">
+            <div className="grid grid-cols-7 border-b border-border/10 bg-muted/5">
               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                <div key={day} className="p-2 text-center text-[10px] font-mono uppercase tracking-widest text-muted-foreground border-r border-border last:border-r-0">
+                <div key={day} className="p-2 text-center text-[10px] font-mono uppercase tracking-widest text-muted-foreground opacity-70 border-r border-border/10 last:border-r-0">
                   {day}
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-7 flex-1 min-h-0 bg-surface/50" style={{ gridAutoRows: 'minmax(0, 1fr)' }}>
+            <div className="grid grid-cols-7 flex-1 min-h-0 bg-transparent" style={{ gridAutoRows: 'minmax(0, 1fr)' }}>
               {gridCells.map((day, i) => {
                 const isToday = day != null && sameDay(new Date(year, month, day), today);
                 const dayEvents = day == null ? [] : monthEvents.filter((e) => e.date.getDate() === day);
                 return (
-                  <div key={i} className="border-r border-b border-border relative bg-background p-1 flex flex-col gap-1 min-h-0 overflow-hidden">
+                  <div key={i} className="border-r border-b border-border/10 relative bg-transparent p-1 flex flex-col gap-1 min-h-0 overflow-hidden">
                     {day && (
                       <>
-                        <div className={`text-[10px] font-mono text-right p-1 ${isToday ? 'text-background bg-foreground font-bold w-5 h-5 ml-auto flex items-center justify-center rounded-full' : 'text-muted-foreground'}`}>
+                        <div className={`text-[10px] font-mono text-right p-1 ${isToday ? 'text-background bg-foreground font-bold w-5 h-5 ml-auto flex items-center justify-center rounded-full' : 'text-muted-foreground opacity-70'}`}>
                           {day}
                         </div>
                         <div className="flex-1 overflow-y-auto space-y-1 pr-1 scrollbar-none">
@@ -361,7 +359,7 @@ export default function CalendarPage() {
                             <div
                               key={event.id}
                               onClick={() => setSelectedEvent(event)}
-                              className={`px-1.5 py-1 text-[9px] font-mono uppercase border cursor-pointer truncate flex items-center gap-1.5 transition-opacity hover:opacity-80 ${getEventStyles(event.type)}`}
+                              className={`px-1.5 py-1 text-[9px] font-mono uppercase border cursor-pointer truncate flex items-center gap-1.5 transition-opacity hover:opacity-80 rounded-sm ${getEventStyles(event.type)}`}
                             >
                               {getEventIcon(event.type)}
                               {event.priority && <span className="font-bold">{getPrioritySymbol(event.priority)}</span>}
@@ -377,23 +375,23 @@ export default function CalendarPage() {
             </div>
           </div>
         ) : (
-          /* Agenda view — flat chronological list of the displayed month's events */
-          <div className="lg:col-span-7 flex flex-col border border-border rounded bg-background min-h-0 overflow-y-auto scrollbar-thin">
+          /* Agenda view */
+          <div className="lg:col-span-7 flex flex-col border border-border/50 rounded-lg bg-card/10 shadow-none min-h-0 overflow-y-auto scrollbar-thin">
             {monthEvents.length === 0 ? (
-              <div className="p-8 text-center text-xs font-mono text-muted-foreground">No events in {monthLabel}.</div>
+              <div className="p-8 text-center text-[10px] font-mono text-muted-foreground opacity-50 uppercase tracking-widest">No events in {monthLabel}.</div>
             ) : (
-              <div className="divide-y divide-border">
+              <div className="divide-y divide-border/10">
                 {[...monthEvents].sort((a, b) => a.date.getTime() - b.date.getTime()).map((event) => (
                   <button key={event.id} onClick={() => setSelectedEvent(event)}
-                    className="w-full p-3 flex items-center gap-3 hover:bg-surface-hover text-left">
-                    <div className="font-mono text-[10px] text-muted-foreground w-14 flex-shrink-0">
+                    className="w-full p-4 flex items-center gap-4 hover:bg-muted/5 transition-colors text-left group">
+                    <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest w-16 flex-shrink-0 opacity-70">
                       {MONTH_NAMES[event.date.getMonth()].slice(0, 3)} {event.date.getDate()}
                     </div>
-                    <div className={`w-6 h-6 flex items-center justify-center border flex-shrink-0 ${getEventStyles(event.type)}`}>
+                    <div className={`w-6 h-6 flex items-center justify-center border rounded flex-shrink-0 ${getEventStyles(event.type)}`}>
                       {getEventIcon(event.type)}
                     </div>
-                    <span className="text-xs truncate flex-1">{event.title}</span>
-                    {event.priority && <span className="font-mono text-[10px] text-muted-foreground">{event.priority}</span>}
+                    <span className="text-xs truncate flex-1 font-bold text-foreground/80 group-hover:text-foreground transition-colors">{event.title}</span>
+                    {event.priority && <span className="font-mono text-[10px] text-muted-foreground opacity-70 border border-border/30 rounded px-1.5 py-0.5">{event.priority}</span>}
                   </button>
                 ))}
               </div>
@@ -404,33 +402,33 @@ export default function CalendarPage() {
         {/* Right Column - Insights */}
         <div className="lg:col-span-3 flex flex-col gap-6 min-h-0 overflow-y-auto pr-2 scrollbar-none">
 
-          {/* Schedule Insights — derived from real events for the displayed month */}
-          <div className="border border-border rounded bg-background relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 rounded-bl-full pointer-events-none" />
-            <div className="p-4 border-b border-border bg-surface-hover flex items-center justify-between">
+          {/* Schedule Insights */}
+          <div className="shadow-none border border-border/50 rounded-lg bg-card/10 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full pointer-events-none" />
+            <div className="p-4 border-b border-border/10 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <AiLogo className="w-4 h-4 text-accent" />
-                <h3 className="font-mono text-xs uppercase tracking-widest font-bold">Schedule Insights</h3>
+                <AiLogo className="w-4 h-4 text-blue-400" />
+                <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70">Schedule Insights</h3>
               </div>
             </div>
             <div className="p-4 space-y-4 text-sm leading-relaxed text-muted-foreground font-light">
               {insights.total === 0 ? (
-                <p className="text-xs">No deadlines scheduled in {monthLabel}.</p>
+                <p className="text-[10px] font-mono uppercase tracking-widest opacity-50">No deadlines scheduled in {monthLabel}.</p>
               ) : (
                 <>
                   <div className="flex items-start gap-3">
-                    <CalendarIcon className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
+                    <CalendarIcon className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-bold text-foreground">{insights.total} deadline{insights.total === 1 ? '' : 's'}</span>
-                      <p className="text-xs mt-1">scheduled in {monthLabel}{insights.highPriority > 0 ? `, ${insights.highPriority} high-priority` : ''}.</p>
+                      <span className="font-bold text-foreground/80">{insights.total} deadline{insights.total === 1 ? '' : 's'}</span>
+                      <p className="text-[10px] mt-1 font-mono uppercase tracking-widest opacity-70">scheduled in {monthLabel}{insights.highPriority > 0 ? `, ${insights.highPriority} high-priority` : ''}.</p>
                     </div>
                   </div>
                   {insights.busiestCount > 1 && (
                     <div className="flex items-start gap-3">
-                      <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                      <AlertTriangle className="w-4 h-4 text-orange-500/80 flex-shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-bold text-foreground">Busiest day</span>
-                        <p className="text-xs mt-1">{MONTH_NAMES[month]} {insights.busiestDay} has {insights.busiestCount} items due.</p>
+                        <span className="font-bold text-foreground/80">Busiest day</span>
+                        <p className="text-[10px] mt-1 font-mono uppercase tracking-widest opacity-70">{MONTH_NAMES[month]} {insights.busiestDay} has {insights.busiestCount} items due.</p>
                       </div>
                     </div>
                   )}
@@ -439,24 +437,24 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          {/* Upcoming — real events in the next 7 days */}
-          <div className="border border-border rounded bg-background">
-            <div className="p-4 border-b border-border bg-surface-hover">
-              <h3 className="font-mono text-xs uppercase tracking-widest font-bold flex items-center gap-2">
-                <div className="w-2 h-2 bg-foreground" /> Upcoming This Week
+          {/* Upcoming */}
+          <div className="shadow-none border border-border/50 rounded-lg bg-card/10 overflow-hidden">
+            <div className="p-4 border-b border-border/10">
+              <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70 flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-foreground/60 rounded-full" /> Upcoming This Week
               </h3>
             </div>
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-border/10">
               {upcoming.length === 0 ? (
-                <div className="p-4 text-xs font-mono text-muted-foreground">Nothing due in the next 7 days.</div>
+                <div className="p-4 text-[10px] font-mono uppercase tracking-widest text-muted-foreground opacity-50">Nothing due in the next 7 days.</div>
               ) : upcoming.map((event) => (
-                <button key={event.id} className="w-full p-3 flex items-start gap-3 hover:bg-surface-hover text-left" onClick={() => setSelectedEvent(event)}>
-                  <div className={`mt-0.5 w-6 h-6 flex items-center justify-center border ${getEventStyles(event.type)}`}>
+                <button key={event.id} className="w-full p-4 flex items-start gap-4 hover:bg-muted/5 transition-colors text-left group" onClick={() => setSelectedEvent(event)}>
+                  <div className={`mt-0.5 w-6 h-6 rounded flex items-center justify-center border flex-shrink-0 ${getEventStyles(event.type)}`}>
                     {getEventIcon(event.type, 'w-3 h-3')}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xs font-bold truncate">{event.title}</div>
-                    <div className="text-[10px] font-mono text-muted-foreground mt-1 uppercase tracking-widest">
+                    <div className="text-xs font-bold truncate text-foreground/80 group-hover:text-foreground">{event.title}</div>
+                    <div className="text-[10px] font-mono text-muted-foreground opacity-70 mt-1 uppercase tracking-widest">
                       {MONTH_NAMES[event.date.getMonth()].slice(0, 3)} {event.date.getDate()}
                     </div>
                   </div>
@@ -465,26 +463,26 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          {/* Team — real org members (availability tracking not yet implemented) */}
-          <div className="border border-border rounded bg-background">
-            <div className="p-4 border-b border-border bg-surface-hover">
-              <h3 className="font-mono text-xs uppercase tracking-widest font-bold flex items-center gap-2">
-                <Users className="w-4 h-4" /> Team
+          {/* Team */}
+          <div className="shadow-none border border-border/50 rounded-lg bg-card/10 overflow-hidden">
+            <div className="p-4 border-b border-border/10">
+              <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground opacity-70 flex items-center gap-2">
+                <Users className="w-4 h-4 opacity-70" /> Team
               </h3>
             </div>
             <div className="p-4 space-y-4">
               {members.slice(0, 6).map((m) => (
                 <div key={m.id} className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-surface border border-border rounded flex items-center justify-center text-xs font-mono font-bold flex-shrink-0">
+                  <div className="w-8 h-8 bg-muted/10 border border-border/50 rounded-full flex items-center justify-center text-[10px] font-mono font-bold text-muted-foreground flex-shrink-0 opacity-80">
                     {m.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xs font-bold truncate">{m.name}</div>
-                    <div className="text-[10px] font-mono text-muted-foreground truncate">{m.job_title ?? '—'}</div>
+                    <div className="text-xs font-bold truncate text-foreground/90">{m.name}</div>
+                    <div className="text-[10px] font-mono text-muted-foreground opacity-50 uppercase tracking-widest truncate">{m.job_title ?? '—'}</div>
                   </div>
                 </div>
               ))}
-              {members.length === 0 && <p className="text-xs font-mono text-muted-foreground">No members.</p>}
+              {members.length === 0 && <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground opacity-50">No members.</p>}
             </div>
           </div>
 

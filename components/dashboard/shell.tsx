@@ -18,6 +18,7 @@ import { MembershipProvider, type MembershipContextValue } from '@/lib/permissio
 import { OrgSwitcher } from '@/components/dashboard/org-switcher';
 import { CommandPalette } from '@/components/dashboard/command-palette';
 import { GlobalAiHub } from '@/components/ai/global-ai-hub';
+import { resolveDashboardPersona } from '@/lib/auth/dashboard-persona';
 
 interface ShellProps {
   children: React.ReactNode;
@@ -36,9 +37,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
-  const perms = membership.permissions;
-  const isAdmin = membership.roles.some((r) => ADMIN_ROLES.includes(r));
-  const can = (p?: string) => !p || isAdmin || perms.includes(p);
+  const persona = resolveDashboardPersona(membership.roles);
 
   // Close the mobile menu on route change. Done during render (comparing to the
   // previous pathname) rather than in an effect to avoid a cascading re-render.
@@ -93,7 +92,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
     return () => window.removeEventListener('demo-alert', onDemoAlert);
   }, []);
 
-  // `perm` gates visibility of each nav item (admins see all).
+  // `roles` array for each item defines which personas can see it
   const navGroups = [
     { title: 'Main_SYS', items: [
       { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -101,34 +100,54 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
       { name: 'Inbox', href: '/dashboard/inbox', icon: Inbox },
       { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
     ]},
+    { title: 'OPS_MGT', items: [
+      { name: 'Projects', href: '/dashboard/projects', icon: Layers, roles: ['ADMIN'] },
+      { name: 'Sprints', href: '/dashboard/sprints', icon: KanbanSquare, roles: ['ADMIN'] },
+      { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare, roles: ['ADMIN'] },
+    ]},
+    { title: 'ENG_CORE', items: [
+      { name: 'Repositories', href: '/dashboard/repositories', icon: GitBranch, roles: ['ADMIN'] },
+      { name: 'QA & Security', href: '/dashboard/qa-security', icon: ShieldCheck, roles: ['ADMIN'] },
+      { name: 'Incidents', href: '/dashboard/incidents', icon: AlertCircle, roles: ['ADMIN'] },
+    ]},
+    { title: 'DATA_KNOWLEDGE', items: [
+      { name: 'Documents', href: '/dashboard/documents', icon: FileText, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
+      { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'EMPLOYER'] },
+    ]},
     { title: 'Training_ERP', items: [
-      { name: 'Institutions', href: '/dashboard/institutions', icon: Building2, perm: 'institution:view' },
-      { name: 'Programmes', href: '/dashboard/programmes', icon: GraduationCap, perm: 'programme:view' },
-      { name: 'Batches', href: '/dashboard/batches', icon: Users, perm: 'batch:view' },
-      { name: 'Trainees', href: '/dashboard/trainees', icon: UserCheck, perm: 'trainee:view' },
-      { name: 'Trainers', href: '/dashboard/trainers', icon: User, perm: 'trainer:view' },
-      { name: 'Attendance', href: '/dashboard/attendance', icon: QrCode, perm: 'attendance:view' },
-      { name: 'Digital ID', href: '/dashboard/id-card', icon: ShieldCheck },
+      { name: 'Institutions', href: '/dashboard/institutions', icon: Building2, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
+      { name: 'Programmes', href: '/dashboard/programmes', icon: GraduationCap, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
+      { name: 'Batches', href: '/dashboard/batches', icon: Users, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER'] },
+      { name: 'Trainees', href: '/dashboard/trainees', icon: UserCheck, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER'] },
+      { name: 'Trainers', href: '/dashboard/trainers', icon: User, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
+      { name: 'Attendance', href: '/dashboard/attendance', icon: QrCode, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
+      { name: 'Digital ID', href: '/dashboard/id-card', icon: ShieldCheck, roles: ['TRAINEE'] },
     ]},
     { title: 'Learning_LMS', items: [
-      { name: 'Courses', href: '/dashboard/courses', icon: BookOpen, perm: 'course:view' },
-      { name: 'Assessments', href: '/dashboard/assessments', icon: ClipboardCheck, perm: 'assessment:view' },
-      { name: 'Certificates', href: '/dashboard/certificates', icon: Award, perm: 'certificate:view' },
-      { name: 'Skill Passport', href: '/dashboard/skill-passport', icon: Target, perm: 'skill:view' },
+      { name: 'Courses', href: '/dashboard/courses', icon: BookOpen, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
+      { name: 'Assessments', href: '/dashboard/assessments', icon: ClipboardCheck, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
+      { name: 'Certificates', href: '/dashboard/certificates', icon: Award, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
+      { name: 'Skill Passport', href: '/dashboard/skill-passport', icon: Target, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINEE', 'EMPLOYER'] },
     ]},
     { title: 'Employment', items: [
-      { name: 'Employers', href: '/dashboard/employers', icon: BriefcaseBusiness, perm: 'employer:view' },
-      { name: 'Jobs', href: '/dashboard/jobs', icon: Briefcase, perm: 'job:view' },
+      { name: 'Employers', href: '/dashboard/employers', icon: BriefcaseBusiness, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
+      { name: 'Jobs', href: '/dashboard/jobs', icon: Briefcase, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINEE', 'EMPLOYER'] },
     ]},
     { title: 'Cooperative_AI', items: [
       { name: 'Career AI', href: '/dashboard/career-ai', icon: Bot },
     ]},
     { title: 'Admin_Level', items: [
-      { name: 'Teams', href: '/dashboard/teams', icon: Users, perm: 'team:view' },
-      { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+      { name: 'Teams', href: '/dashboard/teams', icon: Users, roles: ['ADMIN'] },
+      { name: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'EMPLOYER'] },
     ]},
-  ].map((g) => ({ ...g, items: g.items.filter((it) => can((it as { perm?: string }).perm)) }))
-   .filter((g) => g.items.length > 0);
+  ].map((g) => ({ 
+    ...g, 
+    items: g.items.filter((it) => {
+      if (!('roles' in it)) return true; // Available to everyone
+      return (it as any).roles.includes(persona) || persona === 'ADMIN';
+    })
+  }))
+  .filter((g) => g.items.length > 0);
 
   // Flat, permission-filtered destinations for the ⌘K palette (same source of truth as the sidebar).
   const paletteNavItems = navGroups.flatMap((g) => g.items.map((it) => ({ name: it.name, href: it.href, icon: it.icon })));
@@ -193,7 +212,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
         navItems={paletteNavItems}
-        canViewTasks={can('task:view')}
+        canViewTasks={ADMIN_ROLES.some(r => membership.roles.includes(r)) || membership.permissions.includes('task:view')}
       />
       <div className="flex h-[100dvh] overflow-hidden bg-background text-foreground transition-colors duration-200 font-sans selection:bg-foreground selection:text-background">
         
@@ -290,7 +309,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
                         <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mt-0.5">Workspace</p>
                       </div>
                       <div className="p-1 flex flex-col gap-0.5">
-                        {can('task:create') && (
+                        {(ADMIN_ROLES.some(r => membership.roles.includes(r)) || membership.permissions.includes('task:create')) && (
                           <button
                             onClick={() => { setProfileDropdownOpen(false); router.push('/dashboard/tasks'); }}
                             className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"

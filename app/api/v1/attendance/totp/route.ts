@@ -19,7 +19,13 @@ export async function GET(request: NextRequest) {
     // getOrGenerateTotpSecret now creates/fetches from the 'profiles' table
     const secret = await svc.getOrGenerateTotpSecret(user.id);
 
-    return NextResponse.json({ data: { secret, userId: user.id } });
+    return NextResponse.json({ 
+      data: { 
+        secret, 
+        userId: user.id,
+        userName: user.user_metadata?.full_name || 'User'
+      } 
+    });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
