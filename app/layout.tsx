@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { MotionConfig } from 'motion/react';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Providers } from '@/components/providers';
+import { RegisterServiceWorker } from '@/components/offline/register-sw';
 import './globals.css';
 
 import { headers } from 'next/headers';
@@ -9,6 +10,7 @@ import { headers } from 'next/headers';
 export const metadata: Metadata = {
   title: 'CoopSetu',
   description: 'Cooperative Training Hub — Digital ERP for training institutions, skill development & employment exchange.',
+  manifest: '/manifest.json',
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -27,6 +29,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <MotionConfig reducedMotion="user">
             <Providers>{children}</Providers>
           </MotionConfig>
+          <RegisterServiceWorker />
         </ThemeProvider>
       </body>
     </html>
