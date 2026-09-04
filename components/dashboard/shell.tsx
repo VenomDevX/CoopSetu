@@ -18,6 +18,7 @@ import { MembershipProvider, type MembershipContextValue } from '@/lib/permissio
 import { OrgSwitcher } from '@/components/dashboard/org-switcher';
 import { CommandPalette } from '@/components/dashboard/command-palette';
 import { GlobalAiHub } from '@/components/ai/global-ai-hub';
+import { OfflineIndicator } from '@/components/offline/offline-indicator';
 import { resolveDashboardPersona } from '@/lib/auth/dashboard-persona';
 
 interface ShellProps {
@@ -272,6 +273,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
               <div className="hidden sm:block">
                 <ThemeToggle />
               </div>
+              <OfflineIndicator />
               <GlobalAiHub />
 
               <div className="hidden sm:block w-px h-5 bg-border/60 mx-1" />

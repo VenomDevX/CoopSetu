@@ -2,10 +2,15 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Plus, Clock, Users, Search, FileText, Video, HelpCircle } from 'lucide-react';
+import { BookOpen, Plus, Clock, Users, Search, FileText, Video, HelpCircle, Download, CheckCircle2, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
+import { usePermission } from "@/lib/permissions/context";
+import { saveModule, deleteModule, listModules, queueProgress, type CachedModule } from "@/lib/offline/db";
+import { flushOfflineQueues } from "@/lib/offline/sync";
+import { cacheAssetForOffline, uncacheOfflineAsset } from "@/lib/offline/cache-asset";
 
+interface CourseModule { id: string; title: string; type: string; order_index: number; content_url?: string; content_text?: string; }
 interface Course {
   id: string;
   programme_id: string;
@@ -15,14 +20,22 @@ interface Course {
   order_index: number;
   status: string;
   programmes?: { title: string };
-  course_modules?: { id: string; title: string; type: string; order_index: number }[];
+  course_modules?: CourseModule[];
 }
 
 export default function CoursesPage() {
+  const { hasRole } = usePermission();
+  const isTrainee = hasRole('TRAINEE');
+
   const [courses, setCourses] = useState<Course[]>([]);
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ programme_id: '', title: '', description: '', duration_hours: 1 });
+
+  const [cachedModules, setCachedModules] = useState<Record<string, CachedModule>>({});
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<Record<string, string>>({});
 
   const load = useCallback(() => {
     fetch('/api/v1/courses').then(r => r.json()).then(j => {
@@ -30,13 +43,68 @@ export default function CoursesPage() {
     });
   }, []);
 
+  const loadCachedModules = useCallback(async () => {
+    try {
+      const mods = await listModules();
+      setCachedModules(Object.fromEntries(mods.map(m => [m.id, m])));
+    } catch {
+      // IndexedDB unavailable (e.g. private browsing) — offline download UI just stays unavailable.
+    }
+  }, []);
+
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (isTrainee) loadCachedModules(); }, [isTrainee, loadCachedModules]);
 
   const handleCreate = async () => {
     await fetch('/api/v1/courses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
     setShowCreate(false);
     setForm({ programme_id: '', title: '', description: '', duration_hours: 1 });
     load();
+  };
+
+  const handleDownload = async (course: Course, mod: CourseModule) => {
+    setDownloadingId(mod.id);
+    setDownloadError(prev => { const next = { ...prev }; delete next[mod.id]; return next; });
+    try {
+      // The course list embed only carries id/title/type/order_index — fetch
+      // the full module (content_url/content_text) on demand, only when a
+      // trainee actually asks to download it.
+      const res = await fetch(`/api/v1/courses/${course.id}`);
+      const j = await res.json();
+      if (!res.ok) throw new Error(j?.error || 'Failed to load module content.');
+      const fullModule = (j.data?.course_modules ?? []).find((m: any) => m.id === mod.id);
+      if (!fullModule) throw new Error('Module not found.');
+
+      if (fullModule.content_url) {
+        await cacheAssetForOffline(fullModule.content_url); // best-effort; content_text still saves either way
+      }
+
+      const cached: CachedModule = {
+        id: mod.id, courseId: course.id, courseTitle: course.title, title: mod.title, type: mod.type,
+        contentUrl: fullModule.content_url || undefined, contentText: fullModule.content_text || undefined,
+        cachedAt: new Date().toISOString(),
+      };
+      await saveModule(cached);
+      setCachedModules(prev => ({ ...prev, [mod.id]: cached }));
+
+      // Downloading a module for offline is the trainee's real engagement
+      // signal here (there's no video-watch-time/scroll-depth tracking in
+      // this MVP) — queue it as progress and flush immediately if online,
+      // so the online case doesn't wait for the next `online` event.
+      await queueProgress({ courseId: course.id, moduleId: mod.id, moduleTitle: mod.title, progressPct: 100 });
+      if (navigator.onLine) await flushOfflineQueues();
+    } catch (err: any) {
+      setDownloadError(prev => ({ ...prev, [mod.id]: err.message || 'Download failed.' }));
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const handleRemoveDownload = async (mod: CourseModule) => {
+    const cached = cachedModules[mod.id];
+    if (cached?.contentUrl) uncacheOfflineAsset(cached.contentUrl);
+    await deleteModule(mod.id);
+    setCachedModules(prev => { const next = { ...prev }; delete next[mod.id]; return next; });
   };
 
   const moduleIcon = (type: string) => {
@@ -55,9 +123,11 @@ export default function CoursesPage() {
           </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">Course Catalog</h1>
         </div>
-        <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => setShowCreate(!showCreate)}>
-          <Plus className="w-4 h-4 mr-2" /> Add Course
-        </Button>
+        {!isTrainee && (
+          <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => setShowCreate(!showCreate)}>
+            <Plus className="w-4 h-4 mr-2" /> Add Course
+          </Button>
+        )}
       </motion.div>
 
       {/* Create Form */}
@@ -104,13 +174,57 @@ export default function CoursesPage() {
                   {/* Modules */}
                   {course.course_modules && course.course_modules.length > 0 && (
                     <div className="border border-border rounded divide-y divide-border">
-                      {course.course_modules.sort((a, b) => a.order_index - b.order_index).map(mod => (
-                        <div key={mod.id} className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground">
-                          {moduleIcon(mod.type)}
-                          <span className="flex-1">{mod.title}</span>
-                          <span className="text-[10px] font-mono uppercase text-muted-foreground border border-border px-1.5 py-0.5 rounded">{mod.type}</span>
-                        </div>
-                      ))}
+                      {course.course_modules.sort((a, b) => a.order_index - b.order_index).map(mod => {
+                        const cached = cachedModules[mod.id];
+                        const isExpanded = expandedId === mod.id;
+                        return (
+                          <div key={mod.id} data-testid={`module-row-${mod.id}`}>
+                            <div className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground">
+                              {moduleIcon(mod.type)}
+                              <span className="flex-1">{mod.title}</span>
+                              <span className="text-[10px] font-mono uppercase text-muted-foreground border border-border px-1.5 py-0.5 rounded">{mod.type}</span>
+                              {isTrainee && (
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  {cached ? (
+                                    <>
+                                      <button onClick={() => setExpandedId(isExpanded ? null : mod.id)} className="flex items-center gap-1 text-[10px] font-mono uppercase px-2 py-1 border border-green-500/40 text-green-500 bg-green-500/10 rounded">
+                                        <CheckCircle2 className="w-3 h-3" /> Downloaded {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                      </button>
+                                      <button onClick={() => handleRemoveDownload(mod)} title="Remove download" className="p-1 text-muted-foreground hover:text-destructive">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-7 rounded font-mono text-[10px] uppercase gap-1.5"
+                                      disabled={downloadingId === mod.id}
+                                      onClick={() => handleDownload(course, mod)}
+                                    >
+                                      <Download className="w-3 h-3" /> {downloadingId === mod.id ? 'Downloading…' : 'Download'}
+                                    </Button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            {downloadError[mod.id] && (
+                              <div className="px-3 pb-2 text-xs font-mono text-destructive">{downloadError[mod.id]}</div>
+                            )}
+                            {isExpanded && cached && (
+                              <div className="px-3 pb-3 space-y-2 bg-surface/50">
+                                {cached.contentText && <p className="text-xs text-foreground whitespace-pre-wrap">{cached.contentText}</p>}
+                                {cached.contentUrl && (
+                                  <a href={cached.contentUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-accent underline break-all">{cached.contentUrl}</a>
+                                )}
+                                {!cached.contentText && !cached.contentUrl && (
+                                  <p className="text-xs text-muted-foreground">No content available for this module.</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
