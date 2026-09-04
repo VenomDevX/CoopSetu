@@ -2,14 +2,16 @@ import { handle, ok } from '@/lib/api/response';
 import { requireUser } from '@/lib/auth/require-user';
 import { requireOrganization, requirePermission } from '@/lib/auth/require-organization';
 import { createTeamSchema } from '@/lib/validation/team';
-import { listTeams, createTeam } from '@/services/team.service';
+import { listTeams, createTeam, getTeamAggregates } from '@/services/team.service';
 
 export async function GET() {
   return handle(async () => {
     const { supabase } = await requireUser();
     const m = await requireOrganization();
     requirePermission(m, 'team:view');
-    return ok(await listTeams(supabase, m.organizationId));
+    const teams = await listTeams(supabase, m.organizationId);
+    const aggregates = await getTeamAggregates(supabase, teams.map((t: any) => t.id));
+    return ok(teams.map((t: any) => ({ ...t, ...aggregates[t.id] })));
   });
 }
 
