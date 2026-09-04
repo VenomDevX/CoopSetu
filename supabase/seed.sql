@@ -386,11 +386,16 @@ begin
   end if;
 end $$;
 
--- Temporary fix: ensure dev@apexfintech.test is properly registered in trainees table so the demo button works
+-- Register the trainee@coopsetu.test demo account in the trainees table so
+-- trainee-scoped features (courses, certificates, skill passport, job
+-- applications, etc.) work out of the box for that persona. (This block used
+-- to mistakenly register user 000...003 — trainer@coopsetu.test — under a
+-- stale "dev@apexfintech.test" comment; that account is a TRAINER, not the
+-- TRAINEE demo user, so it never belonged here.)
 do $$
 declare
   v_org uuid := '00000000-0000-0000-0000-0000000000a0';
-  v_trainee uuid := '00000000-0000-0000-0000-000000000003'; -- dev@apexfintech.test
+  v_trainee uuid := '00000000-0000-0000-0000-000000000004'; -- trainee@coopsetu.test
 begin
   insert into public.trainees (user_id, organization_id, status)
   values (v_trainee, v_org, 'ACTIVE')
