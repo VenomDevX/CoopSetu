@@ -1,6 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Membership } from '@/lib/auth/get-current-membership';
 import type { AiSource } from '@/lib/ai/provider';
+import { SkillService } from '@/services/skill.service';
+import { JobService } from '@/services/employer.service';
+import { CourseService } from '@/services/course.service';
 
 /**
  * Grounded context for a single AI request. `facts` is a plain-text block of
@@ -597,5 +600,85 @@ export const buildIncidents: ContextBuilder = async (supabase, m) => {
     candidates: incidents.slice(0, 5).map(i => src('incident', i.id, i.title)),
     isEmpty: false,
     emptyMessage: ''
+  };
+};
+
+// ------------------------------------------------------------- My Learning ---
+/**
+ * The 'my-learning' intent (Career AI): a trainee's own skill profile, their
+ * best job matches with a gap analysis for the top match, and courses
+ * available to enroll in. Unlike every other builder in this file, the
+ * caller's identity here is NOT the org member calling the API — `Membership`
+ * has no trainee id, so this independently resolves the caller's own
+ * `trainees` row the same way the trainee-facing API routes do (see
+ * POST /api/v1/jobs/[jobId]/apply): auth.getUser() -> trainees.user_id, never
+ * a client-supplied id.
+ */
+export const buildMyLearning: ContextBuilder = async (supabase, m) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return empty('Unable to resolve your account.');
+
+  const { data: trainee } = await supabase
+    .from('trainees')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('organization_id', m.organizationId)
+    .maybeSingle();
+  if (!trainee) return empty('This insight is only available to trainees.');
+
+  const skillSvc = new SkillService(supabase);
+  const jobSvc = new JobService(supabase);
+  const courseSvc = new CourseService(supabase);
+
+  const [profile, openJobs, courses] = await Promise.all([
+    skillSvc.getTraineeSkillProfile(trainee.id),
+    jobSvc.listJobs({ status: 'OPEN' }),
+    courseSvc.list(),
+  ]);
+
+  if (profile.skills.length === 0 && openJobs.length === 0 && courses.length === 0) {
+    return empty('No learning data is available yet — add skills, browse jobs, or enroll in a course to get started.');
+  }
+
+  const scored = await Promise.all(
+    openJobs.slice(0, 15).map(async (job) => ({
+      job,
+      score: await skillSvc.calculateJobMatchScore(trainee.id, job.id),
+    })),
+  );
+  const topJobs = scored.sort((a, b) => b.score - a.score).slice(0, 5);
+
+  let gapFacts = '';
+  if (topJobs.length > 0) {
+    const gap = await skillSvc.getSkillGapAnalysis(trainee.id, topJobs[0].job.id);
+    const lines = [
+      gap.missing.length ? `Missing: ${gap.missing.map((s) => s.name).join(', ')}` : '',
+      gap.partial.length ? `Partial: ${gap.partial.map((s) => `${s.name} (${s.proficiency}%)`).join(', ')}` : '',
+    ].filter(Boolean);
+    if (lines.length) gapFacts = `Skill gap for the best match ("${topJobs[0].job.title}"):\n${lines.join('\n')}`;
+  }
+
+  const facts = [
+    `Employment readiness: ${profile.employmentReadiness}%. Certificates earned: ${profile.certificates}. Courses completed: ${profile.coursesCompleted}.`,
+    profile.skills.length
+      ? `Skills:\n${profile.skills.map((s) => `- ${s.name} (${s.category}): ${s.proficiency}%${s.verified ? ', verified' : ''}`).join('\n')}`
+      : 'No skills recorded yet.',
+    topJobs.length
+      ? `Top job matches:\n${topJobs.map(({ job, score }) => `- ${job.title} at ${job.employers?.company_name ?? 'an employer'}: ${score}% match`).join('\n')}`
+      : 'No open jobs to match against right now.',
+    gapFacts,
+    courses.length
+      ? `Available courses:\n${courses.slice(0, 10).map((c) => `- ${c.title}${c.programmes ? ` (${c.programmes.title})` : ''}`).join('\n')}`
+      : 'No courses available yet.',
+  ].filter(Boolean).join('\n\n');
+
+  return {
+    facts,
+    candidates: [
+      ...topJobs.map(({ job }) => src('job', job.id, job.title)),
+      ...courses.slice(0, 10).map((c) => src('course', c.id, c.title)),
+    ],
+    isEmpty: false,
+    emptyMessage: '',
   };
 };
