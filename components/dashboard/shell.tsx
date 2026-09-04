@@ -10,7 +10,7 @@ import {
   BarChart3, Settings, Users, AlertCircle, LogOut, Menu, X, Info, Mail, Shield, FileSignature,
   ChevronDown, User, CreditCard, Key, HelpCircle,
   Building2, GraduationCap, BookOpen, ClipboardCheck, Award, UserCheck,
-  BriefcaseBusiness, Target, Bot, QrCode
+  BriefcaseBusiness, Target, Bot, QrCode, ClipboardList
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NotificationBell } from '@/components/realtime/notification-bell';
@@ -132,6 +132,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
     { title: 'Employment', items: [
       { name: 'Employers', href: '/dashboard/employers', icon: BriefcaseBusiness, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
       { name: 'Jobs', href: '/dashboard/jobs', icon: Briefcase, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINEE', 'EMPLOYER'] },
+      { name: 'Applications', href: '/dashboard/applications', icon: ClipboardList, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'EMPLOYER'] },
     ]},
     { title: 'Cooperative_AI', items: [
       { name: 'Career AI', href: '/dashboard/career-ai', icon: Bot },

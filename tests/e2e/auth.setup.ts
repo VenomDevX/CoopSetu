@@ -10,6 +10,8 @@ const ACCOUNTS: Record<string, string> = {
   pm: 'pm@apexfintech.test',
   tm: 'tm@apexfintech.test',
   dev: 'dev@apexfintech.test',
+  trainee: 'trainee@coopsetu.test',
+  employer: 'employer@coopsetu.test',
 };
 
 fs.mkdirSync('tests/e2e/.auth', { recursive: true });
