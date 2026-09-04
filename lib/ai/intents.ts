@@ -15,6 +15,7 @@ import {
   buildReleaseSummary,
   buildEngineering,
   buildIncidents,
+  buildMyLearning,
 } from '@/lib/ai/ai-context-builder';
 
 /** Definition of one AI intent: who may run it, how its grounded context is built, and its persona. */
@@ -157,6 +158,14 @@ const DEFS: IntentDef[] = [
     persona:
       'Propose a DRAFT delivery plan (numbered steps) for the user\'s objective, grounded in the current workload in the FACTS. This is a proposal only; the user must confirm before anything is created. Do not claim any tasks were created.',
     defaultPrompt: 'Draft a plan.',
+  },
+  {
+    intent: 'my-learning',
+    permissions: ['career:view'],
+    build: buildMyLearning,
+    persona:
+      'Give the trainee career guidance grounded in their real skill profile, job matches, and available courses: what jobs suit them now, what skills to close the gap on, and which courses would help.',
+    defaultPrompt: 'What should I focus on to improve my job readiness?',
   },
 ];
 

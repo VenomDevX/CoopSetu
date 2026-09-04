@@ -2,9 +2,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bot, Send, Sparkles, User, Briefcase, BookOpen, Target } from 'lucide-react';
+import { Bot, Send, Sparkles, User } from 'lucide-react';
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useAiStream } from "@/components/ai/use-ai-stream";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -30,45 +31,37 @@ export default function CareerAIPage() {
     }
   ]);
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { answer, loading, error, done, run, reset } = useAiStream();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, answer]);
 
-  const sendMessage = async (text?: string) => {
-    const msg = text || input;
-    if (!msg.trim()) return;
+  // Commit the finished (or failed) stream into the message list, then reset
+  // the hook so the next send starts from a clean state. useAiStream is an
+  // external system (an SSE connection) — this reacts to it finishing, which
+  // is exactly the "subscribe to an external system" case React's own set-state-in-effect
+  // guidance carves out, not state-mirroring.
+  useEffect(() => {
+    if (done) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reacting to the ai-stream hook (an external SSE connection) completing, not mirroring render state
+      setMessages(prev => [...prev, { role: 'assistant', content: answer || 'No response received.', timestamp: new Date() }]);
+      reset();
+    } else if (error) {
+      setMessages(prev => [...prev, { role: 'assistant', content: error, timestamp: new Date() }]);
+      reset();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [done, error]);
 
-    const userMessage: Message = { role: 'user', content: msg, timestamp: new Date() };
-    setMessages(prev => [...prev, userMessage]);
+  const sendMessage = (text?: string) => {
+    const msg = (text ?? input).trim();
+    if (!msg || loading) return;
+
+    setMessages(prev => [...prev, { role: 'user', content: msg, timestamp: new Date() }]);
     setInput('');
-    setIsTyping(true);
-
-    // Simulated AI response based on keyword matching
-    setTimeout(() => {
-      let response = '';
-      const lower = msg.toLowerCase();
-
-      if (lower.includes('job') || lower.includes('suitable') || lower.includes('employment')) {
-        response = "Based on your current skill profile, here are my top recommendations:\n\n🏢 **Cooperative Field Officer** — 91% match\n📊 **Data Entry Executive** — 87% match\n🏦 **Rural Finance Assistant** — 82% match\n📋 **Cooperative Audit Clerk** — 78% match\n\nThese roles align well with your Digital Literacy, Cooperative Management, and Accounting skills. Would you like me to analyze the skill gaps for any of these roles?";
-      } else if (lower.includes('skill') && (lower.includes('learn') || lower.includes('next') || lower.includes('improve'))) {
-        response = "Based on your current profile, I recommend focusing on:\n\n1. **MS Excel** (Currently missing) — Required for 73% of matching jobs\n2. **Communication Skills** (Partially developed) — Boost to 80%+ proficiency\n3. **Financial Management** — Valuable for cooperative sector roles\n\n📚 **Recommended courses:**\n• Excel Fundamentals for Cooperatives\n• Workplace Communication Essentials\n• Cooperative Financial Management\n\nShall I help you enroll in any of these?";
-      } else if (lower.includes('gap') || lower.includes('analysis')) {
-        response = "**Skill Gap Analysis — Cooperative Field Officer**\n\n✅ **Matched Skills:**\n• Cooperative Management — 85%\n• Digital Literacy — 80%\n• Accounting — 75%\n\n⚠️ **Partial Match:**\n• Communication — 55% (needs 70%+)\n\n❌ **Missing Skills:**\n• MS Excel\n• Report Writing\n\n📈 **Estimated Readiness:** 72%\n\n**Action Plan:**\n→ Complete Excel Fundamentals course\n→ Take Workplace Communication workshop\n→ Estimated readiness after completion: 91%";
-      } else if (lower.includes('course') || lower.includes('programme') || lower.includes('training')) {
-        response = "Here are the recommended training programmes:\n\n📚 **Active Programmes:**\n1. Digital Cooperative Management (90 days) — Starts Sep 15\n2. Rural Finance & Banking (60 days) — Starts Oct 1\n3. Cooperative Audit & Compliance (45 days) — Starts Nov 1\n\n🎯 **Based on your skill gaps:**\n• Excel Fundamentals — 2 weeks intensive\n• Communication Skills Workshop — 1 week\n\nWould you like to register for any of these?";
-      } else if (lower.includes('readiness') || lower.includes('score') || lower.includes('employability')) {
-        response = "**Your Employment Readiness Score: 72%**\n\n📊 **Score Breakdown:**\n• Skill Proficiency: 65/100\n• Certifications: 15/20 (3 certificates)\n• Course Completion: 12/15 (4 courses)\n• Assessment Scores: 80/100\n\n🎯 **To reach 90%+:**\n1. Complete 2 more certifications (+5%)\n2. Improve MS Excel skill (+8%)\n3. Complete Communication course (+5%)\n\nEstimated time to 90%: ~6 weeks with active learning.";
-      } else {
-        response = "I understand you're looking for career guidance. Here's what I can help with:\n\n• **Job Matching** — Find jobs that match your skills\n• **Skill Gap Analysis** — Compare your skills with job requirements\n• **Course Recommendations** — Find the right training\n• **Career Planning** — Build a path to employment\n\nCould you be more specific about what you'd like to know?";
-      }
-
-      const assistantMessage: Message = { role: 'assistant', content: response, timestamp: new Date() };
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsTyping(false);
-    }, 1500);
+    run({ intent: 'my-learning', prompt: msg });
   };
 
   return (
@@ -86,7 +79,7 @@ export default function CareerAIPage() {
       <div className="flex-1 overflow-y-auto space-y-4 pr-2">
         <AnimatePresence>
           {messages.map((msg, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            <motion.div key={i} data-testid={`chat-message-${i}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
               {msg.role === 'assistant' && (
                 <div className="w-8 h-8 rounded bg-accent/10 border border-accent/30 flex items-center justify-center shrink-0 mt-1">
@@ -109,7 +102,7 @@ export default function CareerAIPage() {
             </motion.div>
           ))}
         </AnimatePresence>
-        {isTyping && (
+        {loading && !answer && (
           <div className="flex gap-3">
             <div className="w-8 h-8 rounded bg-accent/10 border border-accent/30 flex items-center justify-center shrink-0">
               <Bot className="w-4 h-4 text-accent animate-pulse" />
@@ -120,6 +113,16 @@ export default function CareerAIPage() {
                 <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                 <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
+            </div>
+          </div>
+        )}
+        {loading && answer && (
+          <div className="flex gap-3">
+            <div className="w-8 h-8 rounded bg-accent/10 border border-accent/30 flex items-center justify-center shrink-0 mt-1">
+              <Bot className="w-4 h-4 text-accent" />
+            </div>
+            <div className="max-w-[80%] rounded-lg px-4 py-3 bg-surface-hover border border-border">
+              <div className="text-sm whitespace-pre-wrap leading-relaxed">{answer}</div>
             </div>
           </div>
         )}
@@ -151,7 +154,7 @@ export default function CareerAIPage() {
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && sendMessage()}
         />
-        <Button onClick={() => sendMessage()} className="rounded px-4" disabled={isTyping}>
+        <Button onClick={() => sendMessage()} aria-label="Send message" className="rounded px-4" disabled={loading}>
           <Send className="w-4 h-4" />
         </Button>
       </div>
