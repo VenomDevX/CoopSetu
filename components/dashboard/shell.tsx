@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import { Logo } from '@/components/logo';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -19,6 +20,7 @@ import { OrgSwitcher } from '@/components/dashboard/org-switcher';
 import { CommandPalette } from '@/components/dashboard/command-palette';
 import { GlobalAiHub } from '@/components/ai/global-ai-hub';
 import { OfflineIndicator } from '@/components/offline/offline-indicator';
+import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { resolveDashboardPersona } from '@/lib/auth/dashboard-persona';
 
 interface ShellProps {
@@ -34,6 +36,8 @@ const ADMIN_ROLES = ['SUPER_ADMIN', 'ORG_OWNER', 'ORG_ADMIN'];
 export function DashboardShell({ children, displayName, initials, avatarUrl, membership }: ShellProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const tNav = useTranslations('Nav');
+  const tShell = useTranslations('Shell');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -93,56 +97,60 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
     return () => window.removeEventListener('demo-alert', onDemoAlert);
   }, []);
 
-  // `roles` array for each item defines which personas can see it
+  // `roles` array for each item defines which personas can see it.
+  // Group titles (Main_SYS, OPS_MGT, ...) are deliberately styled system
+  // labels — matching this app's terminal/monospace design language
+  // throughout (see e.g. app/ai/page.tsx's "PLATFORM_OVERVIEW") — not
+  // natural-language prose, so they're intentionally left untranslated.
   const navGroups = [
     { title: 'Main_SYS', items: [
-      { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-      { name: 'My Work', href: '/dashboard/my-work', icon: Briefcase },
-      { name: 'Inbox', href: '/dashboard/inbox', icon: Inbox },
-      { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
+      { name: tNav('overview'), href: '/dashboard', icon: LayoutDashboard },
+      { name: tNav('myWork'), href: '/dashboard/my-work', icon: Briefcase },
+      { name: tNav('inbox'), href: '/dashboard/inbox', icon: Inbox },
+      { name: tNav('calendar'), href: '/dashboard/calendar', icon: Calendar },
     ]},
     { title: 'OPS_MGT', items: [
-      { name: 'Projects', href: '/dashboard/projects', icon: Layers, roles: ['ADMIN'] },
-      { name: 'Sprints', href: '/dashboard/sprints', icon: KanbanSquare, roles: ['ADMIN'] },
-      { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare, roles: ['ADMIN'] },
+      { name: tNav('projects'), href: '/dashboard/projects', icon: Layers, roles: ['ADMIN'] },
+      { name: tNav('sprints'), href: '/dashboard/sprints', icon: KanbanSquare, roles: ['ADMIN'] },
+      { name: tNav('tasks'), href: '/dashboard/tasks', icon: CheckSquare, roles: ['ADMIN'] },
     ]},
     { title: 'ENG_CORE', items: [
-      { name: 'Repositories', href: '/dashboard/repositories', icon: GitBranch, roles: ['ADMIN'] },
-      { name: 'QA & Security', href: '/dashboard/qa-security', icon: ShieldCheck, roles: ['ADMIN'] },
-      { name: 'Incidents', href: '/dashboard/incidents', icon: AlertCircle, roles: ['ADMIN'] },
+      { name: tNav('repositories'), href: '/dashboard/repositories', icon: GitBranch, roles: ['ADMIN'] },
+      { name: tNav('qaSecurity'), href: '/dashboard/qa-security', icon: ShieldCheck, roles: ['ADMIN'] },
+      { name: tNav('incidents'), href: '/dashboard/incidents', icon: AlertCircle, roles: ['ADMIN'] },
     ]},
     { title: 'DATA_KNOWLEDGE', items: [
-      { name: 'Documents', href: '/dashboard/documents', icon: FileText, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
-      { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'EMPLOYER'] },
+      { name: tNav('documents'), href: '/dashboard/documents', icon: FileText, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
+      { name: tNav('analytics'), href: '/dashboard/analytics', icon: BarChart3, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'EMPLOYER'] },
     ]},
     { title: 'Training_ERP', items: [
-      { name: 'Institutions', href: '/dashboard/institutions', icon: Building2, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
-      { name: 'Programmes', href: '/dashboard/programmes', icon: GraduationCap, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
-      { name: 'Batches', href: '/dashboard/batches', icon: Users, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER'] },
-      { name: 'Trainees', href: '/dashboard/trainees', icon: UserCheck, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER'] },
-      { name: 'Trainers', href: '/dashboard/trainers', icon: User, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
-      { name: 'Attendance', href: '/dashboard/attendance', icon: QrCode, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
-      { name: 'Digital ID', href: '/dashboard/id-card', icon: ShieldCheck, roles: ['TRAINEE'] },
+      { name: tNav('institutions'), href: '/dashboard/institutions', icon: Building2, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
+      { name: tNav('programmes'), href: '/dashboard/programmes', icon: GraduationCap, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
+      { name: tNav('batches'), href: '/dashboard/batches', icon: Users, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER'] },
+      { name: tNav('trainees'), href: '/dashboard/trainees', icon: UserCheck, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER'] },
+      { name: tNav('trainers'), href: '/dashboard/trainers', icon: User, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
+      { name: tNav('attendance'), href: '/dashboard/attendance', icon: QrCode, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
+      { name: tNav('digitalId'), href: '/dashboard/id-card', icon: ShieldCheck, roles: ['TRAINEE'] },
     ]},
     { title: 'Learning_LMS', items: [
-      { name: 'Courses', href: '/dashboard/courses', icon: BookOpen, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
-      { name: 'Assessments', href: '/dashboard/assessments', icon: ClipboardCheck, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
-      { name: 'Certificates', href: '/dashboard/certificates', icon: Award, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
-      { name: 'Skill Passport', href: '/dashboard/skill-passport', icon: Target, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINEE', 'EMPLOYER'] },
+      { name: tNav('courses'), href: '/dashboard/courses', icon: BookOpen, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
+      { name: tNav('assessments'), href: '/dashboard/assessments', icon: ClipboardCheck, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
+      { name: tNav('certificates'), href: '/dashboard/certificates', icon: Award, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
+      { name: tNav('skillPassport'), href: '/dashboard/skill-passport', icon: Target, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINEE', 'EMPLOYER'] },
     ]},
     { title: 'Employment', items: [
-      { name: 'Employers', href: '/dashboard/employers', icon: BriefcaseBusiness, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
-      { name: 'Jobs', href: '/dashboard/jobs', icon: Briefcase, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINEE', 'EMPLOYER'] },
-      { name: 'Applications', href: '/dashboard/applications', icon: ClipboardList, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'EMPLOYER'] },
+      { name: tNav('employers'), href: '/dashboard/employers', icon: BriefcaseBusiness, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
+      { name: tNav('jobs'), href: '/dashboard/jobs', icon: Briefcase, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINEE', 'EMPLOYER'] },
+      { name: tNav('applications'), href: '/dashboard/applications', icon: ClipboardList, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'EMPLOYER'] },
     ]},
     { title: 'Cooperative_AI', items: [
-      { name: 'Career AI', href: '/dashboard/career-ai', icon: Bot },
+      { name: tNav('careerAi'), href: '/dashboard/career-ai', icon: Bot },
     ]},
     { title: 'Admin_Level', items: [
-      { name: 'Teams', href: '/dashboard/teams', icon: Users, roles: ['ADMIN'] },
-      { name: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'EMPLOYER'] },
+      { name: tNav('teams'), href: '/dashboard/teams', icon: Users, roles: ['ADMIN'] },
+      { name: tNav('settings'), href: '/dashboard/settings', icon: Settings, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'EMPLOYER'] },
     ]},
-  ].map((g) => ({ 
+  ].map((g) => ({
     ...g, 
     items: g.items.filter((it) => {
       if (!('roles' in it)) return true; // Available to everyone
@@ -264,7 +272,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
                 aria-label="Open command palette"
                 className="relative w-full max-w-sm hidden md:flex items-center h-9 pl-10 pr-4 text-xs font-mono uppercase tracking-widest bg-surface-hover border border-border rounded hover:border-foreground transition-all text-muted-foreground">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <span className="flex-1 text-left">Search query...</span>
+                <span className="flex-1 text-left">{tShell('searchPlaceholder')}</span>
                 <kbd className="text-[10px] border border-border px-1.5 py-0.5">CTRL+K</kbd>
               </button>
             </div>
@@ -273,6 +281,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
               <div className="hidden sm:block">
                 <ThemeToggle />
               </div>
+              <LanguageSwitcher />
               <OfflineIndicator />
               <GlobalAiHub />
 
@@ -309,7 +318,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
                     >
                       <div className="px-4 py-3 border-b border-border">
                         <p className="text-xs font-mono uppercase tracking-widest text-foreground truncate">{displayName}</p>
-                        <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mt-0.5">Workspace</p>
+                        <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mt-0.5">{tShell('workspace')}</p>
                       </div>
                       <div className="p-1 flex flex-col gap-0.5">
                         {(ADMIN_ROLES.some(r => membership.roles.includes(r)) || membership.permissions.includes('task:create')) && (
@@ -317,14 +326,14 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
                             onClick={() => { setProfileDropdownOpen(false); router.push('/dashboard/tasks'); }}
                             className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
                           >
-                            <Plus className="w-3.5 h-3.5" /> Init Task
+                            <Plus className="w-3.5 h-3.5" /> {tShell('initTask')}
                           </button>
                         )}
                         <button
                           onClick={() => { setProfileDropdownOpen(false); router.push('/dashboard'); }}
                           className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
                         >
-                          <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
+                          <LayoutDashboard className="w-3.5 h-3.5" /> {tShell('dashboard')}
                         </button>
                         <button
                           onClick={() => {
@@ -334,7 +343,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
                           }}
                           className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
                         >
-                          <User className="w-3.5 h-3.5" /> Profile
+                          <User className="w-3.5 h-3.5" /> {tShell('profile')}
                         </button>
                         <button
                           onClick={() => {
@@ -344,7 +353,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
                           }}
                           className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
                         >
-                          <Settings className="w-3.5 h-3.5" /> Settings
+                          <Settings className="w-3.5 h-3.5" /> {tShell('settings')}
                         </button>
                         <button
                           onClick={() => {
@@ -354,7 +363,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
                           }}
                           className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
                         >
-                          <CreditCard className="w-3.5 h-3.5" /> Billing
+                          <CreditCard className="w-3.5 h-3.5" /> {tShell('billing')}
                         </button>
                         <button
                           onClick={() => {
@@ -364,7 +373,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
                           }}
                           className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
                         >
-                          <GitBranch className="w-3.5 h-3.5" /> Repository
+                          <GitBranch className="w-3.5 h-3.5" /> {tShell('repository')}
                         </button>
                       </div>
                       <div className="border-t border-border p-1 flex flex-col gap-0.5">
@@ -372,7 +381,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
                           onClick={() => { setProfileDropdownOpen(false); router.push('/help'); }}
                           className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
                         >
-                          <HelpCircle className="w-3.5 h-3.5" /> Help & Docs
+                          <HelpCircle className="w-3.5 h-3.5" /> {tShell('helpAndDocs')}
                         </button>
                       </div>
                       <div className="border-t border-border p-1 flex flex-col gap-0.5">
@@ -381,7 +390,7 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
                             type="submit"
                             className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-red-400 hover:text-red-300 hover:bg-surface-hover rounded-md transition-colors"
                           >
-                            <LogOut className="w-3.5 h-3.5" /> Sign Out
+                            <LogOut className="w-3.5 h-3.5" /> {tShell('signOut')}
                           </button>
                         </form>
                       </div>
@@ -415,8 +424,8 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
             >
               <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
               <div className="flex-1">
-                <p className="text-sm font-bold uppercase tracking-widest font-mono text-foreground">Demo Limitation</p>
-                <p className="text-xs text-muted-foreground mt-1">This feature is not available for demo users. Please login or sign up to use.</p>
+                <p className="text-sm font-bold uppercase tracking-widest font-mono text-foreground">{tShell('demoLimitationTitle')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{tShell('demoLimitationBody')}</p>
               </div>
               <button onClick={() => setDemoAlertVisible(false)} className="p-1 hover:bg-surface-hover text-muted-foreground hover:text-foreground">
                 <X className="w-4 h-4" />
