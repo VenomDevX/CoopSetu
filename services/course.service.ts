@@ -28,6 +28,17 @@ export interface CourseModule {
   is_mandatory: boolean;
 }
 
+export interface AssessmentQuestion {
+  id: string;
+  assessment_id: string;
+  question_text: string;
+  question_type: string;
+  options?: unknown[];
+  correct_answer?: string;
+  marks: number;
+  order_index: number;
+}
+
 export interface Assessment {
   id: string;
   course_id: string;
@@ -41,6 +52,7 @@ export interface Assessment {
   is_published: boolean;
   created_at: string;
   courses?: { title: string };
+  assessment_questions?: AssessmentQuestion[];
 }
 
 export class CourseService {
@@ -221,5 +233,40 @@ export class AssessmentService {
       .order('submitted_at', { ascending: false });
     if (error) throw error;
     return data;
+  }
+
+  /**
+   * How many prior attempts a trainee has on record for an assessment.
+   * Callers use this to compute the next attempt_number and enforce
+   * attempts_allowed before calling submitResult.
+   */
+  async countAttempts(assessmentId: string, traineeId: string): Promise<number> {
+    const { count, error } = await this.supabase
+      .from('assessment_results')
+      .select('id', { count: 'exact', head: true })
+      .eq('assessment_id', assessmentId)
+      .eq('trainee_id', traineeId);
+    if (error) throw error;
+    return count ?? 0;
+  }
+
+  /**
+   * Auto-grades MCQ/TRUE_FALSE answers against each question's
+   * correct_answer, matched case-insensitively. SHORT_ANSWER/ESSAY questions
+   * are never auto-graded — they always contribute 0 here, since free-text
+   * grading needs a human (or a future AI grader); this is a known
+   * limitation, not a bug: those marks simply aren't counted yet.
+   *
+   * Pure and deterministic on purpose — this is the one place a trainee's
+   * score gets computed, and it must never trust a client-supplied score.
+   */
+  gradeAnswers(questions: AssessmentQuestion[], answers: Record<string, string>): number {
+    return questions.reduce((sum, q) => {
+      if (q.question_type !== 'MCQ' && q.question_type !== 'TRUE_FALSE') return sum;
+      if (!q.correct_answer) return sum;
+      const given = answers[q.id];
+      const isCorrect = typeof given === 'string' && given.trim().toLowerCase() === q.correct_answer.trim().toLowerCase();
+      return isCorrect ? sum + (q.marks ?? 1) : sum;
+    }, 0);
   }
 }
