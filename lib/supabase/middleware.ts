@@ -25,6 +25,9 @@ function isPublic(pathname: string) {
     // an account. Scoped to the exact verify path — the rest of
     // /api/v1/certificates (list/issue/revoke) stays authenticated.
     pathname === '/api/v1/certificates/verify' ||
+    // Public contact form (app/contact/page.tsx): anonymous visitors must be
+    // able to submit it without an account.
+    pathname === '/api/v1/contact' ||
     pathname.startsWith('/auth/') ||
     /\.[a-zA-Z0-9]+$/.test(pathname) // static assets
   );
