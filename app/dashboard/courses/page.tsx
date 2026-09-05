@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Plus, Clock, Users, Search, FileText, Video, HelpCircle, Download, CheckCircle2, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
+import { useTranslations } from 'next-intl';
 import { usePermission } from "@/lib/permissions/context";
 import { saveModule, deleteModule, listModules, queueProgress, type CachedModule } from "@/lib/offline/db";
 import { flushOfflineQueues } from "@/lib/offline/sync";
@@ -24,6 +25,7 @@ interface Course {
 }
 
 export default function CoursesPage() {
+  const t = useTranslations('Courses');
   const { hasRole } = usePermission();
   const isTrainee = hasRole('TRAINEE');
 
@@ -121,11 +123,11 @@ export default function CoursesPage() {
             <div className="w-2 h-2 bg-foreground animate-pulse rounded" />
             Learning_LMS // Courses
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">Course Catalog</h1>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">{t('heading')}</h1>
         </div>
         {!isTrainee && (
           <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => setShowCreate(!showCreate)}>
-            <Plus className="w-4 h-4 mr-2" /> Add Course
+            <Plus className="w-4 h-4 mr-2" /> {t('addCourse')}
           </Button>
         )}
       </motion.div>
@@ -134,13 +136,13 @@ export default function CoursesPage() {
       {showCreate && (
         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
           <Card className="shadow-none border-border rounded bg-background">
-            <CardHeader className="border-b border-border pb-4"><CardTitle className="text-xs font-mono uppercase tracking-widest">New Course</CardTitle></CardHeader>
+            <CardHeader className="border-b border-border pb-4"><CardTitle className="text-xs font-mono uppercase tracking-widest">{t('newCourse')}</CardTitle></CardHeader>
             <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
               <input className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" placeholder="Programme ID" value={form.programme_id} onChange={e => setForm({ ...form, programme_id: e.target.value })} />
               <input className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" placeholder="Course Title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
               <textarea className="px-3 py-2 border border-border rounded bg-background text-sm font-mono col-span-full h-20" placeholder="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
               <input type="number" className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" placeholder="Duration (hours)" value={form.duration_hours} onChange={e => setForm({ ...form, duration_hours: parseInt(e.target.value) || 1 })} />
-              <div className="flex items-end"><Button onClick={handleCreate} className="rounded font-mono text-xs uppercase w-full">Create Course</Button></div>
+              <div className="flex items-end"><Button onClick={handleCreate} className="rounded font-mono text-xs uppercase w-full">{t('createCourse')}</Button></div>
             </CardContent>
           </Card>
         </motion.div>
@@ -149,7 +151,7 @@ export default function CoursesPage() {
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-        <input className="w-full pl-10 pr-4 py-2 border border-border rounded bg-background text-sm font-mono uppercase tracking-widest" placeholder="Search courses..." value={search} onChange={e => setSearch(e.target.value)} />
+        <input className="w-full pl-10 pr-4 py-2 border border-border rounded bg-background text-sm font-mono uppercase tracking-widest" placeholder={t('searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
       {/* Course List */}
@@ -167,8 +169,8 @@ export default function CoursesPage() {
                   {course.description && <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{course.description}</p>}
                   <div className="flex flex-wrap gap-4 text-xs text-muted-foreground font-mono uppercase tracking-widest mb-4">
                     <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{course.duration_hours}h</span>
-                    {course.programmes && <span>Programme: {course.programmes.title}</span>}
-                    <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" />{course.course_modules?.length || 0} modules</span>
+                    {course.programmes && <span>{t('programme')}: {course.programmes.title}</span>}
+                    <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" />{course.course_modules?.length || 0} {t('modules')}</span>
                   </div>
 
                   {/* Modules */}
@@ -188,9 +190,9 @@ export default function CoursesPage() {
                                   {cached ? (
                                     <>
                                       <button onClick={() => setExpandedId(isExpanded ? null : mod.id)} className="flex items-center gap-1 text-[10px] font-mono uppercase px-2 py-1 border border-green-500/40 text-green-500 bg-green-500/10 rounded">
-                                        <CheckCircle2 className="w-3 h-3" /> Downloaded {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                        <CheckCircle2 className="w-3 h-3" /> {t('downloaded')} {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                                       </button>
-                                      <button onClick={() => handleRemoveDownload(mod)} title="Remove download" className="p-1 text-muted-foreground hover:text-destructive">
+                                      <button onClick={() => handleRemoveDownload(mod)} title={t('removeDownload')} className="p-1 text-muted-foreground hover:text-destructive">
                                         <Trash2 className="w-3.5 h-3.5" />
                                       </button>
                                     </>
@@ -202,7 +204,7 @@ export default function CoursesPage() {
                                       disabled={downloadingId === mod.id}
                                       onClick={() => handleDownload(course, mod)}
                                     >
-                                      <Download className="w-3 h-3" /> {downloadingId === mod.id ? 'Downloading…' : 'Download'}
+                                      <Download className="w-3 h-3" /> {downloadingId === mod.id ? t('downloading') : t('download')}
                                     </Button>
                                   )}
                                 </div>
@@ -218,7 +220,7 @@ export default function CoursesPage() {
                                   <a href={cached.contentUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-accent underline break-all">{cached.contentUrl}</a>
                                 )}
                                 {!cached.contentText && !cached.contentUrl && (
-                                  <p className="text-xs text-muted-foreground">No content available for this module.</p>
+                                  <p className="text-xs text-muted-foreground">{t('noContentAvailable')}</p>
                                 )}
                               </div>
                             )}
@@ -234,7 +236,7 @@ export default function CoursesPage() {
         ))}
         {filtered.length === 0 && (
           <div className="text-center py-16 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-            No courses found. Create your first course to build the learning catalog.
+            {t('noCoursesFound')}
           </div>
         )}
       </div>

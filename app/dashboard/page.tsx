@@ -10,6 +10,7 @@ import { Terminal, AlertTriangle, CheckCircle2, Clock, ShieldAlert, Plus, Users,
 import { useTheme } from "next-themes";
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
+import { useTranslations } from 'next-intl';
 import { usePermission, useCurrentMembership } from "@/lib/permissions/context";
 import { useTablesRealtime } from "@/hooks/use-tables-realtime";
 import Link from "next/link";
@@ -36,6 +37,7 @@ interface DashboardData {
 }
 
 export default function CommandCenter() {
+  const t = useTranslations('Dashboard');
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [data, setData] = useState<DashboardData | null>(null);
@@ -77,7 +79,7 @@ export default function CommandCenter() {
   const tooltipBg = mounted && resolvedTheme === 'dark' ? '#171717' : '#FFFFFF';
 
   if (!mounted) return null;
-  if (!data) return <div className="p-8 font-mono text-sm uppercase tracking-widest text-muted-foreground animate-pulse">Initializing Command Center...</div>;
+  if (!data) return <div className="p-8 font-mono text-sm uppercase tracking-widest text-muted-foreground animate-pulse">{t('initializing')}</div>;
 
   const { persona, metrics, signals, attentionQueue, velocity, workload, upcomingDeadlines, recentActivity } = data;
 
@@ -98,7 +100,7 @@ export default function CommandCenter() {
           <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-mono uppercase tracking-widest mb-2 opacity-60">
             MODULE_01 // WORKSPACE: {membership.organizationName}
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tighter uppercase text-foreground mb-1">Command Center</h1>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tighter uppercase text-foreground mb-1">{t('commandCenter')}</h1>
           <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest opacity-60">
             {startOfWeek} — {endOfWeek}
           </div>
@@ -111,18 +113,18 @@ export default function CommandCenter() {
               <span className="absolute inline-flex w-full h-full bg-accent animate-ping opacity-75" />
               <span className="relative inline-flex w-2 h-2 bg-accent" />
             </span>
-            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Live Sync ({lastSync})</span>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{t('liveSync')} ({lastSync})</span>
           </div>
           {persona === 'ADMIN' && (
             <>
               {has('project:create') && (
                 <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => setIsProjectModalOpen(true)}>
-                  <FolderKanban className="w-4 h-4 mr-2" /> Create Project
+                  <FolderKanban className="w-4 h-4 mr-2" /> {t('createProject')}
                 </Button>
               )}
               {has('task:create') && (
                 <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => setIsTaskModalOpen(true)}>
-                  <Plus className="w-4 h-4 mr-2" /> Create Task
+                  <Plus className="w-4 h-4 mr-2" /> {t('createTask')}
                 </Button>
               )}
               {has('member:invite') && (
@@ -130,7 +132,7 @@ export default function CommandCenter() {
                   if (membership.isDemo) window.dispatchEvent(new CustomEvent('demo-alert'));
                   else setIsInviteModalOpen(true);
                 }}>
-                  <Users className="w-4 h-4 mr-2" /> Invite Member
+                  <Users className="w-4 h-4 mr-2" /> {t('inviteMember')}
                 </Button>
               )}
             </>
@@ -140,12 +142,12 @@ export default function CommandCenter() {
             <>
               {has('task:create') && (
                 <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => setIsTaskModalOpen(true)}>
-                  <Plus className="w-4 h-4 mr-2" /> Create Task
+                  <Plus className="w-4 h-4 mr-2" /> {t('createTask')}
                 </Button>
               )}
               {has('project:manage') && (
                 <Button variant="outline" className="rounded font-mono text-xs uppercase" asChild>
-                  <Link href="/dashboard/sprints/new"><Calendar className="w-4 h-4 mr-2" /> Create Sprint</Link>
+                  <Link href="/dashboard/sprints/new"><Calendar className="w-4 h-4 mr-2" /> {t('createSprint')}</Link>
                 </Button>
               )}
             </>
@@ -153,7 +155,7 @@ export default function CommandCenter() {
 
           {persona === 'EMPLOYEE' && (
             <Button variant="outline" className="rounded font-mono text-xs uppercase" asChild>
-              <Link href="/dashboard/my-work"><ArrowRight className="w-4 h-4 mr-2" /> View My Work</Link>
+              <Link href="/dashboard/my-work"><ArrowRight className="w-4 h-4 mr-2" /> {t('viewMyWork')}</Link>
             </Button>
           )}
 
@@ -168,15 +170,15 @@ export default function CommandCenter() {
       {/* KPI ROW */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {(persona === 'EMPLOYEE' ? [
-          { label: 'My Active Tasks', value: pad(metrics.myActiveTasks), sub: 'Assigned', icon: <CheckCircle2 className="w-5 h-5" /> },
-          { label: 'My Blockers', value: pad(metrics.myBlockers), sub: 'Requires Action', icon: <AlertTriangle className="w-5 h-5" /> },
-          { label: 'Due This Week', value: pad(metrics.dueThisWeek), sub: 'Approaching', icon: <Clock className="w-5 h-5" /> },
-          { label: 'Pending Reviews', value: pad(metrics.pendingReviews), sub: 'PRs & QA', icon: <ShieldAlert className="w-5 h-5" /> },
+          { label: t('myActiveTasks'), value: pad(metrics.myActiveTasks), sub: 'Assigned', icon: <CheckCircle2 className="w-5 h-5" /> },
+          { label: t('myBlockers'), value: pad(metrics.myBlockers), sub: 'Requires Action', icon: <AlertTriangle className="w-5 h-5" /> },
+          { label: t('dueThisWeek'), value: pad(metrics.dueThisWeek), sub: 'Approaching', icon: <Clock className="w-5 h-5" /> },
+          { label: t('pendingReviews'), value: pad(metrics.pendingReviews), sub: 'PRs & QA', icon: <ShieldAlert className="w-5 h-5" /> },
         ] : [
-          { label: 'Active Projects', value: pad(metrics.activeProjects), sub: 'In Flight', icon: <FolderKanban className="w-5 h-5" /> },
-          { label: 'Projects at Risk', value: pad(metrics.projectsAtRisk), sub: 'Requires Review', icon: <AlertTriangle className="w-5 h-5" /> },
-          { label: 'Blocked / Overdue', value: pad(metrics.blockedTasks + metrics.overdueTasks), sub: `${metrics.blockedTasks} Blocked · ${metrics.overdueTasks} Overdue`, icon: <Clock className="w-5 h-5" /> },
-          { label: 'Pending Approvals', value: pad(metrics.pendingApprovals), sub: 'Release Gates', icon: <ShieldAlert className="w-5 h-5" /> },
+          { label: t('activeProjects'), value: pad(metrics.activeProjects), sub: 'In Flight', icon: <FolderKanban className="w-5 h-5" /> },
+          { label: t('projectsAtRisk'), value: pad(metrics.projectsAtRisk), sub: 'Requires Review', icon: <AlertTriangle className="w-5 h-5" /> },
+          { label: t('blockedOverdue'), value: pad(metrics.blockedTasks + metrics.overdueTasks), sub: `${metrics.blockedTasks} Blocked · ${metrics.overdueTasks} Overdue`, icon: <Clock className="w-5 h-5" /> },
+          { label: t('pendingApprovals'), value: pad(metrics.pendingApprovals), sub: 'Release Gates', icon: <ShieldAlert className="w-5 h-5" /> },
         ]).map((stat, i) => (
           <Card key={i} className="shadow-none border border-border/50 rounded-lg bg-card/10 relative overflow-hidden flex flex-col justify-between min-h-[160px] hover:border-foreground/30 transition-colors">
             <CardContent className="p-6 flex flex-col justify-between h-full">
@@ -199,10 +201,10 @@ export default function CommandCenter() {
       {/* AI SYSTEMS OVERVIEW */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         {[
-          { label: 'AI Requests Processed', value: '1.2M', sub: 'Last 30 Days', icon: <Terminal className="w-5 h-5" /> },
-          { label: 'Token Consumption', value: '450.5M', sub: 'Input / Output', icon: <Activity className="w-5 h-5" /> },
-          { label: 'Avg Model Latency', value: '245ms', sub: 'Across All Endpoints', icon: <Clock className="w-5 h-5" /> },
-          { label: 'Active LLM Endpoints', value: '3', sub: 'GPT-4 · Gemini · LLaMA', icon: <Server className="w-5 h-5" /> },
+          { label: t('aiRequestsProcessed'), value: '1.2M', sub: 'Last 30 Days', icon: <Terminal className="w-5 h-5" /> },
+          { label: t('tokenConsumption'), value: '450.5M', sub: 'Input / Output', icon: <Activity className="w-5 h-5" /> },
+          { label: t('avgModelLatency'), value: '245ms', sub: 'Across All Endpoints', icon: <Clock className="w-5 h-5" /> },
+          { label: t('activeLlmEndpoints'), value: '3', sub: 'GPT-4 · Gemini · LLaMA', icon: <Server className="w-5 h-5" /> },
         ].map((stat, i) => (
           <Card key={`ai-stat-${i}`} className="shadow-none border border-border/50 rounded-lg bg-card/10 relative overflow-hidden flex flex-col justify-between min-h-[140px] hover:border-blue-500/30 transition-colors group">
             <CardContent className="p-6 flex flex-col justify-between h-full">
@@ -236,7 +238,7 @@ export default function CommandCenter() {
             <CardContent className="flex-1 min-h-[300px]">
               {velocity.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-6 py-12">
-                  No completed sprint data is available yet.<br/>Create and complete a sprint to view delivery trend.
+                  {t('noSprintData')}<br/>{t('createSprintPrompt')}
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height={300}>
@@ -263,7 +265,7 @@ export default function CommandCenter() {
             <CardContent className="flex-1 min-h-[300px]">
               {workload.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-6 py-12">
-                  No active work found for accessible projects.
+                  {t('noActiveWork')}
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height={300}>
@@ -291,7 +293,7 @@ export default function CommandCenter() {
             </div>
             {signals.length === 0 ? (
               <p className="text-sm text-muted-foreground font-mono uppercase tracking-widest opacity-50">
-                No active delivery signals require attention.
+                {t('noActiveSignals')}
               </p>
             ) : (
               <div className="flex-1 space-y-3 overflow-y-auto pr-2">
@@ -320,7 +322,7 @@ export default function CommandCenter() {
                 transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                 className="w-2 h-3 bg-muted-foreground" 
               />
-              <span className="font-mono text-[10px] text-muted-foreground opacity-50">Ready</span>
+              <span className="font-mono text-[10px] text-muted-foreground opacity-50">{t('ready')}</span>
             </div>
           </CardContent>
         </Card>
@@ -336,19 +338,19 @@ export default function CommandCenter() {
           <CardContent className="p-0 overflow-x-auto">
             {attentionQueue.length === 0 ? (
               <div className="flex items-center justify-center text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-6 py-12">
-                No items require immediate attention.
+                {t('noAttentionItems')}
               </div>
             ) : (
               <div className="min-w-[800px]">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-border bg-surface-hover text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-                      <th className="p-4 font-normal">Identifier</th>
-                      <th className="p-4 font-normal">Item Type</th>
-                      <th className="p-4 font-normal">Project</th>
-                      <th className="p-4 font-normal">Severity/Priority</th>
-                      <th className="p-4 font-normal">Status</th>
-                      <th className="p-4 font-normal">Owner</th>
+                      <th className="p-4 font-normal">{t('colIdentifier')}</th>
+                      <th className="p-4 font-normal">{t('colItemType')}</th>
+                      <th className="p-4 font-normal">{t('colProject')}</th>
+                      <th className="p-4 font-normal">{t('colSeverityPriority')}</th>
+                      <th className="p-4 font-normal">{t('colStatus')}</th>
+                      <th className="p-4 font-normal">{t('colOwner')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -389,7 +391,7 @@ export default function CommandCenter() {
           <CardContent className="p-0">
             {upcomingDeadlines.length === 0 ? (
               <div className="flex items-center justify-center text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-6 py-8">
-                No upcoming authorized deadlines.
+                {t('noUpcomingDeadlines')}
               </div>
             ) : (
               <div className="divide-y divide-border">
@@ -420,7 +422,7 @@ export default function CommandCenter() {
         <CardContent className="p-0">
           {recentActivity.length === 0 ? (
             <div className="flex items-center justify-center text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-6 py-12">
-              No recent authorized workspace activity.
+              {t('noRecentActivity')}
             </div>
           ) : (
             <div className="divide-y divide-border">
