@@ -13,10 +13,13 @@ import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { MobileNavDrawer } from '@/components/layout/mobile-nav-drawer';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/providers/auth-provider';
+import { useIsNative } from '@/components/native/native-provider';
+import { MobilePublicBar } from '@/components/mobile/mobile-public-bar';
 
 export function MarketingHeader({ animated = false }: { animated?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
+  const isNative = useIsNative();
   const { isCheckingAuth, isLoggedIn, userName, avatarUrl, signOut } = useAuth();
   
   const [isNavigating, setIsNavigating] = useState(false);
@@ -209,6 +212,13 @@ export function MarketingHeader({ animated = false }: { animated?: boolean }) {
       ? 'border-b border-border bg-background/80 backdrop-blur-xl' 
       : 'border-b-transparent bg-transparent'
   }`;
+
+  // Inside the Capacitor app, swap the whole marketing chrome for a plain
+  // safe-area-aware bar. Branching here rather than per page is what makes
+  // this reach every public page — none of them share a layout, they each
+  // import this component directly. Placed after all hooks so the hook order
+  // is identical in both branches.
+  if (isNative) return <MobilePublicBar />;
 
   if (animated) {
     return (
