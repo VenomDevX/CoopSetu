@@ -226,6 +226,26 @@
     padding-bottom: var(--safe-bottom);
   }
 
+  /* The same 48dp floor, applied to real controls inside page content.
+     Measured need, not a guess: on a Pixel 7 the trainee's own actions come
+     out at 28px (Courses' "Download", which hard-codes h-7), 36px ("Apply"
+     on Jobs) and 33px (the Jobs status filters) — all well under the
+     guideline, and all things a trainee taps constantly.
+
+     Done here rather than by editing pages because these come from the shared
+     Button primitive and from per-page height overrides, so no single
+     component fix reaches them. `min-height` is the operative choice: it wins
+     over an explicit `height` like h-7, which a padding or size change would
+     not.
+
+     Scoped to <main> so it only affects page content, never the shell's own
+     chrome (which already opts in via data-native-tap). Limited to button /
+     select / role=button: an <a> in prose is inline, so a min-height would be
+     ignored anyway, and whole-card links are already far taller. */
+  html.app-native main :is(button, select, [role='button']) {
+    min-height: var(--tap-min);
+  }
+
   *,
   ::before,
   ::after {
