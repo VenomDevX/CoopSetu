@@ -1,0 +1,13 @@
+{
+  "name": "CoopSetu",
+  "short_name": "CoopSetu",
+  "description": "Cooperative Training Hub — Digital ERP for training institutions, skill development & employment exchange.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    { "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

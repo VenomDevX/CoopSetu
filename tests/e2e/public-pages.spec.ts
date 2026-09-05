@@ -40,9 +40,12 @@ test.describe('Public Pages and Navigation E2E', () => {
   test('Contact form validates fields and submits successfully', async ({ page }) => {
     await page.goto('/contact');
 
-    // Fill contact form
+    // Fill contact form. workEmail must be unique per run — the real
+    // backend (app/api/v1/contact/route.ts) rate-limits to 3 submissions
+    // per email per 24 hours, so a hardcoded literal here would start
+    // failing after the 3rd time this suite runs in a day.
     await page.locator('#fullName').fill('E2E Tester');
-    await page.locator('#workEmail').fill('e2etest@example.com');
+    await page.locator('#workEmail').fill(`e2etest-${Date.now()}@example.com`);
     await page.locator('#companyName').fill('E2E Corp');
 
     // companySize/topic are Radix comboboxes (components/ui/select.tsx), not
