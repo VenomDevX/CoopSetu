@@ -2,9 +2,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Plus, MapPin, DollarSign, Clock, Search, Users, Building2 } from 'lucide-react';
+import { Briefcase, Plus, MapPin, DollarSign, Clock, Search, Users, Building2, CheckCircle2 } from 'lucide-react';
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
+import { usePermission } from "@/lib/permissions/context";
 
 interface Job {
   id: string;
@@ -26,12 +27,17 @@ interface Job {
 interface Stats { total: number; open: number; closed: number; filled: number; }
 
 export default function JobsPage() {
+  const { hasRole } = usePermission();
+  const isTrainee = hasRole('TRAINEE');
   const [jobs, setJobs] = useState<Job[]>([]);
   const [stats, setStats] = useState<Stats>({ total: 0, open: 0, closed: 0, filled: 0 });
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ employer_id: '', title: '', description: '', location: '', salary_min: 0, salary_max: 0, employment_type: 'FULL_TIME', experience_min: 0, vacancies: 1 });
+  const [applyingTo, setApplyingTo] = useState<string | null>(null);
+  const [applied, setApplied] = useState<Set<string>>(new Set());
+  const [applyError, setApplyError] = useState<Record<string, string>>({});
 
   const load = useCallback(() => {
     const params = new URLSearchParams();
@@ -49,6 +55,25 @@ export default function JobsPage() {
     setShowCreate(false);
     setForm({ employer_id: '', title: '', description: '', location: '', salary_min: 0, salary_max: 0, employment_type: 'FULL_TIME', experience_min: 0, vacancies: 1 });
     load();
+  };
+
+  const handleApply = async (jobId: string) => {
+    setApplyingTo(jobId);
+    setApplyError(prev => { const next = { ...prev }; delete next[jobId]; return next; });
+    try {
+      const res = await fetch(`/api/v1/jobs/${jobId}/apply`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+      const j = await res.json();
+      if (!res.ok) {
+        // Already-applied (409) is a benign state, not an error — just show it as applied.
+        if (res.status === 409) { setApplied(prev => new Set(prev).add(jobId)); return; }
+        throw new Error(j?.error || 'Failed to apply.');
+      }
+      setApplied(prev => new Set(prev).add(jobId));
+    } catch (err: any) {
+      setApplyError(prev => ({ ...prev, [jobId]: err.message }));
+    } finally {
+      setApplyingTo(null);
+    }
   };
 
   const formatSalary = (min?: number, max?: number) => {
@@ -140,7 +165,7 @@ export default function JobsPage() {
       {/* Job List */}
       <div className="space-y-4">
         {jobs.map(job => (
-          <Card key={job.id} className="shadow-none border-border rounded bg-background hover:border-foreground transition-colors group">
+          <Card key={job.id} data-testid={`job-card-${job.id}`} className="shadow-none border-border rounded bg-background hover:border-foreground transition-colors group">
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row items-start justify-between gap-4">
                 <div className="flex-1">
@@ -168,7 +193,28 @@ export default function JobsPage() {
                       ))}
                     </div>
                   )}
+                  {isTrainee && applyError[job.id] && (
+                    <div className="text-xs font-mono text-destructive mt-3">{applyError[job.id]}</div>
+                  )}
                 </div>
+                {isTrainee && (
+                  <div className="shrink-0">
+                    {applied.has(job.id) ? (
+                      <span className="flex items-center gap-2 px-4 py-2 text-[10px] font-mono uppercase tracking-widest border border-green-500/40 text-green-500 bg-green-500/10 rounded">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Applied
+                      </span>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="rounded font-mono text-xs uppercase"
+                        disabled={applyingTo === job.id || job.status !== 'OPEN'}
+                        onClick={() => handleApply(job.id)}
+                      >
+                        {applyingTo === job.id ? 'Applying…' : 'Apply'}
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
