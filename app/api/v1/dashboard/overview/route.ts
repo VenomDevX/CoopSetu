@@ -3,7 +3,9 @@ import { handle, ok } from '@/lib/api/response';
 import { requireUser } from '@/lib/auth/require-user';
 import { requireOrganization } from '@/lib/auth/require-organization';
 import { resolveDashboardPersona } from '@/lib/auth/dashboard-persona';
-import { getRoleAwareOverview } from '@/services/dashboard.service';
+import { getRoleAwareOverview, getTrainingOverview } from '@/services/dashboard.service';
+
+const TRAINING_PERSONAS = new Set(['INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE', 'EMPLOYER']);
 import { withApiTiming } from '@/lib/observability/api-timing';
 import { cache } from '@/lib/cache/cache';
 import { createHash } from 'crypto';
@@ -17,7 +19,7 @@ export async function GET(req: NextRequest) {
     req,
     async () => {
       return handle(async () => {
-        const { supabase } = await requireUser();
+        const { supabase, user } = await requireUser();
         const m = await requireOrganization();
         
         requestOrgId = m.organizationId;
@@ -47,12 +49,22 @@ export async function GET(req: NextRequest) {
           return ok({ persona, ...cachedData });
         }
 
-        // 4. Fetch properly scoped overview from DB
-        const data = await getRoleAwareOverview(supabase, {
-          orgId: m.organizationId,
-          memberId: m.memberId,
-          persona
-        });
+        // 4. Fetch properly scoped overview from DB. The training personas
+        // (INSTITUTE_ADMIN/TRAINER/TRAINEE/EMPLOYER) get a dedicated data
+        // path — getRoleAwareOverview() only ever covered the apexfintech
+        // personas, so these previously fell through to its all-zero
+        // defaults and an unfiltered org-wide task/incident feed.
+        const data = TRAINING_PERSONAS.has(persona)
+          ? await getTrainingOverview(supabase, {
+              orgId: m.organizationId,
+              userId: user.id,
+              persona: persona as 'INSTITUTE_ADMIN' | 'TRAINER' | 'TRAINEE' | 'EMPLOYER',
+            })
+          : await getRoleAwareOverview(supabase, {
+              orgId: m.organizationId,
+              memberId: m.memberId,
+              persona
+            });
 
         // 5. Cache for 30s
         await cache.set(cacheKey, data, 30);
