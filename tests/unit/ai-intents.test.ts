@@ -17,6 +17,7 @@ describe('AI intent registry', () => {
       'ask', 'daily-brief', 'my-focus', 'qa-security', 'release-readiness',
       'exec-briefing', 'summarize-project', 'summarize-sprint', 'summarize-task',
       'summarize-comments', 'summarize-incident', 'summarize-release', 'summarize-qa', 'task-plan',
+      'my-learning',
     ]) {
       const def = getIntent(intent);
       expect(def, intent).toBeTruthy();
@@ -25,7 +26,7 @@ describe('AI intent registry', () => {
       // Grounding rule is always present in the system instruction.
       expect(systemFor(def!)).toMatch(/ONLY using the FACTS/);
     }
-    expect(ALL_INTENTS.length).toBeGreaterThanOrEqual(14);
+    expect(ALL_INTENTS.length).toBeGreaterThanOrEqual(15);
   });
 
   it('returns undefined for an unknown intent', () => {
@@ -49,6 +50,15 @@ describe('AI permission gating', () => {
   it('org admins implicitly pass feature checks but still need ai:use indirectly granted', () => {
     // ORG_ADMIN holds all permissions including ai:use via hasPermission.
     expect(() => checkIntentPermissions(member([], ['ORG_ADMIN']), ['analytics:view'])).not.toThrow();
+  });
+
+  it('my-learning (Career AI) is gated on career:view, granted to TRAINEE by migration 0083', () => {
+    const def = getIntent('my-learning')!;
+    // Before migration 0083, TRAINEE held neither ai:use nor career:view — Career AI was impossible.
+    expect(() => checkIntentPermissions(member([]), def.permissions)).toThrow();
+    expect(() => checkIntentPermissions(member(['ai:use']), def.permissions)).toThrow(); // ai:use alone isn't enough
+    // After migration 0083, TRAINEE holds both.
+    expect(() => checkIntentPermissions(member(['ai:use', 'career:view']), def.permissions)).not.toThrow();
   });
 });
 
