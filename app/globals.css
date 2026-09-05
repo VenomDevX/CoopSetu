@@ -75,6 +75,12 @@
     --sidebar-bg: #FFFFFF;
     --sidebar-fg: #101010;
     --sidebar-muted: #707070;
+
+    /* Height of the app shell's sticky header. Declared here rather than
+       inlined so layout primitives can subtract it without repeating a magic
+       number (see components/layout/workspace-data-layout.tsx). Matches the
+       shell's h-16. */
+    --app-header-h: 64px;
   }
 
   .dark {
@@ -123,6 +129,92 @@
     --color-foreground: #0B0B0B;
     --color-muted-foreground: #707070;
     --color-border: #E2E2E2;
+  }
+
+  /* ── Capacitor native app only ────────────────────────────────────────
+     `app-native` is put on <html> by app/layout.tsx when the request carries
+     the CoopSetuApp UA sentinel (lib/native/is-native.ts). Nothing in here
+     can reach the web app: the class simply doesn't exist there.
+
+     STRUCTURAL ONLY. Not one colour token is redefined — --accent, the
+     greyscale ramp and the whole :root/.dark light/dark system above are
+     inherited untouched, so theming keeps working identically. Same scoping
+     technique as .section-inverse, minus the double-declaration: that rule
+     has to override both the raw var AND the resolved --color-* token to beat
+     var() indirection, whereas radii are declared directly (--radius-md: 6px)
+     so one level is enough.
+
+     Specificity: @theme emits its tokens on :root (0,1,0); html.app-native is
+     (0,1,1) and wins. .dark also lives on <html> but sets a disjoint set of
+     properties (colours vs. metrics), so the two never contend and source
+     order between them is irrelevant. */
+  html.app-native {
+    /* Soften the deliberately-flat 4/6px terminal radii — that look reads as
+       precise on a desktop panel and as unfinished on a phone. */
+    --radius-xs: 6px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 14px;
+    --radius-xl: 16px;
+    --radius-2xl: 20px;
+    --radius-3xl: 24px;
+    --radius-4xl: 28px;
+    --radius: 12px;
+
+    /* Native chrome metrics, consumed by components/mobile/*. */
+    --app-header-h: 56px;
+    --app-tabbar-h: 56px;
+    --tap-min: 48px;
+
+    /* Non-zero only because app/layout.tsx sets viewportFit: 'cover'. */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+
+    /* Browser-chrome artefacts that only show up inside a WebView. */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior-y: none;
+    /* Overrides the `overflow-y: overlay` below: overlay scrollbars are a
+       desktop pointer affordance and confuse WebView overscroll. */
+    overflow-y: auto;
+  }
+
+  /* Landscape notch/cutout insets. Top and bottom are deliberately left to
+     the individual chrome components so the app bar and tab bar can paint
+     their backgrounds INTO the inset instead of leaving bars above/below. */
+  html.app-native body {
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
+    overscroll-behavior-y: none;
+    /* Android WebView zooms the page when a focused input's font is under
+       16px. Setting the floor here is what lets app/layout.tsx keep
+       pinch-zoom enabled — the usual fix (user-scalable=no) would disable it
+       for mobile web users too. */
+    font-size: 16px;
+  }
+
+  /* A native app has no visible scrollbars. */
+  html.app-native ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  /* Chrome shouldn't feel like a web page: no text selection or long-press
+     callout on navigation surfaces. Opt-in, so page CONTENT stays selectable. */
+  html.app-native [data-native-chrome] {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Android's 48dp touch-target floor. Opt-in via the attribute rather than a
+     blanket `button` rule, so the dense in-page controls across the 43
+     dashboard pages aren't silently resized. */
+  html.app-native [data-native-tap] {
+    min-height: var(--tap-min);
+    min-width: var(--tap-min);
   }
 
   *,
