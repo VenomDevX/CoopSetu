@@ -7,6 +7,7 @@ import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import { usePermission } from "@/lib/permissions/context";
 import { queueSubmission } from "@/lib/offline/db";
+import { useIsNative } from '@/components/native/native-provider';
 
 interface Course { id: string; title: string; }
 
@@ -49,6 +50,11 @@ const EMPTY_FORM = { course_id: '', title: '', description: '', type: 'QUIZ', ma
 const EMPTY_QUESTION = { question_text: '', question_type: 'MCQ', options: '', correct_answer: '', marks: 1 };
 
 export default function AssessmentsPage() {
+  // The native app bar already names this screen, so the page's own <h1> is
+  // a duplicate: two h1s on one screen, the second repeating what the sticky
+  // bar above it already says. Dropping it in the app reclaims 40px (measured
+  // on a Pixel 7) and leaves exactly one h1 on the page.
+  const isNative = useIsNative();
   const { has, hasRole } = usePermission();
   const isStaff = has('assessment:manage');
   const isTrainee = hasRole('TRAINEE');
@@ -163,7 +169,9 @@ export default function AssessmentsPage() {
             <div className="w-2 h-2 bg-foreground animate-pulse rounded" />
             Learning_LMS // Assessments
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">Assessments</h1>
+          {!isNative && (
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">Assessments</h1>
+          )}
           <p className="text-sm text-muted-foreground mt-2 font-mono">Quizzes, exams, and practical assessments</p>
         </div>
         {isStaff && (
