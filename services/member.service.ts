@@ -4,11 +4,79 @@ import { Errors } from '@/lib/api/errors';
 export async function listMembers(supabase: SupabaseClient, orgId: string) {
   const { data, error } = await supabase
     .from('organization_members')
-    .select('id, employment_status, is_active, department_id, profile:profiles!org_members_profile_fk(full_name, email, job_title, timezone), team_members(team_id, role_in_team, allocation_percent)')
+    .select('id, employment_status, is_active, department_id, ' +
+      'profile:profiles!org_members_profile_fk(full_name, email, job_title, timezone), ' +
+      'department:department_id(id, name), ' +
+      'manager:manager_id(id, profile:profiles!org_members_profile_fk(full_name)), ' +
+      'team_members(team_id, role_in_team, allocation_percent)')
     .eq('organization_id', orgId)
     .eq('is_active', true);
   if (error) throw Errors.internal(error.message);
   return data;
+}
+
+export interface MemberAggregate {
+  activeTasks: number;
+  workload: number;
+  recentActivity: { action: string; created_at: string }[];
+}
+
+const EMPTY_MEMBER_AGGREGATE: MemberAggregate = { activeTasks: 0, workload: 0, recentActivity: [] };
+
+const CLOSED_TASK_STATUSES = ['DONE', 'CANCELLED'];
+
+/**
+ * Real, derived per-member metrics — replaces what used to be hardcoded on
+ * the client (activeTasks: 0, workload: 0, recentActivity: '—'). Bulk (not
+ * per-member) to avoid N+1 across the employee directory.
+ *
+ * activeTasks/workload come from task_assignees -> tasks, counting/summing
+ * only tasks not yet DONE/CANCELLED and not archived — workload uses
+ * tasks.estimated_hours (a real column; earlier planning for this phase
+ * assumed no hours model existed on tasks, which direct schema inspection
+ * showed was wrong). recentActivity reads audit_logs for that member as
+ * actor, most recent first — the only real activity-feed source in this
+ * schema (there is no per-member "GitHub handle" or "location" field
+ * anywhere, so those stay removed rather than faked).
+ */
+export async function getMemberAggregates(
+  supabase: SupabaseClient,
+  memberIds: string[],
+): Promise<Record<string, MemberAggregate>> {
+  const result: Record<string, MemberAggregate> = {};
+  for (const id of memberIds) result[id] = { ...EMPTY_MEMBER_AGGREGATE, recentActivity: [] };
+  if (memberIds.length === 0) return result;
+
+  const [{ data: assignments }, { data: activity }] = await Promise.all([
+    supabase.from('task_assignees')
+      .select('organization_member_id, tasks(status, estimated_hours, archived_at)')
+      .in('organization_member_id', memberIds),
+    supabase.from('audit_logs')
+      // audit_logs' real timestamp column is occurred_at, not created_at —
+      // aliased here so the rest of this module and its callers can keep
+      // using the more conventional created_at name.
+      .select('actor_member_id, action, created_at:occurred_at')
+      .in('actor_member_id', memberIds)
+      .order('occurred_at', { ascending: false })
+      .limit(200),
+  ]);
+
+  for (const row of (assignments ?? []) as any[]) {
+    const task = Array.isArray(row.tasks) ? row.tasks[0] : row.tasks;
+    if (!task || task.archived_at || CLOSED_TASK_STATUSES.includes(task.status)) continue;
+    const agg = result[row.organization_member_id];
+    if (!agg) continue;
+    agg.activeTasks += 1;
+    agg.workload += Number(task.estimated_hours) || 0;
+  }
+
+  for (const row of (activity ?? []) as any[]) {
+    const agg = result[row.actor_member_id];
+    if (!agg || agg.recentActivity.length >= 5) continue;
+    agg.recentActivity.push({ action: row.action, created_at: row.created_at });
+  }
+
+  return result;
 }
 
 export interface AssignableMember {

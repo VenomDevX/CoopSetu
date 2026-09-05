@@ -6,6 +6,7 @@ import { ClipboardCheck, Search, Plus, ChevronDown, ChevronUp, CheckCircle2, XCi
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import { usePermission } from "@/lib/permissions/context";
+import { queueSubmission } from "@/lib/offline/db";
 
 interface Course { id: string; title: string; }
 
@@ -65,7 +66,7 @@ export default function AssessmentsPage() {
 
   const [questionForm, setQuestionForm] = useState(EMPTY_QUESTION);
   const [answers, setAnswers] = useState<Record<string, Record<string, string>>>({}); // assessmentId -> questionId -> answer
-  const [submitState, setSubmitState] = useState<Record<string, { submitting?: boolean; result?: AssessmentResult; error?: string }>>({});
+  const [submitState, setSubmitState] = useState<Record<string, { submitting?: boolean; result?: AssessmentResult; error?: string; queued?: boolean }>>({});
 
   const load = useCallback(() => {
     fetch('/api/v1/assessments').then(r => r.json()).then(j => {
@@ -123,17 +124,28 @@ export default function AssessmentsPage() {
 
   const handleSubmitQuiz = async (assessmentId: string) => {
     setSubmitState(prev => ({ ...prev, [assessmentId]: { submitting: true } }));
+    const submittedAnswers = answers[assessmentId] || {};
     try {
       const res = await fetch(`/api/v1/assessments/${assessmentId}/results`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answers: answers[assessmentId] || {} }),
+        body: JSON.stringify({ answers: submittedAnswers }),
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j?.error || 'Failed to submit.');
       setSubmitState(prev => ({ ...prev, [assessmentId]: { result: j.data } }));
     } catch (err: any) {
-      setSubmitState(prev => ({ ...prev, [assessmentId]: { error: err.message } }));
+      if (err instanceof TypeError) {
+        // fetch() itself failed (not a server response) — offline, not a
+        // real rejection. Queue the attempt (lib/offline/db.ts) instead of
+        // losing it; lib/offline/sync.ts submits it for real once back
+        // online, through this exact same route.
+        const assessmentTitle = assessments.find(a => a.id === assessmentId)?.title ?? 'Assessment';
+        await queueSubmission({ assessmentId, assessmentTitle, answers: submittedAnswers });
+        setSubmitState(prev => ({ ...prev, [assessmentId]: { queued: true } }));
+      } else {
+        setSubmitState(prev => ({ ...prev, [assessmentId]: { error: err.message } }));
+      }
     }
   };
 
@@ -258,6 +270,10 @@ export default function AssessmentsPage() {
                           <div className={`flex items-center gap-2 p-4 border rounded text-sm font-mono ${state.result.passed ? 'border-green-500/40 bg-green-500/10 text-green-500' : 'border-red-500/40 bg-red-500/10 text-red-500'}`}>
                             {typeIcon(state.result.passed)}
                             {state.result.passed ? 'Passed' : 'Not passed'} — {state.result.score}/{state.result.max_score}
+                          </div>
+                        ) : state.queued ? (
+                          <div className="flex items-center gap-2 p-4 border border-orange-500/40 bg-orange-500/10 text-orange-500 rounded text-sm font-mono">
+                            Queued — you&apos;re offline. This will submit automatically once you&apos;re back online.
                           </div>
                         ) : (
                           <div className="space-y-2">
