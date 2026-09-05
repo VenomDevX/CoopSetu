@@ -14,7 +14,7 @@ export interface AiInsightMeta {
 }
 
 export const AI_INSIGHTS: AiInsightMeta[] = [
-  { intent: 'my-learning', label: 'My Learning & Jobs', description: 'Your active courses, assessments, and job matches', permissions: ['task:view'] },
+  { intent: 'my-learning', label: 'My Learning & Jobs', description: 'Your active courses, assessments, and job matches', permissions: ['career:view'] },
   { intent: 'trainer-dashboard', label: 'Trainer Digest', description: 'Attendance, batch progress, pending assessments', permissions: ['qa:view', 'security:view'] },
   { intent: 'institution-readiness', label: 'Institution Readiness', description: 'Active programs, enrollment stats, logistics', permissions: ['release:view'] },
   { intent: 'national-briefing', label: 'National Briefing', description: 'Overall training health across institutions', permissions: ['analytics:view'] },
