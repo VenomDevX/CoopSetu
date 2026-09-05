@@ -10,6 +10,7 @@ import { usePermission } from "@/lib/permissions/context";
 import { saveModule, deleteModule, listModules, queueProgress, type CachedModule } from "@/lib/offline/db";
 import { flushOfflineQueues } from "@/lib/offline/sync";
 import { cacheAssetForOffline, uncacheOfflineAsset } from "@/lib/offline/cache-asset";
+import { useIsNative } from '@/components/native/native-provider';
 
 interface CourseModule { id: string; title: string; type: string; order_index: number; content_url?: string; content_text?: string; }
 interface Course {
@@ -25,6 +26,11 @@ interface Course {
 }
 
 export default function CoursesPage() {
+  // The native app bar already names this screen, so the page's own <h1> is
+  // a duplicate: two h1s on one screen, the second repeating what the sticky
+  // bar above it already says. Dropping it in the app reclaims 40px (measured
+  // on a Pixel 7) and leaves exactly one h1 on the page.
+  const isNative = useIsNative();
   const t = useTranslations('Courses');
   const { hasRole } = usePermission();
   const isTrainee = hasRole('TRAINEE');
@@ -123,7 +129,9 @@ export default function CoursesPage() {
             <div className="w-2 h-2 bg-foreground animate-pulse rounded" />
             Learning_LMS // Courses
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">{t('heading')}</h1>
+          {!isNative && (
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">{t('heading')}</h1>
+          )}
         </div>
         {!isTrainee && (
           <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => setShowCreate(!showCreate)}>
