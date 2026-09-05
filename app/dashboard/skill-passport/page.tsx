@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Target, Award, BookOpen, Briefcase, Search } from 'lucide-react';
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
+import { useIsNative } from '@/components/native/native-provider';
 
 interface SkillProfile {
   trainee_id: string;
@@ -15,6 +16,11 @@ interface SkillProfile {
 }
 
 export default function SkillPassportPage() {
+  // The native app bar already names this screen, so the page's own <h1> is
+  // a duplicate: two h1s on one screen, the second repeating what the sticky
+  // bar above it already says. Dropping it in the app reclaims 40px (measured
+  // on a Pixel 7) and leaves exactly one h1 on the page.
+  const isNative = useIsNative();
   const [traineeId, setTraineeId] = useState('');
   const [profile, setProfile] = useState<SkillProfile | null>(null);
   const [allSkills, setAllSkills] = useState<{ id: string; name: string; category: string }[]>([]);
@@ -50,7 +56,9 @@ export default function SkillPassportPage() {
           <div className="w-2 h-2 bg-foreground animate-pulse rounded" />
           Learning_LMS // Digital Skill Passport
         </div>
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">Skill Passport</h1>
+        {!isNative && (
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">Skill Passport</h1>
+          )}
         <p className="text-sm text-muted-foreground mt-2 font-mono">Centralized verified skill profile for every trainee</p>
       </motion.div>
 

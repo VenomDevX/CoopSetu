@@ -7,6 +7,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useTranslations } from 'next-intl';
 import QRCode from 'qrcode';
+import { useIsNative } from '@/components/native/native-provider';
 
 interface Session {
   id: string;
@@ -31,6 +32,11 @@ interface AttendanceRecord {
 interface Stats { totalSessions: number; totalRecords: number; present: number; averageAttendance: number; }
 
 export default function AttendancePage() {
+  // The native app bar already names this screen, so the page's own <h1> is
+  // a duplicate: two h1s on one screen, the second repeating what the sticky
+  // bar above it already says. Dropping it in the app reclaims 40px (measured
+  // on a Pixel 7) and leaves exactly one h1 on the page.
+  const isNative = useIsNative();
   const t = useTranslations('Attendance');
   const [sessions, setSessions] = useState<Session[]>([]);
   const [stats, setStats] = useState<Stats>({ totalSessions: 0, totalRecords: 0, present: 0, averageAttendance: 0 });
@@ -94,7 +100,9 @@ export default function AttendancePage() {
             <div className="w-2 h-2 bg-green-500 animate-pulse rounded" />
             Training_ERP // Digital Attendance
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">{t('heading')}</h1>
+          {!isNative && (
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">{t('heading')}</h1>
+          )}
           <p className="text-sm text-muted-foreground mt-2 font-mono">{t('subtitle')}</p>
         </div>
         <div className="flex gap-3 flex-wrap">
