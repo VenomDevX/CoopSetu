@@ -6,12 +6,8 @@ import { Logo } from '@/components/logo';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  Search, Plus, LayoutDashboard, Briefcase, Inbox, Calendar,
-  Layers, KanbanSquare, CheckSquare, GitBranch, ShieldCheck, FileText,
-  BarChart3, Settings, Users, AlertCircle, LogOut, Menu, X, Info, Mail, Shield, FileSignature,
-  ChevronDown, User, CreditCard, Key, HelpCircle,
-  Building2, GraduationCap, BookOpen, ClipboardCheck, Award, UserCheck,
-  BriefcaseBusiness, Target, Bot, QrCode, ClipboardList
+  Search, Plus, LayoutDashboard, GitBranch, Settings, AlertCircle,
+  LogOut, Menu, X, ChevronDown, User, CreditCard, HelpCircle,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NotificationBell } from '@/components/realtime/notification-bell';
@@ -22,6 +18,7 @@ import { GlobalAiHub } from '@/components/ai/global-ai-hub';
 import { OfflineIndicator } from '@/components/offline/offline-indicator';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { resolveDashboardPersona } from '@/lib/auth/dashboard-persona';
+import { buildNavGroups } from '@/lib/navigation/dashboard-nav';
 
 interface ShellProps {
   children: React.ReactNode;
@@ -97,67 +94,9 @@ export function DashboardShell({ children, displayName, initials, avatarUrl, mem
     return () => window.removeEventListener('demo-alert', onDemoAlert);
   }, []);
 
-  // `roles` array for each item defines which personas can see it.
-  // Group titles (Main_SYS, OPS_MGT, ...) are deliberately styled system
-  // labels — matching this app's terminal/monospace design language
-  // throughout (see e.g. app/ai/page.tsx's "PLATFORM_OVERVIEW") — not
-  // natural-language prose, so they're intentionally left untranslated.
-  const navGroups = [
-    { title: 'Main_SYS', items: [
-      { name: tNav('overview'), href: '/dashboard', icon: LayoutDashboard },
-      { name: tNav('myWork'), href: '/dashboard/my-work', icon: Briefcase },
-      { name: tNav('inbox'), href: '/dashboard/inbox', icon: Inbox },
-      { name: tNav('calendar'), href: '/dashboard/calendar', icon: Calendar },
-    ]},
-    { title: 'OPS_MGT', items: [
-      { name: tNav('projects'), href: '/dashboard/projects', icon: Layers, roles: ['ADMIN'] },
-      { name: tNav('sprints'), href: '/dashboard/sprints', icon: KanbanSquare, roles: ['ADMIN'] },
-      { name: tNav('tasks'), href: '/dashboard/tasks', icon: CheckSquare, roles: ['ADMIN'] },
-    ]},
-    { title: 'ENG_CORE', items: [
-      { name: tNav('repositories'), href: '/dashboard/repositories', icon: GitBranch, roles: ['ADMIN'] },
-      { name: tNav('qaSecurity'), href: '/dashboard/qa-security', icon: ShieldCheck, roles: ['ADMIN'] },
-      { name: tNav('incidents'), href: '/dashboard/incidents', icon: AlertCircle, roles: ['ADMIN'] },
-    ]},
-    { title: 'DATA_KNOWLEDGE', items: [
-      { name: tNav('documents'), href: '/dashboard/documents', icon: FileText, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
-      { name: tNav('analytics'), href: '/dashboard/analytics', icon: BarChart3, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'EMPLOYER'] },
-    ]},
-    { title: 'Training_ERP', items: [
-      { name: tNav('institutions'), href: '/dashboard/institutions', icon: Building2, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
-      { name: tNav('programmes'), href: '/dashboard/programmes', icon: GraduationCap, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
-      { name: tNav('batches'), href: '/dashboard/batches', icon: Users, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER'] },
-      { name: tNav('trainees'), href: '/dashboard/trainees', icon: UserCheck, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER'] },
-      { name: tNav('trainers'), href: '/dashboard/trainers', icon: User, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
-      { name: tNav('attendance'), href: '/dashboard/attendance', icon: QrCode, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
-      { name: tNav('digitalId'), href: '/dashboard/id-card', icon: ShieldCheck, roles: ['TRAINEE'] },
-    ]},
-    { title: 'Learning_LMS', items: [
-      { name: tNav('courses'), href: '/dashboard/courses', icon: BookOpen, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
-      { name: tNav('assessments'), href: '/dashboard/assessments', icon: ClipboardCheck, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
-      { name: tNav('certificates'), href: '/dashboard/certificates', icon: Award, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
-      { name: tNav('skillPassport'), href: '/dashboard/skill-passport', icon: Target, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINEE', 'EMPLOYER'] },
-    ]},
-    { title: 'Employment', items: [
-      { name: tNav('employers'), href: '/dashboard/employers', icon: BriefcaseBusiness, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
-      { name: tNav('jobs'), href: '/dashboard/jobs', icon: Briefcase, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINEE', 'EMPLOYER'] },
-      { name: tNav('applications'), href: '/dashboard/applications', icon: ClipboardList, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'EMPLOYER'] },
-    ]},
-    { title: 'Cooperative_AI', items: [
-      { name: tNav('careerAi'), href: '/dashboard/career-ai', icon: Bot },
-    ]},
-    { title: 'Admin_Level', items: [
-      { name: tNav('teams'), href: '/dashboard/teams', icon: Users, roles: ['ADMIN'] },
-      { name: tNav('settings'), href: '/dashboard/settings', icon: Settings, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'EMPLOYER'] },
-    ]},
-  ].map((g) => ({
-    ...g, 
-    items: g.items.filter((it) => {
-      if (!('roles' in it)) return true; // Available to everyone
-      return (it as any).roles.includes(persona) || persona === 'ADMIN';
-    })
-  }))
-  .filter((g) => g.items.length > 0);
+  // Persona-filtered nav, shared with the ⌘K palette below and with the
+  // native mobile shell — see lib/navigation/dashboard-nav.ts.
+  const navGroups = buildNavGroups(tNav, persona);
 
   // Flat, permission-filtered destinations for the ⌘K palette (same source of truth as the sidebar).
   const paletteNavItems = navGroups.flatMap((g) => g.items.map((it) => ({ name: it.name, href: it.href, icon: it.icon })));

@@ -28,7 +28,8 @@
     "applications": "Applications",
     "careerAi": "Career AI",
     "teams": "Teams",
-    "settings": "Settings"
+    "settings": "Settings",
+    "more": "More"
   },
   "Shell": {
     "searchPlaceholder": "Search query...",
@@ -42,7 +43,9 @@
     "helpAndDocs": "Help & Docs",
     "signOut": "Sign Out",
     "demoLimitationTitle": "Demo Limitation",
-    "demoLimitationBody": "This feature is not available for demo users. Please login or sign up to use."
+    "demoLimitationBody": "This feature is not available for demo users. Please login or sign up to use.",
+    "menu": "Menu",
+    "closeMenu": "Close menu"
   },
   "Language": {
     "label": "Language"

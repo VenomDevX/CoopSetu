@@ -48,7 +48,7 @@ export function OnboardingShell({
   backLabel = 'Back',
 }: OnboardingShellProps) {
   return (
-    <div className="min-h-dvh flex flex-col lg:flex-row bg-background text-foreground font-sans selection:bg-foreground selection:text-background relative">
+    <div data-native-safe-page className="min-h-dvh flex flex-col lg:flex-row bg-background text-foreground font-sans selection:bg-foreground selection:text-background relative">
       <div className="absolute top-4 right-4 z-10">
         <LanguageSwitcher />
       </div>
