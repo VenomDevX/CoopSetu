@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, LayoutDashboard, Settings, User, LogOut, Loader2, CreditCard, Key, HelpCircle, GitBranch } from 'lucide-react';
 
 import { Logo } from '@/components/logo';
+import { CoopSetuLogo } from '@/components/brand/CoopSetu-logo';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { MobileNavDrawer } from '@/components/layout/mobile-nav-drawer';
 import { Button } from '@/components/ui/button';
@@ -57,8 +58,7 @@ export function MarketingHeader({ animated = false }: { animated?: boolean }) {
     <div className="w-full px-6 md:px-12 h-16 flex items-center justify-between">
       <div className="flex items-center gap-12">
         <Link href="/" className="font-bold text-lg tracking-tight flex items-center gap-3">
-          <Logo width={28} height={28} />
-          <span className="uppercase tracking-widest text-xs mt-1">CoopSetu</span>
+          <CoopSetuLogo variant="wordmark" size={28} />
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-xs font-mono uppercase tracking-widest text-muted-foreground">
           <Link href="/product" className={`${pathname === '/product' ? 'text-foreground' : 'hover:text-foreground'} transition-colors`}>Product</Link>
@@ -166,7 +166,7 @@ export function MarketingHeader({ animated = false }: { animated?: boolean }) {
             <button
               onClick={() => handleNavigate('/login', 'signin')}
               disabled={isNavigating}
-              className="hidden md:flex text-xs font-mono uppercase tracking-widest hover:text-foreground text-muted-foreground transition-colors disabled:opacity-50 items-center gap-2"
+              className="flex text-xs font-mono uppercase tracking-widest hover:text-foreground text-muted-foreground transition-colors disabled:opacity-50 items-center gap-2"
             >
               {isNavigating && navType === 'signin' ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
               Sign In
@@ -223,3 +223,6 @@ export function MarketingHeader({ animated = false }: { animated?: boolean }) {
 
   return <header className={className}>{headerContent}</header>;
 }
+
+
+
