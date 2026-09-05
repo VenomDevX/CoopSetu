@@ -1,8 +1,36 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
+import { useIsNative } from '@/components/native/native-provider';
 
 export function PublicFooter() {
+  const isNative = useIsNative();
+
+  // The app doesn't need a sitemap footer — its navigation is the bottom tab
+  // bar. What it does need is the legal links to stay reachable (Play Store
+  // requires it), so those survive as a compact row that clears the gesture
+  // bar via --safe-bottom.
+  if (isNative) {
+    return (
+      <footer
+        data-testid="native-public-footer"
+        className="border-t border-border bg-background px-4 py-6 mt-auto w-full
+                   text-[10px] text-muted-foreground font-mono uppercase tracking-widest
+                   pb-[calc(1.5rem+var(--safe-bottom))]"
+      >
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+          <Link href="/privacy" data-native-tap className="hover:text-foreground transition-colors">Privacy</Link>
+          <Link href="/terms" data-native-tap className="hover:text-foreground transition-colors">Terms</Link>
+          <Link href="/cookies" data-native-tap className="hover:text-foreground transition-colors">Cookies</Link>
+          <Link href="/contact" data-native-tap className="hover:text-foreground transition-colors">Contact</Link>
+        </div>
+        <p className="mt-4 text-foreground font-bold">CoopSetu // 2026</p>
+      </footer>
+    );
+  }
+
   return (
     <footer className="border-t border-border bg-background py-12 px-6 md:px-12 mt-auto text-xs text-muted-foreground font-mono uppercase tracking-widest w-full">
       <div className="container mx-auto">
