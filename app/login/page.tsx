@@ -2,12 +2,14 @@
 
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Eye, EyeOff, Loader2, Github, Building2, Users, Zap } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { GoogleIcon } from '@/components/icons/google-icon';
 import { createClient } from '@/lib/supabase/client';
 import { Checkbox } from '@/components/ui/checkbox';
+import { LanguageSwitcher } from '@/components/layout/language-switcher';
 
 const DEMO_ACCOUNTS = [
   { label: 'Super Admin', email: 'super@coopsetu.test' },
@@ -28,6 +30,7 @@ export default function LoginPage() {
 function LoginInner() {
   const router = useRouter();
   const params = useSearchParams();
+  const t = useTranslations('Auth');
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -117,7 +120,10 @@ function LoginInner() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col lg:flex-row bg-background text-foreground selection:bg-foreground selection:text-background font-sans">
+    <div className="min-h-dvh flex flex-col lg:flex-row bg-background text-foreground selection:bg-foreground selection:text-background font-sans relative">
+      <div className="absolute top-4 right-4 z-10">
+        <LanguageSwitcher />
+      </div>
 
       {/* LEFT: Branding & Info (45%) */}
       <div className="hidden lg:flex flex-col justify-between w-[45%] border-r border-border bg-surface relative overflow-hidden">
@@ -134,10 +140,10 @@ function LoginInner() {
             SECURE_WORKSPACE_ACCESS
           </h2>
           <h1 className="text-4xl font-semibold leading-tight mb-6 tracking-tight">
-            Enter your training workspace.
+            {t('loginHeadline')}
           </h1>
           <p className="text-muted-foreground text-lg mb-12 max-w-md leading-relaxed">
-            Sign in to manage batches, trainees, assessments, attendance, and real-time training work.
+            {t('loginSubhead')}
           </p>
 
           <div className="space-y-4 font-mono text-xs text-muted-foreground tracking-widest uppercase">
@@ -163,14 +169,14 @@ function LoginInner() {
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight">Sign In</h1>
-            <p className="text-xs text-muted-foreground">Authenticate to access your institution.</p>
+            <h1 className="text-2xl font-semibold tracking-tight">{t('signIn')}</h1>
+            <p className="text-xs text-muted-foreground">{t('signInSubtitle')}</p>
           </div>
 
           <form onSubmit={signIn} className="space-y-4">
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Username or email</label>
+                <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">{t('usernameOrEmail')}</label>
                 <input
                   className="w-full h-10 px-3 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground focus:ring-1 focus:ring-foreground transition-all"
                   type="text"
@@ -183,8 +189,8 @@ function LoginInner() {
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Password</label>
-                  <Link href="/forgot-password" className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground">Forgot password?</Link>
+                  <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">{t('password')}</label>
+                  <Link href="/forgot-password" className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground">{t('forgotPassword')}</Link>
                 </div>
                 <div className="relative">
                   <input
@@ -206,7 +212,7 @@ function LoginInner() {
                   checked={remember}
                   onCheckedChange={(checked) => setRemember(checked as boolean)}
                 />
-                <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">Remember this device</span>
+                <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">{t('rememberDevice')}</span>
               </label>
             </div>
 
@@ -221,13 +227,13 @@ function LoginInner() {
               className="w-full h-10 bg-foreground text-background text-xs font-mono uppercase tracking-widest hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2 transition-opacity rounded-[4px]"
             >
               {loading && <Loader2 className="w-3 h-3 animate-spin" />}
-              {loading ? 'Authenticating...' : 'Sign In'}
+              {loading ? t('authenticating') : t('signIn')}
             </button>
 
             <div className="pt-4 pb-2 text-center flex flex-col items-center">
-              <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">No account required</span>
+              <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">{t('noAccountRequired')}</span>
               <Link href="/demo" className="w-full h-10 bg-black border border-zinc-800 text-white text-xs font-mono uppercase tracking-widest hover:border-zinc-500 flex items-center justify-center gap-2 transition-colors rounded-[4px]">
-                EXPLORE DEMO
+                {t('exploreDemo')}
               </Link>
             </div>
           </form>
@@ -235,7 +241,7 @@ function LoginInner() {
           <div className="space-y-4">
             <div className="flex items-center gap-3 py-2">
               <div className="flex-1 h-px bg-border" />
-              <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Or continue with</span>
+              <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">{t('orContinueWith')}</span>
               <div className="flex-1 h-px bg-border" />
             </div>
 
@@ -247,7 +253,7 @@ function LoginInner() {
                 className="w-full h-10 bg-surface text-xs font-mono uppercase tracking-widest hover:bg-surface-hover disabled:opacity-50 flex items-center justify-center gap-2 transition-colors rounded-[4px]"
               >
                 {githubLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Github className="w-4 h-4" />}
-                Continue with GitHub
+                {t('continueWithGithub')}
               </button>
 
               <button
@@ -257,18 +263,18 @@ function LoginInner() {
                 className="w-full h-10 bg-surface text-xs font-mono uppercase tracking-widest hover:bg-surface-hover disabled:opacity-50 flex items-center justify-center gap-2 transition-colors rounded-[4px]"
               >
                 {googleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <GoogleIcon />}
-                Continue with Google
+                {t('continueWithGoogle')}
               </button>
             </div>
           </div>
 
           <div className="pt-4 border-t border-border space-y-3">
             <Link href="/signup" className="flex items-center justify-between p-3 rounded bg-surface hover:bg-surface-hover group transition-colors">
-              <span className="text-xs font-medium">Sign up — Register a new institution</span>
+              <span className="text-xs font-medium">{t('signUpRegisterInstitution')}</span>
               <span className="text-muted-foreground group-hover:text-foreground transition-colors">→</span>
             </Link>
             <Link href="/signup?mode=join" className="flex items-center justify-between p-3 rounded bg-surface hover:bg-surface-hover group transition-colors">
-              <span className="text-xs font-medium">Join an institution — Accept an invitation</span>
+              <span className="text-xs font-medium">{t('joinInstitution')}</span>
               <span className="text-muted-foreground group-hover:text-foreground transition-colors">→</span>
             </Link>
           </div>

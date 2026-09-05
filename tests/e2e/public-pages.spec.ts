@@ -11,18 +11,7 @@ const viewports = {
   ultrawide: { width: 1440, height: 900 }
 };
 
-/**
- * KNOWN GAP — these specs are marked `fixme`, not deleted.
- *
- * The routes they exercise (/about, /contact, /privacy, /terms) do not exist in
- * `app/`, yet `components/layout/public-footer.tsx` still links to them, so the
- * live footer serves 404s. The backend for the contact form is still present at
- * `app/api/v1/contact/route.ts` — only the page was removed.
- *
- * These tests describe the intended behaviour. Un-fixme them once the pages are
- * restored, or delete them if the footer links are removed instead.
- */
-test.describe.fixme('Public Pages and Navigation E2E', () => {
+test.describe('Public Pages and Navigation E2E', () => {
   // 1. Verify all routes render and show correct titles
   test('renders About, Contact, Privacy, and Terms routes', async ({ page }) => {
     // About
@@ -38,12 +27,12 @@ test.describe.fixme('Public Pages and Navigation E2E', () => {
 
     // Privacy
     await page.goto('/privacy');
-    await expect(page.getByText('Privacy Policy')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Privacy Policy' })).toBeVisible();
     await expect(page.getByText('legal draft')).toBeVisible();
 
     // Terms
     await page.goto('/terms');
-    await expect(page.getByText('Terms of Service')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Terms of Service' })).toBeVisible();
     await expect(page.getByText('legal draft')).toBeVisible();
   });
 
@@ -51,13 +40,24 @@ test.describe.fixme('Public Pages and Navigation E2E', () => {
   test('Contact form validates fields and submits successfully', async ({ page }) => {
     await page.goto('/contact');
 
-    // Fill contact form
+    // Fill contact form. workEmail must be unique per run — the real
+    // backend (app/api/v1/contact/route.ts) rate-limits to 3 submissions
+    // per email per 24 hours, so a hardcoded literal here would start
+    // failing after the 3rd time this suite runs in a day.
     await page.locator('#fullName').fill('E2E Tester');
-    await page.locator('#workEmail').fill('e2etest@example.com');
+    await page.locator('#workEmail').fill(`e2etest-${Date.now()}@example.com`);
     await page.locator('#companyName').fill('E2E Corp');
-    await page.locator('#companySize').selectOption('11-50');
+
+    // companySize/topic are Radix comboboxes (components/ui/select.tsx), not
+    // native <select> elements — open the listbox, then click the option.
+    await page.locator('#companySize').click();
+    await page.getByRole('option', { name: '11-50' }).click();
+
     await page.locator('#role').fill('Quality Engineer');
-    await page.locator('#topic').selectOption('Request a Demo');
+
+    await page.locator('#topic').click();
+    await page.getByRole('option', { name: 'Request a Demo' }).click();
+
     await page.locator('#message').fill('This is a test message from Playwright E2E suites.');
 
     // Submit
