@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
 import { CheckCircle2, Github, Mail, ArrowLeft } from 'lucide-react';
+import { LanguageSwitcher } from '@/components/layout/language-switcher';
 
 type Step = {
   id: number;
@@ -47,7 +48,11 @@ export function OnboardingShell({
   backLabel = 'Back',
 }: OnboardingShellProps) {
   return (
-    <div className="min-h-dvh flex flex-col lg:flex-row bg-background text-foreground font-sans selection:bg-foreground selection:text-background">
+    <div className="min-h-dvh flex flex-col lg:flex-row bg-background text-foreground font-sans selection:bg-foreground selection:text-background relative">
+      <div className="absolute top-4 right-4 z-10">
+        <LanguageSwitcher />
+      </div>
+
       {/* LEFT: Branding & Info (44%) - Hidden on mobile */}
       <div className="hidden lg:flex flex-col justify-between w-[44%] border-r border-border bg-surface relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
