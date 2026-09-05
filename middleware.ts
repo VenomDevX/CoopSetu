@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 import { rateLimit, getRateLimitConfig } from '@/lib/security/rate-limit';
+import { NATIVE_HEADER, isNativeUserAgent } from '@/lib/native/is-native';
 
 export async function middleware(request: NextRequest) {
   // 0. Bot Protection
@@ -49,6 +50,15 @@ export async function middleware(request: NextRequest) {
   
   // 2. Attach nonce to request headers so Server Components can read it
   request.headers.set('x-nonce', nonce);
+
+  // 2b. Normalize the Capacitor UA sentinel into a single request header, so
+  // server components read one boolean instead of each re-parsing the UA.
+  // Same request-header mechanism as the nonce above. The delete is the
+  // security-relevant half: without it any browser could simply send
+  // `x-coopsetu-native: 1` and get the native UI. The blast radius is only
+  // cosmetic, but the header must still not be caller-controlled.
+  request.headers.delete(NATIVE_HEADER);
+  if (isNativeUserAgent(userAgent)) request.headers.set(NATIVE_HEADER, '1');
 
   // 3. Let Supabase auth middleware handle session updates & route guarding
   const response = await updateSession(request);
@@ -105,6 +115,10 @@ export async function middleware(request: NextRequest) {
   response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), browsing-topics=()');
   response.headers.set('x-nonce', nonce);
+  // NOTE: responses now vary by user-agent (see 2b). `Vary: User-Agent` is
+  // declared in next.config.ts's headers() rather than here — Next discards a
+  // Vary set from middleware on RSC document responses. See that file for why
+  // the document responses are safe regardless (they are all no-store).
   
   // Rate Limit Headers for successful responses
   response.headers.set('X-RateLimit-Limit', rl.limit.toString());
