@@ -6,6 +6,7 @@ import { Award, Search, QrCode, CheckCircle2, XCircle, Clock } from 'lucide-reac
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import { useTranslations } from 'next-intl';
+import { useIsNative } from '@/components/native/native-provider';
 
 interface Certificate {
   id: string;
@@ -21,6 +22,11 @@ interface Certificate {
 interface VerifyResult { valid: boolean; message: string; certificate?: Certificate; }
 
 export default function CertificatesPage() {
+  // The native app bar already names this screen, so the page's own <h1> is
+  // a duplicate: two h1s on one screen, the second repeating what the sticky
+  // bar above it already says. Dropping it in the app reclaims 40px (measured
+  // on a Pixel 7) and leaves exactly one h1 on the page.
+  const isNative = useIsNative();
   const t = useTranslations('Certificates');
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [stats, setStats] = useState({ total: 0, active: 0, revoked: 0 });
@@ -56,7 +62,9 @@ export default function CertificatesPage() {
           <div className="w-2 h-2 bg-foreground animate-pulse rounded" />
           Learning_LMS // Certificates
         </div>
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">{t('heading')}</h1>
+        {!isNative && (
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">{t('heading')}</h1>
+          )}
       </motion.div>
 
       {/* Verify Section */}
