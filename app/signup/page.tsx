@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 import { ChevronRight, Loader2, Eye, EyeOff, Github, CheckCircle2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -16,6 +17,7 @@ const emailSchema = z.string().email();
 
 export default function SignupPage() {
   const router = useRouter();
+  const t = useTranslations('Auth');
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -133,14 +135,14 @@ export default function SignupPage() {
       <OnboardingShell
         currentStep={1}
         totalSteps={3}
-        stepLabel="Account Verification"
-        title="Check your email"
+        stepLabel={t('accountVerificationStep')}
+        title={t('checkYourEmail')}
         subtitle={`We sent a verification link to ${email}`}
       >
         <div className="bg-surface p-6 border border-border rounded text-center space-y-4 rounded-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
           <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto" />
           <p className="text-sm text-muted-foreground">
-            Please click the link in the email to verify your account and continue setting up your institution.
+            {t('checkYourEmailBody')}
           </p>
           <div className="pt-4">
             <button
@@ -148,7 +150,7 @@ export default function SignupPage() {
               onClick={() => setEmailSent(false)}
               className="text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
             >
-              &larr; Back to Sign Up
+              &larr; {t('backToSignUp')}
             </button>
           </div>
         </div>
@@ -160,9 +162,9 @@ export default function SignupPage() {
     <OnboardingShell
       currentStep={1}
       totalSteps={3}
-      stepLabel="Account Details"
-      title="Create your account"
-      subtitle="Enter your personal details to get started."
+      stepLabel={t('accountDetailsStep')}
+      title={t('createAccount')}
+      subtitle={t('createAccountSubtitle')}
     >
       <form onSubmit={handleSignup} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
         {error && (
@@ -174,13 +176,13 @@ export default function SignupPage() {
         <div className="space-y-6 w-full">
           <div className="grid grid-cols-2 gap-4 w-full">
             <div className="space-y-1.5 w-full">
-              <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Full Name</label>
+              <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">{t('fullName')}</label>
               <input className={`w-full h-11 px-4 bg-surface border rounded text-sm focus:outline-none transition-colors ${touched1 && !isNameValid ? 'border-red-500 focus:border-red-500' : isNameValid && touched1 ? 'border-green-500/50 focus:border-green-500/50' : 'border-border focus:border-foreground'}`}
                 type="text" placeholder="Jane Doe" value={fullName} onChange={(e) => { setFullName(e.target.value); setTouched1(true); }} required autoFocus />
               {touched1 && !isNameValid && <p className="text-[10px] text-red-500 font-mono">Letters, spaces, hyphens only (min 2)</p>}
             </div>
             <div className="space-y-1.5 w-full">
-              <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Work Email</label>
+              <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">{t('workEmail')}</label>
               <input className={`w-full h-11 px-4 bg-surface border rounded text-sm focus:outline-none transition-colors ${touched1 && !isEmailValid ? 'border-red-500 focus:border-red-500' : isEmailValid && touched1 ? 'border-green-500/50 focus:border-green-500/50' : 'border-border focus:border-foreground'}`}
                 type="email" placeholder="jane@company.com" value={email} onChange={(e) => { setEmail(e.target.value); setTouched1(true); }} required />
             </div>
@@ -189,7 +191,7 @@ export default function SignupPage() {
           <div className="space-y-4 w-full">
             <div className="grid grid-cols-2 gap-4 w-full">
               <div className="space-y-1.5 w-full">
-                <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Password</label>
+                <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">{t('password')}</label>
                 <div className="relative">
                   <input className={`w-full h-11 px-4 pr-10 bg-surface border rounded text-sm focus:outline-none transition-colors ${touched1 && !passLength ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-foreground'}`}
                     type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setTouched1(true)} required />
@@ -199,7 +201,7 @@ export default function SignupPage() {
                 </div>
               </div>
               <div className="space-y-1.5 w-full">
-                <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Confirm Password</label>
+                <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">{t('confirmPassword')}</label>
                 <div className="relative">
                   <input className={`w-full h-11 px-4 pr-10 bg-surface border rounded text-sm focus:outline-none transition-colors ${touched1 && password.length > 0 && !passMatch ? 'border-red-500 focus:border-red-500' : passMatch ? 'border-green-500/50 focus:border-green-500/50' : 'border-border focus:border-foreground'}`}
                     type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
@@ -245,25 +247,25 @@ export default function SignupPage() {
             className="mt-0.5"
           />
           <span className="text-sm text-foreground">
-            I agree to the{' '}
+            {t('agreeToTermsPrefix')}{' '}
             <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">
-              Terms of Service
+              {t('termsOfService')}
             </a>{' '}
-            and{' '}
+            {t('and')}{' '}
             <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">
-              Privacy Policy
+              {t('privacyPolicy')}
             </a>
             .
           </span>
         </label>
 
         <button type="submit" disabled={!isStep1Valid || loading} className="w-full h-11 bg-foreground text-background rounded text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground/90 transition-colors disabled:opacity-50">
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continue <ChevronRight className="w-4 h-4" /></>}
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{t('continue')} <ChevronRight className="w-4 h-4" /></>}
         </button>
 
         <div className="flex items-center gap-3 py-2 w-full">
           <div className="flex-1 h-px bg-border" />
-          <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Or continue with</span>
+          <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">{t('orContinueWith')}</span>
           <div className="flex-1 h-px bg-border" />
         </div>
 
@@ -274,7 +276,7 @@ export default function SignupPage() {
           className="w-full h-11 bg-surface border border-border rounded text-xs font-mono uppercase tracking-widest hover:bg-surface-hover disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
         >
           {githubLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Github className="w-4 h-4" />}
-          Continue with GitHub
+          {t('continueWithGithub')}
         </button>
 
         <button
@@ -284,7 +286,7 @@ export default function SignupPage() {
           className="w-full h-11 bg-surface border border-border rounded text-xs font-mono uppercase tracking-widest hover:bg-surface-hover disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
         >
           {googleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <GoogleIcon />}
-          Continue with Google
+          {t('continueWithGoogle')}
         </button>
       </form>
     </OnboardingShell>

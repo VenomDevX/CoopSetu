@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Award, Search, QrCode, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
+import { useTranslations } from 'next-intl';
 
 interface Certificate {
   id: string;
@@ -20,6 +21,7 @@ interface Certificate {
 interface VerifyResult { valid: boolean; message: string; certificate?: Certificate; }
 
 export default function CertificatesPage() {
+  const t = useTranslations('Certificates');
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [stats, setStats] = useState({ total: 0, active: 0, revoked: 0 });
   const [search, setSearch] = useState('');
@@ -54,16 +56,16 @@ export default function CertificatesPage() {
           <div className="w-2 h-2 bg-foreground animate-pulse rounded" />
           Learning_LMS // Certificates
         </div>
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">Digital Certificates</h1>
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">{t('heading')}</h1>
       </motion.div>
 
       {/* Verify Section */}
       <Card className="shadow-none border-2 border-accent/20 rounded bg-background">
-        <CardHeader className="border-b border-border pb-4"><CardTitle className="text-xs font-mono uppercase tracking-widest flex items-center gap-2"><QrCode className="w-4 h-4" /> Verify Certificate</CardTitle></CardHeader>
+        <CardHeader className="border-b border-border pb-4"><CardTitle className="text-xs font-mono uppercase tracking-widest flex items-center gap-2"><QrCode className="w-4 h-4" /> {t('verifyCertificate')}</CardTitle></CardHeader>
         <CardContent className="p-6">
           <div className="flex gap-4">
             <input className="flex-1 px-3 py-2 border border-border rounded bg-background text-sm font-mono uppercase" placeholder="Enter certificate number (e.g. CERT-NCCT-2026-123456)" value={verifyInput} onChange={e => setVerifyInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleVerify()} />
-            <Button onClick={handleVerify} className="rounded font-mono text-xs uppercase">Verify</Button>
+            <Button onClick={handleVerify} className="rounded font-mono text-xs uppercase">{t('verify')}</Button>
           </div>
           {verifyResult && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`mt-4 p-4 border rounded flex items-start gap-3 ${verifyResult.valid ? 'border-green-500/40 bg-green-500/5' : 'border-red-500/40 bg-red-500/5'}`}>
@@ -87,9 +89,9 @@ export default function CertificatesPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         {[
-          { label: 'Total Certificates', value: stats.total, icon: <Award className="w-5 h-5" /> },
-          { label: 'Active', value: stats.active, icon: <CheckCircle2 className="w-5 h-5" /> },
-          { label: 'Revoked', value: stats.revoked, icon: <XCircle className="w-5 h-5" /> },
+          { label: t('totalCertificates'), value: stats.total, icon: <Award className="w-5 h-5" /> },
+          { label: t('active'), value: stats.active, icon: <CheckCircle2 className="w-5 h-5" /> },
+          { label: t('revoked'), value: stats.revoked, icon: <XCircle className="w-5 h-5" /> },
         ].map((s, i) => (
           <Card key={i} className="shadow-none border-border rounded bg-background hover:border-foreground transition-colors group">
             <CardContent className="p-6">
@@ -106,13 +108,13 @@ export default function CertificatesPage() {
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-        <input className="w-full pl-10 pr-4 py-2 border border-border rounded bg-background text-sm font-mono uppercase tracking-widest" placeholder="Search certificates..." value={search} onChange={e => setSearch(e.target.value)} />
+        <input className="w-full pl-10 pr-4 py-2 border border-border rounded bg-background text-sm font-mono uppercase tracking-widest" placeholder={t('searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
       {/* Certificate List */}
       <div className="border border-border rounded overflow-hidden">
         <div className="grid grid-cols-[1fr_1fr_150px_120px_80px] gap-4 px-4 py-3 bg-surface-hover font-mono text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border hidden md:grid">
-          <span>Certificate #</span><span>Title</span><span>Programme</span><span>Issued</span><span>Status</span>
+          <span>{t('colCertificateNumber')}</span><span>{t('colTitle')}</span><span>{t('colProgramme')}</span><span>{t('colIssued')}</span><span>{t('colStatus')}</span>
         </div>
         {filtered.map(cert => (
           <div key={cert.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_150px_120px_80px] gap-2 md:gap-4 px-4 py-3 border-b border-border hover:bg-surface-hover transition-colors items-center">
@@ -125,7 +127,7 @@ export default function CertificatesPage() {
         ))}
         {filtered.length === 0 && (
           <div className="text-center py-16 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-            No certificates issued yet.
+            {t('noCertificates')}
           </div>
         )}
       </div>

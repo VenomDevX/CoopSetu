@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { QrCode, Users, Clock, CheckCircle2, Search, Plus, XCircle, Camera, ScanLine, RefreshCw, UserCheck } from 'lucide-react';
 import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useTranslations } from 'next-intl';
 import QRCode from 'qrcode';
 
 interface Session {
@@ -30,6 +31,7 @@ interface AttendanceRecord {
 interface Stats { totalSessions: number; totalRecords: number; present: number; averageAttendance: number; }
 
 export default function AttendancePage() {
+  const t = useTranslations('Attendance');
   const [sessions, setSessions] = useState<Session[]>([]);
   const [stats, setStats] = useState<Stats>({ totalSessions: 0, totalRecords: 0, present: 0, averageAttendance: 0 });
   const [batchId, setBatchId] = useState('');
@@ -92,12 +94,12 @@ export default function AttendancePage() {
             <div className="w-2 h-2 bg-green-500 animate-pulse rounded" />
             Training_ERP // Digital Attendance
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">Attendance System</h1>
-          <p className="text-sm text-muted-foreground mt-2 font-mono">QR + Face Recognition based digital attendance</p>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">{t('heading')}</h1>
+          <p className="text-sm text-muted-foreground mt-2 font-mono">{t('subtitle')}</p>
         </div>
         <div className="flex gap-3 flex-wrap">
           <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => setShowCreateSession(!showCreateSession)}>
-            <Plus className="w-4 h-4 mr-2" /> New Session
+            <Plus className="w-4 h-4 mr-2" /> {t('newSession')}
           </Button>
         </div>
       </motion.div>
@@ -112,7 +114,7 @@ export default function AttendancePage() {
                   <div className="p-8 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-border bg-surface-hover/30">
                     <div className="flex items-center gap-2 mb-6">
                       <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                      <span className="font-mono text-xs uppercase tracking-widest text-green-500">Live Session</span>
+                      <span className="font-mono text-xs uppercase tracking-widest text-green-500">{t('liveSession')}</span>
                     </div>
                     
                     <div className="space-y-4 mb-8">
@@ -131,25 +133,25 @@ export default function AttendancePage() {
                     </div>
                     
                     <Button variant="outline" className="w-full rounded font-mono text-xs uppercase text-red-500 border-red-500/40 hover:bg-red-500/10" onClick={() => closeSession(activeSession.id)}>
-                      <XCircle className="w-4 h-4 mr-2" /> End Session
+                      <XCircle className="w-4 h-4 mr-2" /> {t('endSession')}
                     </Button>
                   </div>
                   {/* Live Feed */}
                   <div className="p-8">
                     <div className="flex items-center justify-between mb-6">
-                      <h3 className="font-mono text-sm uppercase tracking-widest text-foreground">Hardware Check-ins</h3>
+                      <h3 className="font-mono text-sm uppercase tracking-widest text-foreground">{t('hardwareCheckins')}</h3>
                       <div className="flex items-center gap-2">
                         <RefreshCw className="w-3 h-3 text-muted-foreground animate-spin" style={{ animationDuration: '3s' }} />
-                        <span className="text-[10px] font-mono text-muted-foreground uppercase">Auto-refresh</span>
+                        <span className="text-[10px] font-mono text-muted-foreground uppercase">{t('autoRefresh')}</span>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
                       <div className="text-5xl font-bold text-foreground tracking-tighter">
                         {liveRecords.length}
                       </div>
                       <div className="text-xs text-muted-foreground font-mono uppercase">
-                        Trainees<br/>Checked In
+                        {t('traineesCheckedIn')}
                       </div>
                     </div>
 
@@ -157,7 +159,7 @@ export default function AttendancePage() {
                       {liveRecords.length === 0 && (
                         <div className="text-center py-12 font-mono text-[10px] uppercase tracking-widest text-muted-foreground flex flex-col items-center gap-3">
                           <ScanLine className="w-8 h-8 text-muted-foreground/50" />
-                          Waiting for trainees to scan at the door...
+                          {t('waitingForScan')}
                         </div>
                       )}
                       <AnimatePresence>
@@ -188,7 +190,7 @@ export default function AttendancePage() {
       {showCreateSession && (
         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
           <Card className="shadow-none border-border rounded bg-background">
-            <CardHeader className="border-b border-border pb-4"><CardTitle className="text-xs font-mono uppercase tracking-widest">New Attendance Session</CardTitle></CardHeader>
+            <CardHeader className="border-b border-border pb-4"><CardTitle className="text-xs font-mono uppercase tracking-widest">{t('newAttendanceSession')}</CardTitle></CardHeader>
             <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
               <input className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" placeholder="Batch ID" value={sessionForm.batch_id} onChange={e => setSessionForm({ ...sessionForm, batch_id: e.target.value })} />
               <select className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" value={sessionForm.session_type} onChange={e => setSessionForm({ ...sessionForm, session_type: e.target.value })}>
@@ -197,7 +199,7 @@ export default function AttendancePage() {
               <select className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" value={sessionForm.session_slot} onChange={e => setSessionForm({ ...sessionForm, session_slot: e.target.value })}>
                 <option value="MORNING">Morning</option><option value="AFTERNOON">Afternoon</option><option value="EVENING">Evening</option><option value="FULL_DAY">Full Day</option>
               </select>
-              <div className="md:col-span-3"><Button onClick={createSession} className="rounded font-mono text-xs uppercase w-full sm:w-auto">Start Session</Button></div>
+              <div className="md:col-span-3"><Button onClick={createSession} className="rounded font-mono text-xs uppercase w-full sm:w-auto">{t('startSession')}</Button></div>
             </CardContent>
           </Card>
         </motion.div>
@@ -207,7 +209,7 @@ export default function AttendancePage() {
       <div className="flex gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <input className="w-full pl-10 pr-4 py-2 border border-border rounded bg-background text-sm font-mono uppercase tracking-widest" placeholder="Enter Batch ID to view attendance..." value={batchId} onChange={e => setBatchId(e.target.value)} />
+          <input className="w-full pl-10 pr-4 py-2 border border-border rounded bg-background text-sm font-mono uppercase tracking-widest" placeholder={t('searchPlaceholder')} value={batchId} onChange={e => setBatchId(e.target.value)} />
         </div>
       </div>
 
@@ -215,10 +217,10 @@ export default function AttendancePage() {
       {batchId && (
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
           {[
-            { label: 'Total Sessions', value: stats.totalSessions, icon: <Clock className="w-5 h-5" /> },
-            { label: 'Total Records', value: stats.totalRecords || 0, icon: <Users className="w-5 h-5" /> },
-            { label: 'Present', value: stats.present || 0, icon: <CheckCircle2 className="w-5 h-5" /> },
-            { label: 'Avg Attendance', value: `${stats.averageAttendance}%`, icon: <QrCode className="w-5 h-5" /> },
+            { label: t('totalSessions'), value: stats.totalSessions, icon: <Clock className="w-5 h-5" /> },
+            { label: t('totalRecords'), value: stats.totalRecords || 0, icon: <Users className="w-5 h-5" /> },
+            { label: t('present'), value: stats.present || 0, icon: <CheckCircle2 className="w-5 h-5" /> },
+            { label: t('avgAttendance'), value: `${stats.averageAttendance}%`, icon: <QrCode className="w-5 h-5" /> },
           ].map((s, i) => (
             <Card key={i} className="shadow-none border-border rounded bg-background hover:border-foreground transition-colors group">
               <CardContent className="p-6"><div className="flex items-center justify-between text-muted-foreground mb-4"><span className="font-mono text-[10px] uppercase tracking-widest">{s.label}</span><div className="p-2 border border-border rounded group-hover:bg-foreground group-hover:text-background transition-colors">{s.icon}</div></div><div className="text-3xl font-bold text-foreground tracking-tighter">{s.value}</div></CardContent>
@@ -231,7 +233,7 @@ export default function AttendancePage() {
       {batchId && sessions.length > 0 && (
         <div className="border border-border rounded overflow-hidden">
           <div className="grid grid-cols-[1fr_100px_100px_100px_80px] gap-4 px-4 py-3 bg-surface-hover font-mono text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border hidden md:grid">
-            <span>Date</span><span>Type</span><span>Slot</span><span>Records</span><span>Active</span>
+            <span>{t('colDate')}</span><span>{t('colType')}</span><span>{t('colSlot')}</span><span>{t('colRecords')}</span><span>{t('colActive')}</span>
           </div>
           {sessions.map(s => (
             <div key={s.id} className="grid grid-cols-1 md:grid-cols-[1fr_100px_100px_100px_80px] gap-2 md:gap-4 px-4 py-3 border-b border-border hover:bg-surface-hover transition-colors items-center cursor-pointer" onClick={() => { if (s.is_active) { setActiveSession(s); setLiveRecords([]); } }}>
@@ -239,13 +241,13 @@ export default function AttendancePage() {
               <span className="text-xs font-mono uppercase text-muted-foreground">{s.session_type}</span>
               <span className="text-xs font-mono uppercase text-muted-foreground">{s.session_slot}</span>
               <span className="text-xs font-mono text-foreground">{(s.attendance_records as any)?.[0]?.count || 0}</span>
-              <span className={`text-[10px] font-mono uppercase ${s.is_active ? 'text-green-500' : 'text-muted-foreground'}`}>{s.is_active ? 'LIVE' : 'CLOSED'}</span>
+              <span className={`text-[10px] font-mono uppercase ${s.is_active ? 'text-green-500' : 'text-muted-foreground'}`}>{s.is_active ? t('live') : t('closed')}</span>
             </div>
           ))}
         </div>
       )}
       {batchId && sessions.length === 0 && (
-        <div className="text-center py-16 font-mono text-xs uppercase tracking-widest text-muted-foreground">No attendance sessions found for this batch.</div>
+        <div className="text-center py-16 font-mono text-xs uppercase tracking-widest text-muted-foreground">{t('noSessions')}</div>
       )}
     </div>
   );

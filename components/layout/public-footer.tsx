@@ -24,7 +24,7 @@ export function PublicFooter() {
               </div>
             </div>
             <p className="normal-case font-sans tracking-normal text-muted-foreground/80 leading-relaxed max-w-sm">
-              Operational clarity for teams building critical software. A role-aware workspace for planning work, assigning teams, managing delivery, and tracking approvals.
+              A role-aware workspace for training institutes — batches, attendance, assessments, certification, and employer placement in one connected system.
             </p>
           </div>
 

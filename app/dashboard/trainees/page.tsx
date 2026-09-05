@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { UserCheck, Search, GraduationCap, MapPin, Briefcase, Plus } from 'lucide-react';
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useTranslations } from 'next-intl';
 
 interface Trainee {
   id: string;
@@ -21,6 +22,7 @@ interface Trainee {
 interface Stats { total: number; active: number; graduated: number; employed: number; }
 
 export default function TraineesPage() {
+  const t = useTranslations('Trainees');
   const [trainees, setTrainees] = useState<Trainee[]>([]);
   const [stats, setStats] = useState<Stats>({ total: 0, active: 0, graduated: 0, employed: 0 });
   const [search, setSearch] = useState('');
@@ -71,20 +73,20 @@ export default function TraineesPage() {
             <div className="w-2 h-2 bg-foreground animate-pulse rounded" />
             Training_ERP // Trainees
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">Registered Trainees</h1>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase text-foreground">{t('heading')}</h1>
         </div>
         <Button variant="outline" className="rounded font-mono text-xs uppercase" onClick={() => setShowCreate(!showCreate)}>
-          <Plus className="w-4 h-4 mr-2" /> Add Trainee
+          <Plus className="w-4 h-4 mr-2" /> {t('addTrainee')}
         </Button>
       </motion.div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
         {[
-          { label: 'Total Trainees', value: stats.total },
-          { label: 'Active', value: stats.active },
-          { label: 'Graduated', value: stats.graduated },
-          { label: 'Employed', value: stats.employed },
+          { label: t('totalTrainees'), value: stats.total },
+          { label: t('active'), value: stats.active },
+          { label: t('graduated'), value: stats.graduated },
+          { label: t('employed'), value: stats.employed },
         ].map((s, i) => (
           <Card key={i} className="shadow-none border-border rounded bg-background hover:border-foreground transition-colors group">
             <CardContent className="p-6">
@@ -100,7 +102,7 @@ export default function TraineesPage() {
         {showCreate && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
             <Card className="shadow-none border-border rounded bg-background mb-8">
-              <CardHeader className="border-b border-border pb-4"><CardTitle className="text-xs font-mono uppercase tracking-widest">Register New Trainee</CardTitle></CardHeader>
+              <CardHeader className="border-b border-border pb-4"><CardTitle className="text-xs font-mono uppercase tracking-widest">{t('registerNewTrainee')}</CardTitle></CardHeader>
               <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" placeholder="User ID (UUID)" value={form.user_id} onChange={e => setForm({ ...form, user_id: e.target.value })} />
                 <input className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" placeholder="Education (e.g. B.Tech)" value={form.education} onChange={e => setForm({ ...form, education: e.target.value })} />
@@ -119,7 +121,7 @@ export default function TraineesPage() {
                   <option value="STUDENT">Student</option>
                 </select>
                 <div className="flex items-end md:col-span-1">
-                  <Button onClick={handleCreate} className="rounded font-mono text-xs uppercase w-full">Register Trainee</Button>
+                  <Button onClick={handleCreate} className="rounded font-mono text-xs uppercase w-full">{t('registerTrainee')}</Button>
                 </div>
               </CardContent>
             </Card>
@@ -131,13 +133,13 @@ export default function TraineesPage() {
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <input className="w-full pl-10 pr-4 py-2 border border-border rounded bg-background text-sm font-mono uppercase tracking-widest" placeholder="Search trainees..." value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="w-full pl-10 pr-4 py-2 border border-border rounded bg-background text-sm font-mono uppercase tracking-widest" placeholder={t('searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <div className="flex gap-2">
           {['', 'ACTIVE', 'GRADUATED', 'INACTIVE'].map(s => (
             <button key={s} onClick={() => setStatusFilter(s)}
               className={`px-3 py-2 text-[10px] font-mono uppercase tracking-widest border rounded transition-colors ${statusFilter === s ? 'bg-foreground text-background border-foreground' : 'border-border text-muted-foreground hover:border-foreground'}`}>
-              {s || 'All'}
+              {s || t('all')}
             </button>
           ))}
         </div>
@@ -146,7 +148,7 @@ export default function TraineesPage() {
       {/* Trainee List */}
       <div className="border border-border rounded overflow-hidden">
         <div className="grid grid-cols-[1fr_1fr_120px_120px_100px] gap-4 px-4 py-3 bg-surface-hover font-mono text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border hidden md:grid">
-          <span>Trainee</span><span>Location</span><span>Education</span><span>Employment</span><span>Status</span>
+          <span>{t('colTrainee')}</span><span>{t('colLocation')}</span><span>{t('colEducation')}</span><span>{t('colEmployment')}</span><span>{t('colStatus')}</span>
         </div>
         {trainees.map(t => (
           <div key={t.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_120px_120px_100px] gap-2 md:gap-4 px-4 py-4 border-b border-border hover:bg-surface-hover transition-colors items-center">
@@ -162,7 +164,7 @@ export default function TraineesPage() {
         ))}
         {trainees.length === 0 && (
           <div className="text-center py-16 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-            No trainees registered yet.
+            {t('noTrainees')}
           </div>
         )}
       </div>

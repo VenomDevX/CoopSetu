@@ -9,6 +9,7 @@ import { ChevronDown, LayoutDashboard, Settings, User, LogOut, Loader2, CreditCa
 import { Logo } from '@/components/logo';
 import { CoopSetuLogo } from '@/components/brand/CoopSetu-logo';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { MobileNavDrawer } from '@/components/layout/mobile-nav-drawer';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/providers/auth-provider';
@@ -70,6 +71,7 @@ export function MarketingHeader({ animated = false }: { animated?: boolean }) {
         </nav>
       </div>
       <div className="flex items-center gap-4 md:gap-6">
+        <LanguageSwitcher />
         <ThemeToggle />
         {isCheckingAuth ? (
           <div className="flex items-center gap-2.5 py-1 px-2">
