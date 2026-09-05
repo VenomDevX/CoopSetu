@@ -6,7 +6,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line
 } from 'recharts';
-import { Terminal, AlertTriangle, CheckCircle2, Clock, ShieldAlert, Plus, Users, FolderKanban, Calendar, ArrowRight, Activity, Server } from 'lucide-react';
+import { Terminal, AlertTriangle, CheckCircle2, Clock, ShieldAlert, Plus, Users, FolderKanban, Calendar, ArrowRight, Activity, Server, GraduationCap, Award, Briefcase, ClipboardCheck } from 'lucide-react';
 import { useTheme } from "next-themes";
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
@@ -27,6 +27,12 @@ interface DashboardData {
     activeProjects: number; projectsAtRisk: number; blockedTasks: number; overdueTasks: number;
     pendingApprovals: number; criticalBugs: number; openIncidents: number; openSecurityFindings: number;
     myActiveTasks: number; myBlockers: number; dueThisWeek: number; pendingReviews: number;
+    // Training personas (INSTITUTE_ADMIN / TRAINER / TRAINEE / EMPLOYER) — see
+    // services/dashboard.service.ts's getTrainingOverview().
+    activeTrainees: number; activeTrainers: number; activeBatches: number; certificatesIssued: number;
+    myBatches: number; myTrainees: number; pendingGrading: number; sessionsThisWeek: number;
+    myCertificates: number; myApplications: number; assessmentsTaken: number; coursesInProgress: number;
+    activeJobPostings: number; totalApplications: number; shortlisted: number; filledPositions: number;
   };
   signals: any[];
   attentionQueue: AttentionQueueItem[];
@@ -86,6 +92,42 @@ export default function CommandCenter() {
   const today = new Date();
   const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay())).toLocaleDateString();
   const endOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + 6)).toLocaleDateString();
+
+  // KPI cards per persona. INSTITUTE_ADMIN/TRAINER/TRAINEE/EMPLOYER get the
+  // training-domain metrics from getTrainingOverview(); every other persona
+  // keeps the original apexfintech-domain set.
+  const kpiCards =
+    persona === 'EMPLOYEE' ? [
+      { label: t('myActiveTasks'), value: pad(metrics.myActiveTasks), sub: 'Assigned', icon: <CheckCircle2 className="w-5 h-5" /> },
+      { label: t('myBlockers'), value: pad(metrics.myBlockers), sub: 'Requires Action', icon: <AlertTriangle className="w-5 h-5" /> },
+      { label: t('dueThisWeek'), value: pad(metrics.dueThisWeek), sub: 'Approaching', icon: <Clock className="w-5 h-5" /> },
+      { label: t('pendingReviews'), value: pad(metrics.pendingReviews), sub: 'PRs & QA', icon: <ShieldAlert className="w-5 h-5" /> },
+    ] : persona === 'INSTITUTE_ADMIN' ? [
+      { label: t('activeTrainees'), value: pad(metrics.activeTrainees), sub: 'Enrolled', icon: <GraduationCap className="w-5 h-5" /> },
+      { label: t('activeTrainers'), value: pad(metrics.activeTrainers), sub: 'On Staff', icon: <Users className="w-5 h-5" /> },
+      { label: t('activeBatches'), value: pad(metrics.activeBatches), sub: 'In Progress', icon: <FolderKanban className="w-5 h-5" /> },
+      { label: t('certificatesIssued'), value: pad(metrics.certificatesIssued), sub: 'Active', icon: <Award className="w-5 h-5" /> },
+    ] : persona === 'TRAINER' ? [
+      { label: t('myBatches'), value: pad(metrics.myBatches), sub: 'Assigned', icon: <FolderKanban className="w-5 h-5" /> },
+      { label: t('myTrainees'), value: pad(metrics.myTrainees), sub: 'Enrolled', icon: <GraduationCap className="w-5 h-5" /> },
+      { label: t('pendingGrading'), value: pad(metrics.pendingGrading), sub: 'Ungraded', icon: <ClipboardCheck className="w-5 h-5" /> },
+      { label: t('sessionsThisWeek'), value: pad(metrics.sessionsThisWeek), sub: 'Attendance', icon: <Calendar className="w-5 h-5" /> },
+    ] : persona === 'TRAINEE' ? [
+      { label: t('coursesInProgress'), value: pad(metrics.coursesInProgress), sub: 'Learning', icon: <FolderKanban className="w-5 h-5" /> },
+      { label: t('assessmentsTaken'), value: pad(metrics.assessmentsTaken), sub: 'Submitted', icon: <ClipboardCheck className="w-5 h-5" /> },
+      { label: t('myCertificates'), value: pad(metrics.myCertificates), sub: 'Active', icon: <Award className="w-5 h-5" /> },
+      { label: t('myApplications'), value: pad(metrics.myApplications), sub: 'Job Board', icon: <Briefcase className="w-5 h-5" /> },
+    ] : persona === 'EMPLOYER' ? [
+      { label: t('activeJobPostings'), value: pad(metrics.activeJobPostings), sub: 'Open', icon: <Briefcase className="w-5 h-5" /> },
+      { label: t('totalApplications'), value: pad(metrics.totalApplications), sub: 'Received', icon: <ClipboardCheck className="w-5 h-5" /> },
+      { label: t('shortlisted'), value: pad(metrics.shortlisted), sub: 'In Review', icon: <CheckCircle2 className="w-5 h-5" /> },
+      { label: t('filledPositions'), value: pad(metrics.filledPositions), sub: 'Closed', icon: <Award className="w-5 h-5" /> },
+    ] : [
+      { label: t('activeProjects'), value: pad(metrics.activeProjects), sub: 'In Flight', icon: <FolderKanban className="w-5 h-5" /> },
+      { label: t('projectsAtRisk'), value: pad(metrics.projectsAtRisk), sub: 'Requires Review', icon: <AlertTriangle className="w-5 h-5" /> },
+      { label: t('blockedOverdue'), value: pad(metrics.blockedTasks + metrics.overdueTasks), sub: `${metrics.blockedTasks} Blocked · ${metrics.overdueTasks} Overdue`, icon: <Clock className="w-5 h-5" /> },
+      { label: t('pendingApprovals'), value: pad(metrics.pendingApprovals), sub: 'Release Gates', icon: <ShieldAlert className="w-5 h-5" /> },
+    ];
 
   return (
     <div className="max-w-7xl mx-auto space-y-10 pb-24">
@@ -159,6 +201,30 @@ export default function CommandCenter() {
             </Button>
           )}
 
+          {persona === 'INSTITUTE_ADMIN' && (
+            <Button variant="outline" className="rounded font-mono text-xs uppercase" asChild>
+              <Link href="/dashboard/batches"><ArrowRight className="w-4 h-4 mr-2" /> {t('viewBatches')}</Link>
+            </Button>
+          )}
+
+          {persona === 'TRAINER' && (
+            <Button variant="outline" className="rounded font-mono text-xs uppercase" asChild>
+              <Link href="/dashboard/assessments"><ArrowRight className="w-4 h-4 mr-2" /> {t('gradeSubmissions')}</Link>
+            </Button>
+          )}
+
+          {persona === 'TRAINEE' && (
+            <Button variant="outline" className="rounded font-mono text-xs uppercase" asChild>
+              <Link href="/dashboard/courses"><ArrowRight className="w-4 h-4 mr-2" /> {t('continueLearning')}</Link>
+            </Button>
+          )}
+
+          {persona === 'EMPLOYER' && (
+            <Button variant="outline" className="rounded font-mono text-xs uppercase" asChild>
+              <Link href="/dashboard/applications"><ArrowRight className="w-4 h-4 mr-2" /> {t('viewApplications')}</Link>
+            </Button>
+          )}
+
           {has('ai:use') && (
             <AskAiButton />
           )}
@@ -169,17 +235,7 @@ export default function CommandCenter() {
 
       {/* KPI ROW */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {(persona === 'EMPLOYEE' ? [
-          { label: t('myActiveTasks'), value: pad(metrics.myActiveTasks), sub: 'Assigned', icon: <CheckCircle2 className="w-5 h-5" /> },
-          { label: t('myBlockers'), value: pad(metrics.myBlockers), sub: 'Requires Action', icon: <AlertTriangle className="w-5 h-5" /> },
-          { label: t('dueThisWeek'), value: pad(metrics.dueThisWeek), sub: 'Approaching', icon: <Clock className="w-5 h-5" /> },
-          { label: t('pendingReviews'), value: pad(metrics.pendingReviews), sub: 'PRs & QA', icon: <ShieldAlert className="w-5 h-5" /> },
-        ] : [
-          { label: t('activeProjects'), value: pad(metrics.activeProjects), sub: 'In Flight', icon: <FolderKanban className="w-5 h-5" /> },
-          { label: t('projectsAtRisk'), value: pad(metrics.projectsAtRisk), sub: 'Requires Review', icon: <AlertTriangle className="w-5 h-5" /> },
-          { label: t('blockedOverdue'), value: pad(metrics.blockedTasks + metrics.overdueTasks), sub: `${metrics.blockedTasks} Blocked · ${metrics.overdueTasks} Overdue`, icon: <Clock className="w-5 h-5" /> },
-          { label: t('pendingApprovals'), value: pad(metrics.pendingApprovals), sub: 'Release Gates', icon: <ShieldAlert className="w-5 h-5" /> },
-        ]).map((stat, i) => (
+        {kpiCards.map((stat, i) => (
           <Card key={i} className="shadow-none border border-border/50 rounded-lg bg-card/10 relative overflow-hidden flex flex-col justify-between min-h-[160px] hover:border-foreground/30 transition-colors">
             <CardContent className="p-6 flex flex-col justify-between h-full">
               <div className="flex justify-between items-start mb-6">
