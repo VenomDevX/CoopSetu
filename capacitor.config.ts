@@ -1,5 +1,6 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 import * as dotenv from 'dotenv';
+import { NATIVE_UA_SENTINEL } from './lib/native/is-native';
 
 dotenv.config({ path: '.env.local' });
 
@@ -29,6 +30,18 @@ const config: CapacitorConfig = {
     // Only allow plaintext HTTP for local dev addresses; a real deployment
     // must be served over HTTPS.
     cleartext: appUrl.startsWith('http://'),
+  },
+  android: {
+    // Appends to (does not replace) the stock WebView UA, so the server can
+    // tell app traffic from browser traffic and render the native UI. The
+    // resulting string still reads as Chrome, which matters: middleware.ts
+    // 403s empty / curl / python-requests user-agents on /api/v1/*.
+    // Consumed by lib/native/is-native.ts — single source of truth for the
+    // sentinel is that module, imported above.
+    appendUserAgent: `${NATIVE_UA_SENTINEL}1`,
+    // Matches --background #000000 (the app defaults to the dark theme), so
+    // the window behind the WebView doesn't flash white on cold start.
+    backgroundColor: '#000000',
   },
 };
 
