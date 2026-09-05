@@ -20,7 +20,7 @@ export class TrainerService {
   async getTrainers(institutionId?: string) {
     let query = this.supabase
       .from('trainers')
-      .select('*, profiles:user_id(full_name, email, avatar_url), institutions(name)')
+      .select('*, profiles:user_id(full_name, email, avatar_path), institutions(name)')
       .order('created_at', { ascending: false });
 
     if (institutionId) {
@@ -41,7 +41,7 @@ export class TrainerService {
   async getTrainerById(id: string) {
     const { data, error } = await this.supabase
       .from('trainers')
-      .select('*, profiles:user_id(full_name, email, avatar_url), institutions(name)')
+      .select('*, profiles:user_id(full_name, email, avatar_path), institutions(name)')
       .eq('id', id)
       .single();
     if (error) throw error;

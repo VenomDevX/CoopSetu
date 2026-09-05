@@ -3278,6 +3278,7 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "username_normalized" "text",
     "bio" "text",
     "profile_completed_at" timestamp with time zone,
+    "totp_secret" "text",
     CONSTRAINT "username_normalized_lower_trim" CHECK ((("username_normalized" IS NULL) OR ("username_normalized" = "lower"(TRIM(BOTH FROM "username_normalized"))))),
     CONSTRAINT "valid_username" CHECK ((("username" IS NULL) OR (("length"("username") >= 3) AND ("length"("username") <= 30) AND ("username" ~ '^[a-zA-Z0-9\._\-]+$'::"text"))))
 );
@@ -4046,7 +4047,6 @@ CREATE TABLE IF NOT EXISTS "public"."trainees" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "face_embedding" "jsonb",
-    "totp_secret" "text",
     CONSTRAINT "trainees_digital_literacy_level_check" CHECK (("digital_literacy_level" = ANY (ARRAY['BASIC'::"text", 'INTERMEDIATE'::"text", 'ADVANCED'::"text"]))),
     CONSTRAINT "trainees_employment_status_check" CHECK (("employment_status" = ANY (ARRAY['UNEMPLOYED'::"text", 'EMPLOYED'::"text", 'SELF_EMPLOYED'::"text", 'STUDENT'::"text"]))),
     CONSTRAINT "trainees_status_check" CHECK (("status" = ANY (ARRAY['ACTIVE'::"text", 'INACTIVE'::"text", 'GRADUATED'::"text"])))
@@ -7606,6 +7606,11 @@ ALTER TABLE ONLY "public"."trainees"
 
 
 ALTER TABLE ONLY "public"."trainees"
+    ADD CONSTRAINT "trainees_profile_fk" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."trainees"
     ADD CONSTRAINT "trainees_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
@@ -7617,6 +7622,11 @@ ALTER TABLE ONLY "public"."trainers"
 
 ALTER TABLE ONLY "public"."trainers"
     ADD CONSTRAINT "trainers_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."trainers"
+    ADD CONSTRAINT "trainers_profile_fk" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
 
 
 
@@ -7741,10 +7751,67 @@ CREATE POLICY "approvals_select" ON "public"."approvals" FOR SELECT USING ("coop
 ALTER TABLE "public"."assessment_questions" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "assessment_questions_manage" ON "public"."assessment_questions" USING ((EXISTS ( SELECT 1
+   FROM (("public"."assessments" "a"
+     JOIN "public"."courses" "c" ON (("c"."id" = "a"."course_id")))
+     JOIN "public"."programmes" "p" ON (("p"."id" = "c"."programme_id")))
+  WHERE (("a"."id" = "assessment_questions"."assessment_id") AND "coopsetu"."has_permission"("p"."organization_id", 'assessment:manage'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM (("public"."assessments" "a"
+     JOIN "public"."courses" "c" ON (("c"."id" = "a"."course_id")))
+     JOIN "public"."programmes" "p" ON (("p"."id" = "c"."programme_id")))
+  WHERE (("a"."id" = "assessment_questions"."assessment_id") AND "coopsetu"."has_permission"("p"."organization_id", 'assessment:manage'::"text")))));
+
+
+
+CREATE POLICY "assessment_questions_select" ON "public"."assessment_questions" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM (("public"."assessments" "a"
+     JOIN "public"."courses" "c" ON (("c"."id" = "a"."course_id")))
+     JOIN "public"."programmes" "p" ON (("p"."id" = "c"."programme_id")))
+  WHERE (("a"."id" = "assessment_questions"."assessment_id") AND "coopsetu"."is_org_member"("p"."organization_id")))));
+
+
+
 ALTER TABLE "public"."assessment_results" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "assessment_results_manage" ON "public"."assessment_results" USING ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "assessment_results"."trainee_id") AND "coopsetu"."has_permission"("t"."organization_id", 'assessment:manage'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "assessment_results"."trainee_id") AND "coopsetu"."has_permission"("t"."organization_id", 'assessment:manage'::"text")))));
+
+
+
+CREATE POLICY "assessment_results_select" ON "public"."assessment_results" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "assessment_results"."trainee_id") AND "coopsetu"."is_org_member"("t"."organization_id")))));
+
+
+
+CREATE POLICY "assessment_results_submit" ON "public"."assessment_results" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "assessment_results"."trainee_id") AND ("t"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
+
+
+
 ALTER TABLE "public"."assessments" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "assessments_manage" ON "public"."assessments" USING ((EXISTS ( SELECT 1
+   FROM ("public"."courses" "c"
+     JOIN "public"."programmes" "p" ON (("p"."id" = "c"."programme_id")))
+  WHERE (("c"."id" = "assessments"."course_id") AND "coopsetu"."has_permission"("p"."organization_id", 'assessment:manage'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM ("public"."courses" "c"
+     JOIN "public"."programmes" "p" ON (("p"."id" = "c"."programme_id")))
+  WHERE (("c"."id" = "assessments"."course_id") AND "coopsetu"."has_permission"("p"."organization_id", 'assessment:manage'::"text")))));
+
+
+
+CREATE POLICY "assessments_select" ON "public"."assessments" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM ("public"."courses" "c"
+     JOIN "public"."programmes" "p" ON (("p"."id" = "c"."programme_id")))
+  WHERE (("c"."id" = "assessments"."course_id") AND "coopsetu"."is_org_member"("p"."organization_id")))));
+
 
 
 ALTER TABLE "public"."attachments" ENABLE ROW LEVEL SECURITY;
@@ -7769,7 +7836,41 @@ CREATE POLICY "attachments_select" ON "public"."attachments" FOR SELECT USING ((
 ALTER TABLE "public"."attendance_records" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "attendance_records_manage" ON "public"."attendance_records" USING ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "attendance_records"."trainee_id") AND "coopsetu"."has_permission"("t"."organization_id", 'attendance:manage'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "attendance_records"."trainee_id") AND "coopsetu"."has_permission"("t"."organization_id", 'attendance:manage'::"text")))));
+
+
+
+CREATE POLICY "attendance_records_select" ON "public"."attendance_records" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "attendance_records"."trainee_id") AND "coopsetu"."is_org_member"("t"."organization_id")))));
+
+
+
+CREATE POLICY "attendance_records_self_insert" ON "public"."attendance_records" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "attendance_records"."trainee_id") AND ("t"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
+
+
+
 ALTER TABLE "public"."attendance_sessions" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "attendance_sessions_manage" ON "public"."attendance_sessions" USING ((EXISTS ( SELECT 1
+   FROM "public"."batches" "b"
+  WHERE (("b"."id" = "attendance_sessions"."batch_id") AND "coopsetu"."has_permission"("b"."organization_id", 'attendance:manage'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."batches" "b"
+  WHERE (("b"."id" = "attendance_sessions"."batch_id") AND "coopsetu"."has_permission"("b"."organization_id", 'attendance:manage'::"text")))));
+
+
+
+CREATE POLICY "attendance_sessions_select" ON "public"."attendance_sessions" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "public"."batches" "b"
+  WHERE (("b"."id" = "attendance_sessions"."batch_id") AND "coopsetu"."is_org_member"("b"."organization_id")))));
+
 
 
 ALTER TABLE "public"."audit_logs" ENABLE ROW LEVEL SECURITY;
@@ -7780,6 +7881,10 @@ CREATE POLICY "audit_logs_select" ON "public"."audit_logs" FOR SELECT USING ("co
 
 
 ALTER TABLE "public"."batches" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "batches_manage" ON "public"."batches" USING ("coopsetu"."has_permission"("organization_id", 'batch:manage'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'batch:manage'::"text"));
+
 
 
 ALTER TABLE "public"."bug_activity" ENABLE ROW LEVEL SECURITY;
@@ -7839,6 +7944,14 @@ CREATE POLICY "bugs_update" ON "public"."bugs" FOR UPDATE USING ("coopsetu"."can
 
 
 ALTER TABLE "public"."certificates" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "certificates_manage" ON "public"."certificates" USING ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "certificates"."trainee_id") AND "coopsetu"."has_permission"("t"."organization_id", 'certificate:manage'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "certificates"."trainee_id") AND "coopsetu"."has_permission"("t"."organization_id", 'certificate:manage'::"text")))));
+
 
 
 CREATE POLICY "checklist_items_delete" ON "public"."task_checklist_items" FOR DELETE USING ((EXISTS ( SELECT 1
@@ -7999,10 +8112,57 @@ ALTER TABLE "public"."contact_requests" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."course_modules" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "course_modules_manage" ON "public"."course_modules" USING ((EXISTS ( SELECT 1
+   FROM ("public"."courses" "c"
+     JOIN "public"."programmes" "p" ON (("p"."id" = "c"."programme_id")))
+  WHERE (("c"."id" = "course_modules"."course_id") AND "coopsetu"."has_permission"("p"."organization_id", 'course:manage'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM ("public"."courses" "c"
+     JOIN "public"."programmes" "p" ON (("p"."id" = "c"."programme_id")))
+  WHERE (("c"."id" = "course_modules"."course_id") AND "coopsetu"."has_permission"("p"."organization_id", 'course:manage'::"text")))));
+
+
+
+CREATE POLICY "course_modules_select" ON "public"."course_modules" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM ("public"."courses" "c"
+     JOIN "public"."programmes" "p" ON (("p"."id" = "c"."programme_id")))
+  WHERE (("c"."id" = "course_modules"."course_id") AND "coopsetu"."is_org_member"("p"."organization_id")))));
+
+
+
 ALTER TABLE "public"."course_progress" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "course_progress_select" ON "public"."course_progress" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "course_progress"."trainee_id") AND "coopsetu"."is_org_member"("t"."organization_id")))));
+
+
+
+CREATE POLICY "course_progress_self_manage" ON "public"."course_progress" USING ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "course_progress"."trainee_id") AND ("t"."user_id" = ( SELECT "auth"."uid"() AS "uid")))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "course_progress"."trainee_id") AND ("t"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
+
+
+
+CREATE POLICY "course_progress_staff_manage" ON "public"."course_progress" USING ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "course_progress"."trainee_id") AND "coopsetu"."has_permission"("t"."organization_id", 'course:manage'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "course_progress"."trainee_id") AND "coopsetu"."has_permission"("t"."organization_id", 'course:manage'::"text")))));
+
+
+
 ALTER TABLE "public"."courses" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "courses_manage" ON "public"."courses" USING ((EXISTS ( SELECT 1
+   FROM "public"."programmes" "p"
+  WHERE (("p"."id" = "courses"."programme_id") AND "coopsetu"."has_permission"("p"."organization_id", 'course:manage'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."programmes" "p"
+  WHERE (("p"."id" = "courses"."programme_id") AND "coopsetu"."has_permission"("p"."organization_id", 'course:manage'::"text")))));
+
 
 
 ALTER TABLE "public"."demo_sessions" ENABLE ROW LEVEL SECURITY;
@@ -8203,7 +8363,43 @@ ALTER TABLE "public"."employee_skills" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."employers" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "employers_admin_delete" ON "public"."employers" FOR DELETE USING ("coopsetu"."is_org_admin_or_owner"("organization_id"));
+
+
+
+CREATE POLICY "employers_admin_insert" ON "public"."employers" FOR INSERT WITH CHECK ("coopsetu"."is_org_admin_or_owner"("organization_id"));
+
+
+
+CREATE POLICY "employers_self_insert" ON "public"."employers" FOR INSERT WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+
+
+
+CREATE POLICY "employers_self_update" ON "public"."employers" FOR UPDATE USING ((("user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."is_org_admin_or_owner"("organization_id"))) WITH CHECK ((("user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."is_org_admin_or_owner"("organization_id")));
+
+
+
 ALTER TABLE "public"."enrollments" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "enrollments_manage" ON "public"."enrollments" USING ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "enrollments"."trainee_id") AND "coopsetu"."has_permission"("t"."organization_id", 'trainee:manage'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "enrollments"."trainee_id") AND "coopsetu"."has_permission"("t"."organization_id", 'trainee:manage'::"text")))));
+
+
+
+CREATE POLICY "enrollments_select" ON "public"."enrollments" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "enrollments"."trainee_id") AND "coopsetu"."is_org_member"("t"."organization_id")))));
+
+
+
+CREATE POLICY "enrollments_self_insert" ON "public"."enrollments" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "enrollments"."trainee_id") AND ("t"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
+
 
 
 ALTER TABLE "public"."environments" ENABLE ROW LEVEL SECURITY;
@@ -8335,6 +8531,10 @@ CREATE POLICY "incidents_update" ON "public"."incidents" FOR UPDATE USING ("coop
 ALTER TABLE "public"."institutions" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "institutions_manage" ON "public"."institutions" USING ("coopsetu"."has_permission"("organization_id", 'institution:manage'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'institution:manage'::"text"));
+
+
+
 ALTER TABLE "public"."integrations" ENABLE ROW LEVEL SECURITY;
 
 
@@ -8373,10 +8573,60 @@ CREATE POLICY "invites_update" ON "public"."organization_invites" FOR UPDATE USI
 ALTER TABLE "public"."job_applications" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "job_applications_employer_manage" ON "public"."job_applications" FOR UPDATE USING ((EXISTS ( SELECT 1
+   FROM ("public"."jobs" "j"
+     JOIN "public"."employers" "e" ON (("e"."id" = "j"."employer_id")))
+  WHERE (("j"."id" = "job_applications"."job_id") AND (("e"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."is_org_admin_or_owner"("e"."organization_id")))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM ("public"."jobs" "j"
+     JOIN "public"."employers" "e" ON (("e"."id" = "j"."employer_id")))
+  WHERE (("j"."id" = "job_applications"."job_id") AND (("e"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."is_org_admin_or_owner"("e"."organization_id"))))));
+
+
+
+CREATE POLICY "job_applications_select" ON "public"."job_applications" FOR SELECT USING (((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "job_applications"."trainee_id") AND ("t"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))) OR (EXISTS ( SELECT 1
+   FROM ("public"."jobs" "j"
+     JOIN "public"."employers" "e" ON (("e"."id" = "j"."employer_id")))
+  WHERE (("j"."id" = "job_applications"."job_id") AND (("e"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."is_org_admin_or_owner"("e"."organization_id")))))));
+
+
+
+CREATE POLICY "job_applications_self_insert" ON "public"."job_applications" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "job_applications"."trainee_id") AND ("t"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
+
+
+
 ALTER TABLE "public"."job_skills" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "job_skills_manage" ON "public"."job_skills" USING ((EXISTS ( SELECT 1
+   FROM ("public"."jobs" "j"
+     JOIN "public"."employers" "e" ON (("e"."id" = "j"."employer_id")))
+  WHERE (("j"."id" = "job_skills"."job_id") AND (("e"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."is_org_admin_or_owner"("e"."organization_id")))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM ("public"."jobs" "j"
+     JOIN "public"."employers" "e" ON (("e"."id" = "j"."employer_id")))
+  WHERE (("j"."id" = "job_skills"."job_id") AND (("e"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."is_org_admin_or_owner"("e"."organization_id"))))));
+
+
+
+CREATE POLICY "job_skills_select" ON "public"."job_skills" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM ("public"."jobs" "j"
+     JOIN "public"."employers" "e" ON (("e"."id" = "j"."employer_id")))
+  WHERE (("j"."id" = "job_skills"."job_id") AND "coopsetu"."is_org_member"("e"."organization_id")))));
+
+
+
 ALTER TABLE "public"."jobs" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "jobs_manage" ON "public"."jobs" USING ((EXISTS ( SELECT 1
+   FROM "public"."employers" "e"
+  WHERE (("e"."id" = "jobs"."employer_id") AND (("e"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."is_org_admin_or_owner"("e"."organization_id")))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."employers" "e"
+  WHERE (("e"."id" = "jobs"."employer_id") AND (("e"."user_id" = ( SELECT "auth"."uid"() AS "uid")) OR "coopsetu"."is_org_admin_or_owner"("e"."organization_id"))))));
+
 
 
 CREATE POLICY "leav_delete" ON "public"."leave_requests" FOR DELETE USING ((EXISTS ( SELECT 1
@@ -8686,6 +8936,10 @@ CREATE POLICY "profiles_update_self" ON "public"."profiles" FOR UPDATE USING (("
 
 
 ALTER TABLE "public"."programmes" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "programmes_manage" ON "public"."programmes" USING ("coopsetu"."has_permission"("organization_id", 'programme:manage'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'programme:manage'::"text"));
+
 
 
 ALTER TABLE "public"."programs" ENABLE ROW LEVEL SECURITY;
@@ -9452,10 +9706,48 @@ CREATE POLICY "time_entries_update" ON "public"."time_entries" FOR UPDATE USING 
 ALTER TABLE "public"."trainee_skills" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "trainee_skills_select" ON "public"."trainee_skills" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "trainee_skills"."trainee_id") AND "coopsetu"."is_org_member"("t"."organization_id")))));
+
+
+
+CREATE POLICY "trainee_skills_self_manage" ON "public"."trainee_skills" USING ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "trainee_skills"."trainee_id") AND ("t"."user_id" = ( SELECT "auth"."uid"() AS "uid")))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "trainee_skills"."trainee_id") AND ("t"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
+
+
+
+CREATE POLICY "trainee_skills_staff_manage" ON "public"."trainee_skills" USING ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "trainee_skills"."trainee_id") AND "coopsetu"."has_permission"("t"."organization_id", 'trainee:manage'::"text"))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."trainees" "t"
+  WHERE (("t"."id" = "trainee_skills"."trainee_id") AND "coopsetu"."has_permission"("t"."organization_id", 'trainee:manage'::"text")))));
+
+
+
 ALTER TABLE "public"."trainees" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "trainees_manage" ON "public"."trainees" USING ("coopsetu"."has_permission"("organization_id", 'trainee:manage'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'trainee:manage'::"text"));
+
+
+
+CREATE POLICY "trainees_self_insert" ON "public"."trainees" FOR INSERT WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+
+
+
+CREATE POLICY "trainees_self_update" ON "public"."trainees" FOR UPDATE USING (("user_id" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+
+
+
 ALTER TABLE "public"."trainers" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "trainers_manage" ON "public"."trainers" USING ("coopsetu"."has_permission"("organization_id", 'trainer:manage'::"text")) WITH CHECK ("coopsetu"."has_permission"("organization_id", 'trainer:manage'::"text"));
+
 
 
 ALTER TABLE "public"."user_legal_acceptances" ENABLE ROW LEVEL SECURITY;
@@ -9934,21 +10226,21 @@ GRANT ALL ON TABLE "public"."approvals" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."assessment_questions" TO "anon";
+GRANT ALL ON TABLE "public"."assessment_questions" TO "anon";
 GRANT ALL ON TABLE "public"."assessment_questions" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."assessment_questions" TO "service_role";
+GRANT ALL ON TABLE "public"."assessment_questions" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."assessment_results" TO "anon";
+GRANT ALL ON TABLE "public"."assessment_results" TO "anon";
 GRANT ALL ON TABLE "public"."assessment_results" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."assessment_results" TO "service_role";
+GRANT ALL ON TABLE "public"."assessment_results" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."assessments" TO "anon";
+GRANT ALL ON TABLE "public"."assessments" TO "anon";
 GRANT ALL ON TABLE "public"."assessments" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."assessments" TO "service_role";
+GRANT ALL ON TABLE "public"."assessments" TO "service_role";
 
 
 
@@ -9958,15 +10250,15 @@ GRANT ALL ON TABLE "public"."attachments" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."attendance_records" TO "anon";
+GRANT ALL ON TABLE "public"."attendance_records" TO "anon";
 GRANT ALL ON TABLE "public"."attendance_records" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."attendance_records" TO "service_role";
+GRANT ALL ON TABLE "public"."attendance_records" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."attendance_sessions" TO "anon";
+GRANT ALL ON TABLE "public"."attendance_sessions" TO "anon";
 GRANT ALL ON TABLE "public"."attendance_sessions" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."attendance_sessions" TO "service_role";
+GRANT ALL ON TABLE "public"."attendance_sessions" TO "service_role";
 
 
 
@@ -9976,9 +10268,9 @@ GRANT ALL ON TABLE "public"."audit_logs" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."batches" TO "anon";
+GRANT ALL ON TABLE "public"."batches" TO "anon";
 GRANT ALL ON TABLE "public"."batches" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."batches" TO "service_role";
+GRANT ALL ON TABLE "public"."batches" TO "service_role";
 
 
 
@@ -10000,9 +10292,9 @@ GRANT ALL ON TABLE "public"."bug_attachments" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."certificates" TO "anon";
+GRANT ALL ON TABLE "public"."certificates" TO "anon";
 GRANT ALL ON TABLE "public"."certificates" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."certificates" TO "service_role";
+GRANT ALL ON TABLE "public"."certificates" TO "service_role";
 
 
 
@@ -10048,21 +10340,21 @@ GRANT ALL ON TABLE "public"."contact_requests" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."course_modules" TO "anon";
+GRANT ALL ON TABLE "public"."course_modules" TO "anon";
 GRANT ALL ON TABLE "public"."course_modules" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."course_modules" TO "service_role";
+GRANT ALL ON TABLE "public"."course_modules" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."course_progress" TO "anon";
+GRANT ALL ON TABLE "public"."course_progress" TO "anon";
 GRANT ALL ON TABLE "public"."course_progress" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."course_progress" TO "service_role";
+GRANT ALL ON TABLE "public"."course_progress" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."courses" TO "anon";
+GRANT ALL ON TABLE "public"."courses" TO "anon";
 GRANT ALL ON TABLE "public"."courses" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."courses" TO "service_role";
+GRANT ALL ON TABLE "public"."courses" TO "service_role";
 
 
 
@@ -10126,15 +10418,15 @@ GRANT ALL ON TABLE "public"."employee_skills" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."employers" TO "anon";
+GRANT ALL ON TABLE "public"."employers" TO "anon";
 GRANT ALL ON TABLE "public"."employers" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."employers" TO "service_role";
+GRANT ALL ON TABLE "public"."employers" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."enrollments" TO "anon";
+GRANT ALL ON TABLE "public"."enrollments" TO "anon";
 GRANT ALL ON TABLE "public"."enrollments" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."enrollments" TO "service_role";
+GRANT ALL ON TABLE "public"."enrollments" TO "service_role";
 
 
 
@@ -10186,9 +10478,9 @@ GRANT ALL ON TABLE "public"."incidents" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."institutions" TO "anon";
+GRANT ALL ON TABLE "public"."institutions" TO "anon";
 GRANT ALL ON TABLE "public"."institutions" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."institutions" TO "service_role";
+GRANT ALL ON TABLE "public"."institutions" TO "service_role";
 
 
 
@@ -10230,21 +10522,21 @@ GRANT SELECT("updated_at") ON TABLE "public"."integrations" TO "authenticated";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."job_applications" TO "anon";
+GRANT ALL ON TABLE "public"."job_applications" TO "anon";
 GRANT ALL ON TABLE "public"."job_applications" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."job_applications" TO "service_role";
+GRANT ALL ON TABLE "public"."job_applications" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."job_skills" TO "anon";
+GRANT ALL ON TABLE "public"."job_skills" TO "anon";
 GRANT ALL ON TABLE "public"."job_skills" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."job_skills" TO "service_role";
+GRANT ALL ON TABLE "public"."job_skills" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."jobs" TO "anon";
+GRANT ALL ON TABLE "public"."jobs" TO "anon";
 GRANT ALL ON TABLE "public"."jobs" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."jobs" TO "service_role";
+GRANT ALL ON TABLE "public"."jobs" TO "service_role";
 
 
 
@@ -10338,9 +10630,9 @@ GRANT ALL ON TABLE "public"."profiles" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."programmes" TO "anon";
+GRANT ALL ON TABLE "public"."programmes" TO "anon";
 GRANT ALL ON TABLE "public"."programmes" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."programmes" TO "service_role";
+GRANT ALL ON TABLE "public"."programmes" TO "service_role";
 
 
 
@@ -10602,21 +10894,21 @@ GRANT ALL ON TABLE "public"."time_entries" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."trainee_skills" TO "anon";
+GRANT ALL ON TABLE "public"."trainee_skills" TO "anon";
 GRANT ALL ON TABLE "public"."trainee_skills" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."trainee_skills" TO "service_role";
+GRANT ALL ON TABLE "public"."trainee_skills" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."trainees" TO "anon";
+GRANT ALL ON TABLE "public"."trainees" TO "anon";
 GRANT ALL ON TABLE "public"."trainees" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."trainees" TO "service_role";
+GRANT ALL ON TABLE "public"."trainees" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."trainers" TO "anon";
+GRANT ALL ON TABLE "public"."trainers" TO "anon";
 GRANT ALL ON TABLE "public"."trainers" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."trainers" TO "service_role";
+GRANT ALL ON TABLE "public"."trainers" TO "service_role";
 
 
 

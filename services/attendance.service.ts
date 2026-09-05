@@ -289,23 +289,39 @@ export class AttendanceService {
       throw new Error('Invalid or expired QR code');
     }
 
-    // Check if user is a trainee to mark attendance
+    // Check if user is a trainee to mark attendance. `trainees` has no
+    // batch_id column — the batch linkage is via `enrollments.batch_id`, so
+    // resolve the trainee's current batch through their active enrollment.
     const { data: traineeData } = await this.supabase
       .from('trainees')
-      .select('id, batch_id')
+      .select('id')
       .eq('user_id', userId)
       .single();
 
-    if (!traineeData || !traineeData.batch_id) {
+    if (!traineeData) {
       // User is authenticated but not a trainee (e.g. Trainer/Admin). Return success without marking batch attendance.
       return { status: 'PRESENT', recordId: null, message: 'Staff verified' };
+    }
+
+    const { data: enrollment } = await this.supabase
+      .from('enrollments')
+      .select('batch_id')
+      .eq('trainee_id', traineeData.id)
+      .eq('status', 'ENROLLED')
+      .not('batch_id', 'is', null)
+      .order('enrolled_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!enrollment || !enrollment.batch_id) {
+      throw new Error('You are not currently assigned to a batch.');
     }
 
     // Find the currently active session for this batch
     const { data: activeSession, error: sessionError } = await this.supabase
       .from('attendance_sessions')
       .select('id')
-      .eq('batch_id', traineeData.batch_id)
+      .eq('batch_id', enrollment.batch_id)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(1)
