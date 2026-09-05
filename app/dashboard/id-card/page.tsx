@@ -7,8 +7,17 @@ import { useEffect, useState, useRef } from "react";
 import { motion } from "motion/react";
 import QRCode from 'qrcode';
 import { TOTP } from 'totp-generator';
+import { useIsNative } from '@/components/native/native-provider';
 
 export default function DigitalIdCard() {
+  // In the app this screen has one job — be held up to a scanner — and it
+  // must not require scrolling to do it. Measured on a Pixel 7: the web
+  // layout needs 892px inside a 726px viewport, which pushes the rotating
+  // fallback code (what a trainee reads out when the scan fails) off the
+  // bottom, behind the tab bar. The native branch reclaims that space: the
+  // app bar already reads DIGITAL ID, so the duplicate page heading and its
+  // top margin go, and the card tightens up.
+  const isNative = useIsNative();
   const [userId, setUserId] = useState('');
   const [userName, setUserName] = useState('');
   const [secret, setSecret] = useState<string | null>(null);
@@ -79,9 +88,11 @@ export default function DigitalIdCard() {
   }, [secret, userId]);
 
   return (
-    <div className="max-w-md mx-auto space-y-6 pb-24 mt-12">
+    <div className={isNative ? 'max-w-md mx-auto space-y-3' : 'max-w-md mx-auto space-y-6 pb-24 mt-12'}>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center">
-        <h1 className="text-3xl font-bold tracking-tighter uppercase text-foreground mb-2">Digital ID Card</h1>
+        {!isNative && (
+          <h1 className="text-3xl font-bold tracking-tighter uppercase text-foreground mb-2">Digital ID Card</h1>
+        )}
         <p className="text-sm text-muted-foreground font-mono">Present this live QR to the scanner</p>
       </motion.div>
 
@@ -104,10 +115,10 @@ export default function DigitalIdCard() {
             {/* Hologram effect line */}
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-foreground/20 to-transparent animate-pulse" />
             
-            <CardContent className="p-8 flex flex-col items-center text-center">
-              <ShieldCheck className="w-8 h-8 text-foreground mb-6" />
-              
-              <div className="w-full aspect-square bg-white rounded-xl p-4 flex items-center justify-center mb-6 shadow-xl relative">
+            <CardContent className={`flex flex-col items-center text-center ${isNative ? 'p-5' : 'p-8'}`}>
+              <ShieldCheck className={`w-8 h-8 text-foreground ${isNative ? 'mb-3' : 'mb-6'}`} />
+
+              <div className={`w-full aspect-square bg-white rounded-xl p-4 flex items-center justify-center shadow-xl relative ${isNative ? 'mb-3' : 'mb-6'}`}>
                 {qrDataUrl ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img src={qrDataUrl} alt="Live QR" className="w-full h-full object-contain" />
@@ -132,7 +143,7 @@ export default function DigitalIdCard() {
                 <span className="text-foreground font-bold text-sm">{userName || (userId.slice(0, 8) + '...')}</span>
               </div>
 
-              <div className="mt-8 flex items-center gap-3 w-full border-t border-border pt-6">
+              <div className={`flex items-center gap-3 w-full border-t border-border ${isNative ? 'mt-4 pt-4' : 'mt-8 pt-6'}`}>
                 <div className="flex-1 text-left">
                   <div className="text-[10px] font-mono uppercase text-muted-foreground tracking-widest mb-1">Live Code</div>
                   <div className="text-xl font-mono font-bold tracking-[0.2em]">{totpCode}</div>

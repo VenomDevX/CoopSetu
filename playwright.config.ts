@@ -31,7 +31,25 @@ export default defineConfig({
     {
       name: 'e2e',
       dependencies: ['setup'],
+      // Excludes tests/e2e/native/** so the existing suite keeps exercising
+      // the WEB shell only — that separation is what proves the native UI
+      // hasn't leaked.
+      testIgnore: /native\//,
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      // The Capacitor app is a WebView, so the only thing distinguishing it
+      // from a mobile browser is the UA sentinel that capacitor.config.ts's
+      // appendUserAgent adds. Playwright cannot emulate a native context, but
+      // it reproduces a UA exactly — which is precisely why detection was
+      // built on the UA rather than @capacitor/core's isNativePlatform().
+      name: 'native',
+      dependencies: ['setup'],
+      testMatch: /native\/.*\.spec\.ts/,
+      use: {
+        ...devices['Pixel 7'],
+        userAgent: `${devices['Pixel 7'].userAgent} CoopSetuApp/1`,
+      },
     },
   ],
   webServer: {
