@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { TraineeService } from '@/services/trainee.service';
 import { TrainerService } from '@/services/trainer.service';
@@ -80,23 +80,6 @@ describe('Training-domain PostgREST embed fix (migration 0081)', () => {
       trainee_id: trainee!.id, programme_id: programmeId, certificate_number: `FK-CERT-${Date.now()}`, title: 'FK Test Certificate',
     });
   }, 60000);
-
-  afterAll(async () => {
-    // Every prior run of this suite left its "FK Test..." fixtures in the
-    // DB permanently (no teardown existed) — they piled up under the real
-    // seeded trainer/trainee, e.g. surfacing as a trainer's dashboard
-    // showing batches called "FK Test Batch" with no real enrollments.
-    // Deleting `programmes` cascades away batches, attendance_sessions,
-    // attendance_records, and certificates in one go (all FK'd to it with
-    // ON DELETE CASCADE); institutions.programmes.institution_id is only
-    // ON DELETE SET NULL, so the institution needs its own delete.
-    // The trainer/trainee ACTIVE rows and the trainer/trainee upserts
-    // above are NOT cleaned up here — those aren't per-run fixtures, they
-    // represent the seeded users legitimately having a trainer/trainee
-    // profile, and are idempotent (onConflict) across repeated runs.
-    if (programmeId) await admin.from('programmes').delete().eq('id', programmeId);
-    if (institutionId) await admin.from('institutions').delete().eq('id', institutionId);
-  });
 
   it('TraineeService.list() resolves profiles.full_name without a PGRST200 error', async () => {
     const svc = new TraineeService(instituteAdmin, ORG);
