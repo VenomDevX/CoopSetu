@@ -217,6 +217,15 @@
     min-width: var(--tap-min);
   }
 
+  /* Full-page routes with no app chrome of their own — login, signup,
+     onboarding — have nothing to paint into the status bar / gesture area, so
+     they inset instead. (The dashboard and public bars deliberately do the
+     opposite: they extend their background INTO the inset.) */
+  html.app-native [data-native-safe-page] {
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+  }
+
   *,
   ::before,
   ::after {

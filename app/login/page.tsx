@@ -120,7 +120,7 @@ function LoginInner() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col lg:flex-row bg-background text-foreground selection:bg-foreground selection:text-background font-sans relative">
+    <div data-native-safe-page className="min-h-dvh flex flex-col lg:flex-row bg-background text-foreground selection:bg-foreground selection:text-background font-sans relative">
       <div className="absolute top-4 right-4 z-10">
         <LanguageSwitcher />
       </div>
@@ -178,6 +178,7 @@ function LoginInner() {
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">{t('usernameOrEmail')}</label>
                 <input
+                  data-native-tap
                   className="w-full h-10 px-3 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground focus:ring-1 focus:ring-foreground transition-all"
                   type="text"
                   autoComplete="username"
@@ -194,6 +195,7 @@ function LoginInner() {
                 </div>
                 <div className="relative">
                   <input
+                    data-native-tap
                     className="w-full h-10 pl-3 pr-10 bg-surface border border-border rounded text-sm focus:outline-none focus:border-foreground focus:ring-1 focus:ring-foreground transition-all"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
@@ -224,6 +226,7 @@ function LoginInner() {
 
             <button
               disabled={loading}
+              data-native-tap
               className="w-full h-10 bg-foreground text-background text-xs font-mono uppercase tracking-widest hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2 transition-opacity rounded-[4px]"
             >
               {loading && <Loader2 className="w-3 h-3 animate-spin" />}
@@ -232,7 +235,8 @@ function LoginInner() {
 
             <div className="pt-4 pb-2 text-center flex flex-col items-center">
               <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">{t('noAccountRequired')}</span>
-              <Link href="/demo" className="w-full h-10 bg-black border border-zinc-800 text-white text-xs font-mono uppercase tracking-widest hover:border-zinc-500 flex items-center justify-center gap-2 transition-colors rounded-[4px]">
+              <Link href="/demo" data-native-tap
+              className="w-full h-10 bg-black border border-zinc-800 text-white text-xs font-mono uppercase tracking-widest hover:border-zinc-500 flex items-center justify-center gap-2 transition-colors rounded-[4px]">
                 {t('exploreDemo')}
               </Link>
             </div>
