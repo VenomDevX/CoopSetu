@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, LayoutDashboard, Settings, User, LogOut, Loader2, CreditCard, Key, HelpCircle, GitBranch } from 'lucide-react';
 
@@ -20,6 +21,8 @@ export function MarketingHeader({ animated = false }: { animated?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const isNative = useIsNative();
+  const tNav = useTranslations('Marketing.nav');
+  const t = useTranslations('Marketing.header');
   const { isCheckingAuth, isLoggedIn, userName, avatarUrl, signOut } = useAuth();
   
   const [isNavigating, setIsNavigating] = useState(false);
@@ -65,12 +68,12 @@ export function MarketingHeader({ animated = false }: { animated?: boolean }) {
           <CoopSetuLogo variant="wordmark" size={28} />
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-xs font-mono uppercase tracking-widest text-muted-foreground">
-          <Link href="/product" className={`${pathname === '/product' ? 'text-foreground' : 'hover:text-foreground'} transition-colors`}>Product</Link>
-          <Link href="/solutions" className={`${pathname === '/solutions' ? 'text-foreground' : 'hover:text-foreground'} transition-colors`}>Solutions</Link>
-          <Link href="/ai" className={`${pathname === '/ai' ? 'text-foreground' : 'hover:text-foreground'} transition-colors`}>AI</Link>
-          <Link href="/security" className={`${pathname === '/security' ? 'text-foreground' : 'hover:text-foreground'} transition-colors`}>Security</Link>
-          <Link href="/enterprise" className={`${pathname === '/enterprise' ? 'text-foreground' : 'hover:text-foreground'} transition-colors`}>Enterprise</Link>
-          <Link href="/pricing" className={`${pathname === '/pricing' ? 'text-foreground' : 'hover:text-foreground'} transition-colors`}>Pricing</Link>
+          <Link href="/product" className={`${pathname === '/product' ? 'text-foreground' : 'hover:text-foreground'} transition-colors`}>{tNav('product')}</Link>
+          <Link href="/solutions" className={`${pathname === '/solutions' ? 'text-foreground' : 'hover:text-foreground'} transition-colors`}>{tNav('solutions')}</Link>
+          <Link href="/ai" className={`${pathname === '/ai' ? 'text-foreground' : 'hover:text-foreground'} transition-colors`}>{tNav('ai')}</Link>
+          <Link href="/security" className={`${pathname === '/security' ? 'text-foreground' : 'hover:text-foreground'} transition-colors`}>{tNav('security')}</Link>
+          <Link href="/enterprise" className={`${pathname === '/enterprise' ? 'text-foreground' : 'hover:text-foreground'} transition-colors`}>{tNav('enterprise')}</Link>
+          <Link href="/pricing" className={`${pathname === '/pricing' ? 'text-foreground' : 'hover:text-foreground'} transition-colors`}>{tNav('pricing')}</Link>
         </nav>
       </div>
       <div className="flex items-center gap-4 md:gap-6">
@@ -96,7 +99,7 @@ export function MarketingHeader({ animated = false }: { animated?: boolean }) {
                 )}
               </span>
               <span className="hidden md:block truncate max-w-[96px]">
-                {userName ? userName.split(' ')[0] : 'User'}
+                {userName ? userName.split(' ')[0] : t('user')}
               </span>
               <ChevronDown className={`w-3 h-3 shrink-0 text-muted-foreground group-hover:text-foreground transition-transform duration-200 ${userDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
@@ -111,39 +114,39 @@ export function MarketingHeader({ animated = false }: { animated?: boolean }) {
                   className="absolute right-0 top-full mt-2 w-56 bg-background border border-border rounded-lg shadow-2xl z-50 overflow-hidden"
                 >
                   <div className="px-4 py-3 border-b border-border">
-                    <p className="text-xs font-mono uppercase tracking-widest text-foreground truncate">{userName || 'User'}</p>
-                    <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mt-0.5">Workspace</p>
+                    <p className="text-xs font-mono uppercase tracking-widest text-foreground truncate">{userName || t('user')}</p>
+                    <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mt-0.5">{t('workspace')}</p>
                   </div>
                   <div className="p-1 flex flex-col gap-0.5">
                     <button
                       onClick={() => { setUserDropdownOpen(false); handleNavigate('/dashboard', 'dashboard'); }}
                       className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
                     >
-                      <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
+                      <LayoutDashboard className="w-3.5 h-3.5" /> {t('dashboard')}
                     </button>
                     <button
                       onClick={() => { setUserDropdownOpen(false); handleNavigate('/dashboard/settings?tab=profile', 'profile'); }}
                       className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
                     >
-                      <User className="w-3.5 h-3.5" /> Profile
+                      <User className="w-3.5 h-3.5" /> {t('profile')}
                     </button>
                     <button
                       onClick={() => { setUserDropdownOpen(false); handleNavigate('/dashboard/settings?tab=org', 'settings'); }}
                       className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
                     >
-                      <Settings className="w-3.5 h-3.5" /> Settings
+                      <Settings className="w-3.5 h-3.5" /> {t('settings')}
                     </button>
                     <button
                       onClick={() => { setUserDropdownOpen(false); handleNavigate('/dashboard/settings?tab=billing', 'settings'); }}
                       className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
                     >
-                      <CreditCard className="w-3.5 h-3.5" /> Billing
+                      <CreditCard className="w-3.5 h-3.5" /> {t('billing')}
                     </button>
                     <button
                       onClick={() => { setUserDropdownOpen(false); handleNavigate('/dashboard/repositories', 'repository'); }}
                       className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
                     >
-                      <GitBranch className="w-3.5 h-3.5" /> Repository
+                      <GitBranch className="w-3.5 h-3.5" /> {t('repository')}
                     </button>
                   </div>
                   <div className="border-t border-border p-1 flex flex-col gap-0.5">
@@ -151,7 +154,7 @@ export function MarketingHeader({ animated = false }: { animated?: boolean }) {
                       onClick={() => { setUserDropdownOpen(false); handleNavigate('/help', 'help'); }}
                       className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
                     >
-                      <HelpCircle className="w-3.5 h-3.5" /> Help & Docs
+                      <HelpCircle className="w-3.5 h-3.5" /> {t('helpDocs')}
                     </button>
                   </div>
                   <div className="border-t border-border p-1 flex flex-col gap-0.5">
@@ -159,7 +162,7 @@ export function MarketingHeader({ animated = false }: { animated?: boolean }) {
                       onClick={handleSignOut}
                       className="w-full flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-widest text-red-400 hover:text-red-300 hover:bg-surface-hover rounded-md transition-colors"
                     >
-                      <LogOut className="w-3.5 h-3.5" /> Sign Out
+                      <LogOut className="w-3.5 h-3.5" /> {t('signOut')}
                     </button>
                   </div>
                 </motion.div>
@@ -174,7 +177,7 @@ export function MarketingHeader({ animated = false }: { animated?: boolean }) {
               className="flex text-xs font-mono uppercase tracking-widest hover:text-foreground text-muted-foreground transition-colors disabled:opacity-50 items-center gap-2"
             >
               {isNavigating && navType === 'signin' ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-              Sign In
+              {t('signIn')}
             </button>
             <Button
               onClick={() => handleNavigate('/demo', 'demo')}
@@ -182,23 +185,23 @@ export function MarketingHeader({ animated = false }: { animated?: boolean }) {
               className="bg-foreground text-background hover:bg-foreground/90 rounded h-8 px-4 md:px-6 text-xs font-mono uppercase tracking-widest transition-all w-auto md:w-40"
             >
               {isNavigating && navType === 'demo' ? (
-                <span className="flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> LOADING...</span>
+                <span className="flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> {t('loading')}</span>
               ) : (
-                <span className="hidden sm:inline">Request Demo</span>
+                <span className="hidden sm:inline">{t('requestDemo')}</span>
               )}
-              {!(isNavigating && navType === 'demo') && <span className="sm:hidden">Demo</span>}
+              {!(isNavigating && navType === 'demo') && <span className="sm:hidden">{t('demoShort')}</span>}
             </Button>
           </>
         )}
 
         <MobileNavDrawer
           links={[
-            { href: '/product', label: 'Product' },
-            { href: '/solutions', label: 'Solutions' },
-            { href: '/ai', label: 'AI' },
-            { href: '/security', label: 'Security' },
-            { href: '/enterprise', label: 'Enterprise' },
-            { href: '/pricing', label: 'Pricing' },
+            { href: '/product', label: tNav('product') },
+            { href: '/solutions', label: tNav('solutions') },
+            { href: '/ai', label: tNav('ai') },
+            { href: '/security', label: tNav('security') },
+            { href: '/enterprise', label: tNav('enterprise') },
+            { href: '/pricing', label: tNav('pricing') },
           ]}
           onSignIn={() => handleNavigate('/dashboard', 'signin')}
           isNavigating={isNavigating}
