@@ -18,6 +18,11 @@ function isPublic(pathname: string) {
     pathname.startsWith('/api/v1/auth/') ||
     pathname.startsWith('/api/v1/dev/') ||
     pathname.startsWith('/api/v1/demo/') ||
+    // Attendance hardware has no cookie session, so it cannot pass this guard.
+    // These routes authenticate the device themselves with a bearer token
+    // (lib/auth/device-auth.ts) — being listed here means "the route owns its
+    // own auth", not "open". /api/v1/hardware/scan was genuinely unauthenticated
+    // until 0088 added that check.
     pathname.startsWith('/api/v1/hardware/') ||
     pathname.startsWith('/api/v1/attendance/totp') ||
     // Public certificate verification: anyone holding a certificate number
@@ -82,7 +87,17 @@ export async function updateSession(request: NextRequest) {
   }
 
   // 2. Global API Guarding (Reject unauthenticated /api/v1/* requests)
-  if (!user && pathname.startsWith('/api/v1/') && !isPublic(pathname)) {
+  //
+  // One exception: an attendance terminal presents `Authorization: Bearer` and
+  // has no cookie, so it would be rejected here before its route could check
+  // the credential. Only the attendance endpoints that actually implement
+  // device auth are exempted, and only when such a header is present — the
+  // route still validates it, so a bogus bearer gains nothing.
+  const bearsDeviceToken =
+    /^Bearer\s+\S+/i.test(request.headers.get('authorization') || '') &&
+    (pathname === '/api/v1/attendance/qr' || pathname === '/api/v1/attendance/face');
+
+  if (!user && pathname.startsWith('/api/v1/') && !isPublic(pathname) && !bearsDeviceToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

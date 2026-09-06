@@ -118,7 +118,7 @@ describe('Training-domain PostgREST embed fix (migration 0081)', () => {
   });
 
   it('BatchService.getBatches() resolves the nested trainers -> profiles embed', async () => {
-    const svc = new BatchService(instituteAdmin);
+    const svc = new BatchService(instituteAdmin, ORG);
     const batches = await svc.getBatches(programmeId);
     expect(batches?.length).toBeGreaterThan(0);
     expect(batches!.some((b: any) => b.id === batchId)).toBe(true);
