@@ -11,6 +11,7 @@ import { TOTP } from 'totp-generator';
 import { useIsNative } from '@/components/native/native-provider';
 
 export default function DigitalIdCard() {
+  const [showFaceEnrol, setShowFaceEnrol] = useState(false);
   // In the app this screen has one job — be held up to a scanner — and it
   // must not require scrolling to do it. Measured on a Pixel 7: the web
   // layout needs 892px inside a 726px viewport, which pushes the rotating
@@ -174,9 +175,24 @@ export default function DigitalIdCard() {
       {/* Face enrolment lives here rather than in settings: this is already the
           trainee's identity screen, and the registered face is the same
           credential as the rotating code above — just a different way to
-          present it at the door. */}
+          present it at the door.
+
+          Collapsed by default. native-id-card.spec.ts asserts the whole card
+          fits without scrolling on a phone, and rendering the camera panel
+          inline broke that — the guarantee matters more than saving a tap. */}
       <div className={isNative ? 'mt-3' : 'mt-6'}>
-        <FaceCapture mode="register" />
+        {showFaceEnrol ? (
+          <FaceCapture mode="register" />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowFaceEnrol(true)}
+            data-native-tap
+            className="w-full px-4 py-3 border border-border rounded font-mono text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+          >
+            Register your face for check-in
+          </button>
+        )}
       </div>
     </div>
   );
