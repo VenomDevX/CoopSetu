@@ -401,3 +401,161 @@ begin
   values (v_trainee, v_org, 'ACTIVE')
   on conflict do nothing;
 end $$;
+
+
+-- ============================================================================
+-- NCCT ecosystem seed (PS 26087)
+--
+-- The real institutional structure the problem statement describes:
+--
+--     NCCT (national apex)
+--       └── VAMNICOM, Pune                    (APEX)
+--             ├── RICM Bengaluru              (REGIONAL)
+--             │     └── ICM Lucknow           (INSTITUTE)
+--             └── RICM Chandigarh             (REGIONAL)
+--                   └── ICM Bhopal            (INSTITUTE)
+--
+-- Every account below signs in with Password123!, same as the accounts above.
+-- Institute staff are pinned to their institute via organization_members
+-- .institution_id, so 0085's restrictive policies scope them; the NCCT director
+-- is left NULL, which means national scope.
+--
+-- Idempotent throughout: institutions.code is GLOBALLY unique (0071), so a
+-- second `supabase db reset` against a live database would otherwise collide.
+-- ============================================================================
+do $$
+declare
+  v_org      uuid := '00000000-0000-0000-0000-0000000000a0'; -- CoopSetu Training Network
+  v_member   uuid;
+  v_role     uuid;
+  v          record;
+
+  -- institutions
+  v_ncct     uuid := '00000000-0000-0000-0000-0000000000c1';
+  v_vamnicom uuid := '00000000-0000-0000-0000-0000000000c2';
+  v_ricm_blr uuid := '00000000-0000-0000-0000-0000000000c3';
+  v_ricm_chd uuid := '00000000-0000-0000-0000-0000000000c4';
+  v_icm_lko  uuid := '00000000-0000-0000-0000-0000000000c5';
+  v_icm_bpl  uuid := '00000000-0000-0000-0000-0000000000c6';
+
+  users jsonb := '[
+    {"id":"00000000-0000-0000-0000-0000000000b1","email":"ncct.director@coopsetu.test","name":"Dr. Meena Raghavan","role":"SUPER_ADMIN","title":"Director General, NCCT","inst":null},
+    {"id":"00000000-0000-0000-0000-0000000000b2","email":"vamnicom.director@coopsetu.test","name":"Dr. Anil Deshmukh","role":"INSTITUTE_ADMIN","title":"Director, VAMNICOM","inst":"00000000-0000-0000-0000-0000000000c2"},
+    {"id":"00000000-0000-0000-0000-0000000000b3","email":"ricm.bengaluru@coopsetu.test","name":"Lakshmi Narayan","role":"INSTITUTE_ADMIN","title":"Principal, RICM Bengaluru","inst":"00000000-0000-0000-0000-0000000000c3"},
+    {"id":"00000000-0000-0000-0000-0000000000b4","email":"ricm.chandigarh@coopsetu.test","name":"Harpreet Kaur","role":"INSTITUTE_ADMIN","title":"Principal, RICM Chandigarh","inst":"00000000-0000-0000-0000-0000000000c4"},
+    {"id":"00000000-0000-0000-0000-0000000000b5","email":"icm.lucknow@coopsetu.test","name":"Ravi Shankar Tiwari","role":"INSTITUTE_ADMIN","title":"Principal, ICM Lucknow","inst":"00000000-0000-0000-0000-0000000000c5"},
+    {"id":"00000000-0000-0000-0000-0000000000b6","email":"icm.bhopal@coopsetu.test","name":"Sneha Chouhan","role":"INSTITUTE_ADMIN","title":"Principal, ICM Bhopal","inst":"00000000-0000-0000-0000-0000000000c6"},
+    {"id":"00000000-0000-0000-0000-0000000000b7","email":"trainer.vamnicom@coopsetu.test","name":"Prof. Sudhir Kulkarni","role":"TRAINER","title":"Faculty, Cooperative Management","inst":"00000000-0000-0000-0000-0000000000c2"},
+    {"id":"00000000-0000-0000-0000-0000000000b8","email":"trainer.icm@coopsetu.test","name":"Anita Verma","role":"TRAINER","title":"Faculty, Rural Banking","inst":"00000000-0000-0000-0000-0000000000c5"},
+    {"id":"00000000-0000-0000-0000-0000000000b9","email":"trainee.aman@coopsetu.test","name":"Aman Yadav","role":"TRAINEE","title":"Trainee","inst":"00000000-0000-0000-0000-0000000000c5"},
+    {"id":"00000000-0000-0000-0000-0000000000ba","email":"trainee.sunita@coopsetu.test","name":"Sunita Devi","role":"TRAINEE","title":"Trainee","inst":"00000000-0000-0000-0000-0000000000c5"},
+    {"id":"00000000-0000-0000-0000-0000000000bb","email":"trainee.rahul@coopsetu.test","name":"Rahul Meshram","role":"TRAINEE","title":"Trainee","inst":"00000000-0000-0000-0000-0000000000c6"},
+    {"id":"00000000-0000-0000-0000-0000000000bc","email":"employer.iffco@coopsetu.test","name":"Priya Nair","role":"EMPLOYER","title":"HR Manager, IFFCO","inst":null},
+    {"id":"00000000-0000-0000-0000-0000000000bd","email":"employer.amul@coopsetu.test","name":"Kiran Patel","role":"EMPLOYER","title":"Talent Lead, Amul","inst":null}
+  ]'::jsonb;
+begin
+  -- ---- auth users (same three-step dance as the block at the top of this file:
+  -- ---- auth.users, then auth.identities, then blanking the GoTrue token
+  -- ---- columns. Skip the third step and password login fails silently.)
+  for v in select * from jsonb_array_elements(users) loop
+    insert into auth.users (
+      instance_id, id, aud, role, email, encrypted_password,
+      email_confirmed_at, created_at, updated_at,
+      raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous)
+    values (
+      '00000000-0000-0000-0000-000000000000',
+      (v.value->>'id')::uuid, 'authenticated', 'authenticated',
+      v.value->>'email', extensions.crypt('Password123!', extensions.gen_salt('bf')),
+      now(), now(), now(),
+      '{"provider":"email","providers":["email"]}'::jsonb,
+      jsonb_build_object('full_name', v.value->>'name'),
+      false, false)
+    on conflict (id) do nothing;
+
+    insert into auth.identities (
+      id, user_id, provider_id, identity_data, provider,
+      last_sign_in_at, created_at, updated_at)
+    values (
+      gen_random_uuid(), (v.value->>'id')::uuid, v.value->>'id',
+      jsonb_build_object('sub', v.value->>'id', 'email', v.value->>'email'),
+      'email', now(), now(), now())
+    on conflict do nothing;
+
+    update public.profiles
+      set job_title = v.value->>'title',
+          username = split_part(v.value->>'email', '@', 1) || '-coopsetu',
+          username_normalized = lower(split_part(v.value->>'email', '@', 1) || '-coopsetu'),
+          profile_completed_at = now()
+      where id = (v.value->>'id')::uuid;
+
+    update auth.users set
+      confirmation_token = '', recovery_token = '',
+      email_change_token_new = '', email_change = '',
+      email_change_token_current = '', phone_change = '',
+      phone_change_token = '', reauthentication_token = ''
+    where id = (v.value->>'id')::uuid;
+  end loop;
+
+  -- ---- the institution tree (parents before children; the self-FK requires it)
+  insert into public.institutions (id, organization_id, name, code, type, level, parent_institution_id, city, state, capacity, contact_email)
+  values
+    (v_ncct,     v_org, 'National Council for Cooperative Training',            'NCCT',            'NCCT',     'NATIONAL', null,       'New Delhi',  'Delhi',          0,    'contact@ncct.gov.in'),
+    (v_vamnicom, v_org, 'Vaikunth Mehta National Institute of Cooperative Mgmt','VAMNICOM-PUNE',   'VAMNICOM', 'APEX',     v_ncct,     'Pune',       'Maharashtra',    600,  'info@vamnicom.gov.in'),
+    (v_ricm_blr, v_org, 'Regional Institute of Cooperative Management, Bengaluru','RICM-BENGALURU','RICM',     'REGIONAL', v_vamnicom, 'Bengaluru',  'Karnataka',      320,  'info@ricmbengaluru.in'),
+    (v_ricm_chd, v_org, 'Regional Institute of Cooperative Management, Chandigarh','RICM-CHANDIGARH','RICM',   'REGIONAL', v_vamnicom, 'Chandigarh', 'Punjab',         280,  'info@ricmchandigarh.in'),
+    (v_icm_lko,  v_org, 'Institute of Cooperative Management, Lucknow',         'ICM-LUCKNOW',     'ICM',      'INSTITUTE',v_ricm_blr, 'Lucknow',    'Uttar Pradesh',  180,  'info@icmlucknow.in'),
+    (v_icm_bpl,  v_org, 'Institute of Cooperative Management, Bhopal',          'ICM-BHOPAL',      'ICM',      'INSTITUTE',v_ricm_chd, 'Bhopal',     'Madhya Pradesh', 150,  'info@icmbhopal.in')
+  on conflict (id) do nothing;
+
+  -- ---- memberships, roles, institute pinning
+  for v in select * from jsonb_array_elements(users) loop
+    insert into public.organization_members (organization_id, user_id, employment_status, is_active, job_title, institution_id)
+    values (v_org, (v.value->>'id')::uuid, 'ACTIVE', true, v.value->>'title',
+            nullif(v.value->>'inst','')::uuid)
+    on conflict (organization_id, user_id) do update
+      set institution_id = excluded.institution_id
+    returning id into v_member;
+
+    if v_member is null then
+      select id into v_member from public.organization_members
+        where organization_id = v_org and user_id = (v.value->>'id')::uuid;
+    end if;
+
+    select id into v_role from public.roles
+      where code = v.value->>'role' and organization_id is null;
+    if v_role is not null then
+      insert into public.member_roles (organization_member_id, role_id)
+      values (v_member, v_role) on conflict do nothing;
+    end if;
+  end loop;
+
+  -- ---- institute heads (denormalised for the tree view; the membership row
+  -- ---- above is still the authoritative link)
+  update public.institutions set head_user_id = '00000000-0000-0000-0000-0000000000b2' where id = v_vamnicom;
+  update public.institutions set head_user_id = '00000000-0000-0000-0000-0000000000b3' where id = v_ricm_blr;
+  update public.institutions set head_user_id = '00000000-0000-0000-0000-0000000000b4' where id = v_ricm_chd;
+  update public.institutions set head_user_id = '00000000-0000-0000-0000-0000000000b5' where id = v_icm_lko;
+  update public.institutions set head_user_id = '00000000-0000-0000-0000-0000000000b6' where id = v_icm_bpl;
+
+  -- ---- trainers
+  insert into public.trainers (user_id, organization_id, institution_id, specialization, qualification, experience_years, status)
+  values
+    ('00000000-0000-0000-0000-0000000000b7', v_org, v_vamnicom, 'Cooperative Management', 'Ph.D. Cooperative Management', 14, 'ACTIVE'),
+    ('00000000-0000-0000-0000-0000000000b8', v_org, v_icm_lko,  'Rural Banking & Credit', 'M.Com, CAIIB',                  9, 'ACTIVE')
+  on conflict (user_id, organization_id) do nothing;
+
+  -- ---- trainees
+  insert into public.trainees (user_id, organization_id, institution_id, education, location, languages, digital_literacy_level, employment_status, gender, status)
+  values
+    ('00000000-0000-0000-0000-0000000000b9', v_org, v_icm_lko, 'B.A. Rural Studies',  'Barabanki, Uttar Pradesh', '{"Hindi","English"}',  'BASIC',        'UNEMPLOYED', 'MALE',   'ACTIVE'),
+    ('00000000-0000-0000-0000-0000000000ba', v_org, v_icm_lko, '12th Pass',           'Sitapur, Uttar Pradesh',   '{"Hindi"}',            'BASIC',        'UNEMPLOYED', 'FEMALE', 'ACTIVE'),
+    ('00000000-0000-0000-0000-0000000000bb', v_org, v_icm_bpl, 'B.Sc. Agriculture',   'Sehore, Madhya Pradesh',   '{"Hindi","English"}',  'INTERMEDIATE', 'SELF_EMPLOYED','MALE', 'ACTIVE')
+  on conflict (user_id, organization_id) do nothing;
+
+  -- ---- employers
+  insert into public.employers (user_id, organization_id, company_name, industry, location, status)
+  values
+    ('00000000-0000-0000-0000-0000000000bc', v_org, 'IFFCO', 'Cooperative / Fertilisers', 'New Delhi', 'ACTIVE'),
+    ('00000000-0000-0000-0000-0000000000bd', v_org, 'Amul (GCMMF)', 'Dairy Cooperative',  'Anand, Gujarat', 'ACTIVE')
+  on conflict do nothing;
+end $$;
