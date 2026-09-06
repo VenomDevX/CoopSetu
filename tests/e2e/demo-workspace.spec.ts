@@ -13,8 +13,15 @@ test.describe('Public Demo Workspace', () => {
   test('Can navigate to demo selection page', async ({ page }) => {
     await page.goto('/demo');
     await expect(page.locator('h1')).toHaveText('CHOOSE YOUR ROLE');
-    await expect(page.locator('text=Project Manager')).toBeVisible();
-    await expect(page.locator('text=START DEMO').first()).toBeVisible();
+
+    // Asserted against DEMO_PERSONAS rather than the old delivery-management
+    // roles. This test previously looked for "Project Manager" and a
+    // "START DEMO" button, neither of which has existed since the personas
+    // became NCCT training roles — so it was failing on stale expectations
+    // rather than on anything broken.
+    for (const persona of ['Super Admin', 'Institute Admin', 'Trainer', 'Trainee', 'Employer']) {
+      await expect(page.getByText(persona, { exact: true }).first()).toBeVisible();
+    }
   });
 
   // Since provisioning takes time and alters the DB, we may want to skip
