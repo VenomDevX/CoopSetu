@@ -47,8 +47,24 @@ test.describe('lesson player', () => {
 
     // Scrolling a text lesson to the end marks it complete, which the sidebar
     // reflects without a reload.
+    //
+    // The count is read before and after rather than asserted as "1 / n": the
+    // seed now gives this trainee real history on this course, so they arrive
+    // with modules already finished. What the test is actually about is that
+    // the sidebar moves when a lesson is completed.
+    const counter = page.getByText(/\d+ \/ \d+ complete/i);
+    await expect(counter).toBeVisible({ timeout: 20_000 });
+    const before = Number(((await counter.textContent()) ?? '').split('/')[0].trim());
+
     const body = page.locator('aside').locator('..').locator('div[class*="overflow-y-auto"]').last();
     await body.evaluate((el) => { el.scrollTop = el.scrollHeight; });
-    await expect(page.getByText(/1 \/ \d+ complete/i)).toBeVisible({ timeout: 20_000 });
+
+    // The module just scrolled through is complete, whether it already was or
+    // has only now become so.
+    await expect(modules.nth(1).locator('.text-green-500')).toBeVisible({ timeout: 20_000 });
+    await expect
+      .poll(async () => Number(((await counter.textContent()) ?? '').split('/')[0].trim()),
+            { timeout: 20_000 })
+      .toBeGreaterThanOrEqual(before);
   });
 });

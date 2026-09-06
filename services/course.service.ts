@@ -71,14 +71,40 @@ export class CourseService {
     return data as Course[];
   }
 
-  async getById(id: string) {
+  /**
+   * @param locale when given and not the source language, course and module
+   * text is folded over with its translation. Each field falls back on its own,
+   * so a partly translated module still renders rather than disappearing.
+   */
+  async getById(id: string, locale?: string) {
     const { data, error } = await this.supabase
       .from('courses')
       .select('*, programmes(title), course_modules(*), assessments(*)')
       .eq('id', id)
       .single();
     if (error) throw error;
-    return data;
+    if (!data || !locale || locale === 'en') return data;
+
+    const { applyTranslation, indexTranslations } = await import('@/lib/i18n/content-locale');
+    const moduleIds = (data.course_modules || []).map((m: any) => m.id);
+
+    const [courseTr, moduleTr] = await Promise.all([
+      this.supabase.from('course_translations')
+        .select('*').eq('course_id', id).eq('locale', locale).maybeSingle(),
+      moduleIds.length
+        ? this.supabase.from('course_module_translations')
+            .select('*').in('module_id', moduleIds).eq('locale', locale)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const byModule = indexTranslations(moduleTr.data as any[], 'module_id');
+
+    return {
+      ...applyTranslation(data, courseTr.data, ['title', 'description']),
+      course_modules: (data.course_modules || []).map((m: any) =>
+        applyTranslation(m, byModule.get(m.id), ['title', 'content_text', 'content_url']),
+      ),
+    };
   }
 
   async create(input: { programme_id: string; title: string; description?: string; duration_hours?: number; trainer_id?: string; order_index?: number }) {
@@ -174,14 +200,39 @@ export class AssessmentService {
     return data as Assessment[];
   }
 
-  async getById(id: string) {
+  async getById(id: string, locale?: string) {
     const { data, error } = await this.supabase
       .from('assessments')
       .select('*, courses(title), assessment_questions(*)')
       .eq('id', id)
       .single();
     if (error) throw error;
-    return data;
+    if (!data || !locale || locale === 'en') return data;
+
+    const { applyTranslation, indexTranslations } = await import('@/lib/i18n/content-locale');
+    const questionIds = (data.assessment_questions || []).map((q: any) => q.id);
+
+    const [assessmentTr, questionTr] = await Promise.all([
+      this.supabase.from('assessment_translations')
+        .select('*').eq('assessment_id', id).eq('locale', locale).maybeSingle(),
+      questionIds.length
+        ? this.supabase.from('assessment_question_translations')
+            .select('*').in('question_id', questionIds).eq('locale', locale)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const byQuestion = indexTranslations(questionTr.data as any[], 'question_id');
+
+    return {
+      ...applyTranslation(data, assessmentTr.data, ['title', 'description']),
+      // correct_answer is intentionally NOT translated: it is compared against
+      // the option the trainee picked, and grading must not depend on which
+      // language they read the question in. Options are replaced as a whole
+      // array so their order still matches what correct_answer refers to.
+      assessment_questions: (data.assessment_questions || []).map((q: any) =>
+        applyTranslation(q, byQuestion.get(q.id), ['question_text', 'options']),
+      ),
+    };
   }
 
   async create(input: { course_id: string; title: string; description?: string; type?: string; max_score?: number; passing_score?: number; duration_minutes?: number; attempts_allowed?: number }) {
@@ -205,7 +256,23 @@ export class AssessmentService {
   }
 
   async submitResult(input: { assessment_id: string; trainee_id: string; score: number; max_score: number; answers?: Record<string, unknown>; attempt_number?: number }) {
-    const passed = input.score >= (input.max_score * 0.4); // Default 40% passing
+    // Was a hardcoded 40% that ignored assessments.passing_score entirely, so
+    // an exam configured to require 60 passed anyone who scored 40. The
+    // assessment's own threshold decides; 40% remains the fallback only when
+    // the row cannot be read, matching the column default in 0071.
+    const { data: assessment } = await this.supabase
+      .from('assessments')
+      .select('passing_score, max_score')
+      .eq('id', input.assessment_id)
+      .maybeSingle();
+
+    const passMark = assessment?.passing_score != null && assessment?.max_score
+      // passing_score is stored in marks against the assessment's own
+      // max_score, which need not equal the max_score of this submission.
+      ? (assessment.passing_score / assessment.max_score) * input.max_score
+      : input.max_score * 0.4;
+
+    const passed = input.score >= passMark;
     const { data, error } = await this.supabase
       .from('assessment_results')
       .insert({ ...input, passed })
