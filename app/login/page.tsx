@@ -11,12 +11,24 @@ import { createClient } from '@/lib/supabase/client';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
 
+// Two sets. The generic five are the original org-wide accounts, kept because
+// existing e2e specs sign in as them. The NCCT set is scoped to the real
+// institution tree seeded in supabase/seed.sql, so each one demonstrates a
+// different slice of the hierarchy: the director sees every institute, an ICM
+// principal sees only their own.
 const DEMO_ACCOUNTS = [
+  { label: 'NCCT Director', email: 'ncct.director@coopsetu.test' },
+  { label: 'VAMNICOM', email: 'vamnicom.director@coopsetu.test' },
+  { label: 'RICM Bengaluru', email: 'ricm.bengaluru@coopsetu.test' },
+  { label: 'ICM Lucknow', email: 'icm.lucknow@coopsetu.test' },
+  { label: 'Trainer', email: 'trainer.icm@coopsetu.test' },
+  { label: 'Trainee (Aman)', email: 'trainee.aman@coopsetu.test' },
+  { label: 'Employer (IFFCO)', email: 'employer.iffco@coopsetu.test' },
   { label: 'Super Admin', email: 'super@coopsetu.test' },
   { label: 'Institute Admin', email: 'admin@coopsetu.test' },
-  { label: 'Trainer', email: 'trainer@coopsetu.test' },
-  { label: 'Trainee', email: 'trainee@coopsetu.test' },
-  { label: 'Employer', email: 'employer@coopsetu.test' },
+  { label: 'Trainer (generic)', email: 'trainer@coopsetu.test' },
+  { label: 'Trainee (generic)', email: 'trainee@coopsetu.test' },
+  { label: 'Employer (generic)', email: 'employer@coopsetu.test' },
 ];
 
 export default function LoginPage() {
