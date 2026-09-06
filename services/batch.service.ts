@@ -16,7 +16,7 @@ export interface Batch {
 }
 
 export class BatchService {
-  constructor(private supabase: SupabaseClient) {}
+  constructor(private supabase: SupabaseClient, private orgId: string) {}
 
   async getBatches(programmeId?: string) {
     let query = this.supabase
@@ -54,10 +54,16 @@ export class BatchService {
   }
 
   async createBatch(batch: Partial<Batch>) {
+    // organization_id was never set here, so every insert hit batches'
+    // NOT NULL / RLS check and batch creation from the UI could not succeed.
+    // Taken from the caller's membership rather than the request body: the
+    // body is client-controlled, and a batch must belong to the org whose
+    // session is making the call.
     const { data, error } = await this.supabase
       .from('batches')
       .insert({
         ...batch,
+        organization_id: this.orgId,
         status: batch.status || 'UPCOMING'
       })
       .select()
