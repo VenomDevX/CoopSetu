@@ -23,9 +23,14 @@ import {
   listPendingSubmissions, removePendingSubmission,
   listPendingProgress, removePendingProgress,
   type PendingSubmission, type PendingProgress,
+  listPendingAttendance,
+  removePendingAttendance,
+  type PendingAttendance,
 } from '@/lib/offline/db';
 
 export interface SyncResult {
+  attendanceSynced: number;
+  attendanceFailed: { item: PendingAttendance; error: string }[];
   submissionsSynced: number;
   submissionsFailed: { item: PendingSubmission; error: string }[];
   progressSynced: number;
@@ -63,7 +68,11 @@ async function syncProgress(item: PendingProgress): Promise<void> {
  * failed rather than retrying forever.
  */
 export async function flushOfflineQueues(): Promise<SyncResult> {
-  const result: SyncResult = { submissionsSynced: 0, submissionsFailed: [], progressSynced: 0, progressFailed: [] };
+  const result: SyncResult = {
+    submissionsSynced: 0, submissionsFailed: [],
+    progressSynced: 0, progressFailed: [],
+    attendanceSynced: 0, attendanceFailed: [],
+  };
 
   for (const item of await listPendingSubmissions()) {
     try {
@@ -89,7 +98,36 @@ export async function flushOfflineQueues(): Promise<SyncResult> {
     }
   }
 
+  // Attendance replays through the same route a live check-in uses, so the
+  // server re-validates the QR token and its expiry. A token that expired while
+  // the device was offline is rejected here rather than silently accepted —
+  // recording someone present for a session that had already closed would be
+  // worse than losing the mark.
+  for (const item of await listPendingAttendance()) {
+    try {
+      await syncAttendance(item);
+      await removePendingAttendance(item.id);
+      result.attendanceSynced++;
+    } catch (err: any) {
+      if (err instanceof TypeError) continue; // still offline — leave queued
+      await removePendingAttendance(item.id);
+      result.attendanceFailed.push({ item, error: err.message ?? 'Unknown error' });
+    }
+  }
+
   return result;
+}
+
+async function syncAttendance(item: PendingAttendance): Promise<void> {
+  const res = await fetch('/api/v1/attendance/qr', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ qr_token: item.qrToken, trainee_id: item.traineeId }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.error || `Attendance sync failed (${res.status})`);
+  }
 }
 
 let listenerRegistered = false;

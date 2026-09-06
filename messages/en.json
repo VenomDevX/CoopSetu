@@ -30,7 +30,8 @@
     "teams": "Teams",
     "settings": "Settings",
     "more": "More",
-    "nominations": "Nominations"
+    "nominations": "Nominations",
+    "logistics": "Logistics"
   },
   "Shell": {
     "searchPlaceholder": "Search query...",

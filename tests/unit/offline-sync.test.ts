@@ -4,12 +4,16 @@ const mockListPendingSubmissions = vi.fn();
 const mockRemovePendingSubmission = vi.fn();
 const mockListPendingProgress = vi.fn();
 const mockRemovePendingProgress = vi.fn();
+const mockListPendingAttendance = vi.fn();
+const mockRemovePendingAttendance = vi.fn();
 
 vi.mock('@/lib/offline/db', () => ({
   listPendingSubmissions: (...args: any[]) => mockListPendingSubmissions(...args),
   removePendingSubmission: (...args: any[]) => mockRemovePendingSubmission(...args),
   listPendingProgress: (...args: any[]) => mockListPendingProgress(...args),
   removePendingProgress: (...args: any[]) => mockRemovePendingProgress(...args),
+  listPendingAttendance: (...args: any[]) => mockListPendingAttendance(...args),
+  removePendingAttendance: (...args: any[]) => mockRemovePendingAttendance(...args),
 }));
 
 import { flushOfflineQueues } from '@/lib/offline/sync';
@@ -26,6 +30,7 @@ describe('flushOfflineQueues()', () => {
     vi.clearAllMocks();
     mockListPendingSubmissions.mockResolvedValue([]);
     mockListPendingProgress.mockResolvedValue([]);
+    mockListPendingAttendance.mockResolvedValue([]);
   });
 
   it('POSTs each queued submission to the real assessment results route and removes it on success', async () => {
@@ -117,5 +122,54 @@ describe('flushOfflineQueues()', () => {
     expect(mockRemovePendingProgress).toHaveBeenCalledTimes(1);
 
     vi.unstubAllGlobals();
+  });
+
+  it('replays a queued attendance mark through the real QR route and clears it', async () => {
+    mockListPendingAttendance.mockResolvedValueOnce([
+      { id: 'at1', qrToken: 'tok-1', traineeId: 't1', traineeName: 'Aman', queuedAt: '2026-01-01T00:00:00Z' },
+    ]);
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: {} }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await flushOfflineQueues();
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/attendance/qr', expect.objectContaining({ method: 'POST' }));
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as any).body);
+    expect(body).toEqual({ qr_token: 'tok-1', trainee_id: 't1' });
+    expect(mockRemovePendingAttendance).toHaveBeenCalledWith('at1');
+    expect(result.attendanceSynced).toBe(1);
+  });
+
+  it('leaves a queued attendance mark alone while still offline', async () => {
+    mockListPendingAttendance.mockResolvedValueOnce([
+      { id: 'at2', qrToken: 'tok-2', traineeId: 't2', queuedAt: '2026-01-01T00:00:00Z' },
+    ]);
+    // A TypeError is what fetch throws when there is no network at all, as
+    // opposed to a server that answered and refused.
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+
+    const result = await flushOfflineQueues();
+
+    expect(mockRemovePendingAttendance).not.toHaveBeenCalled();
+    expect(result.attendanceSynced).toBe(0);
+    expect(result.attendanceFailed).toHaveLength(0);
+  });
+
+  it('drops an attendance mark the server rejects, surfacing why', async () => {
+    mockListPendingAttendance.mockResolvedValueOnce([
+      { id: 'at3', qrToken: 'expired', traineeId: 't3', queuedAt: '2026-01-01T00:00:00Z' },
+    ]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false, status: 400, json: async () => ({ error: 'QR code has expired' }),
+    }));
+
+    const result = await flushOfflineQueues();
+
+    // Recording someone present for a session that already closed would be
+    // worse than losing the mark, so this is dropped rather than retried.
+    expect(mockRemovePendingAttendance).toHaveBeenCalledWith('at3');
+    expect(result.attendanceFailed).toEqual([
+      { item: expect.objectContaining({ id: 'at3' }), error: 'QR code has expired' },
+    ]);
   });
 });

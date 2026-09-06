@@ -11,12 +11,36 @@
 
 const CACHE_NAME = 'coopsetu-module-assets-v1';
 
-self.addEventListener('install', () => {
+// A second, separate cache for the app shell. Kept apart from the module cache
+// on purpose: module assets are user-chosen downloads that must survive, while
+// the shell is disposable and versioned. Bump SHELL_CACHE to retire an old one.
+//
+// Without this, navigating to the dashboard while offline showed the browser's
+// error page — downloaded course content was only reachable if the tab happened
+// to already be open, which is not much use to a trainee on a train.
+const SHELL_CACHE = 'coopsetu-app-shell-v1';
+const OFFLINE_URL = '/offline';
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(SHELL_CACHE)
+      // Best-effort: a failed precache must not block activation, or a single
+      // 404 would leave the worker permanently installing.
+      .then((cache) => cache.addAll([OFFLINE_URL, '/manifest.json']).catch(() => {})),
+  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys
+          .filter((k) => k !== CACHE_NAME && k !== SHELL_CACHE)
+          .map((k) => caches.delete(k)),
+      ))
+      .then(() => self.clients.claim()),
+  );
 });
 
 self.addEventListener('message', (event) => {
@@ -35,6 +59,24 @@ self.addEventListener('message', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  // Navigations get network-first with an offline fallback. Deliberately NOT
+  // cache-first: dashboard HTML is per-user and Cache-Control: no-store, so
+  // serving a stale copy could show one trainee another's page. The fallback
+  // is a static page that explains the state and lists what is available
+  // offline — never a cached authenticated document.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() =>
+        caches.open(SHELL_CACHE).then((cache) =>
+          cache.match(OFFLINE_URL).then((cached) =>
+            cached || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } }),
+          ),
+        ),
+      ),
+    );
+    return;
+  }
 
   event.respondWith(
     caches.open(CACHE_NAME).then(async (cache) => {

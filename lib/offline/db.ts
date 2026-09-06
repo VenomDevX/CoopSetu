@@ -17,11 +17,12 @@
  */
 
 const DB_NAME = 'coopsetu-offline';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // v2 adds pendingAttendance
 
 const STORE_MODULES = 'modules';
 const STORE_PENDING_SUBMISSIONS = 'pendingSubmissions';
 const STORE_PENDING_PROGRESS = 'pendingProgress';
+const STORE_PENDING_ATTENDANCE = 'pendingAttendance';
 
 export interface CachedModule {
   id: string;
@@ -39,6 +40,25 @@ export interface PendingSubmission {
   assessmentId: string;
   assessmentTitle: string;
   answers: Record<string, string>;
+  queuedAt: string;
+}
+
+/**
+ * A check-in captured while offline.
+ *
+ * Attendance was the one thing that could not be recorded without a connection,
+ * which is backwards for the use case: a village training centre is exactly
+ * where the network is worst, and marking presence is the one thing that has to
+ * happen at a fixed moment. The QR token is stored as scanned; the server still
+ * validates it and its expiry on replay, so a queued check-in cannot outlive
+ * the session it belongs to.
+ */
+export interface PendingAttendance {
+  id: string;
+  qrToken: string;
+  traineeId?: string;
+  traineeName?: string;
+  sessionLabel?: string;
   queuedAt: string;
 }
 
@@ -66,6 +86,9 @@ function openDb(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(STORE_PENDING_SUBMISSIONS)) {
         db.createObjectStore(STORE_PENDING_SUBMISSIONS, { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains(STORE_PENDING_ATTENDANCE)) {
+        db.createObjectStore(STORE_PENDING_ATTENDANCE, { keyPath: 'id' });
       }
       if (!db.objectStoreNames.contains(STORE_PENDING_PROGRESS)) {
         db.createObjectStore(STORE_PENDING_PROGRESS, { keyPath: 'id' });
@@ -160,6 +183,26 @@ export async function listPendingProgress(): Promise<PendingProgress[]> {
 
 export async function removePendingProgress(id: string): Promise<void> {
   await withStore(STORE_PENDING_PROGRESS, 'readwrite', (store) => store.delete(id));
+}
+
+export async function queueAttendance(
+  input: Omit<PendingAttendance, 'id' | 'queuedAt'>,
+): Promise<PendingAttendance> {
+  const record: PendingAttendance = {
+    ...input,
+    id: crypto.randomUUID(),
+    queuedAt: new Date().toISOString(),
+  };
+  await withStore(STORE_PENDING_ATTENDANCE, 'readwrite', (store) => store.put(record));
+  return record;
+}
+
+export async function listPendingAttendance(): Promise<PendingAttendance[]> {
+  return getAll<PendingAttendance>(STORE_PENDING_ATTENDANCE);
+}
+
+export async function removePendingAttendance(id: string): Promise<void> {
+  await withStore(STORE_PENDING_ATTENDANCE, 'readwrite', (store) => store.delete(id));
 }
 
 export const __offlineDbSupported = isSupported;
