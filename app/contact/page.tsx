@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Logo } from '@/components/logo';
 import { MarketingHeader } from '@/components/layout/marketing-header';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from 'next-intl';
 import { Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { contactRequestSchema, companySizeEnum, topicEnum } from '@/lib/validation/contact';
@@ -12,6 +13,7 @@ import { PublicFooter } from '@/components/layout/public-footer';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function ContactPage() {
+  const t = useTranslations('Marketing.contact');
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
   const [navType, setNavType] = useState<string | null>(null);
@@ -105,11 +107,11 @@ export default function ContactPage() {
         setHoneypot('');
       } else {
         setSubmitStatus('error');
-        setErrorMessage(data.error || 'An error occurred during submission.');
+        setErrorMessage(data.error || t('genericError'));
       }
     } catch (err) {
       setSubmitStatus('error');
-      setErrorMessage('Could not connect to the server. Please try again.');
+      setErrorMessage(t('networkError'));
     } finally {
       setIsLoading(false);
     }
@@ -128,13 +130,13 @@ export default function ContactPage() {
           <section className="mb-16 border-b border-border pb-10">
             <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
               <span className="w-2 h-2 bg-foreground rounded-full" />
-              CONTACT_CoopSetu
+              {t('eyebrow')}
             </div>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 leading-[1.1] max-w-4xl">
-              Talk to the CoopSetu team.
+              {t('heading')}
             </h1>
             <p className="text-lg text-muted-foreground max-w-3xl leading-relaxed">
-              Tell us about your institution, training workflow, or placement requirements.
+              {t('intro')}
             </p>
           </section>
 
@@ -147,16 +149,16 @@ export default function ContactPage() {
                 <div className="border border-border rounded p-8 mb-8 bg-surface-hover flex flex-col gap-4">
                   <div className="flex items-center gap-3 text-foreground">
                     <CheckCircle2 className="w-5 h-5 text-foreground" />
-                    <span className="font-mono text-xs uppercase tracking-widest font-bold">SUBMISSION_RECEIVED</span>
+                    <span className="font-mono text-xs uppercase tracking-widest font-bold">{t('successTitle')}</span>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Thank you. Your message has been securely transmitted. Our team will review your request and follow up shortly.
+                    {t('successBody')}
                   </p>
                   <Button 
                     onClick={() => setSubmitStatus('idle')}
                     className="border border-border rounded bg-transparent text-foreground hover:bg-surface rounded h-10 px-6 text-xs font-mono uppercase tracking-widest self-start mt-2"
                   >
-                    Send another message
+                    {t('sendAnother')}
                   </Button>
                 </div>
               )}
@@ -165,7 +167,7 @@ export default function ContactPage() {
                 <div className="border border-red-500/30 p-8 mb-8 bg-red-950/10 flex flex-col gap-4">
                   <div className="flex items-center gap-3 text-red-500">
                     <AlertTriangle className="w-5 h-5" />
-                    <span className="font-mono text-xs uppercase tracking-widest font-bold">SUBMISSION_ERROR</span>
+                    <span className="font-mono text-xs uppercase tracking-widest font-bold">{t('errorTitle')}</span>
                   </div>
                   <p className="text-sm text-red-400 leading-relaxed">
                     {errorMessage}
@@ -178,7 +180,7 @@ export default function ContactPage() {
                   
                   {/* Honeypot field (hidden from screen reader and visual layout) */}
                   <div className="hidden" aria-hidden="true">
-                    <label htmlFor="honeypot">Leave this field blank</label>
+                    <label htmlFor="honeypot">{t('honeypot')}</label>
                     <input 
                       type="text" 
                       id="honeypot" 
@@ -192,7 +194,7 @@ export default function ContactPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="flex flex-col gap-2">
-                      <label htmlFor="fullName" className="text-foreground font-bold">Full Name <span className="text-red-500">*</span></label>
+                      <label htmlFor="fullName" className="text-foreground font-bold">{t('fullName')} <span className="text-red-500">*</span></label>
                       <input 
                         type="text"
                         id="fullName"
@@ -206,7 +208,7 @@ export default function ContactPage() {
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <label htmlFor="workEmail" className="text-foreground font-bold">Work Email <span className="text-red-500">*</span></label>
+                      <label htmlFor="workEmail" className="text-foreground font-bold">{t('workEmail')} <span className="text-red-500">*</span></label>
                       <input 
                         type="email"
                         id="workEmail"
@@ -222,7 +224,7 @@ export default function ContactPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="flex flex-col gap-2">
-                      <label htmlFor="companyName" className="text-foreground font-bold">Company Name <span className="text-red-500">*</span></label>
+                      <label htmlFor="companyName" className="text-foreground font-bold">{t('companyName')} <span className="text-red-500">*</span></label>
                       <input 
                         type="text"
                         id="companyName"
@@ -236,10 +238,10 @@ export default function ContactPage() {
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <label htmlFor="companySize" className="text-foreground font-bold">Company Size <span className="text-red-500">*</span></label>
+                      <label htmlFor="companySize" className="text-foreground font-bold">{t('companySize')} <span className="text-red-500">*</span></label>
                       <Select value={companySize} onValueChange={setCompanySize} disabled={isLoading} required>
                         <SelectTrigger id="companySize" className="bg-transparent border border-border rounded px-4 py-3 text-foreground focus:outline-none focus:border-foreground uppercase min-h-[46px]">
-                          <SelectValue placeholder="Select Company Size" />
+                          <SelectValue placeholder={t('selectCompanySize')} />
                         </SelectTrigger>
                         <SelectContent>
                           {companySizeEnum.map((opt) => (
@@ -253,7 +255,7 @@ export default function ContactPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="flex flex-col gap-2">
-                      <label htmlFor="role" className="text-foreground font-bold">Your Role <span className="text-red-500">*</span></label>
+                      <label htmlFor="role" className="text-foreground font-bold">{t('yourRole')} <span className="text-red-500">*</span></label>
                       <input 
                         type="text"
                         id="role"
@@ -267,10 +269,10 @@ export default function ContactPage() {
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <label htmlFor="topic" className="text-foreground font-bold">Topic <span className="text-red-500">*</span></label>
+                      <label htmlFor="topic" className="text-foreground font-bold">{t('topic')} <span className="text-red-500">*</span></label>
                       <Select value={topic} onValueChange={setTopic} disabled={isLoading} required>
                         <SelectTrigger id="topic" className="bg-transparent border border-border rounded px-4 py-3 text-foreground focus:outline-none focus:border-foreground min-h-[46px]">
-                          <SelectValue placeholder="Select Topic" />
+                          <SelectValue placeholder={t('selectTopic')} />
                         </SelectTrigger>
                         <SelectContent>
                           {topicEnum.map((opt) => (
@@ -283,7 +285,7 @@ export default function ContactPage() {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label htmlFor="message" className="text-foreground font-bold">Message <span className="text-red-500">*</span></label>
+                    <label htmlFor="message" className="text-foreground font-bold">{t('message')} <span className="text-red-500">*</span></label>
                     <textarea 
                       id="message"
                       value={message}
@@ -302,7 +304,7 @@ export default function ContactPage() {
                   </div>
 
                   <p className="text-[10px] tracking-wide text-muted-foreground/60 leading-relaxed font-sans normal-case max-w-xl">
-                    By submitting this form, you agree that CoopSetu may use your information to respond to your request.
+                    {t('consent')}
                   </p>
 
                   <Button 
@@ -310,7 +312,7 @@ export default function ContactPage() {
                     className="bg-foreground text-background hover:bg-foreground/90 rounded h-12 px-8 font-mono uppercase tracking-widest text-xs self-start"
                     disabled={isLoading}
                   >
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send Message'}
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('sendMessage')}
                   </Button>
 
                 </form>
@@ -320,16 +322,16 @@ export default function ContactPage() {
             {/* Right Side: Sidebar Info */}
             <div className="border border-border rounded p-8 flex flex-col gap-8 h-fit bg-surface/30">
               <div>
-                <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest block mb-3">Enterprise Sales</span>
+                <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest block mb-3">{t('salesLabel')}</span>
                 <p className="text-sm text-foreground leading-relaxed font-sans">
-                  Interested in setting up CoopSetu for custom training roles, strict attendance audits, or complex placement pipelines? Get in touch with our solutions team.
+                  {t('salesBody')}
                 </p>
               </div>
 
               <div className="border-t border-border pt-6">
-                <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest block mb-3">Audits & Reports</span>
+                <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest block mb-3">{t('auditsLabel')}</span>
                 <p className="text-sm text-foreground leading-relaxed font-sans">
-                  If you need specialized affiliation documentation, NCCT readiness queries, or assessment portal reviews, select the **Security Question** topic.
+                  {t('auditsBody')}
                 </p>
               </div>
             </div>
@@ -348,7 +350,7 @@ export default function ContactPage() {
           <div className="bg-surface border border-border rounded p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
             <Loader2 className="w-8 h-8 text-foreground animate-spin mb-6" />
             <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-              Navigating to workspace...
+              {t('navigating')}
             </div>
           </div>
         </div>
