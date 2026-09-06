@@ -66,7 +66,31 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const svc = new CourseService(supabase);
     const progress = await svc.updateProgress(trainee.id, courseId, body.module_id, progressPct);
 
-    return NextResponse.json({ data: progress }, { status: 201 });
+    // Append the history alongside the current-state row. Done here rather than
+    // in the player so the log fills in for every caller — including
+    // lib/offline/sync.ts replaying a queued offline view.
+    const { LmsAnalyticsService } = await import('@/services/lms-analytics.service');
+    const lms = new LmsAnalyticsService(supabase, membership.organizationId);
+
+    let unlocked: { code: string; name: string; tier: string; points: number }[] = [];
+    try {
+      await lms.recordEvent({
+        traineeId: trainee.id,
+        eventType: progressPct >= 100 ? 'MODULE_COMPLETE' : 'VIEW_PROGRESS',
+        courseId,
+        moduleId: body.module_id,
+        progressPct,
+        secondsSpent: Number(body.seconds_spent) || 0,
+      });
+      // Only on completion: a badge check on every timeupdate would be several
+      // queries per second per learner for a result that cannot have changed.
+      if (progressPct >= 100) unlocked = await lms.evaluateAchievements(trainee.id);
+    } catch {
+      // Analytics must never cost a trainee their progress. The write above has
+      // already succeeded; losing a log line is the cheaper failure.
+    }
+
+    return NextResponse.json({ data: progress, unlocked }, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

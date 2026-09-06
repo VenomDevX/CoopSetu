@@ -98,23 +98,65 @@ describe('AssessmentService', () => {
     expect(result).toEqual(question);
   });
 
-  it('submitResult() computes passed from score/max_score and inserts the result', async () => {
+  /**
+   * submitResult now reads the assessment's own passing_score first, so the
+   * mock has to answer a select as well as an insert. It used to hardcode 40%
+   * and ignore the column entirely — an assessment with a 60% bar passed a 45%
+   * answer.
+   */
+  const submitMock = (assessment: any) => {
     let insertedPayload: any;
-    const saved = { id: 'r1' };
-    mockSupabase = {
-      from: vi.fn(() => ({
-        insert: vi.fn((payload: any) => { insertedPayload = payload; return { select: () => ({ single: () => Promise.resolve({ data: { ...payload, ...saved }, error: null }) }) }; }),
-      })),
+    const client = {
+      from: vi.fn((table: string) => {
+        if (table === 'assessments') {
+          const builder: any = {
+            select: vi.fn(() => builder),
+            eq: vi.fn(() => builder),
+            maybeSingle: vi.fn(() => Promise.resolve({ data: assessment, error: null })),
+          };
+          return builder;
+        }
+        return {
+          insert: vi.fn((payload: any) => {
+            insertedPayload = payload;
+            return { select: () => ({ single: () => Promise.resolve({ data: { ...payload, id: 'r1' }, error: null }) }) };
+          }),
+        };
+      }),
     } as unknown as SupabaseClient;
+    return { client, inserted: () => insertedPayload };
+  };
 
-    const svc = new AssessmentService(mockSupabase);
-    const passing = await svc.submitResult({ assessment_id: 'a1', trainee_id: 't1', score: 50, max_score: 100 });
-    expect(insertedPayload.passed).toBe(true);
+  it('submitResult() computes passed from score/max_score and inserts the result', async () => {
+    const pass = submitMock({ passing_score: 40, max_score: 100 });
+    const passing = await new AssessmentService(pass.client)
+      .submitResult({ assessment_id: 'a1', trainee_id: 't1', score: 50, max_score: 100 });
+    expect(pass.inserted().passed).toBe(true);
     expect(passing.id).toBe('r1');
 
-    const failing = await svc.submitResult({ assessment_id: 'a1', trainee_id: 't1', score: 10, max_score: 100 });
-    expect(insertedPayload.passed).toBe(false);
-    void failing;
+    const fail = submitMock({ passing_score: 40, max_score: 100 });
+    await new AssessmentService(fail.client)
+      .submitResult({ assessment_id: 'a1', trainee_id: 't1', score: 10, max_score: 100 });
+    expect(fail.inserted().passed).toBe(false);
+  });
+
+  it("submitResult() honours the assessment's own passing_score, not a fixed 40%", async () => {
+    const strict = submitMock({ passing_score: 60, max_score: 100 });
+    await new AssessmentService(strict.client)
+      .submitResult({ assessment_id: 'a1', trainee_id: 't1', score: 45, max_score: 100 });
+    expect(strict.inserted().passed).toBe(false);
+
+    const lenient = submitMock({ passing_score: 30, max_score: 100 });
+    await new AssessmentService(lenient.client)
+      .submitResult({ assessment_id: 'a1', trainee_id: 't1', score: 35, max_score: 100 });
+    expect(lenient.inserted().passed).toBe(true);
+  });
+
+  it('submitResult() falls back to 40% when the assessment cannot be read', async () => {
+    const orphan = submitMock(null);
+    await new AssessmentService(orphan.client)
+      .submitResult({ assessment_id: 'a1', trainee_id: 't1', score: 45, max_score: 100 });
+    expect(orphan.inserted().passed).toBe(true);
   });
 
   it('getResults() lists results for an assessment ordered by submission time', async () => {
