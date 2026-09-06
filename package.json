@@ -76,7 +76,7 @@
     "eslint": "9.39.1",
     "eslint-config-next": "16.0.8",
     "fake-indexeddb": "^6.2.5",
-    "firebase-tools": "^10.1.1",
+    "firebase-tools": "^15.29.0",
     "supabase": "^2.116.0",
     "tailwindcss": "4.1.11",
     "typescript": "5.9.3",
