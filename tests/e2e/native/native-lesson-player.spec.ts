@@ -17,10 +17,17 @@ test.describe('lesson player', () => {
   test('plays a course and records progress', async ({ page }) => {
     test.setTimeout(120_000);
 
+    // Navigate straight to the seeded course rather than clicking the first
+    // learn link on the catalog: integration tests create their own courses, so
+    // "first" is not stable and can land on one with no modules.
+    const SEEDED_COURSE = '00000000-0000-0000-0000-0000000000d2';
+
+    // The catalog must still link into the player — that is the entry point.
     await page.goto('/dashboard/courses');
-    const link = page.locator('a[href*="/learn"]').first();
-    await link.waitFor({ state: 'visible', timeout: 60_000 });
-    await link.click();
+    await expect(page.locator(`a[href="/dashboard/courses/${SEEDED_COURSE}/learn"]`))
+      .toBeVisible({ timeout: 60_000 });
+
+    await page.goto(`/dashboard/courses/${SEEDED_COURSE}/learn`);
 
     // The module list is the page's spine — wait on it rather than a timeout,
     // because a cold dev compile can take tens of seconds.

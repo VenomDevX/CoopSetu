@@ -634,3 +634,26 @@ E'Three roles carry statutory weight in a primary cooperative society, and confu
                        '00000000-0000-0000-0000-0000000000bb')
   on conflict (trainee_id, programme_id) do nothing;
 end $$;
+
+
+-- ============================================================================
+-- Attendance terminal credential
+--
+-- Lives here rather than in migration 0088 because migrations run before the
+-- seed: at 0088 the institutions table is still empty, so an INSERT..SELECT
+-- keyed on ICM-LUCKNOW matched nothing and silently produced no row.
+--
+-- The plaintext is committed deliberately — this is a local demo environment,
+-- and firmware/CoopSetuTerminal/config.h needs a value to authenticate with.
+-- Real deployments mint a token through the API and see the plaintext once.
+--
+--   token: coopsetu-device-icm-lucknow-demo
+-- ============================================================================
+insert into public.device_tokens (organization_id, institution_id, label, token_hash, token_hint)
+select '00000000-0000-0000-0000-0000000000a0', i.id,
+       'ICM Lucknow - entrance terminal',
+       encode(extensions.digest('coopsetu-device-icm-lucknow-demo', 'sha256'), 'hex'),
+       'demo'
+  from public.institutions i
+ where i.code = 'ICM-LUCKNOW'
+on conflict (token_hash) do nothing;

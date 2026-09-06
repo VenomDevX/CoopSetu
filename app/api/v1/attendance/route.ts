@@ -8,18 +8,24 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
     const svc = new AttendanceService(supabase);
 
-    if (body.action === 'create_session') {
-      const session = await svc.createSession(body);
+    // `action` is the route's own discriminator, not a column. Passing the raw
+    // body through meant it reached the insert and PostgREST rejected the whole
+    // request with "Could not find the 'action' column" — creating an
+    // attendance session through this endpoint could never succeed.
+    const { action, ...input } = body;
+
+    if (action === 'create_session') {
+      const session = await svc.createSession(input);
       return NextResponse.json({ data: session }, { status: 201 });
     }
 
-    if (body.action === 'mark') {
-      const record = await svc.markAttendance(body);
+    if (action === 'mark') {
+      const record = await svc.markAttendance(input);
       return NextResponse.json({ data: record }, { status: 201 });
     }
 
-    if (body.action === 'close_session') {
-      await svc.closeSession(body.session_id);
+    if (action === 'close_session') {
+      await svc.closeSession(input.session_id);
       return NextResponse.json({ data: { success: true } });
     }
 
