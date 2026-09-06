@@ -28,6 +28,7 @@ import { CreateReportModal } from '@/components/reports/create-report-modal';
 import { ScheduleReportModal } from '@/components/reports/schedule-report-modal';
 import { usePermission } from '@/lib/permissions/context';
 import { TrainingAnalytics } from '@/components/analytics/training-analytics';
+import { LmsEngagement } from '@/components/analytics/lms-engagement';
 import {
   BarChart,
   Bar,
@@ -48,6 +49,10 @@ import {
 // persona/nav correction, not a removal. Before this, an institute admin
 // clicking "Analytics" was shown sprint velocity and incident MTTR.
 const TRAINING_TAB = 'Training Outcomes';
+// Who is watching what, from the 0091 event log. Sits beside the outcomes tab
+// rather than inside it: one answers "did they finish", the other "are they
+// even opening it", and staff look at them at different moments.
+const ENGAGEMENT_TAB = 'LMS Engagement';
 
 const tabs = [
   'Delivery Analytics',
@@ -63,7 +68,7 @@ const tabs = [
 export default function AnalyticsPage() {
   const { hasRole } = usePermission();
   const isTrainingPersona = hasRole('INSTITUTE_ADMIN') || hasRole('TRAINER') || hasRole('SUPER_ADMIN');
-  const visibleTabs = isTrainingPersona ? [TRAINING_TAB, ...tabs] : tabs;
+  const visibleTabs = isTrainingPersona ? [TRAINING_TAB, ENGAGEMENT_TAB, ...tabs] : tabs;
 
   const [activeTab, setActiveTab] = useState(isTrainingPersona ? TRAINING_TAB : 'Delivery Analytics');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -210,6 +215,7 @@ export default function AnalyticsPage() {
       {/* Tab Content */}
       <div className="space-y-6 pb-12">
         {activeTab === TRAINING_TAB && <TrainingAnalytics />}
+        {activeTab === ENGAGEMENT_TAB && <LmsEngagement />}
 
         {activeTab === 'Delivery Analytics' && loading && (
           <div className="p-8 text-center text-[10px] font-mono uppercase tracking-widest text-muted-foreground">

@@ -4,7 +4,7 @@ import {
   BarChart3, Settings, Users, AlertCircle,
   Building2, GraduationCap, BookOpen, ClipboardCheck, Award, UserCheck,
   BriefcaseBusiness, Target, Bot, QrCode, ClipboardList, User,
-  CalendarClock,
+  CalendarClock, Flame,
   type LucideIcon,
 } from 'lucide-react';
 import type { DashboardPersona } from '@/lib/auth/dashboard-persona';
@@ -72,6 +72,7 @@ export function buildNavGroups(t: (key: string) => string, persona: DashboardPer
       { name: t('digitalId'), href: '/dashboard/id-card', icon: ShieldCheck, roles: ['TRAINEE'] },
     ]},
     { title: 'Learning_LMS', items: [
+      { name: t('myLearning'), href: '/dashboard/my-learning', icon: Flame, roles: ['ADMIN', 'TRAINEE'] },
       { name: t('courses'), href: '/dashboard/courses', icon: BookOpen, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
       { name: t('assessments'), href: '/dashboard/assessments', icon: ClipboardCheck, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
       { name: t('certificates'), href: '/dashboard/certificates', icon: Award, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
@@ -112,7 +113,7 @@ export function buildNavGroups(t: (key: string) => string, persona: DashboardPer
  * stay inside that set.
  */
 const MOBILE_TAB_PREFERENCES: Record<DashboardPersona, string[]> = {
-  TRAINEE: ['/dashboard', '/dashboard/courses', '/dashboard/attendance', '/dashboard/certificates'],
+  TRAINEE: ['/dashboard', '/dashboard/my-learning', '/dashboard/courses', '/dashboard/attendance'],
   TRAINER: ['/dashboard', '/dashboard/batches', '/dashboard/attendance', '/dashboard/assessments'],
   INSTITUTE_ADMIN: ['/dashboard', '/dashboard/trainees', '/dashboard/batches', '/dashboard/analytics'],
   EMPLOYER: ['/dashboard', '/dashboard/jobs', '/dashboard/applications', '/dashboard/skill-passport'],
