@@ -700,3 +700,41 @@ E'प्राथमिक सहकारी समिति में ती�
    where m.course_id = v_course and m.title = 'Accountability: board, secretary, Registrar'
   on conflict (module_id, locale) do nothing;
 end $$;
+
+
+-- ============================================================================
+-- Issued certificates
+--
+-- Gives the public verification page (/verify/<number>) something real to
+-- confirm, and the skill passport something to show. Two ACTIVE and one
+-- REVOKED, because "revoked" is the answer a verifier most needs to trust and
+-- the one most likely to be broken without a fixture proving it.
+--
+-- qr_code stores the URL the printed QR encodes, not the number again — that
+-- is what closes the scan-to-verify loop.
+-- ============================================================================
+do $$
+declare
+  v_org       uuid := '00000000-0000-0000-0000-0000000000a0';
+  v_programme uuid := '00000000-0000-0000-0000-0000000000d1';
+  v_aman      uuid;
+  v_sunita    uuid;
+  v_rahul     uuid;
+begin
+  select id into v_aman   from public.trainees where user_id = '00000000-0000-0000-0000-0000000000b9' and organization_id = v_org;
+  select id into v_sunita from public.trainees where user_id = '00000000-0000-0000-0000-0000000000ba' and organization_id = v_org;
+  select id into v_rahul  from public.trainees where user_id = '00000000-0000-0000-0000-0000000000bb' and organization_id = v_org;
+
+  insert into public.certificates (trainee_id, programme_id, certificate_number, title, issued_at, valid_until, issuer_name, qr_code, status)
+  values
+    (v_aman,   v_programme, 'CERT-NCCT-2026-000101', 'Cooperative Management Foundation',
+     now() - interval '20 days', now() + interval '5 years', 'NCCT',
+     'https://coopsetu.in/verify/CERT-NCCT-2026-000101', 'ACTIVE'),
+    (v_sunita, v_programme, 'CERT-NCCT-2026-000102', 'Cooperative Management Foundation',
+     now() - interval '18 days', now() + interval '5 years', 'NCCT',
+     'https://coopsetu.in/verify/CERT-NCCT-2026-000102', 'ACTIVE'),
+    (v_rahul,  v_programme, 'CERT-NCCT-2026-000103', 'Cooperative Management Foundation',
+     now() - interval '2 years', now() + interval '3 years', 'NCCT',
+     'https://coopsetu.in/verify/CERT-NCCT-2026-000103', 'REVOKED')
+  on conflict (certificate_number) do nothing;
+end $$;

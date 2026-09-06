@@ -1,0 +1,60 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { getCurrentMembership } from '@/lib/auth/get-current-membership';
+import { InstitutionService } from '@/services/institution.service';
+
+/**
+ * Records could be created but never corrected: the services have carried
+ * update() and delete() since 0071 with no HTTP route reaching them, so a typo
+ * in a trainee's name or a wrongly-registered institute was permanent.
+ *
+ * Scoping is the service's job — it filters by organization_id — and 0085's
+ * policies narrow it further by institute.
+ */
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const membership = await getCurrentMembership();
+    if (!membership) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { id } = await params;
+    const supabase = await createClient();
+    const svc = new InstitutionService(supabase, membership.organizationId);
+    return NextResponse.json({ data: await svc.getById(id) });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const membership = await getCurrentMembership();
+    if (!membership) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { id } = await params;
+    const body = await request.json();
+    // Identity columns are never taken from the body: moving a record between
+    // organizations or reassigning its owner is not an edit.
+    const { id: _id, organization_id: _org, user_id: _user, created_at: _created, ...patch } = body;
+
+    const supabase = await createClient();
+    const svc = new InstitutionService(supabase, membership.organizationId);
+    return NextResponse.json({ data: await svc.update(id, patch) });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const membership = await getCurrentMembership();
+    if (!membership) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { id } = await params;
+    const supabase = await createClient();
+    const svc = new InstitutionService(supabase, membership.organizationId);
+    await svc.delete(id);
+    return NextResponse.json({ data: { success: true } });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
