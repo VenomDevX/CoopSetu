@@ -29,7 +29,8 @@
     "careerAi": "Career AI",
     "teams": "Teams",
     "settings": "Settings",
-    "more": "More"
+    "more": "More",
+    "nominations": "Nominations"
   },
   "Shell": {
     "searchPlaceholder": "Search query...",

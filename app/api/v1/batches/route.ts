@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const programmeId = searchParams.get('programme_id') || undefined;
 
     const supabase = await createClient();
-    const svc = new BatchService(supabase);
+    const svc = new BatchService(supabase, membership.organizationId);
 
     const batches = await svc.getBatches(programmeId);
 
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const supabase = await createClient();
-    const svc = new BatchService(supabase);
+    const svc = new BatchService(supabase, membership.organizationId);
 
     const batch = await svc.createBatch(body);
     return NextResponse.json({ data: batch }, { status: 201 });
