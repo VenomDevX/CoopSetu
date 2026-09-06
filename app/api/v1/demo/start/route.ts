@@ -4,10 +4,13 @@ import { handle, ok } from '@/lib/api/response';
 import { Errors } from '@/lib/api/errors';
 import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/auth/rate-limit';
-import { provisionDemoWorkspace } from '@/lib/demo/provision-demo-workspace';
+import { provisionDemoWorkspace , DEMO_ROLES } from '@/lib/demo/provision-demo-workspace';
 
+// Was z.string(), so a typo or an unlisted role sailed through validation and
+// failed deep inside provisioning as an opaque 500. A bad role is the caller's
+// mistake, so it belongs here as a 400 naming the valid values.
 const schema = z.object({
-  role: z.string(),
+  role: z.enum(DEMO_ROLES),
 }).strict();
 
 export async function POST(req: NextRequest) {

@@ -197,6 +197,7 @@ export class AttendanceService {
 
     // Calculate Euclidean distance
     const distance = this.euclideanDistance(embedding, storedEmbedding);
+    const toSimilarity = (d: number) => AttendanceService.toSimilarityImpl(d);
     const threshold = 0.6; // Standard threshold for face-api.js
     const verified = distance < threshold;
 
@@ -207,15 +208,30 @@ export class AttendanceService {
         trainee_id: traineeId,
         method: 'FACE',
       });
-      return { verified: true, distance: 1 - distance, record };
+      return { verified: true, distance, similarity: toSimilarity(distance), record };
     }
 
-    return { verified: false, distance: 1 - distance };
+    // Both numbers are returned because they answer different questions:
+    // `distance` is what the threshold is actually compared against, and
+    // `similarity` is what a human reads. Previously a single field named
+    // `distance` carried `1 - distance`, which is neither — it went negative
+    // for any poor match (a real response read `distance: -6.6`) and made the
+    // threshold impossible to reason about from the API alone.
+    return { verified: false, distance, similarity: toSimilarity(distance) };
   }
 
   /**
    * Euclidean distance between two embedding vectors.
    */
+  /**
+   * Euclidean distance as a 0-1 confidence. Clamped, because face-api.js
+   * descriptors can be further than 1.0 apart and an unclamped 1 - d reads as
+   * a negative percentage in the UI.
+   */
+  private static toSimilarityImpl(distance: number): number {
+    return Math.max(0, Math.min(1, 1 - distance));
+  }
+
   private euclideanDistance(a: number[], b: number[]): number {
     if (a.length !== b.length) throw new Error('Embedding dimensions mismatch.');
     let sum = 0;

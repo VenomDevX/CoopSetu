@@ -36,7 +36,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: 'Invalid action. Use "register" or "verify".' }, { status: 400 });
   } catch (err: any) {
-    const status = err.message.includes('not registered') || err.message.includes('No face') ? 400 : 500;
+    // A malformed embedding is the caller's mistake, not a server fault. It
+    // previously returned 500, which told a client to retry something that
+    // could never succeed.
+    const status = /not registered|No face|Invalid face embedding|required/i.test(err.message) ? 400 : 500;
     return NextResponse.json({ error: err.message }, { status });
   }
 }

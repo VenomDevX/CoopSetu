@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { AttendanceService } from '@/services/attendance.service';
 import { authenticateDevice } from '@/lib/auth/device-auth';
+import { createClient as createSessionClient } from '@/lib/supabase/server';
+import { getCurrentMembership } from '@/lib/auth/get-current-membership';
 
 /**
  * HARDWARE SCAN API
@@ -19,9 +21,28 @@ import { authenticateDevice } from '@/lib/auth/device-auth';
  */
 export async function POST(request: NextRequest) {
   try {
+    // Two legitimate callers, and neither is anonymous:
+    //   * an attendance terminal presenting a device bearer token;
+    //   * a trainer scanning a trainee's ID from their own phone
+    //     (components/attendance/qr-scanner.tsx), authenticated by session.
+    //
+    // The session path exists so an institute without hardware can still take
+    // attendance. It is not a weaker door: it requires a real membership, and
+    // the trainee's rotating TOTP is still the second factor either way.
     const device = await authenticateDevice(request);
+    let scannedBy = device?.label ?? null;
+
     if (!device) {
-      return NextResponse.json({ error: 'Unauthorized device' }, { status: 401 });
+      const membership = await getCurrentMembership();
+      if (!membership) {
+        return NextResponse.json({ error: 'Unauthorized device' }, { status: 401 });
+      }
+      const sessionClient = await createSessionClient();
+      const { data: auth } = await sessionClient.auth.getUser();
+      if (!auth?.user) {
+        return NextResponse.json({ error: 'Unauthorized device' }, { status: 401 });
+      }
+      scannedBy = 'browser session';
     }
 
     const body = await request.json();
@@ -54,7 +75,7 @@ export async function POST(request: NextRequest) {
       data: {
         success: true,
         message: 'Attendance marked successfully via hardware',
-        device: device.label,
+        scanned_by: scannedBy,
         record
       }
     });
