@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Plus, Clock, Users, Search, FileText, Video, HelpCircle, Download, CheckCircle2, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
@@ -171,7 +173,7 @@ export default function CoursesPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <BookOpen className="w-5 h-5 text-muted-foreground" />
-                    <h3 className="font-bold text-lg text-foreground">{course.title}</h3>
+                    <Link href={`/dashboard/courses/${course.id}/learn`} className="hover:text-accent transition-colors"><h3 className="font-bold text-lg text-foreground">{course.title}</h3></Link>
                     <span className={`text-[10px] font-mono uppercase px-2 py-0.5 border rounded ${course.status === 'ACTIVE' ? 'border-green-500/40 text-green-500 bg-green-500/10' : 'border-border text-muted-foreground'}`}>{course.status}</span>
                   </div>
                   {course.description && <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{course.description}</p>}

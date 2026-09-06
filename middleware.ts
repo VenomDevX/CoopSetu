@@ -64,6 +64,14 @@ export async function middleware(request: NextRequest) {
   const response = await updateSession(request);
 
   // 4. Construct Content Security Policy
+  //
+  // media-src and frame-src are open to https: because course content is
+  // authored by institute staff and hosted wherever that institute keeps it —
+  // a state portal, a CDN, an LMS export. Without them `default-src 'self'`
+  // blocks every <video>, <audio> and PDF <iframe> in
+  // components/learning/module-player.tsx, which is the entire lesson player.
+  // frame-ancestors stays 'none', so widening frame-src lets us embed others
+  // and still forbids anyone embedding us.
   const isDev = process.env.NODE_ENV === 'development';
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   let supabaseOrigin = '';
@@ -100,6 +108,8 @@ export async function middleware(request: NextRequest) {
     style-src 'self' 'unsafe-inline';
     img-src 'self' data: https: ${supabaseOrigin} http://127.0.0.1:54321 http://localhost:54321;
     font-src 'self' data:;
+    media-src 'self' blob: data: https:;
+    frame-src 'self' https:;
     connect-src ${connectSrc};
     worker-src 'self' blob:;
     frame-ancestors 'none';
