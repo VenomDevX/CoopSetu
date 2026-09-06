@@ -4,6 +4,7 @@ import {
   BarChart3, Settings, Users, AlertCircle,
   Building2, GraduationCap, BookOpen, ClipboardCheck, Award, UserCheck,
   BriefcaseBusiness, Target, Bot, QrCode, ClipboardList, User,
+  CalendarClock,
   type LucideIcon,
 } from 'lucide-react';
 import type { DashboardPersona } from '@/lib/auth/dashboard-persona';
@@ -63,6 +64,7 @@ export function buildNavGroups(t: (key: string) => string, persona: DashboardPer
       { name: t('institutions'), href: '/dashboard/institutions', icon: Building2, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
       { name: t('programmes'), href: '/dashboard/programmes', icon: GraduationCap, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
       { name: t('nominations'), href: '/dashboard/nominations', icon: ClipboardList, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
+      { name: t('logistics'), href: '/dashboard/logistics', icon: CalendarClock, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER'] },
       { name: t('batches'), href: '/dashboard/batches', icon: Users, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER'] },
       { name: t('trainees'), href: '/dashboard/trainees', icon: UserCheck, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER'] },
       { name: t('trainers'), href: '/dashboard/trainers', icon: User, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
