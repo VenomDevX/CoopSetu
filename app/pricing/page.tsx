@@ -20,6 +20,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 const PRICING = {
   team: {
@@ -32,42 +33,21 @@ const PRICING = {
   }
 };
 
-const FAQS = [
-  {
-    question: "Can we start with a small institute?",
-    answer: "Yes, our Team plan is designed for growing training institutes. You can start small and upgrade as your organization scales and requires more advanced placement management or enterprise governance."
-  },
-  {
-    question: "Is CoopSetu available for large organizations?",
-    answer: "Absolutely. CoopSetu is built specifically to coordinate complex training delivery across hundreds of institutes, offering advanced governance, security controls, and cross-institute visibility."
-  },
-  {
-    question: "Can we use SSO?",
-    answer: "Yes, Single Sign-On (SSO), SAML, and OpenID Connect, along with SCIM provisioning, are fully supported on the Enterprise plan to integrate seamlessly with your existing identity providers."
-  },
-  {
-    question: "Can we import from existing LMS?",
-    answer: "Yes, we offer dedicated import tools and scripts to migrate your trainee records, assessments, and histories directly from Moodle, Canvas, and Blackboard into CoopSetu."
-  },
-  {
-    question: "Does CoopSetu integrate with state portals?",
-    answer: "Yes, CoopSetu features deep integrations with NCCT portals, Skill India Digital, and state registries. You can link batches, track certifications, and synchronize attendance directly from your workspace."
-  },
-  {
-    question: "Can we control AI access?",
-    answer: "Yes, on the Enterprise plan, CoopSetu AI operates under strict enterprise guardrails. It respects existing user permissions, logs prompts for auditing, and includes configurable access controls to protect restricted data."
-  },
-  {
-    question: "Is enterprise onboarding available?",
-    answer: "Yes, Enterprise customers receive dedicated onboarding support, custom training sessions, and an assigned account manager to ensure a smooth transition and tailored setup for your workflows."
-  },
-  {
-    question: "Can pricing be customized?",
-    answer: "Our Enterprise plan offers custom pricing based on your specific organizational size, required features, and deployment needs. Contact our sales team to build a package that works for you."
-  }
+// Message keys rather than text: this array is module scope, where the
+// useTranslations hook cannot run. Resolved in the component below.
+const FAQ_KEYS: ReadonlyArray<readonly [string, string]> = [
+  ['canWeStartWithASmallInstitute', 'yesOurTeamPlanIsDesignedForGrowing'],
+  ['isCoopsetuAvailableForLargeOrganizations', 'absolutelyCoopsetuIsBuiltSpecificallyToCoord'],
+  ['canWeUseSso', 'yesSingleSignOnSsoSamlAndOpenid'],
+  ['canWeImportFromExistingLms', 'yesWeOfferDedicatedImportToolsAndScripts'],
+  ['doesCoopsetuIntegrateWithStatePortals', 'yesCoopsetuFeaturesDeepIntegrationsWithNcctP'],
+  ['canWeControlAiAccess', 'yesOnTheEnterprisePlanCoopsetuAiOperates'],
+  ['isEnterpriseOnboardingAvailable', 'yesEnterpriseCustomersReceiveDedicatedOnboar'],
+  ['canPricingBeCustomized', 'ourEnterprisePlanOffersCustomPricingBasedOn'],
 ];
 
 export default function PricingPage() {
+  const t = useTranslations('Marketing.pricing');
   const router = useRouter();
   const [isNavigating, setIsNavigating] = React.useState(false);
   const [navType, setNavType] = React.useState<string | null>(null);
@@ -103,7 +83,7 @@ export default function PricingPage() {
               PLANS_AND_PRICING
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-8 leading-[1.1]">
-              Pricing that scales with how your institutes train.
+              {t('pricingThatScalesWithHowYourInstitutesTrain')}
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
               Start with core batch management. Add enterprise governance, AI career counseling, and state-wide reporting as your needs grow.
@@ -113,14 +93,14 @@ export default function PricingPage() {
                 onClick={() => handleNavigate('/contact', 'sales')}
                 className="bg-foreground text-background hover:bg-foreground/90 rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
-                Start a Conversation
+                {t('startAConversation')}
               </Button>
               <Button 
                 onClick={() => handleNavigate('/contact', 'demo')}
                 variant="outline"
                 className="border-border text-foreground hover:bg-surface-hover rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
-                Request Demo
+                {t('requestDemo')}
               </Button>
             </div>
           </div>
@@ -135,13 +115,13 @@ export default function PricingPage() {
                 onClick={() => setIsAnnual(false)}
                 className={`px-6 py-2 text-xs font-mono uppercase tracking-widest transition-colors ${!isAnnual ? 'bg-background border border-border rounded text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               >
-                Monthly
+                {t('monthly')}
               </button>
               <button 
                 onClick={() => setIsAnnual(true)}
                 className={`px-6 py-2 text-xs font-mono uppercase tracking-widest transition-colors ${isAnnual ? 'bg-background border border-border rounded text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               >
-                Annually
+                {t('annually')}
               </button>
             </div>
             <div className="mt-4 text-[10px] font-mono text-emerald-500 uppercase tracking-widest flex items-center gap-2">
@@ -154,8 +134,8 @@ export default function PricingPage() {
             {/* Team Plan */}
             <div className="border border-border rounded bg-background p-8 flex flex-col relative">
               <div className="mb-8">
-                <h3 className="text-2xl font-bold tracking-tight mb-2">Team</h3>
-                <p className="text-sm text-muted-foreground">Growing cooperative training institutes.</p>
+                <h3 className="text-2xl font-bold tracking-tight mb-2">{t('team')}</h3>
+                <p className="text-sm text-muted-foreground">{t('growingCooperativeTrainingInstitutes')}</p>
               </div>
               <div className="mb-8">
                 <div className="flex items-end gap-2 mb-1">
@@ -170,21 +150,21 @@ export default function PricingPage() {
                 variant="outline" 
                 className="w-full rounded border-border h-10 font-mono text-xs uppercase tracking-widest mb-8 hover:bg-surface-hover"
               >
-                Start with Team
+                {t('startWithTeam')}
               </Button>
               <div className="space-y-4 text-sm mt-auto">
-                <div className="font-bold text-xs uppercase tracking-widest mb-4 font-mono">Features</div>
+                <div className="font-bold text-xs uppercase tracking-widest mb-4 font-mono">{t('features')}</div>
                 {[
-                  'Batches and assessments',
-                  'Attendance tracking',
-                  'Basic course planning',
-                  'Trainer workload view',
-                  'Basic dashboards',
-                  'Forums and materials',
-                  'Documents',
-                  'Standard LMS integrations',
-                  'Basic AI career counselor',
-                  'Email support'
+                  t('batchesAndAssessments'),
+                  t('attendanceTracking'),
+                  t('basicCoursePlanning'),
+                  t('trainerWorkloadView'),
+                  t('basicDashboards'),
+                  t('forumsAndMaterials'),
+                  t('documents'),
+                  t('standardLmsIntegrations'),
+                  t('basicAiCareerCounselor'),
+                  t('emailSupport')
                 ].map((feature, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <CheckCircle2 className="w-4 h-4 text-foreground flex-shrink-0 mt-0.5" />
@@ -197,11 +177,11 @@ export default function PricingPage() {
             {/* Business Plan */}
             <div className="border-2 border-foreground bg-surface p-8 flex flex-col relative shadow-xl transform lg:-translate-y-4">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-foreground text-background px-4 py-1 text-[10px] font-mono uppercase tracking-widest font-bold">
-                Most Popular
+                {t('mostPopular')}
               </div>
               <div className="mb-8">
-                <h3 className="text-2xl font-bold tracking-tight mb-2">Business</h3>
-                <p className="text-sm text-muted-foreground">Multi-institute cooperative organizations.</p>
+                <h3 className="text-2xl font-bold tracking-tight mb-2">{t('business')}</h3>
+                <p className="text-sm text-muted-foreground">{t('multiInstituteCooperativeOrganizations')}</p>
               </div>
               <div className="mb-8">
                 <div className="flex items-end gap-2 mb-1">
@@ -215,22 +195,22 @@ export default function PricingPage() {
                 onClick={() => handleNavigate('/signup', 'business')}
                 className="w-full rounded bg-foreground text-background h-10 font-mono text-xs uppercase tracking-widest mb-8 hover:bg-foreground/90"
               >
-                Choose Business
+                {t('chooseBusiness')}
               </Button>
               <div className="space-y-4 text-sm mt-auto">
                 <div className="font-bold text-xs uppercase tracking-widest mb-4 font-mono">Everything in Team, plus:</div>
                 {[
-                  'Training programs and curriculums',
-                  'Advanced batch scheduling',
-                  'Infrastructure capacity planning',
-                  'Skill roadmaps and prerequisites',
-                  'Advanced placement reporting',
-                  'Assessment moderation',
-                  'Certification management',
-                  'Payment gateway integrations',
-                  'CoopSetu AI skill matching',
-                  'Scheduled reports',
-                  'Priority support'
+                  t('trainingProgramsAndCurriculums'),
+                  t('advancedBatchScheduling'),
+                  t('infrastructureCapacityPlanning'),
+                  t('skillRoadmapsAndPrerequisites'),
+                  t('advancedPlacementReporting'),
+                  t('assessmentModeration'),
+                  t('certificationManagement'),
+                  t('paymentGatewayIntegrations'),
+                  t('coopsetuAiSkillMatching'),
+                  t('scheduledReports'),
+                  t('prioritySupport')
                 ].map((feature, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <CheckCircle2 className="w-4 h-4 text-foreground flex-shrink-0 mt-0.5" />
@@ -243,15 +223,15 @@ export default function PricingPage() {
             {/* Enterprise Plan */}
             <div className="border border-border rounded bg-background p-8 flex flex-col relative">
               <div className="mb-8">
-                <h3 className="text-2xl font-bold tracking-tight mb-2">Enterprise</h3>
-                <p className="text-sm text-muted-foreground">National federations, state governments, and large cooperatives.</p>
+                <h3 className="text-2xl font-bold tracking-tight mb-2">{t('enterprise')}</h3>
+                <p className="text-sm text-muted-foreground">{t('nationalFederationsStateGovernmentsAndLargeC')}</p>
               </div>
               <div className="mb-8">
                 <div className="flex items-end gap-2 mb-1">
-                  <span className="text-4xl font-bold tracking-tight">Custom</span>
+                  <span className="text-4xl font-bold tracking-tight">{t('custom')}</span>
                 </div>
                 <div className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
-                  Contact us for a quote
+                  {t('contactUsForAQuote')}
                 </div>
               </div>
               <Button 
@@ -259,22 +239,22 @@ export default function PricingPage() {
                 variant="outline" 
                 className="w-full rounded border-border h-10 font-mono text-xs uppercase tracking-widest mb-8 hover:bg-surface-hover"
               >
-                Contact Sales
+                {t('contactSales')}
               </Button>
               <div className="space-y-4 text-sm mt-auto">
                 <div className="font-bold text-xs uppercase tracking-widest mb-4 font-mono">Everything in Business, plus:</div>
                 {[
-                  'SSO / SAML & SCIM provisioning',
-                  'Advanced role-based access control',
-                  'Project-level restrictions',
-                  'Approval workflows & gates',
-                  'Security review workflows',
-                  'Compliance evidence management',
-                  'Enterprise AI controls',
-                  'AI prompt logging',
-                  'Data classification',
-                  'Dedicated onboarding',
-                  'Enterprise support & Account management'
+                  t('ssoSamlScimProvisioning'),
+                  t('advancedRoleBasedAccessControl'),
+                  t('projectLevelRestrictions'),
+                  t('approvalWorkflowsGates'),
+                  t('securityReviewWorkflows'),
+                  t('complianceEvidenceManagement'),
+                  t('enterpriseAiControls'),
+                  t('aiPromptLogging'),
+                  t('dataClassification'),
+                  t('dedicatedOnboarding'),
+                  t('enterpriseSupportAccountManagement')
                 ].map((feature, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <CheckCircle2 className="w-4 h-4 text-foreground flex-shrink-0 mt-0.5" />
@@ -293,9 +273,9 @@ export default function PricingPage() {
               <div>
                 <div className="flex items-center gap-2 text-[10px] font-mono text-accent uppercase tracking-widest font-bold mb-4">
                   <AiLogo className="w-3 h-3" />
-                  CoopSetu Add-On
+                  {t('coopsetuAddOn')}
                 </div>
-                <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">AI with controls built for enterprise work.</h2>
+                <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">{t('aiWithControlsBuiltForEnterpriseWork')}</h2>
                 <p className="text-muted-foreground mb-8 text-lg">
                   Empower your teams with generative AI that respects your existing access controls, data boundaries, and compliance requirements.
                 </p>
@@ -303,30 +283,30 @@ export default function PricingPage() {
                   onClick={() => handleNavigate('/contact', 'ai')}
                   className="rounded bg-foreground text-background h-10 px-6 font-mono text-xs uppercase tracking-widest"
                 >
-                  Learn About Enterprise AI
+                  {t('learnAboutEnterpriseAi')}
                 </Button>
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-background border border-border rounded p-4 flex gap-3">
                   <Lock className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <div className="text-sm font-bold">Permission-aware AI</div>
+                  <div className="text-sm font-bold">{t('permissionAwareAi')}</div>
                 </div>
                 <div className="bg-background border border-border rounded p-4 flex gap-3">
                   <FileText className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <div className="text-sm font-bold">Source citations</div>
+                  <div className="text-sm font-bold">{t('sourceCitations')}</div>
                 </div>
                 <div className="bg-background border border-border rounded p-4 flex gap-3">
                   <Eye className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <div className="text-sm font-bold">Prompt logging</div>
+                  <div className="text-sm font-bold">{t('promptLogging')}</div>
                 </div>
                 <div className="bg-background border border-border rounded p-4 flex gap-3">
                   <Shield className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <div className="text-sm font-bold">Restricted data controls</div>
+                  <div className="text-sm font-bold">{t('restrictedDataControls')}</div>
                 </div>
                 <div className="bg-background border border-border rounded p-4 flex gap-3">
                   <UserCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <div className="text-sm font-bold">Human approval workflows</div>
+                  <div className="text-sm font-bold">{t('humanApprovalWorkflows')}</div>
                 </div>
               </div>
             </div>
@@ -336,160 +316,160 @@ export default function PricingPage() {
         {/* COMPARE PLANS */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32">
           <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold tracking-tight mb-4">Compare plans</h2>
-            <p className="text-muted-foreground">Find the right level of control and visibility for your organization.</p>
+            <h2 className="text-3xl font-bold tracking-tight mb-4">{t('comparePlans')}</h2>
+            <p className="text-muted-foreground">{t('findTheRightLevelOfControlAndVisibility')}</p>
           </div>
           
           <div className="overflow-x-auto border border-border rounded bg-background shadow-xl">
             <table className="w-full text-left text-sm border-collapse min-w-[800px]">
               <thead>
                 <tr className="border-b border-border bg-surface">
-                  <th className="p-4 w-1/3 font-bold">Features</th>
-                  <th className="p-4 w-[22%] font-bold text-center">Team</th>
-                  <th className="p-4 w-[22%] font-bold text-center">Business</th>
-                  <th className="p-4 w-[22%] font-bold text-center">Enterprise</th>
+                  <th className="p-4 w-1/3 font-bold">{t('features')}</th>
+                  <th className="p-4 w-[22%] font-bold text-center">{t('team')}</th>
+                  <th className="p-4 w-[22%] font-bold text-center">{t('business')}</th>
+                  <th className="p-4 w-[22%] font-bold text-center">{t('enterprise')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {/* Work Management */}
-                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">Training Management</td></tr>
+                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">{t('trainingManagement')}</td></tr>
                 <tr>
-                  <td className="p-4">Batches and assessments</td>
+                  <td className="p-4">{t('batchesAndAssessments')}</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 <tr>
-                  <td className="p-4">Attendance & Grade views</td>
+                  <td className="p-4">{t('attendanceGradeViews')}</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 <tr>
-                  <td className="p-4">Custom fields & statuses</td>
+                  <td className="p-4">{t('customFieldsStatuses')}</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 
                 {/* Digital Training */}
-                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">Training Delivery</td></tr>
+                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">{t('trainingDelivery')}</td></tr>
                 <tr>
-                  <td className="p-4">Course planning</td>
-                  <td className="p-4 text-center">Basic</td>
-                  <td className="p-4 text-center">Advanced</td>
-                  <td className="p-4 text-center">Advanced</td>
+                  <td className="p-4">{t('coursePlanning')}</td>
+                  <td className="p-4 text-center">{t('basic')}</td>
+                  <td className="p-4 text-center">{t('advanced')}</td>
+                  <td className="p-4 text-center">{t('advanced')}</td>
                 </tr>
                 <tr>
-                  <td className="p-4">Capacity planning</td>
+                  <td className="p-4">{t('capacityPlanning')}</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 
                 {/* Portfolio Management */}
-                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">Curriculum Management</td></tr>
+                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">{t('curriculumManagement')}</td></tr>
                 <tr>
-                  <td className="p-4">Programs and syllabi</td>
+                  <td className="p-4">{t('programsAndSyllabi')}</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 <tr>
-                  <td className="p-4">Roadmaps & dependencies</td>
+                  <td className="p-4">{t('roadmapsDependencies')}</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 
                 {/* Portal Integration */}
-                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">Ecosystem Integration</td></tr>
+                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">{t('ecosystemIntegration')}</td></tr>
                 <tr>
-                  <td className="p-4">Moodle / Blackboard / Canvas</td>
+                  <td className="p-4">{t('moodleBlackboardCanvas')}</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 <tr>
-                  <td className="p-4">Certification tracking</td>
+                  <td className="p-4">{t('certificationTracking')}</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 
                 {/* Security and Compliance */}
-                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">Security and Compliance</td></tr>
+                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">{t('securityAndCompliance')}</td></tr>
                 <tr>
-                  <td className="p-4">Role-based access</td>
-                  <td className="p-4 text-center">Basic</td>
-                  <td className="p-4 text-center">Advanced</td>
-                  <td className="p-4 text-center">Custom</td>
+                  <td className="p-4">{t('roleBasedAccess')}</td>
+                  <td className="p-4 text-center">{t('basic')}</td>
+                  <td className="p-4 text-center">{t('advanced')}</td>
+                  <td className="p-4 text-center">{t('custom')}</td>
                 </tr>
                 <tr>
-                  <td className="p-4">Approval workflows & gates</td>
+                  <td className="p-4">{t('approvalWorkflowsGates')}</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 <tr>
-                  <td className="p-4">Audit logs</td>
+                  <td className="p-4">{t('auditLogs')}</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 <tr>
-                  <td className="p-4">Compliance evidence</td>
+                  <td className="p-4">{t('complianceEvidence')}</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
 
                 {/* AI Features */}
-                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">AI Features</td></tr>
+                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">{t('aiFeatures')}</td></tr>
                 <tr>
-                  <td className="p-4">Basic summaries</td>
+                  <td className="p-4">{t('basicSummaries')}</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 <tr>
-                  <td className="p-4">Planning & Analytics AI</td>
+                  <td className="p-4">{t('planningAnalyticsAi')}</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 <tr>
-                  <td className="p-4">Enterprise AI Controls</td>
+                  <td className="p-4">{t('enterpriseAiControls2')}</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
-                  <td className="p-4 text-center">Add-on</td>
+                  <td className="p-4 text-center">{t('addOn')}</td>
                 </tr>
 
                 {/* Administration */}
-                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">Administration</td></tr>
+                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">{t('administration')}</td></tr>
                 <tr>
-                  <td className="p-4">SSO / SAML</td>
+                  <td className="p-4">{t('ssoSaml')}</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 <tr>
-                  <td className="p-4">SCIM provisioning</td>
+                  <td className="p-4">{t('scimProvisioning')}</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
                 </tr>
                 
                 {/* Support */}
-                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">Support</td></tr>
+                <tr className="bg-surface-hover/50"><td colSpan={4} className="p-4 font-mono text-[10px] uppercase tracking-widest font-bold">{t('support')}</td></tr>
                 <tr>
-                  <td className="p-4">Support level</td>
-                  <td className="p-4 text-center">Email</td>
-                  <td className="p-4 text-center">Priority</td>
-                  <td className="p-4 text-center">Enterprise</td>
+                  <td className="p-4">{t('supportLevel')}</td>
+                  <td className="p-4 text-center">{t('email')}</td>
+                  <td className="p-4 text-center">{t('priority')}</td>
+                  <td className="p-4 text-center">{t('enterprise')}</td>
                 </tr>
                 <tr>
-                  <td className="p-4">Dedicated onboarding</td>
+                  <td className="p-4">{t('dedicatedOnboarding')}</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center text-muted-foreground">-</td>
                   <td className="p-4 text-center"><CheckCircle2 className="w-4 h-4 mx-auto text-foreground" /></td>
@@ -502,17 +482,17 @@ export default function PricingPage() {
         {/* FAQs */}
         <section className="px-6 md:px-12 max-w-3xl mx-auto mb-32">
           <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold tracking-tight mb-4">Frequently asked questions</h2>
+            <h2 className="text-3xl font-bold tracking-tight mb-4">{t('frequentlyAskedQuestions')}</h2>
           </div>
           
           <div className="space-y-4">
-            {FAQS.map((faq, i) => (
+            {FAQ_KEYS.map((faq, i) => (
               <div key={i} className="border border-border rounded bg-background">
                 <button 
                   onClick={() => toggleFaq(i)}
                   className="w-full flex items-center justify-between p-6 text-left"
                 >
-                  <span className="font-bold">{faq.question}</span>
+                  <span className="font-bold">{t(faq[0])}</span>
                   {openFaq === i ? (
                     <Minus className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                   ) : (
@@ -521,7 +501,7 @@ export default function PricingPage() {
                 </button>
                 {openFaq === i && (
                   <div className="px-6 pb-6 text-muted-foreground text-sm leading-relaxed border-t border-border pt-4">
-                    {faq.answer}
+                    {t(faq[1])}
                   </div>
                 )}
               </div>
@@ -532,21 +512,21 @@ export default function PricingPage() {
         {/* SECTION 8 - Final CTA */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto text-center py-16 border-t border-border">
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-8 max-w-3xl mx-auto">
-            Build your training operating system.
+            {t('buildYourTrainingOperatingSystem')}
           </h2>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button 
               onClick={() => handleNavigate('/contact', 'sales')}
               className="bg-foreground text-background hover:bg-foreground/90 rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
             >
-              Contact Sales
+              {t('contactSales')}
             </Button>
             <Button 
               onClick={() => handleNavigate('/dashboard', 'demo')}
               variant="outline"
               className="border-border text-foreground hover:bg-surface-hover rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
             >
-              Request Demo
+              {t('requestDemo')}
             </Button>
           </div>
         </section>
@@ -561,7 +541,7 @@ export default function PricingPage() {
           <div className="bg-surface border border-border rounded p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
             <Loader2 className="w-8 h-8 text-foreground animate-spin mb-6" />
             <div className="font-mono text-xs uppercase tracking-widest text-center text-muted-foreground">
-              {navType === 'signin' ? 'AUTHENTICATING' : 'INITIALIZING WORKSPACE'}...
+              {navType === 'signin' ? t('authenticating') : t('initializingWorkspace')}...
             </div>
           </div>
         </div>

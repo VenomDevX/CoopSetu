@@ -7,9 +7,12 @@ import { MarketingHeader } from '@/components/layout/marketing-header';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { PublicFooter } from '@/components/layout/public-footer';
 
 export default function CookiesPage() {
+  const t = useTranslations('Marketing.legal');
+  const locale = useLocale();
   const router = useRouter();
   const [isNavigating, setIsNavigating] = React.useState(false);
   const [navType, setNavType] = React.useState<string | null>(null);
@@ -28,11 +31,21 @@ export default function CookiesPage() {
       {/* Main Content */}
       <main className="flex-grow pt-32 pb-24">
         <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Hindi readers get the headings and chrome translated, but the
+              operative legal text stays English on purpose: a machine
+              translation of contractual language can misstate obligations, and
+              only one version can govern. This banner says which one does. */}
+          {locale !== 'en' && (
+            <div className="border border-border bg-surface/50 p-4 mb-8 rounded">
+              <p className="text-xs text-muted-foreground leading-relaxed">{t('translationNotice')}</p>
+            </div>
+          )}
+
 
           {/* Legal Draft Notice */}
           <div className="border border-yellow-500/30 bg-yellow-500/5 p-6 mb-12 flex flex-col gap-2 rounded">
             <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-yellow-500 font-bold">
-              <span>✦ Notice</span>
+              <span>{t('notice')}</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
               This cookie policy is a product draft and must be reviewed by qualified legal counsel before production use.
@@ -41,7 +54,7 @@ export default function CookiesPage() {
 
           {/* Title block */}
           <section className="mb-12 border-b border-border pb-8">
-            <h1 className="text-3xl font-bold tracking-tight mb-2">Cookie Policy</h1>
+            <h1 className="text-3xl font-bold tracking-tight mb-2">{t('cookiesTitle')}</h1>
             <div className="flex flex-col gap-1 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
               <div>Effective Date: [Effective Date]</div>
               <div>Last Updated: [Last Updated Date]</div>
@@ -52,49 +65,49 @@ export default function CookiesPage() {
           <article className="prose prose-sm max-w-3xl text-muted-foreground space-y-8 font-sans leading-relaxed text-sm">
 
             <section className="space-y-3">
-              <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">1. What Cookies Are</h2>
+              <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">{t('cookies1')}</h2>
               <p>
                 Cookies are small text files stored on your device that let a website recognize your browser between requests. CoopSetu uses cookies and similar mechanisms (e.g. localStorage) only to operate and secure the service.
               </p>
             </section>
 
             <section className="space-y-3">
-              <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">2. Essential Cookies</h2>
+              <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">{t('cookies2')}</h2>
               <p>
                 Session and authentication cookies keep you signed in, verify your identity on each request, and protect against cross-site request forgery. These are required for the workspace to function and cannot be disabled.
               </p>
             </section>
 
             <section className="space-y-3">
-              <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">3. Preference Cookies</h2>
+              <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">{t('cookies3')}</h2>
               <p>
                 Some cookies remember workspace preferences, such as your active organization/workspace selection and demo session state, so you don&apos;t have to re-select them on every page load.
               </p>
             </section>
 
             <section className="space-y-3">
-              <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">4. What We Do Not Use Cookies For</h2>
+              <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">{t('cookies4')}</h2>
               <p>
                 We do not use cookies for third-party advertising or cross-site tracking. Legal consent (Terms/Privacy acceptance) is recorded server-side against your account, never stored only in a cookie or local storage.
               </p>
             </section>
 
             <section className="space-y-3">
-              <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">5. Managing Cookies</h2>
+              <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">{t('cookies5')}</h2>
               <p>
                 Most browsers let you clear or block cookies through their settings. Blocking essential cookies will prevent you from signing in or using authenticated features of CoopSetu.
               </p>
             </section>
 
             <section className="space-y-3">
-              <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">6. Changes to This Policy</h2>
+              <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">{t('cookies6')}</h2>
               <p>
                 We update this cookie policy draft as new features or operational requirements are implemented. We will update the effective date accordingly.
               </p>
             </section>
 
             <section className="space-y-3 pb-8">
-              <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">7. Contact Information</h2>
+              <h2 className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">{t('cookies7')}</h2>
               <p>
                 For questions regarding this draft policy, please contact:
               </p>
