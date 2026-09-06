@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Bot, ShieldCheck, Building2, User, UserCheck, BriefcaseBusiness } from 'lucide-react';
 
 import { DEMO_PERSONAS } from '@/lib/demo/provision-demo-workspace';
+import { useTranslations } from 'next-intl';
 
 const ROLE_ICONS: Record<string, any> = {
   'SUPER_ADMIN': ShieldCheck,
@@ -14,15 +15,8 @@ const ROLE_ICONS: Record<string, any> = {
   'EMPLOYER': BriefcaseBusiness,
 };
 
-const ROLE_DESCRIPTIONS: Record<string, string> = {
-  'SUPER_ADMIN': 'Full visibility into all institutes, programs, and system analytics.',
-  'INSTITUTE_ADMIN': 'Manage your institute, batches, trainers, and trainees.',
-  'TRAINER': 'Mark attendance, manage your batches, and track trainee progress.',
-  'TRAINEE': 'View schedule, access learning materials, and apply for jobs.',
-  'EMPLOYER': 'Post job opportunities and recruit from the talent pool.',
-};
-
 export default function DemoPage() {
+  const t = useTranslations('Marketing.demo');
   const router = useRouter();
   const [loadingRole, setLoadingRole] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -99,20 +93,20 @@ export default function DemoPage() {
         onClick={() => router.back()} 
         className="absolute top-8 left-8 z-20 flex items-center gap-2 text-zinc-500 hover:text-white transition-colors text-xs font-mono uppercase tracking-widest"
       >
-        <span>&larr;</span> BACK
+        <span>&larr;</span> {t('back')}
       </button>
 
       <div className="max-w-3xl w-full z-10 space-y-8">
         <div className="text-center space-y-4">
           <h1 className="text-3xl sm:text-4xl font-bold uppercase tracking-tighter">
-            CHOOSE YOUR ROLE
+            {t('heading')}
           </h1>
           <div className="space-y-2 max-w-2xl mx-auto">
             <p className="text-zinc-400 font-mono text-xs leading-relaxed">
-              Experience CoopSetu through the lens of different team members. Each role has distinct permissions and visibility.
+              {t('intro')}
             </p>
             <p className="text-zinc-600 font-mono text-[10px] leading-relaxed">
-              Demo usage is subject to our Terms of Service and Privacy Policy. AI features remain disabled in demo mode.
+              {t('legal')}
             </p>
           </div>
           {error && (
@@ -126,7 +120,7 @@ export default function DemoPage() {
                   }}
                   className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 border border-red-500/50 rounded transition-colors uppercase tracking-widest text-[10px]"
                 >
-                  Force Clear Session
+                  {t('forceClear')}
                 </button>
               )}
             </div>
@@ -154,7 +148,7 @@ export default function DemoPage() {
                   <h3 className="font-bold text-sm uppercase tracking-tight text-white">{persona.title}</h3>
                   <p className="text-zinc-600 text-[10px] font-mono">{persona.name}</p>
                   <p className="text-zinc-400 text-xs mt-0.5">
-                    {isLoading ? 'Provisioning workspace...' : ROLE_DESCRIPTIONS[persona.role]}
+                    {isLoading ? t('provisioning') : t(`role${persona.role}`)}
                   </p>
                 </div>
               </button>
