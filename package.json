@@ -12,6 +12,9 @@
     "test:all": "vitest run",
     "test:e2e": "playwright test",
     "clean": "next clean",
+    "android:sync": "cap sync android",
+    "android:build": "npm run android:sync && cd android && ./gradlew assembleDebug",
+    "android:run": "npm run android:sync && cap run android",
     "worker:reports": "node scripts/report-worker.js",
     "load:smoke": "k6 run tests/load/k6/coopsetu-smoke.js",
     "load:auth": "k6 run tests/load/k6/coopsetu-authenticated.js"
