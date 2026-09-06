@@ -4,6 +4,7 @@
 // markup. The ONLY edit is the component's name (LandingPage ->
 // WebLanding); everything below is byte-identical to what app/page.tsx
 // rendered before, which is what makes the web output provably unchanged.
+import { useTranslations } from 'next-intl';
 import { Logo } from '@/components/logo';
 import { MarketingHeader } from '@/components/layout/marketing-header';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -43,6 +44,10 @@ type SprintBoardColumn = {
 };
 
 export function WebLanding() {
+  const t = useTranslations('Marketing.webLanding');
+  // Hero, capability and metric copy is shared with the app's native landing
+  // (components/mobile/marketing/native-landing.tsx) - one source, two layouts.
+  const tl = useTranslations('Marketing.landing');
   const router = useRouter();
   const pathname = usePathname();
   const [isNavigating, setIsNavigating] = useState(false);
@@ -136,33 +141,33 @@ export function WebLanding() {
   // Live sprint board (repurposed for Batches/Trainees)
   const board: SprintBoardColumn[] = [
     {
-      title: 'Registered', count: 8, accent: false,
+      title: t('registered'), count: 8, accent: false,
       cards: [
-        { id: 'TRN-221', title: 'Complete digital literacy test', tag: 'Core', who: 'JK' },
-        { id: 'TRN-218', title: 'Upload ID proof', tag: 'Admin', who: 'ML' },
+        { id: 'TRN-221', title: t('completeDigitalLiteracyTest'), tag: 'Core', who: 'JK' },
+        { id: 'TRN-218', title: t('uploadIdProof'), tag: 'Admin', who: 'ML' },
       ],
     },
     {
-      title: 'In Training', count: 3, accent: true,
+      title: t('inTraining'), count: 3, accent: true,
       cards: [
-        { id: 'TRN-204', title: 'Cooperative Management Module 2', tag: 'LMS', who: 'AR', prio: true, progress: 64 },
-        { id: 'TRN-209', title: 'Attend live workshop', tag: 'Live', who: 'TS', progress: 30 },
+        { id: 'TRN-204', title: t('cooperativeManagementModule2'), tag: 'LMS', who: 'AR', prio: true, progress: 64 },
+        { id: 'TRN-209', title: t('attendLiveWorkshop'), tag: 'Live', who: 'TS', progress: 30 },
       ],
     },
     {
-      title: 'Certified', count: 12, accent: false,
+      title: t('certified'), count: 12, accent: false,
       cards: [
-        { id: 'TRN-201', title: 'Passed Final Assessment', tag: 'Exam', who: 'PS', done: true },
-        { id: 'TRN-198', title: 'Skill Passport Updated', tag: 'Skill', who: 'DV', done: true },
+        { id: 'TRN-201', title: t('passedFinalAssessment'), tag: 'Exam', who: 'PS', done: true },
+        { id: 'TRN-198', title: t('skillPassportUpdated'), tag: 'Skill', who: 'DV', done: true },
       ],
     },
   ];
 
   // Overlay analytics widget — tabbed chart
   const charts = [
-    { label: 'Attendance', value: '94', unit: '%', delta: '+12%', up: true, data: [40, 55, 48, 62, 58, 72, 68, 85, 90] },
-    { label: 'Dropouts', value: '12', unit: 'total', delta: '-24%', up: false, data: [95, 88, 80, 70, 64, 55, 48, 42, 38] },
-    { label: 'Placements', value: '88', unit: '%', delta: '+3%', up: true, data: [70, 72, 75, 78, 80, 84, 88, 91, 94] },
+    { label: t('attendance'), value: '94', unit: '%', delta: '+12%', up: true, data: [40, 55, 48, 62, 58, 72, 68, 85, 90] },
+    { label: t('dropouts'), value: '12', unit: 'total', delta: '-24%', up: false, data: [95, 88, 80, 70, 64, 55, 48, 42, 38] },
+    { label: t('placements'), value: '88', unit: '%', delta: '+3%', up: true, data: [70, 72, 75, 78, 80, 84, 88, 91, 94] },
   ];
   const chart = charts[activeTab];
   const CW = 260, CH = 96, CPAD = 12;
@@ -213,10 +218,10 @@ export function WebLanding() {
 
               <h1 className="text-5xl md:text-7xl lg:text-[96px] font-bold tracking-tighter mb-6 leading-[0.9] uppercase relative">
                 <div className="flex flex-col text-left">
-                  <SplitText text="Train." className="block" textAlign="left" delay={120} splitType="chars" />
-                  <SplitText text="Certify." className="block text-muted-foreground" textAlign="left" delay={120} splitType="chars" />
+                  <SplitText text={tl('heroTrain')} className="block" textAlign="left" delay={120} splitType="chars" />
+                  <SplitText text={tl('heroCertify')} className="block text-muted-foreground" textAlign="left" delay={120} splitType="chars" />
                   <div className="flex items-center">
-                    <SplitText text="Employ." className="block" textAlign="left" delay={120} splitType="chars" />
+                    <SplitText text={tl('heroEmploy')} className="block" textAlign="left" delay={120} splitType="chars" />
                     <motion.span
                       animate={{ opacity: [1, 0, 1] }}
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
@@ -230,7 +235,7 @@ export function WebLanding() {
               <div className="mt-8 border-t border-border pt-8 relative">
                 <div className="absolute -top-[1px] left-0 w-12 h-[1px] bg-accent" />
                 <p className="text-base md:text-lg text-muted-foreground leading-relaxed font-light mb-8 max-w-xl">
-                  CoopSetu brings institutions, trainees, skills, certifications, and employment exchange into one unified cooperative training platform.
+                  {tl('heroBody')}
                 </p>
                 <div className="flex flex-col sm:flex-row items-start justify-start gap-6">
                   <Button
@@ -240,21 +245,21 @@ export function WebLanding() {
                     className="h-14 px-8 text-sm font-mono uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 group w-52"
                   >
                     {isNavigating && navType === 'init' ? (
-                      <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> BOOTING...</span>
+                      <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> {t('booting')}</span>
                     ) : (
-                      <>Initialize <ArrowRight className="ml-3 w-4 h-4 group-hover:translate-x-1 transition-transform" /></>
+                      <>{tl('ctaInitialize')} <ArrowRight className="ml-3 w-4 h-4 group-hover:translate-x-1 transition-transform" /></>
                     )}
                   </Button>
                   <Link href="#explore">
                     <Button size="lg" variant="outline" className="h-14 px-8 text-sm font-mono uppercase tracking-widest border-border-strong text-foreground hover:bg-surface-hover">
-                      Explore Architecture
+                      {t('exploreArchitecture')}
                     </Button>
                   </Link>
                 </div>
 
                 {/* Trust strip */}
                 <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {['200+ Institutions', 'Digital Certificates', 'QR Attendance', 'Skill Passport'].map((item, i) => (
+                  {[tl('chipInstitutions'), tl('chipCertificates'), tl('chipAttendance'), t('skillPassport')].map((item, i) => (
                     <div key={item} className="flex items-center gap-6">
                       {i > 0 && <span className="w-1 h-1 bg-accent" />}
                       <span>{item}</span>
@@ -287,7 +292,7 @@ export function WebLanding() {
                 <div className="flex items-center justify-between px-5 h-12 border-b border-border-strong bg-background">
                   <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest">
                     <Layers className="w-3.5 h-3.5 text-accent" />
-                    <span className="text-foreground font-bold">Batch 24</span>
+                    <span className="text-foreground font-bold">{t('batch24')}</span>
                     <span className="text-muted-foreground">{'// Trainees'}</span>
                   </div>
                   <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -349,7 +354,7 @@ export function WebLanding() {
 
                 {/* Footer — sprint progress */}
                 <div className="border-t border-border px-5 py-4 flex items-center gap-4">
-                  <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground shrink-0">Training Progress</div>
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground shrink-0">{t('trainingProgress')}</div>
                   <div className="flex-1 h-1 bg-border overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
@@ -373,7 +378,7 @@ export function WebLanding() {
                 <div className="flex items-center justify-between px-5 h-12 border-b border-border-strong">
                   <div className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-widest text-foreground">
                     <BarChart3 className="w-4 h-4 text-accent" />
-                    Analytics
+                    {t('analytics')}
                   </div>
                   <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                     <span className="w-1.5 h-1.5 bg-accent animate-pulse" /> Realtime
@@ -450,7 +455,7 @@ export function WebLanding() {
             transition={{ delay: 1, duration: 1 }}
             className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden sm:flex flex-col items-center gap-3"
           >
-            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground whitespace-nowrap">Scroll Down</span>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground whitespace-nowrap">{t('scrollDown')}</span>
             <motion.div
               animate={{ y: [0, 5, 0] }}
               transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
@@ -500,9 +505,9 @@ export function WebLanding() {
                     </div>
                     <div className="space-y-8">
                       <div>
-                        <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-4">Training</div>
+                        <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-4">{t('training')}</div>
                         <div className="space-y-2">
-                          {['Institutions', 'Programmes', 'Batches'].map(i => (
+                          {[t('institutions'), t('programmes'), t('batches')].map(i => (
                             <div key={i} className="text-sm font-mono uppercase tracking-wider py-2 px-3 text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded cursor-pointer transition-colors flex items-center justify-between group">
                               {i}
                               <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -511,9 +516,9 @@ export function WebLanding() {
                         </div>
                       </div>
                       <div>
-                        <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-4">Network</div>
+                        <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-4">{t('network')}</div>
                         <div className="space-y-2">
-                          {['Trainers', 'Trainees', 'Employers'].map(i => (
+                          {[t('trainers'), t('trainees'), t('employers')].map(i => (
                             <div key={i} className="text-sm font-mono uppercase tracking-wider py-2 px-3 text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded cursor-pointer transition-colors flex items-center justify-between group">
                               {i}
                               <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -534,21 +539,21 @@ export function WebLanding() {
                     <div className="flex justify-between items-end mb-12 border-b border-border pb-6">
                       <div>
                         <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-2">Module_01</div>
-                        <h2 className="text-3xl font-bold text-foreground uppercase tracking-tighter">Command Center</h2>
+                        <h2 className="text-3xl font-bold text-foreground uppercase tracking-tighter">{t('commandCenter')}</h2>
                       </div>
                       <div className="flex gap-3">
                         <div className="h-8 w-32 border border-border rounded bg-background rounded flex items-center px-3">
                           <div className="w-2 h-2 bg-foreground mr-2 animate-pulse" />
-                          <span className="font-mono text-[10px] uppercase">Live Sync</span>
+                          <span className="font-mono text-[10px] uppercase">{t('liveSync')}</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                       {[
-                        { label: 'Active Programs', value: '24', sub: 'Optimal', icon: <Layers className="w-4 h-4 text-foreground" /> },
-                        { label: 'Avg Attendance', value: '88%', sub: '+12% YoY', icon: <Zap className="w-4 h-4 text-foreground" /> },
-                        { label: 'Job Openings', value: '312', sub: 'Action Req', icon: <CheckCircle2 className="w-4 h-4 text-foreground" /> }
+                        { label: t('activePrograms'), value: '24', sub: t('optimal'), icon: <Layers className="w-4 h-4 text-foreground" /> },
+                        { label: t('avgAttendance'), value: '88%', sub: '+12% YoY', icon: <Zap className="w-4 h-4 text-foreground" /> },
+                        { label: t('jobOpenings'), value: '312', sub: t('actionReq'), icon: <CheckCircle2 className="w-4 h-4 text-foreground" /> }
                       ].map((stat, i) => (
                         <div key={i} className="bg-background p-6 border border-border rounded flex flex-col justify-between h-40 hover:border-foreground transition-colors group">
                           <div className="flex items-center justify-between text-muted-foreground">
@@ -566,7 +571,7 @@ export function WebLanding() {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                       <div className="lg:col-span-2 bg-background border border-border rounded p-6 flex flex-col justify-between">
                         <div className="flex justify-between items-center mb-8">
-                          <h3 className="font-mono text-xs uppercase tracking-widest text-foreground">Attendance Trend</h3>
+                          <h3 className="font-mono text-xs uppercase tracking-widest text-foreground">{t('attendanceTrend')}</h3>
                           <div className="flex gap-2">
                             <div className="w-2 h-2 bg-foreground" />
                             <div className="w-2 h-2 bg-border" />
@@ -589,8 +594,8 @@ export function WebLanding() {
                           ))}
                         </div>
                         <div className="flex justify-between mt-4 font-mono text-[10px] text-muted-foreground">
-                          <span>Week 1</span>
-                          <span>Week 12</span>
+                          <span>{t('week1')}</span>
+                          <span>{t('week12')}</span>
                         </div>
                       </div>
 
@@ -598,24 +603,24 @@ export function WebLanding() {
                         <div className="absolute top-0 left-0 w-1 h-full bg-accent" />
                         <h3 className="font-mono text-xs uppercase tracking-widest mb-6 flex items-center gap-3 text-foreground">
                           <Terminal className="w-4 h-4 text-accent" />
-                          AI Feed
+                          {t('aiFeed')}
                         </h3>
                         <div className="space-y-4 font-mono text-xs flex-1">
                           <div className="p-3 border border-border rounded bg-surface-hover text-foreground">
                             <span className="text-accent mr-2">{'>'}</span>
-                            WARN: Batch 04 trainer not assigned.
+                            {t('warnBatch04TrainerNotAssigned')}
                           </div>
                           <div className="p-3 border border-border rounded text-muted-foreground">
                             <span className="mr-2">{'>'}</span>
-                            INFO: 12 Trainees pending ID proof.
+                            {t('info12TraineesPendingIdProof')}
                           </div>
                           <div className="p-3 border border-border rounded text-muted-foreground">
                             <span className="mr-2">{'>'}</span>
-                            INFO: Final assessments completed.
+                            {t('infoFinalAssessmentsCompleted')}
                           </div>
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground opacity-50 mt-4 text-xs font-mono">
-                          <div className="w-2 h-3 bg-foreground animate-pulse" /> Ready
+                          <div className="w-2 h-3 bg-foreground animate-pulse" /> {t('ready')}
                         </div>
                       </div>
                     </div>
@@ -635,13 +640,13 @@ export function WebLanding() {
           >
             {[...Array(6)].map((_, i) => (
               <div key={i} className="flex items-center gap-12">
-                <span>National Scale</span>
+                <span>{t('nationalScale')}</span>
                 <div className="w-1.5 h-1.5 bg-background rounded" />
-                <span>Verified Skills</span>
+                <span>{t('verifiedSkills')}</span>
                 <div className="w-1.5 h-1.5 bg-background rounded" />
-                <span>Cooperative Training</span>
+                <span>{t('cooperativeTraining')}</span>
                 <div className="w-1.5 h-1.5 bg-background rounded" />
-                <span>Maximum Employability</span>
+                <span>{t('maximumEmployability')}</span>
                 <div className="w-1.5 h-1.5 bg-background rounded" />
               </div>
             ))}
@@ -663,10 +668,10 @@ export function WebLanding() {
             >
               <div className="max-w-2xl">
                 <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted-foreground mb-6">
-                  <span className="w-2 h-2 bg-accent" /> Core Infrastructure // 06 Modules
+                  <span className="w-2 h-2 bg-accent" /> {tl('sectionCore')}
                 </div>
                 <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter uppercase leading-[0.9]">
-                  Empower<br />Cooperatives.
+                  {tl('empowerLine1')}<br />{tl('empowerLine2')}
                 </h2>
               </div>
               <div className="max-w-sm">
@@ -674,7 +679,7 @@ export function WebLanding() {
                   One platform to register, train, certify, and employ — built for institutions aiming to transform cooperative education.
                 </p>
                 <Link href="/product" className="inline-flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-foreground border-b border-accent pb-1 group w-fit">
-                  Explore all modules <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  {t('exploreAllModules')} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </div>
             </motion.div>
@@ -682,10 +687,10 @@ export function WebLanding() {
             {/* Social-proof metrics strip */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-[1px] bg-border border border-border rounded mb-3">
               {[
-                { v: '25K+', l: 'Trainees Certified' },
-                { v: '99.9%', l: 'Platform Uptime' },
-                { v: '200+', l: 'Institutions' },
-                { v: '100%', l: 'Digital Records' },
+                { v: '25K+', l: tl('metricTraineesCertified') },
+                { v: '99.9%', l: tl('metricUptime') },
+                { v: '200+', l: t('institutions') },
+                { v: '100%', l: tl('metricDigitalRecords') },
               ].map((m, i) => (
                 <div key={i} className="bg-background p-6 md:p-8 group hover:bg-surface transition-colors">
                   <div className="text-3xl md:text-4xl font-bold tracking-tighter mb-2 group-hover:text-accent transition-colors">{m.v}</div>
@@ -708,14 +713,14 @@ export function WebLanding() {
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_01</span>
                   </div>
-                  <h3 className="text-3xl md:text-4xl font-bold uppercase tracking-tighter mb-4 text-foreground">Institutional Visibility.</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed max-w-md">Monitor programs, batches, and trainees across multiple institutes with real-time attendance and assessment metrics.</p>
+                  <h3 className="text-3xl md:text-4xl font-bold uppercase tracking-tighter mb-4 text-foreground">{t('institutionalVisibility')}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed max-w-md">{t('monitorProgramsBatchesAndTraineesAcrossMulti')}</p>
                 </div>
 
                 {/* Visible animated chart */}
                 <div className="relative z-10 w-full bg-background border border-border rounded p-6 mt-8">
                   <div className="flex items-center justify-between mb-4 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                    <span>Overall Attendance</span>
+                    <span>{t('overallAttendance')}</span>
                     <span className="text-accent">+18% QoQ</span>
                   </div>
                   <div className="flex gap-2 md:gap-2.5 items-end h-28">
@@ -743,11 +748,11 @@ export function WebLanding() {
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_02</span>
                   </div>
-                  <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">Digital Training.</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">Host online courses, track trainee progress, and conduct live virtual classes effortlessly.</p>
+                  <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">{t('digitalTraining')}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{t('hostOnlineCoursesTrackTraineeProgressAndCond')}</p>
                 </div>
                 <div className="space-y-4 mt-8">
-                  {[{ l: 'Batch 24', v: 85 }, { l: 'Completed', v: 60 }, { l: 'Assessments', v: 90 }].map((r, i) => (
+                  {[{ l: t('batch24'), v: 85 }, { l: t('completed'), v: 60 }, { l: t('assessments'), v: 90 }].map((r, i) => (
                     <div key={i}>
                       <div className="flex justify-between font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
                         <span>{r.l}</span><span className="text-foreground">{r.v}%</span>
@@ -775,11 +780,11 @@ export function WebLanding() {
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_03</span>
                   </div>
-                  <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">Access Control.</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">Enforce institution-level access, manage trainer roles, and verify certifications securely.</p>
+                  <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">{t('accessControl')}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{t('enforceInstitutionLevelAccessManageTrainerRo')}</p>
                 </div>
                 <div className="space-y-2 mt-8 font-mono text-[10px] uppercase tracking-widest">
-                  {['Institute onboarded', 'Trainer verified', '2FA enforced'].map((t, i) => (
+                  {[t('instituteOnboarded'), t('trainerVerified'), '2FA enforced'].map((t, i) => (
                     <div key={i} className="flex items-center justify-between border border-border rounded p-2.5 group-hover:border-border-strong transition-colors">
                       <span className="text-muted-foreground flex items-center gap-2"><Lock className="w-3 h-3 text-accent" />{t}</span>
                       <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
@@ -797,8 +802,8 @@ export function WebLanding() {
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_04</span>
                   </div>
-                  <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">Live Learning.</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">Doubt clearing, forums, and live classrooms that keep every trainee engaged.</p>
+                  <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">{t('liveLearning')}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{t('doubtClearingForumsAndLiveClassroomsThatKeep')}</p>
                 </div>
                 <div className="mt-8 flex items-center justify-between border border-border rounded p-4">
                   <div className="flex -space-x-2">
@@ -822,7 +827,7 @@ export function WebLanding() {
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Module_05</span>
                   </div>
-                  <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">Ecosystem Integrations.</h3>
+                  <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4 text-foreground">{t('ecosystemIntegrations')}</h3>
                   <p className="text-muted-foreground text-sm leading-relaxed">Connect your tools — LMS, ERP, payment gateways, and state portals.</p>
                 </div>
                 <div className="mt-8">
@@ -831,7 +836,7 @@ export function WebLanding() {
                       { n: 'Moodle', k: 'MD', on: true },
                       { n: 'Zoom', k: 'ZM', on: false },
                       { n: 'Tally', k: 'TL', on: false },
-                      { n: 'Gov ID', k: 'GV', on: true },
+                      { n: t('govId'), k: 'GV', on: true },
                       { n: 'Razorpay', k: 'RP', on: false },
                       { n: 'SMS', k: 'SM', on: false },
                     ].map((it) => (
@@ -843,7 +848,7 @@ export function WebLanding() {
                     ))}
                   </div>
                   <div className="mt-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                    <span className="text-accent font-bold">+40</span> more integrations
+                    <span className="text-accent font-bold">+40</span> {t('moreIntegrations')}
                   </div>
                 </div>
               </div>
@@ -860,21 +865,21 @@ export function WebLanding() {
                     </div>
                     <span className="font-mono text-[10px] uppercase tracking-widest text-background/50">Module_06 // Core</span>
                   </div>
-                  <h3 className="text-3xl md:text-5xl font-bold uppercase tracking-tighter mb-4">AI Intelligence.</h3>
+                  <h3 className="text-3xl md:text-5xl font-bold uppercase tracking-tighter mb-4">{t('aiIntelligence')}</h3>
                   <p className="text-background/70 text-sm leading-relaxed mb-8 max-w-md">Recommend courses, identify skill gaps, and match trainees to jobs automatically — your virtual career counselor.</p>
                   <Button
                     onClick={() => handleNavigate('/dashboard', 'ai')}
                     disabled={isNavigating}
                     className="h-12 px-8 text-xs font-mono uppercase tracking-widest bg-background text-foreground hover:bg-background/90 rounded group/btn"
                   >
-                    See It In Action <ArrowRight className="ml-3 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                    {t('seeItInAction')} <ArrowRight className="ml-3 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                   </Button>
                 </div>
                 <div className="relative z-10 w-full md:w-96 shrink-0 border border-background/20 bg-background/5 backdrop-blur-sm p-5 font-mono text-xs space-y-3">
                   {[
-                    { tag: 'COURSE', msg: 'Recommended · Data Science Basics' },
+                    { tag: 'COURSE', msg: t('recommendedDataScienceBasics') },
                     { tag: 'SKILL', msg: '3 missing skills identified' },
-                    { tag: 'JOB', msg: 'High match found in local org' },
+                    { tag: 'JOB', msg: t('highMatchFoundInLocalOrg') },
                   ].map((l) => (
                     <div key={l.tag} className="flex items-center gap-3">
                       <span className="text-accent shrink-0">{'>'}</span>
@@ -932,29 +937,29 @@ export function WebLanding() {
                     }`}>
                     <div className="w-full min-w-[220px]">
                       <div className="font-mono text-[10px] uppercase tracking-widest text-accent mb-6 whitespace-nowrap">Extraction Complete // 100%</div>
-                      <h3 className="text-3xl font-bold mb-6">Immutable Skill Passport</h3>
+                      <h3 className="text-3xl font-bold mb-6">{t('immutableSkillPassport')}</h3>
                       <p className="text-muted-foreground text-sm leading-relaxed mb-8">
-                        Every certificate, assessment score, and course completion is cryptographically signed and securely stored, ensuring verifiable digital credentials.
+                        {t('everyCertificateAssessmentScoreAndCourseComp')}
                       </p>
                       <div className="space-y-6">
                         <div>
                           <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-2">
-                            <span>Institute A</span>
-                            <span className="text-green-400">SYNCED</span>
+                            <span>{t('instituteA')}</span>
+                            <span className="text-green-400">{t('synced')}</span>
                           </div>
                           <div className="w-full h-1 bg-border overflow-hidden"><div className="w-full h-full bg-green-500" /></div>
                         </div>
                         <div>
                           <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-2">
-                            <span>Institute B</span>
-                            <span className="text-green-400">SYNCED</span>
+                            <span>{t('instituteB')}</span>
+                            <span className="text-green-400">{t('synced')}</span>
                           </div>
                           <div className="w-full h-1 bg-border overflow-hidden"><div className="w-[98%] h-full bg-green-500" /></div>
                         </div>
                         <div>
                           <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-2">
-                            <span>Trainee Vault</span>
-                            <span className="text-amber-400">STANDBY</span>
+                            <span>{t('traineeVault')}</span>
+                            <span className="text-amber-400">{t('standby')}</span>
                           </div>
                           <div className="w-full h-1 bg-border overflow-hidden"><div className="w-[45%] h-full bg-amber-500" /></div>
                         </div>
@@ -985,14 +990,14 @@ export function WebLanding() {
                     }`}>
                     <div className="w-full min-w-[220px]">
                       <div className="font-mono text-[10px] uppercase tracking-widest text-accent mb-6 whitespace-nowrap">Extraction Complete // 100%</div>
-                      <h3 className="text-3xl font-bold mb-6">National Training Network</h3>
+                      <h3 className="text-3xl font-bold mb-6">{t('nationalTrainingNetwork')}</h3>
                       <p className="text-muted-foreground text-sm leading-relaxed mb-8">
-                        We connect thousands of cooperative institutions across India, ensuring localized content delivery and high availability.
+                        {t('weConnectThousandsOfCooperativeInstitutionsA')}
                       </p>
                       <div className="grid grid-cols-2 gap-4">
                         {['us-east', 'eu-west', 'ap-south', 'sa-east'].map(region => (
                           <div key={region} className="bg-surface border border-border rounded p-4">
-                            <div className="text-[10px] font-mono uppercase text-muted-foreground mb-2">Region</div>
+                            <div className="text-[10px] font-mono uppercase text-muted-foreground mb-2">{t('region')}</div>
                             <div className="text-sm font-bold text-foreground mb-2">{region}</div>
                             <div className="text-[10px] font-mono text-green-500 animate-pulse">Online // 99.999%</div>
                           </div>
@@ -1024,9 +1029,9 @@ export function WebLanding() {
                     }`}>
                     <div className="w-full min-w-[220px]">
                       <div className="font-mono text-[10px] uppercase tracking-widest text-accent mb-6 whitespace-nowrap">Extraction Complete // 100%</div>
-                      <h3 className="text-3xl font-bold mb-6">Real-Time Attendance Sync</h3>
+                      <h3 className="text-3xl font-bold mb-6">{t('realTimeAttendanceSync')}</h3>
                       <p className="text-muted-foreground text-sm leading-relaxed mb-8">
-                        Offline-first QR attendance allows trainers to mark presence without internet. Data syncs automatically the moment connectivity is restored.
+                        {t('offlineFirstQrAttendanceAllowsTrainersToMark')}
                       </p>
                       <div className="bg-surface border border-border rounded p-6 font-mono text-[10px] text-muted-foreground space-y-3 relative overflow-hidden h-64">
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-surface pointer-events-none z-10" />
@@ -1078,7 +1083,7 @@ export function WebLanding() {
                   }}
                   className="font-mono text-xs uppercase tracking-widest text-foreground/50 mb-4 flex items-center gap-3"
                 >
-                  <span className="w-2 h-2 bg-accent animate-pulse" /> Infrastructure // Global Network
+                  <span className="w-2 h-2 bg-accent animate-pulse" /> {t('infrastructureGlobalNetwork')}
                 </motion.div>
                 <motion.h2 
                   variants={{
@@ -1102,7 +1107,7 @@ export function WebLanding() {
                 }}
                 className="text-foreground/60 font-mono text-sm uppercase tracking-widest max-w-md md:text-right leading-relaxed"
               >
-                Operating across 24 regions with military-grade redundancy and automated failover.
+                {t('operatingAcross24RegionsWithMilitaryGradeRed')}
               </motion.p>
             </motion.div>
 
@@ -1119,7 +1124,7 @@ export function WebLanding() {
                   FIG.04 — Global Network Map
                 </div>
                 <div className="absolute top-5 right-5 z-30 font-mono text-[10px] uppercase tracking-widest flex items-center gap-2 text-green-600 dark:text-green-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-600 dark:bg-green-400 animate-pulse" /> Core Cluster Online
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-600 dark:bg-green-400 animate-pulse" /> {t('coreClusterOnline')}
                 </div>
 
                 <svg
@@ -1194,15 +1199,15 @@ export function WebLanding() {
             {[...Array(4)].map((_, i) => (
               <div key={i} className="flex items-center">
                 <span className="text-4xl md:text-6xl font-bold tracking-tighter uppercase mx-8">
-                  Data Integrity
+                  {t('dataIntegrity')}
                 </span>
                 <span className="text-accent">✦</span>
                 <span className="text-4xl md:text-6xl font-bold tracking-tighter uppercase mx-8">
-                  Global Scale
+                  {t('globalScale')}
                 </span>
                 <span className="text-accent">✦</span>
                 <span className="text-4xl md:text-6xl font-bold tracking-tighter uppercase mx-8">
-                  Real-Time Sync
+                  {t('realTimeSync')}
                 </span>
                 <span className="text-accent">✦</span>
               </div>
