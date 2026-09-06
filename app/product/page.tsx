@@ -28,8 +28,10 @@ import {
   Settings
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function ProductPage() {
+  const t = useTranslations('Marketing.product');
   const router = useRouter();
   const [isNavigating, setIsNavigating] = React.useState(false);
   const [navType, setNavType] = React.useState<string | null>(null);
@@ -52,27 +54,27 @@ export default function ProductPage() {
           <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-16">
             <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
               <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-              PLATFORM_OVERVIEW
+              {t('eyebrow')}
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-8 leading-[1.1]">
-              One operational system for teams building critical software.
+              {t('heading')}
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-              CoopSetu Enterprise connects planning, batch assignment, training, moderation workflows, assessments, security, placements, and AI intelligence in one controlled workspace.
+              {t('intro')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Button 
                 onClick={() => handleNavigate('/dashboard', 'explore')}
                 className="bg-foreground text-background hover:bg-foreground/90 rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
-                Explore the Platform
+                {t('ctaExplore')}
               </Button>
               <Button 
                 onClick={() => handleNavigate('/contact', 'demo')}
                 variant="outline"
                 className="border-border text-foreground hover:bg-surface-hover rounded h-12 px-8 font-mono uppercase tracking-widest text-xs"
               >
-                Request Demo
+                {t('ctaDemo')}
               </Button>
             </div>
           </div>
@@ -124,24 +126,24 @@ export default function ProductPage() {
                      <AiLogo className="w-3 h-3 text-accent" />
                      <span className="font-mono text-[10px] uppercase tracking-widest font-bold">CoopSetu Insight</span>
                    </div>
-                   <p className="text-xs text-muted-foreground">Final Assessment for Batch A is blocked by 2 attendance anomalies. Moderation signoff pending for 3 hours.</p>
+                   <p className="text-xs text-muted-foreground">{t('alert')}</p>
                  </div>
                  <div className="border border-border rounded bg-background p-4 flex-1">
                    <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4">Placement Pipeline</div>
                    <div className="space-y-3">
                      <div className="flex items-center gap-2">
                        <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                       <span className="text-[10px] font-mono">CODE REVIEW</span>
+                       <span className="text-[10px] font-mono">{t('codeReview')}</span>
                      </div>
                      <div className="w-[1px] h-3 bg-border ml-1.5" />
                      <div className="flex items-center gap-2">
                        <Loader2 className="w-3 h-3 text-accent animate-spin" />
-                       <span className="text-[10px] font-mono text-accent font-bold">QA APPROVAL</span>
+                       <span className="text-[10px] font-mono text-accent font-bold">{t('qaApproval')}</span>
                      </div>
                      <div className="w-[1px] h-3 bg-border border-dashed ml-1.5" />
                      <div className="flex items-center gap-2 opacity-50">
                        <Shield className="w-3 h-3" />
-                       <span className="text-[10px] font-mono">SEC APPROVAL</span>
+                       <span className="text-[10px] font-mono">{t('secApproval')}</span>
                      </div>
                    </div>
                  </div>
@@ -153,9 +155,9 @@ export default function ProductPage() {
         {/* SECTION 1 - Command Center */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32">
           <div className="mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">See delivery work as it happens.</h2>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">{t('h2Delivery')}</h2>
             <p className="text-muted-foreground max-w-2xl text-lg">
-              Get an immediate, uncompromising view of institute health, training capacity, and certification risk across all training centers.
+              {t('deliveryBody')}
             </p>
           </div>
           
@@ -180,7 +182,7 @@ export default function ProductPage() {
                           <div className="h-full bg-foreground w-[65%]" />
                         </div>
                       </td>
-                      <td className="py-4"><span className="text-[10px] px-2 py-0.5 border border-emerald-500 text-emerald-500 bg-emerald-500/10">ON TRACK</span></td>
+                      <td className="py-4"><span className="text-[10px] px-2 py-0.5 border border-emerald-500 text-emerald-500 bg-emerald-500/10">{t('onTrack')}</span></td>
                     </tr>
                     <tr>
                       <td className="py-4 font-bold flex items-center gap-2"><div className="w-2 h-2 bg-foreground" /> Payments API v3</td>
@@ -190,7 +192,7 @@ export default function ProductPage() {
                           <div className="h-full bg-foreground w-[90%]" />
                         </div>
                       </td>
-                      <td className="py-4"><span className="text-[10px] px-2 py-0.5 border border-orange-500 text-orange-500 bg-orange-500/10">DELAYED</span></td>
+                      <td className="py-4"><span className="text-[10px] px-2 py-0.5 border border-orange-500 text-orange-500 bg-orange-500/10">{t('delayed')}</span></td>
                     </tr>
                   </tbody>
                </table>
@@ -214,7 +216,7 @@ export default function ProductPage() {
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32 border-t border-border pt-32">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">Assign work with clear ownership.</h2>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">{t('h2Ownership')}</h2>
               <div className="space-y-4 font-mono text-sm uppercase tracking-widest mb-8">
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> Projects, programs & portfolios</div>
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> Epics, stories, tasks & bugs</div>
@@ -229,8 +231,8 @@ export default function ProductPage() {
             <div className="border border-border rounded bg-background p-4 relative">
               <div className="absolute top-0 right-0 w-32 h-32 bg-surface-hover rounded-bl-[100px] pointer-events-none" />
               <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-4 border-b border-border pb-2 flex justify-between">
-                <span>Task Board</span>
-                <span>Batch 24</span>
+                <span>{t('taskBoard')}</span>
+                <span>{t('batch24')}</span>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {["Backlog", "Code Review", "QA Testing"].map(status => (
@@ -268,7 +270,7 @@ export default function ProductPage() {
               <div className="space-y-6">
                  <div>
                    <div className="flex justify-between text-xs font-mono uppercase mb-2">
-                     <span>Capacity</span>
+                     <span>{t('capacity')}</span>
                      <span>95%</span>
                    </div>
                    <div className="h-2 w-full bg-background border border-border rounded">
@@ -277,7 +279,7 @@ export default function ProductPage() {
                  </div>
                  <div>
                    <div className="flex justify-between text-xs font-mono uppercase mb-2">
-                     <span>Carryover Risk</span>
+                     <span>{t('carryover')}</span>
                      <span className="text-orange-500">12%</span>
                    </div>
                    <div className="h-2 w-full bg-background border border-border rounded">
@@ -288,7 +290,7 @@ export default function ProductPage() {
             </div>
             
             <div className="order-1 lg:order-2">
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">Plan batches with real capacity.</h2>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">{t('h2Capacity')}</h2>
               <div className="space-y-4 font-mono text-sm uppercase tracking-widest mb-8">
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> Backlog prioritization</div>
                 <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> Story points & velocity</div>
@@ -302,36 +304,36 @@ export default function ProductPage() {
         {/* SECTION 4 - Institute Visibility */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32 border-t border-border pt-32">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">Connect work to the code that ships.</h2>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">{t('h2Code')}</h2>
             <p className="text-muted-foreground text-lg">
-              Integrate directly with GitHub, GitLab, and Bitbucket. Track pull requests, commits, CI/CD pipelines, and deployments from within the task.
+              {t('codeBody')}
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="border border-border rounded bg-background p-6">
               <GitPullRequest className="w-8 h-8 text-foreground mb-4" />
-              <h3 className="font-bold text-lg mb-2">PR Tracking</h3>
-              <p className="text-sm text-muted-foreground mb-4">Automatically link pull requests to stories and tasks. Block merging if tests fail.</p>
+              <h3 className="font-bold text-lg mb-2">{t('prTitle')}</h3>
+              <p className="text-sm text-muted-foreground mb-4">{t('prBody')}</p>
               <div className="text-[10px] font-mono p-2 bg-surface border border-border rounded text-emerald-500">
                 MERGED #1042 into main
               </div>
             </div>
             <div className="border border-border rounded bg-background p-6">
               <Terminal className="w-8 h-8 text-foreground mb-4" />
-              <h3 className="font-bold text-lg mb-2">CI/CD Visibility</h3>
-              <p className="text-sm text-muted-foreground mb-4">View build logs, test results, and environment deployments directly on the ticket.</p>
+              <h3 className="font-bold text-lg mb-2">{t('ciTitle')}</h3>
+              <p className="text-sm text-muted-foreground mb-4">{t('ciBody')}</p>
               <div className="text-[10px] font-mono p-2 bg-surface border border-border rounded flex items-center gap-2">
                 <Loader2 className="w-3 h-3 animate-spin text-accent" />
-                BUILDING WORKFLOW
+                {t('buildingWorkflow')}
               </div>
             </div>
             <div className="border border-border rounded bg-background p-6">
               <Layers className="w-8 h-8 text-foreground mb-4" />
-              <h3 className="font-bold text-lg mb-2">Environment Tracking</h3>
-              <p className="text-sm text-muted-foreground mb-4">Know exactly which features are deployed to staging, pre-prod, and production.</p>
+              <h3 className="font-bold text-lg mb-2">{t('envTitle')}</h3>
+              <p className="text-sm text-muted-foreground mb-4">{t('envBody')}</p>
               <div className="text-[10px] font-mono p-2 bg-surface border border-border rounded text-accent">
-                DEPLOYED TO STAGING
+                {t('deployedStaging')}
               </div>
             </div>
           </div>
@@ -342,7 +344,7 @@ export default function ProductPage() {
           <div className="border border-border rounded bg-surface p-8 lg:p-12">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
               <div>
-                <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">Ship software with evidence, approvals, and accountability.</h2>
+                <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">{t('h2Evidence')}</h2>
                 <div className="space-y-4 font-mono text-sm uppercase tracking-widest">
                   <div className="flex items-center gap-3"><Shield className="w-4 h-4 text-muted-foreground" /> Security review checklists</div>
                   <div className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-muted-foreground" /> QA test plans & bugs</div>
@@ -377,9 +379,9 @@ export default function ProductPage() {
         <section className="px-6 md:px-12 max-w-7xl mx-auto mb-32 grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="border border-border rounded bg-background p-8 lg:p-12">
             <Database className="w-10 h-10 mb-6 text-foreground" />
-            <h2 className="text-2xl font-bold tracking-tight mb-4">Keep decisions, systems, and delivery knowledge connected.</h2>
+            <h2 className="text-2xl font-bold tracking-tight mb-4">{t('h2Knowledge')}</h2>
             <p className="text-muted-foreground mb-8 text-sm">
-              Architecture records, API documentation, runbooks, and meeting notes—all version-controlled, access-restricted, and linked directly to project execution.
+              {t('knowledgeBody')}
             </p>
             <div className="border border-border rounded bg-surface p-4 text-xs font-mono">
               <div className="text-muted-foreground uppercase tracking-widest text-[10px] mb-2 border-b border-border pb-2">Architecture Decision Record</div>
@@ -390,9 +392,9 @@ export default function ProductPage() {
           
           <div className="border border-border rounded bg-background p-8 lg:p-12 flex flex-col">
             <BarChart3 className="w-10 h-10 mb-6 text-foreground" />
-            <h2 className="text-2xl font-bold tracking-tight mb-4">Turn operational data into delivery intelligence.</h2>
+            <h2 className="text-2xl font-bold tracking-tight mb-4">{t('h2Intelligence')}</h2>
             <p className="text-muted-foreground mb-8 text-sm">
-              Executive dashboards for institute health, certification velocity, workload analysis, dropout trends, and placement reliability.
+              {t('intelligenceBody')}
             </p>
             <div className="grid grid-cols-2 gap-4 mt-auto">
               <div className="border border-border rounded p-4 bg-surface">
@@ -410,7 +412,7 @@ export default function ProductPage() {
         {/* SECTION 8 - Workflow */}
         <section className="w-full border-y border-border bg-surface py-20 mb-32 overflow-hidden">
           <div className="px-6 md:px-12 max-w-7xl mx-auto">
-            <h2 className="text-2xl font-bold tracking-tight mb-12 text-center">The unified enterprise delivery workflow</h2>
+            <h2 className="text-2xl font-bold tracking-tight mb-12 text-center">{t('h2Workflow')}</h2>
             
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-2">
               {['Enroll', 'Assign', 'Train', 'Review', 'Assess', 'Secure', 'Place', 'Learn'].map((step, i, arr) => (
@@ -436,7 +438,7 @@ export default function ProductPage() {
         {/* SECTION 9 - Final CTA */}
         <section className="px-6 md:px-12 max-w-7xl mx-auto text-center py-16">
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-8 max-w-3xl mx-auto">
-            Replace disconnected tools with one controlled delivery system.
+            {t('h2Replace')}
           </h2>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button 
@@ -465,7 +467,7 @@ export default function ProductPage() {
           <div className="bg-surface border border-border rounded p-8 flex flex-col items-center max-w-sm w-full mx-4 shadow-2xl">
             <Loader2 className="w-8 h-8 text-foreground animate-spin mb-6" />
             <div className="font-mono text-xs uppercase tracking-widest text-center text-muted-foreground">
-              {navType === 'signin' ? 'AUTHENTICATING' : 'INITIALIZING WORKSPACE'}...
+              {navType === 'signin' ? t('authenticating') : t('initializing')}...
             </div>
           </div>
         </div>
