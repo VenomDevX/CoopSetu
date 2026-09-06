@@ -119,7 +119,7 @@ describe('resolveMobileTabs', () => {
   it('uses the persona-preferred destinations when they resolve', () => {
     const trainee = resolveMobileTabs(buildNavGroups(t, 'TRAINEE'), 'TRAINEE');
     expect(trainee.map((i) => i.href)).toEqual([
-      '/dashboard', '/dashboard/courses', '/dashboard/attendance', '/dashboard/certificates',
+      '/dashboard', '/dashboard/my-learning', '/dashboard/courses', '/dashboard/attendance',
     ]);
 
     const employer = resolveMobileTabs(buildNavGroups(t, 'EMPLOYER'), 'EMPLOYER');

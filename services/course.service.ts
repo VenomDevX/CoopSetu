@@ -256,7 +256,23 @@ export class AssessmentService {
   }
 
   async submitResult(input: { assessment_id: string; trainee_id: string; score: number; max_score: number; answers?: Record<string, unknown>; attempt_number?: number }) {
-    const passed = input.score >= (input.max_score * 0.4); // Default 40% passing
+    // Was a hardcoded 40% that ignored assessments.passing_score entirely, so
+    // an exam configured to require 60 passed anyone who scored 40. The
+    // assessment's own threshold decides; 40% remains the fallback only when
+    // the row cannot be read, matching the column default in 0071.
+    const { data: assessment } = await this.supabase
+      .from('assessments')
+      .select('passing_score, max_score')
+      .eq('id', input.assessment_id)
+      .maybeSingle();
+
+    const passMark = assessment?.passing_score != null && assessment?.max_score
+      // passing_score is stored in marks against the assessment's own
+      // max_score, which need not equal the max_score of this submission.
+      ? (assessment.passing_score / assessment.max_score) * input.max_score
+      : input.max_score * 0.4;
+
+    const passed = input.score >= passMark;
     const { data, error } = await this.supabase
       .from('assessment_results')
       .insert({ ...input, passed })
