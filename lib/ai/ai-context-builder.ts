@@ -27,6 +27,11 @@ export interface IntentParams {
   taskId?: string;
   incidentId?: string;
   releaseId?: string;
+  /**
+   * Prior turns, oldest first. Present only for conversational intents; see
+   * buildPrompt() in lib/ai/ai-streaming.ts for how it is rendered.
+   */
+  history?: { role: 'user' | 'assistant'; text: string }[];
 }
 
 export type ContextBuilder = (
@@ -678,6 +683,173 @@ export const buildMyLearning: ContextBuilder = async (supabase, m) => {
       ...topJobs.map(({ job }) => src('job', job.id, job.title)),
       ...courses.slice(0, 10).map((c) => src('course', c.id, c.title)),
     ],
+    isEmpty: false,
+    emptyMessage: '',
+  };
+};
+
+
+/* ---------------------------------------------------------------------------
+ * Training-domain insight intents.
+ *
+ * lib/constants/ai-insights.ts advertised trainer-dashboard,
+ * institution-readiness and national-briefing, but none of them existed in the
+ * registry, so three of the four Insights tiles returned 422 "Unknown AI
+ * intent" when clicked. These are the missing builders.
+ *
+ * All three read through the caller's own session, so 0085's institution
+ * scoping applies: an ICM principal's "institution readiness" covers their
+ * institute, and the NCCT director's "national briefing" covers the country,
+ * without either passing a scope parameter.
+ * ------------------------------------------------------------------------- */
+
+export const buildTrainerDashboard: ContextBuilder = async (supabase, m) => {
+  const { data: trainer } = await supabase
+    .from('trainers')
+    .select('id, institution_id')
+    .eq('user_id', (await supabase.auth.getUser()).data.user?.id ?? '')
+    .eq('organization_id', m.organizationId)
+    .maybeSingle();
+
+  if (!trainer) {
+    return {
+      facts: '',
+      candidates: [],
+      isEmpty: true,
+      emptyMessage: 'This briefing is for trainers — no trainer profile is linked to your account.',
+    };
+  }
+
+  const { data: batches } = await supabase
+    .from('batches')
+    .select('id, name, status, start_date, end_date, programmes(title)')
+    .eq('trainer_id', trainer.id);
+
+  const batchIds = (batches || []).map((b) => b.id);
+
+  const [{ data: enrolments }, { data: sessions }, { data: results }] = await Promise.all([
+    batchIds.length
+      ? supabase.from('enrollments').select('id, status, batch_id').in('batch_id', batchIds)
+      : Promise.resolve({ data: [] as never[] }),
+    batchIds.length
+      ? supabase.from('attendance_sessions').select('id, date, batch_id, is_active').in('batch_id', batchIds)
+      : Promise.resolve({ data: [] as never[] }),
+    supabase.from('assessment_results').select('id, graded_at').is('graded_at', null),
+  ]);
+
+  if (!batchIds.length) {
+    return {
+      facts: '',
+      candidates: [],
+      isEmpty: true,
+      emptyMessage: 'You have no batches assigned yet, so there is nothing to report on.',
+    };
+  }
+
+  const facts = [
+    `Batches you run: ${(batches || []).length}.`,
+    (batches || [])
+      .map((b: any) => {
+        const enrolled = (enrolments || []).filter((e: any) => e.batch_id === b.id && e.status === 'ENROLLED').length;
+        const held = (sessions || []).filter((s: any) => s.batch_id === b.id).length;
+        return `- ${b.name} (${b.programmes?.title ?? 'no programme'}): ${b.status}, ${enrolled} enrolled, ${held} session(s) held`;
+      })
+      .join('\n'),
+    `Ungraded assessment submissions across the organisation: ${(results || []).length}.`,
+  ].filter(Boolean).join('\n\n');
+
+  return {
+    facts,
+    candidates: (batches || []).map((b: any) => src('batch', b.id, b.name)),
+    isEmpty: false,
+    emptyMessage: '',
+  };
+};
+
+export const buildInstitutionReadiness: ContextBuilder = async (supabase, m) => {
+  const { TrainingAnalyticsService } = await import('@/services/training-analytics.service');
+  const svc = new TrainingAnalyticsService(supabase, m.organizationId);
+
+  const [institutions, funnel, risk] = await Promise.all([
+    svc.getInstitutionRollup(),
+    svc.getFunnel(),
+    svc.getDropoutRisk(),
+  ]);
+
+  if (!institutions.length) {
+    return {
+      facts: '', candidates: [], isEmpty: true,
+      emptyMessage: 'No institutes are registered yet, so there is nothing to assess.',
+    };
+  }
+
+  const facts = [
+    `Institutes in your scope: ${institutions.length}.`,
+    institutions
+      .map((i) =>
+        `- ${i.name} (${i.code}, ${i.level}): ${i.trainees} trainees, ${i.active_programmes} active programme(s), ` +
+        `${i.certificates} certificate(s)` +
+        (i.utilisation_pct === null ? ', capacity uncapped' : `, ${i.utilisation_pct}% of capacity`),
+      )
+      .join('\n'),
+    `Journey: ${funnel.registered} registered, ${funnel.enrolled} enrolled, ${funnel.completed} completed, ${funnel.certified} certified, ${funnel.employed} employed.`,
+    risk.length
+      ? `Trainees showing drop-out signals: ${risk.length}.\n${risk.slice(0, 8).map((r) => `- ${r.name}: ${r.reasons.join('; ')}`).join('\n')}`
+      : 'No enrolled trainee is currently showing drop-out signals.',
+  ].join('\n\n');
+
+  return {
+    facts,
+    candidates: institutions.map((i) => src('institution', i.id, i.name)),
+    isEmpty: false,
+    emptyMessage: '',
+  };
+};
+
+export const buildNationalBriefing: ContextBuilder = async (supabase, m) => {
+  const { TrainingAnalyticsService } = await import('@/services/training-analytics.service');
+  const svc = new TrainingAnalyticsService(supabase, m.organizationId);
+
+  const [funnel, institutions, geography, attendance] = await Promise.all([
+    svc.getFunnel(),
+    svc.getInstitutionRollup(),
+    svc.getGeographicSpread(),
+    svc.getAttendanceTrend(30),
+  ]);
+
+  if (!funnel.registered) {
+    return {
+      facts: '', candidates: [], isEmpty: true,
+      emptyMessage: 'No trainees are registered yet, so there is nothing to brief on.',
+    };
+  }
+
+  const avgAttendance = attendance.length
+    ? Math.round(attendance.reduce((a, d) => a + d.pct, 0) / attendance.length)
+    : null;
+
+  const conv = (n: number) => (funnel.registered ? Math.round((n / funnel.registered) * 100) : 0);
+
+  const facts = [
+    `National journey: ${funnel.registered} registered -> ${funnel.enrolled} enrolled (${conv(funnel.enrolled)}%) -> ` +
+      `${funnel.completed} completed (${conv(funnel.completed)}%) -> ${funnel.certified} certified (${conv(funnel.certified)}%) -> ` +
+      `${funnel.employed} employed (${conv(funnel.employed)}%).`,
+    `Institutes: ${institutions.length}. By level: ${
+      ['NATIONAL', 'APEX', 'REGIONAL', 'INSTITUTE']
+        .map((l) => `${l} ${institutions.filter((i) => i.level === l).length}`)
+        .join(', ')
+    }.`,
+    geography.length
+      ? `Trainees by state:\n${geography.map((g) => `- ${g.state}: ${g.trainees}`).join('\n')}`
+      : 'No geographic spread recorded.',
+    avgAttendance === null
+      ? 'No attendance has been marked in the last 30 days.'
+      : `Average attendance over the last 30 days: ${avgAttendance}% across ${attendance.length} day(s) with sessions.`,
+  ].join('\n\n');
+
+  return {
+    facts,
+    candidates: institutions.slice(0, 10).map((i) => src('institution', i.id, i.name)),
     isEmpty: false,
     emptyMessage: '',
   };

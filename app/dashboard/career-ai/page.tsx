@@ -61,7 +61,17 @@ export default function CareerAIPage() {
 
     setMessages(prev => [...prev, { role: 'user', content: msg, timestamp: new Date() }]);
     setInput('');
-    run({ intent: 'my-learning', prompt: msg });
+    // Send the transcript so the counsellor can follow a thread. Built from
+    // `messages` before this turn is appended — the new message travels as
+    // `prompt`, and including it in history too would duplicate it.
+    run({
+      intent: 'my-learning',
+      prompt: msg,
+      history: messages
+        .filter(m => m.content?.trim())
+        .slice(-12)
+        .map(m => ({ role: m.role === 'user' ? 'user' as const : 'assistant' as const, text: m.content })),
+    });
   };
 
   return (
