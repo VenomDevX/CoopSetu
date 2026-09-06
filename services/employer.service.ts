@@ -142,13 +142,62 @@ export class JobService {
   }
 
   async applyToJob(input: { job_id: string; trainee_id: string; cover_letter?: string; resume_url?: string }) {
+    // match_score was declared on the row and ordered by in getApplications(),
+    // but never written — it defaults to 0, so the employer's shortlisting view
+    // showed "Match: 0%" for every candidate and its ordering was a constant.
+    // SkillService.calculateJobMatchScore already existed and was reachable
+    // only through GET /jobs/[jobId]/match, one trainee at a time.
+    //
+    // Computed at apply time rather than on read: it is the score *as of* the
+    // application, so a later skill change does not silently rewrite history an
+    // employer has already reviewed.
+    let matchScore = 0;
+    try {
+      const { SkillService } = await import('./skill.service');
+      matchScore = await new SkillService(this.supabase).calculateJobMatchScore(
+        input.trainee_id,
+        input.job_id,
+      );
+    } catch {
+      // A job with no skills attached, or a trainee with no skill profile yet,
+      // is an ordinary state — not a reason to refuse the application.
+    }
+
     const { data, error } = await this.supabase
       .from('job_applications')
-      .insert(input)
+      .insert({ ...input, match_score: matchScore })
       .select()
       .single();
     if (error) throw error;
     return data as JobApplication;
+  }
+
+  /**
+   * Ranks every trainee against one job — the reverse of
+   * calculateJobMatchScore, which answers for a single trainee. This is what an
+   * employer actually needs: "who should I talk to", not "how good is this one".
+   */
+  async rankCandidatesForJob(jobId: string, orgId: string, limit = 25) {
+    const { data: trainees, error } = await this.supabase
+      .from('trainees')
+      .select('id, education, location, employment_status, profiles:user_id(full_name)')
+      .eq('organization_id', orgId)
+      .eq('status', 'ACTIVE');
+    if (error) throw error;
+
+    const { SkillService } = await import('./skill.service');
+    const skills = new SkillService(this.supabase);
+
+    const scored = await Promise.all(
+      (trainees || []).map(async (t: any) => ({
+        ...t,
+        match_score: await skills.calculateJobMatchScore(t.id, jobId).catch(() => 0),
+      })),
+    );
+
+    return scored
+      .sort((a, b) => b.match_score - a.match_score)
+      .slice(0, limit);
   }
 
   async getApplications(jobId: string) {
