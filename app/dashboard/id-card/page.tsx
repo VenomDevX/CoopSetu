@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardContent } from "@/components/ui/card";
+import { FaceCapture } from '@/components/attendance/face-capture';
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, RefreshCw, Smartphone, Key } from 'lucide-react';
 import { useEffect, useState, useRef } from "react";
@@ -169,6 +170,14 @@ export default function DigitalIdCard() {
           </Card>
         </motion.div>
       ) : null}
+
+      {/* Face enrolment lives here rather than in settings: this is already the
+          trainee's identity screen, and the registered face is the same
+          credential as the rotating code above — just a different way to
+          present it at the door. */}
+      <div className={isNative ? 'mt-3' : 'mt-6'}>
+        <FaceCapture mode="register" />
+      </div>
     </div>
   );
 }

@@ -7,6 +7,8 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useTranslations } from 'next-intl';
 import QRCode from 'qrcode';
+import { QrScanner } from '@/components/attendance/qr-scanner';
+import { FaceCapture } from '@/components/attendance/face-capture';
 import { useIsNative } from '@/components/native/native-provider';
 
 interface Session {
@@ -44,6 +46,7 @@ export default function AttendancePage() {
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [liveRecords, setLiveRecords] = useState<AttendanceRecord[]>([]);
   const [showCreateSession, setShowCreateSession] = useState(false);
+  const [captureMode, setCaptureMode] = useState<'qr' | 'face' | null>(null);
   const [sessionForm, setSessionForm] = useState({ batch_id: '', session_type: 'LECTURE', session_slot: 'MORNING' });
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -140,6 +143,39 @@ export default function AttendancePage() {
                       </div>
                     </div>
                     
+                    {/* Capture without hardware. Both libraries have shipped in
+                        the repo unused since the offline work; an institute with
+                        no terminal can now take attendance from a phone. */}
+                    <div className="mb-6 space-y-3">
+                      <div className="flex gap-2">
+                        {(['qr', 'face'] as const).map((m) => (
+                          <button
+                            key={m}
+                            onClick={() => setCaptureMode(captureMode === m ? null : m)}
+                            data-native-tap
+                            className={`flex-1 px-3 py-2 text-[10px] font-mono uppercase tracking-widest border rounded transition-colors ${
+                              captureMode === m
+                                ? 'bg-foreground text-background border-foreground'
+                                : 'border-border text-muted-foreground hover:border-foreground'
+                            }`}
+                          >
+                            {m === 'qr' ? 'Scan QR' : 'Face check-in'}
+                          </button>
+                        ))}
+                      </div>
+
+                      {captureMode === 'qr' && (
+                        <QrScanner onScanned={(r) => { if (r.ok) load(); }} />
+                      )}
+                      {captureMode === 'face' && (
+                        <FaceCapture
+                          mode="verify"
+                          sessionId={activeSession.id}
+                          onDone={(r) => { if (r.verified) load(); }}
+                        />
+                      )}
+                    </div>
+
                     <Button variant="outline" className="w-full rounded font-mono text-xs uppercase text-red-500 border-red-500/40 hover:bg-red-500/10" onClick={() => closeSession(activeSession.id)}>
                       <XCircle className="w-4 h-4 mr-2" /> {t('endSession')}
                     </Button>
