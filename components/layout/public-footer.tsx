@@ -2,10 +2,14 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Logo } from '@/components/logo';
 import { useIsNative } from '@/components/native/native-provider';
 
 export function PublicFooter() {
+  const tNav = useTranslations('Marketing.nav');
+  const t = useTranslations('Marketing.footer');
+  const tHdr = useTranslations('Marketing.header');
   const isNative = useIsNative();
 
   // The app doesn't need a sitemap footer — its navigation is the bottom tab
@@ -21,10 +25,10 @@ export function PublicFooter() {
                    pb-[calc(1.5rem+var(--safe-bottom))]"
       >
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-          <Link href="/privacy" data-native-tap className="hover:text-foreground transition-colors">Privacy</Link>
-          <Link href="/terms" data-native-tap className="hover:text-foreground transition-colors">Terms</Link>
-          <Link href="/cookies" data-native-tap className="hover:text-foreground transition-colors">Cookies</Link>
-          <Link href="/contact" data-native-tap className="hover:text-foreground transition-colors">Contact</Link>
+          <Link href="/privacy" data-native-tap className="hover:text-foreground transition-colors">{tNav('privacy')}</Link>
+          <Link href="/terms" data-native-tap className="hover:text-foreground transition-colors">{tNav('terms')}</Link>
+          <Link href="/cookies" data-native-tap className="hover:text-foreground transition-colors">{tNav('cookies')}</Link>
+          <Link href="/contact" data-native-tap className="hover:text-foreground transition-colors">{tNav('contact')}</Link>
         </div>
         <p className="mt-4 text-foreground font-bold">CoopSetu // 2026</p>
       </footer>
@@ -58,28 +62,28 @@ export function PublicFooter() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 md:gap-16 w-full md:w-auto">
             <div className="flex flex-col gap-4">
-              <span className="text-foreground font-bold mb-2">Platform</span>
-              <Link href="/product" className="hover:text-foreground transition-colors">Product</Link>
-              <Link href="/solutions" className="hover:text-foreground transition-colors">Solutions</Link>
+              <span className="text-foreground font-bold mb-2">{t('platform')}</span>
+              <Link href="/product" className="hover:text-foreground transition-colors">{tNav('product')}</Link>
+              <Link href="/solutions" className="hover:text-foreground transition-colors">{tNav('solutions')}</Link>
               <Link href="/ai" className="hover:text-foreground transition-colors">AI</Link>
-              <Link href="/security" className="hover:text-foreground transition-colors">Security</Link>
-              <Link href="/enterprise" className="hover:text-foreground transition-colors">Enterprise</Link>
-              <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
+              <Link href="/security" className="hover:text-foreground transition-colors">{tNav('security')}</Link>
+              <Link href="/enterprise" className="hover:text-foreground transition-colors">{tNav('enterprise')}</Link>
+              <Link href="/pricing" className="hover:text-foreground transition-colors">{tNav('pricing')}</Link>
             </div>
 
             <div className="flex flex-col gap-4">
-              <span className="text-foreground font-bold mb-2">Company</span>
-              <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
-              <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
-              <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-              <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
-              <Link href="/cookies" className="hover:text-foreground transition-colors">Cookies</Link>
+              <span className="text-foreground font-bold mb-2">{t('company')}</span>
+              <Link href="/about" className="hover:text-foreground transition-colors">{tNav('about')}</Link>
+              <Link href="/contact" className="hover:text-foreground transition-colors">{tNav('contact')}</Link>
+              <Link href="/privacy" className="hover:text-foreground transition-colors">{tNav('privacy')}</Link>
+              <Link href="/terms" className="hover:text-foreground transition-colors">{tNav('terms')}</Link>
+              <Link href="/cookies" className="hover:text-foreground transition-colors">{tNav('cookies')}</Link>
             </div>
 
             <div className="flex flex-col gap-4">
-              <span className="text-foreground font-bold mb-2">App</span>
-              <Link href="/dashboard" className="hover:text-foreground transition-colors">Sign In</Link>
-              <Link href="/dashboard" className="hover:text-foreground transition-colors">Request Demo</Link>
+              <span className="text-foreground font-bold mb-2">{t('app')}</span>
+              <Link href="/dashboard" className="hover:text-foreground transition-colors">{tHdr('signIn')}</Link>
+              <Link href="/dashboard" className="hover:text-foreground transition-colors">{tHdr('requestDemo')}</Link>
             </div>
           </div>
           
