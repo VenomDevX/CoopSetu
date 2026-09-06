@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { z } from 'zod';
@@ -288,6 +289,23 @@ export default function SignupPage() {
           {googleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <GoogleIcon />}
           {t('continueWithGoogle')}
         </button>
+
+        {/* Parity with /login, which has carried this since the demo workspace
+            shipped. Signup never got it, so a visitor who landed here rather
+            than on login had no route into the demo without creating an
+            account — the one thing the demo exists to avoid. */}
+        <div className="pt-4 pb-2 text-center flex flex-col items-center">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">
+            {t('noAccountRequired')}
+          </span>
+          <Link
+            href="/demo"
+            data-native-tap
+            className="w-full h-10 bg-black border border-zinc-800 text-white text-xs font-mono uppercase tracking-widest hover:border-zinc-500 flex items-center justify-center gap-2 transition-colors rounded-[4px]"
+          >
+            {t('exploreDemo')}
+          </Link>
+        </div>
       </form>
     </OnboardingShell>
   );

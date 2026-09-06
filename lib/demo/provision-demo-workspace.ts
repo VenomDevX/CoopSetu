@@ -1,5 +1,10 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 
+export const DEMO_ROLES = [
+  'SUPER_ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE', 'EMPLOYER',
+] as const;
+export type DemoRole = (typeof DEMO_ROLES)[number];
+
 export const DEMO_PERSONAS = [
   { role: 'SUPER_ADMIN', email: 'demo-super@coopsetu.local', name: 'NCCT Authority', title: 'Super Admin' },
   { role: 'INSTITUTE_ADMIN', email: 'demo-admin@coopsetu.local', name: 'Institute Director', title: 'Institute Admin' },
@@ -87,6 +92,14 @@ export async function provisionDemoWorkspace(authUserId: string, requestedRole: 
   let visitorMemberId = '';
 
   // 4. Create Members
+  //
+  // The visitor becomes a member only when their requested role matches one of
+  // the personas above. An unrecognised role therefore left visitorMemberId as
+  // '' and surfaced 200 lines later as
+  //   "Failed to create demo session: invalid input syntax for type uuid"
+  // which says nothing about the actual mistake. This is what broke the nightly
+  // full-regression run every night from 2026-08-31. Checked here rather than
+  // only at the route so every caller gets the same guarantee.
   for (const persona of DEMO_PERSONAS) {
     const isVisitor = persona.role === requestedRole;
     const userId = isVisitor ? authUserId : dummyUserIds[persona.role];
@@ -119,6 +132,12 @@ export async function provisionDemoWorkspace(authUserId: string, requestedRole: 
           role_id: roleId,
         });
     }
+  }
+
+  if (!visitorMemberId) {
+    throw new Error(
+      `Unknown demo role "${requestedRole}". Expected one of: ${DEMO_ROLES.join(', ')}.`,
+    );
   }
 
   // 5. Create Demo Session Record

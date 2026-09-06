@@ -18,3 +18,7 @@ metadata.json
 # JetBrains IDE state - machine-specific (SDK paths, emulator lists).
 .idea/
 android/.idea/
+
+# Local credential sheet for the seeded NCCT demo environment.
+# Never commit: keeping it untracked is the whole point of the file.
+NCCT-LOGINS.md

@@ -657,3 +657,687 @@ select '00000000-0000-0000-0000-0000000000a0', i.id,
   from public.institutions i
  where i.code = 'ICM-LUCKNOW'
 on conflict (token_hash) do nothing;
+
+
+-- ============================================================================
+-- Hindi translations for the seeded course
+--
+-- Matched on the base row's title rather than a hardcoded id, so this survives
+-- the course being reseeded with a new uuid.
+--
+-- The PDF module is deliberately left untranslated. That is the point of the
+-- fallback: an untranslated module still renders in the source language rather
+-- than disappearing from the course, and a judge switching to Hindi can see
+-- both behaviours in one screen.
+-- ============================================================================
+do $$
+declare
+  v_course uuid := '00000000-0000-0000-0000-0000000000d2';
+begin
+  insert into public.course_translations (course_id, locale, title, description)
+  values (v_course, 'hi',
+          'सहकारी अभिशासन की मूल बातें',
+          'सहकारी संस्था क्या होती है, किसकी क्या जवाबदेही है, और सदस्य समिति से उत्तरदायित्व कैसे माँगते हैं।')
+  on conflict (course_id, locale) do nothing;
+
+  insert into public.course_module_translations (module_id, locale, title, content_text)
+  select m.id, 'hi', 'स्वागत और यह पाठ्यक्रम कैसे चलेगा', null
+    from public.course_modules m
+   where m.course_id = v_course and m.title = 'Welcome and how this course works'
+  on conflict (module_id, locale) do nothing;
+
+  insert into public.course_module_translations (module_id, locale, title, content_text)
+  select m.id, 'hi', 'कोई संस्था सहकारी कब कहलाती है',
+E'सहकारी संस्था व्यक्तियों का एक स्वायत्त संघ है, जो स्वेच्छा से जुड़कर अपनी साझा आर्थिक, सामाजिक और सांस्कृतिक आवश्यकताओं की पूर्ति एक संयुक्त स्वामित्व वाले तथा लोकतांत्रिक रूप से नियंत्रित उद्यम के माध्यम से करता है।\n\nइस परिभाषा में चार प्रतिबद्धताएँ छिपी हैं, जिन्हें अलग-अलग समझना ज़रूरी है।\n\n1. स्वैच्छिक और खुली सदस्यता\nसदस्यता हर उस व्यक्ति के लिए खुली है जो समिति की सेवाओं का उपयोग कर सके और सदस्य होने के दायित्व स्वीकार करने को तैयार हो। कोई समिति लिंग, सामाजिक स्थिति, जाति, राजनीतिक संबद्धता या धर्म के आधार पर सदस्यता से मना नहीं कर सकती।\n\n2. लोकतांत्रिक सदस्य नियंत्रण\nएक सदस्य, एक मत — चाहे उसके पास कितने भी शेयर हों। कंपनी और सहकारी संस्था के बीच यही सबसे बड़ा अंतर है। कंपनी में नियंत्रण पूँजी के पीछे चलता है; सहकारी संस्था में नियंत्रण सदस्यता के पीछे चलता है। पचास शेयर रखने वाले सदस्य की आवाज़ आम सभा में उतनी ही है, जितनी एक शेयर रखने वाले सदस्य की।\n\n3. सदस्यों की आर्थिक भागीदारी\nसदस्य अपनी समिति की पूँजी में समान रूप से योगदान करते हैं और उस पर लोकतांत्रिक नियंत्रण रखते हैं। लाभांश शेयरधारिता के अनुपात में नहीं, बल्कि उपयोग के अनुपात में बाँटा जाता है — जिस किसान ने डेयरी को अधिक दूध दिया, उसे अधिक संरक्षण बोनस मिलता है।\n\n4. स्वायत्तता और स्वतंत्रता\nजब कोई सहकारी संस्था सरकार के साथ समझौता करती है या बाहर से पूँजी जुटाती है, तो शर्तें ऐसी होनी चाहिए कि सदस्यों का लोकतांत्रिक नियंत्रण बना रहे।\n\nव्यवहार में यह क्यों मायने रखता है\nजो पैक्स सचिव इन सिद्धांतों को समझता है, वह आम सभा में उठने वाले असली सवालों का उत्तर दे सकता है: बड़ा जमाकर्ता दूसरा मत क्यों नहीं माँग सकता, लाभांश उसी तरह क्यों बँटा, और समिति की बहियाँ हर सदस्य के लिए खुली क्यों हैं।\n\nअगले पाठ में यह देखेंगे कि किसकी क्या जवाबदेही है, और रजिस्ट्रार किसी समिति को क्या निर्देश दे सकता है और क्या नहीं।'
+    from public.course_modules m
+   where m.course_id = v_course and m.title = 'What makes an organisation a cooperative'
+  on conflict (module_id, locale) do nothing;
+
+  insert into public.course_module_translations (module_id, locale, title, content_text)
+  select m.id, 'hi', 'जवाबदेही: समिति, सचिव और रजिस्ट्रार',
+E'प्राथमिक सहकारी समिति में तीन भूमिकाओं का वैधानिक महत्व है, और इन्हें आपस में गड्डमड्ड कर देना अंकेक्षण आपत्तियों का सबसे आम कारण है।\n\nप्रबंध समिति\nआम सभा द्वारा निर्वाचित। समिति के निर्णयों के लिए सामूहिक रूप से उत्तरदायी: सीमा के भीतर ऋण स्वीकृत करना, बजट अनुमोदित करना और कर्मचारियों की नियुक्ति। किसी एक सदस्य के पास अकेले कार्यकारी अधिकार नहीं होता — साधन समिति का प्रस्ताव है, अध्यक्ष की इच्छा नहीं।\n\nसचिव\nसमिति का कार्यकारी अधिकारी। बहियाँ रखता है, समिति के प्रस्तावों को लागू करता है, और अभिलेखों की शुद्धता के लिए उत्तरदायी है। सचिव नीति तय नहीं करता; जिस सचिव ने समिति के प्रस्ताव के बिना ऋण स्वीकृत किया, उसने अपने अधिकार का अतिक्रमण किया है — भले ही ऋण कितना भी उचित क्यों न हो।\n\nसहकारी समितियों का रजिस्ट्रार\nएक वैधानिक प्राधिकारी, समिति का सदस्य नहीं। समितियों का पंजीकरण करता है, अंकेक्षण और जाँच के आदेश देता है, और निर्धारित परिस्थितियों में समिति को अधिक्रांत कर सकता है। रजिस्ट्रार जो नहीं कर सकता, वह है समिति का रोज़मर्रा का कामकाज चलाना या उन विषयों पर आम सभा को दरकिनार करना जो अधिनियम ने सदस्यों के लिए छोड़े हैं।\n\nएक उदाहरण\nकोई सदस्य 80,000 रुपये के फसल ऋण के लिए आवेदन करता है। उपविधि सचिव को 25,000 रुपये तक स्वीकृत करने की अनुमति देती है। सही क्रम यह है: आवेदन दर्ज हो, प्रबंध समिति के समक्ष रखा जाए, समिति का प्रस्ताव पारित और कार्यवृत्त में दर्ज हो, फिर सचिव उसी प्रस्ताव के आधार पर राशि वितरित करे और उसे अभिलिखित करे।\n\nप्रस्ताव को छोड़ देना सहकारी अंकेक्षण की सबसे बार-बार मिलने वाली आपत्ति है — इसलिए नहीं कि धन का दुरुपयोग हुआ, बल्कि इसलिए कि ऋण देने का अधिकार ही कभी विधिवत सृजित नहीं हुआ।'
+    from public.course_modules m
+   where m.course_id = v_course and m.title = 'Accountability: board, secretary, Registrar'
+  on conflict (module_id, locale) do nothing;
+end $$;
+
+
+-- ============================================================================
+-- Issued certificates
+--
+-- Gives the public verification page (/verify/<number>) something real to
+-- confirm, and the skill passport something to show. Two ACTIVE and one
+-- REVOKED, because "revoked" is the answer a verifier most needs to trust and
+-- the one most likely to be broken without a fixture proving it.
+--
+-- qr_code stores the URL the printed QR encodes, not the number again — that
+-- is what closes the scan-to-verify loop.
+-- ============================================================================
+do $$
+declare
+  v_org       uuid := '00000000-0000-0000-0000-0000000000a0';
+  v_programme uuid := '00000000-0000-0000-0000-0000000000d1';
+  v_aman      uuid;
+  v_sunita    uuid;
+  v_rahul     uuid;
+begin
+  select id into v_aman   from public.trainees where user_id = '00000000-0000-0000-0000-0000000000b9' and organization_id = v_org;
+  select id into v_sunita from public.trainees where user_id = '00000000-0000-0000-0000-0000000000ba' and organization_id = v_org;
+  select id into v_rahul  from public.trainees where user_id = '00000000-0000-0000-0000-0000000000bb' and organization_id = v_org;
+
+  insert into public.certificates (trainee_id, programme_id, certificate_number, title, issued_at, valid_until, issuer_name, qr_code, status)
+  values
+    (v_aman,   v_programme, 'CERT-NCCT-2026-000101', 'Cooperative Management Foundation',
+     now() - interval '20 days', now() + interval '5 years', 'NCCT',
+     'https://coopsetu.in/verify/CERT-NCCT-2026-000101', 'ACTIVE'),
+    (v_sunita, v_programme, 'CERT-NCCT-2026-000102', 'Cooperative Management Foundation',
+     now() - interval '18 days', now() + interval '5 years', 'NCCT',
+     'https://coopsetu.in/verify/CERT-NCCT-2026-000102', 'ACTIVE'),
+    (v_rahul,  v_programme, 'CERT-NCCT-2026-000103', 'Cooperative Management Foundation',
+     now() - interval '2 years', now() + interval '3 years', 'NCCT',
+     'https://coopsetu.in/verify/CERT-NCCT-2026-000103', 'REVOKED')
+  on conflict (certificate_number) do nothing;
+end $$;
+
+
+-- ============================================================================
+-- NCCT environment — population
+--
+-- The environment was almost empty: 3 trainees, 1 programme, 1 batch, 1 course,
+-- and zero rows in assessments, results, progress, attendance, jobs and skills.
+-- Every chart and KPI was rendering against an empty set.
+--
+-- This block builds a plausible national deployment: 20 trainees across all five
+-- institutes, 7 programmes, 12 batches, 9 courses, 45+ modules, real assessment
+-- scores, and 90 days of learning history.
+--
+-- History is GENERATED, not enumerated — generate_series plus a fixed seed, so
+-- seed.sql stays readable and `db reset` stays quick. setseed() makes it
+-- reproducible: the same reset always produces the same demo.
+--
+-- UUID namespaces, chosen to stay clear of the existing ...0b1-0bd / 0c1-0c6 /
+-- 0d1-0d3 blocks:
+--   e001-e011  trainee auth users      f101-f107  programmes
+--   f201-f20c  batches                 f301-f309  courses
+--   f401-f408  assessments
+-- ============================================================================
+
+-- ---------------------------------------------------------------- trainees
+do $$
+declare
+  v_org uuid := '00000000-0000-0000-0000-0000000000a0';
+  v     record;
+  people jsonb := '[
+    {"n":1, "name":"Kavita Sharma",     "inst":"c5","edu":"B.A. Sociology",        "loc":"Barabanki, Uttar Pradesh","g":"FEMALE","lit":"BASIC"},
+    {"n":2, "name":"Deepak Nishad",     "inst":"c5","edu":"12th Pass",             "loc":"Gonda, Uttar Pradesh",    "g":"MALE",  "lit":"BASIC"},
+    {"n":3, "name":"Pooja Maurya",      "inst":"c5","edu":"B.Com",                 "loc":"Sitapur, Uttar Pradesh",  "g":"FEMALE","lit":"INTERMEDIATE"},
+    {"n":4, "name":"Vikas Chaurasia",   "inst":"c5","edu":"B.Sc. Agriculture",     "loc":"Hardoi, Uttar Pradesh",   "g":"MALE",  "lit":"INTERMEDIATE"},
+    {"n":5, "name":"Anjali Verma",      "inst":"c5","edu":"M.A. Rural Development","loc":"Lucknow, Uttar Pradesh",  "g":"FEMALE","lit":"ADVANCED"},
+    {"n":6, "name":"Rakesh Ahirwar",    "inst":"c6","edu":"12th Pass",             "loc":"Sehore, Madhya Pradesh",  "g":"MALE",  "lit":"BASIC"},
+    {"n":7, "name":"Meena Lodhi",       "inst":"c6","edu":"B.A. Economics",        "loc":"Vidisha, Madhya Pradesh", "g":"FEMALE","lit":"BASIC"},
+    {"n":8, "name":"Suresh Yadav",      "inst":"c6","edu":"B.Com",                 "loc":"Raisen, Madhya Pradesh",  "g":"MALE",  "lit":"INTERMEDIATE"},
+    {"n":9, "name":"Geeta Patel",       "inst":"c6","edu":"Diploma Dairy Tech",    "loc":"Bhopal, Madhya Pradesh",  "g":"FEMALE","lit":"INTERMEDIATE"},
+    {"n":10,"name":"Manoj Gowda",       "inst":"c3","edu":"B.Sc. Agriculture",     "loc":"Mandya, Karnataka",       "g":"MALE",  "lit":"INTERMEDIATE"},
+    {"n":11,"name":"Lakshmi Devi",      "inst":"c3","edu":"12th Pass",             "loc":"Hassan, Karnataka",       "g":"FEMALE","lit":"BASIC"},
+    {"n":12,"name":"Prakash Naik",      "inst":"c3","edu":"B.Com",                 "loc":"Tumakuru, Karnataka",     "g":"MALE",  "lit":"ADVANCED"},
+    {"n":13,"name":"Shwetha Rao",       "inst":"c3","edu":"MBA Rural Management",  "loc":"Bengaluru, Karnataka",    "g":"FEMALE","lit":"ADVANCED"},
+    {"n":14,"name":"Harjeet Singh",     "inst":"c4","edu":"B.A. Punjabi",          "loc":"Ludhiana, Punjab",        "g":"MALE",  "lit":"BASIC"},
+    {"n":15,"name":"Simran Kaur",       "inst":"c4","edu":"B.Sc. Home Science",    "loc":"Patiala, Punjab",         "g":"FEMALE","lit":"INTERMEDIATE"},
+    {"n":16,"name":"Gurpreet Dhillon",  "inst":"c4","edu":"Diploma Agri Marketing","loc":"Bathinda, Punjab",        "g":"MALE",  "lit":"INTERMEDIATE"},
+    {"n":17,"name":"Sunita Bansal",     "inst":"c2","edu":"M.Com",                 "loc":"Pune, Maharashtra",       "g":"FEMALE","lit":"ADVANCED"}
+  ]'::jsonb;
+begin
+  for v in select * from jsonb_array_elements(people) loop
+    declare
+      v_uid uuid := ('00000000-0000-0000-0000-00000000e0' || lpad((v.value->>'n')::text, 2, '0'))::uuid;
+      v_email text := lower(replace(split_part(v.value->>'name', ' ', 1), '.', '')) || (v.value->>'n') || '@coopsetu.test';
+      v_inst uuid := ('00000000-0000-0000-0000-0000000000' || (v.value->>'inst'))::uuid;
+      v_member uuid;
+      v_role uuid;
+    begin
+      insert into auth.users (
+        instance_id, id, aud, role, email, encrypted_password,
+        email_confirmed_at, created_at, updated_at,
+        raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous)
+      values (
+        '00000000-0000-0000-0000-000000000000', v_uid, 'authenticated', 'authenticated',
+        v_email, extensions.crypt('Password123!', extensions.gen_salt('bf')),
+        now(), now() - interval '120 days', now(),
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        jsonb_build_object('full_name', v.value->>'name'), false, false)
+      on conflict (id) do nothing;
+
+      insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+      values (gen_random_uuid(), v_uid, v_uid::text,
+              jsonb_build_object('sub', v_uid::text, 'email', v_email),
+              'email', now(), now(), now())
+      on conflict do nothing;
+
+      update public.profiles
+        set job_title = 'Trainee',
+            username = split_part(v_email,'@',1) || '-coopsetu',
+            username_normalized = lower(split_part(v_email,'@',1) || '-coopsetu'),
+            profile_completed_at = now()
+        where id = v_uid;
+
+      update auth.users set
+        confirmation_token='', recovery_token='', email_change_token_new='',
+        email_change='', email_change_token_current='', phone_change='',
+        phone_change_token='', reauthentication_token=''
+      where id = v_uid;
+
+      insert into public.organization_members (organization_id, user_id, employment_status, is_active, job_title, institution_id)
+      values (v_org, v_uid, 'ACTIVE', true, 'Trainee', v_inst)
+      on conflict (organization_id, user_id) do update set institution_id = excluded.institution_id
+      returning id into v_member;
+      if v_member is null then
+        select id into v_member from public.organization_members where organization_id=v_org and user_id=v_uid;
+      end if;
+
+      select id into v_role from public.roles where code='TRAINEE' and organization_id is null;
+      if v_role is not null then
+        insert into public.member_roles (organization_member_id, role_id) values (v_member, v_role)
+        on conflict do nothing;
+      end if;
+
+      insert into public.trainees (user_id, organization_id, institution_id, education, location, languages,
+                                   digital_literacy_level, employment_status, gender, status, created_at)
+      values (v_uid, v_org, v_inst, v.value->>'edu', v.value->>'loc',
+              '{"Hindi","English"}', v.value->>'lit',
+              case when (v.value->>'n')::int % 5 = 0 then 'EMPLOYED' else 'UNEMPLOYED' end,
+              v.value->>'g', 'ACTIVE', now() - ((v.value->>'n')::int * 4 || ' days')::interval)
+      on conflict (user_id, organization_id) do nothing;
+    end;
+  end loop;
+end $$;
+
+-- ------------------------------------------- programmes, batches, courses
+do $$
+declare
+  v_org uuid := '00000000-0000-0000-0000-0000000000a0';
+  v_vam uuid := '00000000-0000-0000-0000-0000000000c2';
+  v_blr uuid := '00000000-0000-0000-0000-0000000000c3';
+  v_chd uuid := '00000000-0000-0000-0000-0000000000c4';
+  v_lko uuid := '00000000-0000-0000-0000-0000000000c5';
+  v_bpl uuid := '00000000-0000-0000-0000-0000000000c6';
+  t_vam uuid; t_icm uuid;
+begin
+  select id into t_vam from public.trainers where user_id='00000000-0000-0000-0000-0000000000b7';
+  select id into t_icm from public.trainers where user_id='00000000-0000-0000-0000-0000000000b8';
+
+  insert into public.programmes (id, organization_id, institution_id, title, description, duration_days, capacity, fee, status, start_date, end_date) values
+   ('00000000-0000-0000-0000-00000000f101', v_org, v_vam, 'Rural Banking & Credit Management',
+    'Credit appraisal, NPA management and the recovery process for primary agricultural credit societies.', 60, 45, 0, 'ACTIVE', current_date-40, current_date+20),
+   ('00000000-0000-0000-0000-00000000f102', v_org, v_bpl, 'Dairy Cooperative Management',
+    'Milk procurement, quality testing, chilling-centre operations and the Anand pattern of dairy cooperation.', 45, 35, 0, 'ACTIVE', current_date-30, current_date+15),
+   ('00000000-0000-0000-0000-00000000f103', v_org, v_lko, 'PACS Computerisation',
+    'Taking a primary agricultural credit society from paper ledgers to the national PACS software stack.', 30, 40, 0, 'ACTIVE', current_date-25, current_date+5),
+   ('00000000-0000-0000-0000-00000000f104', v_org, v_blr, 'Cooperative Audit & Compliance',
+    'Statutory audit, audit classification, and the objections that most often arise in cooperative accounts.', 50, 30, 0, 'ACTIVE', current_date-55, current_date-5),
+   ('00000000-0000-0000-0000-00000000f105', v_org, v_chd, 'Agri Marketing & FPOs',
+    'Forming and running a Farmer Producer Organisation: aggregation, grading, and market linkage.', 40, 40, 0, 'ACTIVE', current_date-20, current_date+20),
+   ('00000000-0000-0000-0000-00000000f106', v_org, v_lko, 'Digital Literacy for Rural Youth',
+    'Devices, the internet, digital payments, online forms and staying safe online.', 21, 60, 0, 'ACTIVE', current_date-15, current_date+6),
+   ('00000000-0000-0000-0000-00000000f107', v_org, v_vam, 'Cooperative Leadership (Advanced)',
+    'Board governance, strategy and financial oversight for senior cooperative office bearers.', 30, 25, 0, 'DRAFT', current_date+10, current_date+40)
+  on conflict (id) do nothing;
+
+  insert into public.batches (id, organization_id, programme_id, trainer_id, name, start_date, end_date, capacity, status, room) values
+   ('00000000-0000-0000-0000-00000000f201', v_org, '00000000-0000-0000-0000-00000000f101', t_icm, 'RBC-2026-LKO-01', current_date-40, current_date+20, 45, 'ACTIVE',    'Hall B'),
+   ('00000000-0000-0000-0000-00000000f202', v_org, '00000000-0000-0000-0000-00000000f101', t_vam, 'RBC-2026-PUN-01', current_date-38, current_date+22, 40, 'ACTIVE',    'Room 12'),
+   ('00000000-0000-0000-0000-00000000f203', v_org, '00000000-0000-0000-0000-00000000f102', t_icm, 'DCM-2026-BPL-01', current_date-30, current_date+15, 35, 'ACTIVE',    'Dairy Lab'),
+   ('00000000-0000-0000-0000-00000000f204', v_org, '00000000-0000-0000-0000-00000000f103', t_icm, 'PACS-2026-LKO-01',current_date-25, current_date+5,  40, 'ACTIVE',    'Computer Lab 1'),
+   ('00000000-0000-0000-0000-00000000f205', v_org, '00000000-0000-0000-0000-00000000f103', t_icm, 'PACS-2026-LKO-02',current_date-10, current_date+20, 40, 'ACTIVE',    'Computer Lab 2'),
+   ('00000000-0000-0000-0000-00000000f206', v_org, '00000000-0000-0000-0000-00000000f104', t_vam, 'AUD-2026-BLR-01', current_date-55, current_date-5,  30, 'COMPLETED', 'Seminar Hall'),
+   ('00000000-0000-0000-0000-00000000f207', v_org, '00000000-0000-0000-0000-00000000f105', t_vam, 'FPO-2026-CHD-01', current_date-20, current_date+20, 40, 'ACTIVE',    'Hall A'),
+   ('00000000-0000-0000-0000-00000000f208', v_org, '00000000-0000-0000-0000-00000000f106', t_icm, 'DL-2026-LKO-01',  current_date-15, current_date+6,  60, 'ACTIVE',    'Computer Lab 1'),
+   ('00000000-0000-0000-0000-00000000f209', v_org, '00000000-0000-0000-0000-00000000f106', t_icm, 'DL-2026-BPL-01',  current_date-12, current_date+9,  60, 'ACTIVE',    'IT Room'),
+   ('00000000-0000-0000-0000-00000000f20a', v_org, '00000000-0000-0000-0000-00000000f107', t_vam, 'LEAD-2026-PUN-01',current_date+10, current_date+40, 25, 'UPCOMING',  'Board Room'),
+   ('00000000-0000-0000-0000-00000000f20b', v_org, '00000000-0000-0000-0000-00000000f102', t_vam, 'DCM-2026-PUN-01', current_date-60, current_date-10, 35, 'COMPLETED', 'Dairy Lab')
+  on conflict (id) do nothing;
+
+  insert into public.courses (id, programme_id, trainer_id, title, description, duration_hours, order_index, status) values
+   ('00000000-0000-0000-0000-00000000f301','00000000-0000-0000-0000-00000000f101', t_icm, 'Credit Appraisal Fundamentals',   'How a society decides whether a loan is sound, and what it must record when it does.', 14, 1, 'ACTIVE'),
+   ('00000000-0000-0000-0000-00000000f302','00000000-0000-0000-0000-00000000f101', t_icm, 'NPA Management and Recovery',     'Recognising a non-performing asset early, and the recovery routes open to a society.', 10, 2, 'ACTIVE'),
+   ('00000000-0000-0000-0000-00000000f303','00000000-0000-0000-0000-00000000f102', t_icm, 'Milk Procurement and Quality',    'Collection routes, fat and SNF testing, chilling, and paying a farmer correctly.',      12, 1, 'ACTIVE'),
+   ('00000000-0000-0000-0000-00000000f304','00000000-0000-0000-0000-00000000f103', t_icm, 'PACS Software Essentials',        'Day-to-day operation of the national PACS package: members, deposits, loans, reports.', 16, 1, 'ACTIVE'),
+   ('00000000-0000-0000-0000-00000000f305','00000000-0000-0000-0000-00000000f103', t_icm, 'Migrating Ledgers to Digital',    'Preparing, cleaning and importing a society''s existing books without losing history.',  8, 2, 'ACTIVE'),
+   ('00000000-0000-0000-0000-00000000f306','00000000-0000-0000-0000-00000000f104', t_vam, 'Cooperative Audit Practice',      'The statutory audit cycle, audit classification, and drafting an audit memorandum.',    18, 1, 'ACTIVE'),
+   ('00000000-0000-0000-0000-00000000f307','00000000-0000-0000-0000-00000000f105', t_vam, 'Building a Farmer Producer Organisation', 'Mobilising members, registering an FPO, and its first season of business.',      12, 1, 'ACTIVE'),
+   ('00000000-0000-0000-0000-00000000f308','00000000-0000-0000-0000-00000000f106', t_icm, 'Digital Basics',                  'Using a smartphone and a computer with confidence: files, browsing, forms, safety.',     10, 1, 'ACTIVE'),
+   ('00000000-0000-0000-0000-00000000f309','00000000-0000-0000-0000-00000000f106', t_icm, 'Digital Payments and UPI',        'Making and receiving payments safely, and recognising the common frauds.',               6, 2, 'ACTIVE')
+  on conflict (id) do nothing;
+end $$;
+
+-- ------------------------------------------------------------------ modules
+-- Five modules per course across the nine courses. The mix is deliberate: a
+-- presentation and a video open each course, reading and practice follow, and a
+-- quiz closes it — so the content-engagement panel has more than one type to
+-- compare and the drop-off column means something.
+do $$
+declare
+  c record;
+  i int;
+  v_type text; v_title text; v_url text; v_text text; v_mins int;
+begin
+  for c in select id, title from public.courses
+            where id::text like '00000000-0000-0000-0000-00000000f3%' order by id loop
+    for i in 1..5 loop
+      v_type := case i when 1 then 'PPT' when 2 then 'VIDEO' when 3 then 'TEXT' when 4 then 'PDF' else 'QUIZ' end;
+      v_mins := case i when 1 then 20 when 2 then 14 when 3 then 25 when 4 then 18 else 15 end;
+      v_title := case i
+        when 1 then 'Overview — ' || c.title
+        when 2 then 'Walkthrough — ' || c.title
+        when 3 then 'Reading — ' || c.title
+        when 4 then 'Reference handbook — ' || c.title
+        else 'Knowledge check — ' || c.title end;
+      v_url := case i
+        when 1 then 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+        when 2 then 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'
+        when 4 then 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+        else null end;
+      v_text := case when i in (3,5) then
+        'This session covers the practical side of ' || c.title || E'.\n\n'
+        'Work through it at your own pace. The points below are the ones that come up most often in the field, and the ones an auditor is most likely to ask about.\n\n'
+        '1. Record the decision, not just the outcome. A society that cannot show why it acted has a finding waiting for it, however sound the action was.\n\n'
+        '2. The by-laws set the limits. Where a limit is silent, the managing committee decides — and that decision belongs in the minutes.\n\n'
+        '3. Members are entitled to the books. Openness is not a courtesy in a cooperative; it is the mechanism by which democratic control actually works.\n\n'
+        'Take the knowledge check at the end of this course once you have worked through every module.'
+        else null end;
+
+      insert into public.course_modules (course_id, title, type, content_url, content_text, duration_minutes, order_index, is_mandatory)
+      select c.id, v_title, v_type, v_url, v_text, v_mins, i, (i <> 4)
+      where not exists (
+        select 1 from public.course_modules m where m.course_id = c.id and m.order_index = i
+      );
+    end loop;
+  end loop;
+end $$;
+
+-- -------------------------------------------------------------- assessments
+do $$
+declare
+  c record; a_id uuid; q int;
+begin
+  for c in select id, title from public.courses
+            where id::text like '00000000-0000-0000-0000-00000000f3%' order by id limit 8 loop
+    a_id := ('00000000-0000-0000-0000-00000000f4' || lpad((row_number() over ())::text, 2, '0'))::uuid;
+    insert into public.assessments (course_id, title, description, type, max_score, passing_score, duration_minutes, attempts_allowed, is_published)
+    select c.id, c.title || ' — Final Assessment',
+           'Six questions covering the whole course. You need 60% to pass.',
+           'QUIZ', 60, 36, 45, 2, true
+    where not exists (select 1 from public.assessments x where x.course_id = c.id);
+  end loop;
+end $$;
+
+-- Questions: six per assessment, real cooperative-domain content.
+do $$
+declare a record; i int;
+declare qs jsonb := '[
+  {"q":"Under the one-member-one-vote principle, how many votes does a member holding 50 shares have at the general body?",
+   "o":["One","Fifty","Proportional to shareholding","Depends on the by-laws"],"a":"One"},
+  {"q":"Who is collectively responsible for sanctioning a loan above the secretary''s limit?",
+   "o":["The secretary","The managing committee","The Registrar","The auditor"],"a":"The managing committee"},
+  {"q":"Surplus in a cooperative is distributed in proportion to:",
+   "o":["Shareholding","Use of the society''s services","Seniority of membership","Equally to all members"],"a":"Use of the society''s services"},
+  {"q":"Which of these can the Registrar NOT do?",
+   "o":["Order an audit","Register a society","Run the society''s daily business","Order an inquiry"],"a":"Run the society''s daily business"},
+  {"q":"The most frequent finding in cooperative audit is:",
+   "o":["Cash shortage","Missing committee resolution","Unregistered members","Late annual return"],"a":"Missing committee resolution"},
+  {"q":"Membership of a cooperative may be refused on the grounds of:",
+   "o":["Religion","Gender","Political affiliation","None of these"],"a":"None of these"}
+]'::jsonb;
+begin
+  for a in select id from public.assessments where id is not null loop
+    if exists (select 1 from public.assessment_questions where assessment_id = a.id) then continue; end if;
+    i := 0;
+    for i in 0..5 loop
+      insert into public.assessment_questions (assessment_id, question_text, question_type, options, correct_answer, marks, order_index)
+      values (a.id, qs->i->>'q', 'MCQ', qs->i->'o', qs->i->>'a', 10, i+1);
+    end loop;
+  end loop;
+end $$;
+
+-- -------------------------------------------------------------- enrolments
+-- Each trainee joins two to four programmes, their own institute's first, so
+-- the enrolment matches where they actually study. The spread matters: with
+-- everyone on the same two programmes the timeline has no texture and the
+-- content-engagement table ranks nothing.
+do $$
+declare t record; p record; n int := 0; want int;
+begin
+  for t in select tr.id, tr.institution_id from public.trainees tr
+            where tr.organization_id='00000000-0000-0000-0000-0000000000a0' and tr.status='ACTIVE' loop
+    n := 0;
+    want := 2 + (abs(hashtext(t.id::text || 'enr')) % 3);
+    for p in select pr.id, pr.institution_id from public.programmes pr
+              where pr.organization_id='00000000-0000-0000-0000-0000000000a0'
+                and pr.status='ACTIVE'
+              order by (pr.institution_id = t.institution_id) desc, pr.id loop
+      exit when n >= want;
+      insert into public.enrollments (trainee_id, programme_id, batch_id, status, source, enrolled_at, created_at)
+      select t.id, p.id,
+             (select b.id from public.batches b where b.programme_id = p.id and b.status='ACTIVE' limit 1),
+             -- The oldest enrolment of a long-standing trainee is finished;
+             -- without any COMPLETED row the programme-graduate achievement
+             -- and the completion funnel both stay empty.
+             case when n = 0 and (abs(hashtext(t.id::text)) % 3) = 0 then 'COMPLETED' else 'ENROLLED' end,
+             case when n = 0 then 'NOMINATED' else 'SELF' end,
+             now() - ((30 + n*10) || ' days')::interval,
+             now() - ((35 + n*10) || ' days')::interval
+      on conflict (trainee_id, programme_id) do nothing;
+      n := n + 1;
+    end loop;
+  end loop;
+end $$;
+
+-- ==========================================================================
+-- 90 days of learning history
+--
+-- Generated rather than enumerated. setseed() fixes the sequence so the same
+-- `db reset` always produces the same demo — a chart that reshuffles between
+-- runs is impossible to talk about.
+--
+-- The shape is deliberate, not uniform noise:
+--   * each trainee gets a "pace" from their id, so some race ahead and some
+--     barely start — which is what makes the drop-out panel meaningful;
+--   * weekends are quieter than weekdays;
+--   * a few trainees stop entirely part-way through, so the timeline has the
+--     falling-off that a real cohort shows.
+--
+-- course_progress is derived FROM these events afterwards, never written
+-- independently, so the current state and the history cannot disagree.
+-- ==========================================================================
+do $$
+declare
+  v_org uuid := '00000000-0000-0000-0000-0000000000a0';
+  t record; m record;
+  day_offset int; gives_up int;
+  pct int; secs int; ts timestamptz;
+  module_index int; visits int; v int; v_pct int; v_secs int;
+begin
+  perform setseed(0.42);
+
+  for t in
+    select tr.id, tr.created_at,
+           -- Pace and persistence derived from the id, so they are stable
+           -- across resets and vary believably between people.
+           (abs(hashtext(tr.id::text)) % 5 + 1)::numeric as speed,
+           (abs(hashtext(tr.id::text || 'x')) % 100)     as persistence
+      from public.trainees tr
+     where tr.organization_id = v_org and tr.status = 'ACTIVE'
+  loop
+    -- ~15% of the cohort disengages part-way; the rest keep going.
+    gives_up := case when t.persistence < 15 then 25 + (t.persistence % 20) else 200 end;
+    module_index := 0;
+
+    for m in
+      select cm.id as module_id, cm.course_id, cm.duration_minutes
+        from public.course_modules cm
+        join public.courses c on c.id = cm.course_id
+        join public.enrollments e on e.programme_id = c.programme_id
+       where e.trainee_id = t.id
+       order by c.id, cm.order_index
+    loop
+      module_index := module_index + 1;
+      -- Faster learners cover more ground per calendar day.
+      day_offset := 84 - floor(module_index * (4.0 / t.speed))::int;
+      exit when day_offset < 1;
+      exit when module_index > gives_up;
+
+      ts := date_trunc('day', now()) - (day_offset || ' days')::interval
+            + ((9 + (abs(hashtext(m.module_id::text)) % 10)) || ' hours')::interval;
+
+      -- Weekends: most people skip, so only ~30% of weekend slots produce a session.
+      if extract(dow from ts) in (0, 6) and random() > 0.3 then
+        continue;
+      end if;
+
+      -- How far they actually got. Most finish; some stall part-way, which is
+      -- what gives the content-engagement drop-off column something to show.
+      pct := case
+        when random() < 0.72 then 100
+        when random() < 0.6  then 40 + (random() * 45)::int
+        else 10 + (random() * 25)::int
+      end;
+      secs := greatest(60, (coalesce(m.duration_minutes, 15) * 60 * (pct / 100.0) * (0.7 + random() * 0.6))::int);
+
+      -- A module is rarely finished in one sitting. Splitting it across one to
+      -- three sessions is both truer to how people study and what gives the
+      -- daily timeline and the streak counter something to count.
+      visits := 1 + (abs(hashtext(t.id::text || m.module_id::text)) % 3);
+      for v in 1..visits loop
+        -- Earlier sittings land on earlier days and reach less far; the last
+        -- one carries the final figure, and course_progress takes the maximum.
+        ts := date_trunc('day', now()) - ((day_offset + (visits - v) * 2) || ' days')::interval
+              + ((8 + (abs(hashtext(m.module_id::text || v::text)) % 11)) || ' hours')::interval
+              + ((abs(hashtext(v::text || m.module_id::text)) % 60) || ' minutes')::interval;
+
+        v_pct  := (pct * v) / visits;
+        v_secs := greatest(60, secs / visits);
+
+        insert into public.lms_events (organization_id, trainee_id, course_id, module_id, event_type, progress_pct, seconds_spent, occurred_at)
+        values (v_org, t.id, m.course_id, m.module_id, 'VIEW_START', 0, 0, ts);
+
+        insert into public.lms_events (organization_id, trainee_id, course_id, module_id, event_type, progress_pct, seconds_spent, occurred_at)
+        values (v_org, t.id, m.course_id, m.module_id,
+                case when v = visits and pct >= 100 then 'MODULE_COMPLETE' else 'VIEW_PROGRESS' end,
+                v_pct, v_secs, ts + (v_secs || ' seconds')::interval);
+      end loop;
+
+    end loop;
+  end loop;
+end $$;
+
+-- --------------------------------------------- derive course_progress from it
+-- One pass over the log: the furthest point reached per module wins, which is
+-- exactly the high-water rule the live player applies.
+insert into public.course_progress (trainee_id, course_id, module_id, progress_pct, completed, completed_at, last_accessed_at, time_spent_seconds)
+select e.trainee_id, e.course_id, e.module_id,
+       max(e.progress_pct)                                        as progress_pct,
+       max(e.progress_pct) >= 100                                 as completed,
+       case when max(e.progress_pct) >= 100 then max(e.occurred_at) end as completed_at,
+       max(e.occurred_at)                                         as last_accessed_at,
+       sum(e.seconds_spent)                                       as time_spent_seconds
+  from public.lms_events e
+ where e.module_id is not null
+ group by e.trainee_id, e.course_id, e.module_id
+on conflict (trainee_id, course_id, module_id) do nothing;
+
+-- ------------------------------------------------------- assessment results
+-- Only trainees who actually finished most of a course sit its assessment —
+-- results that appear without the learning behind them would undercut the
+-- funnel they are meant to illustrate.
+do $$
+declare r record; sc int; att int;
+begin
+  perform setseed(0.73);
+  for r in
+    select a.id as assessment_id, a.course_id, a.max_score, cp.trainee_id,
+           count(*) filter (where cp.completed) as done,
+           count(*) as total
+      from public.assessments a
+      join public.course_progress cp on cp.course_id = a.course_id
+     group by a.id, a.course_id, a.max_score, cp.trainee_id
+    having count(*) filter (where cp.completed) >= 3
+  loop
+    -- A believable spread: mostly passes, a tail of failures, a few perfect.
+    sc := case
+      when random() < 0.12 then r.max_score
+      when random() < 0.70 then (r.max_score * (0.62 + random() * 0.32))::int
+      when random() < 0.80 then (r.max_score * (0.40 + random() * 0.18))::int
+      else (r.max_score * (0.15 + random() * 0.24))::int
+    end;
+    att := case when sc < r.max_score * 0.6 and random() < 0.5 then 2 else 1 end;
+
+    insert into public.assessment_results (assessment_id, trainee_id, score, max_score, passed, attempt_number, submitted_at, graded_at)
+    values (r.assessment_id, r.trainee_id, sc, r.max_score,
+            sc >= r.max_score * 0.6, att,
+            now() - ((3 + (abs(hashtext(r.trainee_id::text || r.assessment_id::text)) % 30)) || ' days')::interval,
+            now() - ((2 + (abs(hashtext(r.trainee_id::text)) % 25)) || ' days')::interval);
+
+    insert into public.lms_events (organization_id, trainee_id, course_id, assessment_id, event_type, progress_pct, seconds_spent, occurred_at)
+    values ('00000000-0000-0000-0000-0000000000a0', r.trainee_id, r.course_id, r.assessment_id,
+            'ASSESSMENT_SUBMIT', 100, 1200,
+            now() - ((3 + (abs(hashtext(r.trainee_id::text || r.assessment_id::text)) % 30)) || ' days')::interval);
+  end loop;
+end $$;
+
+-- ------------------------------------------------------------ skill passport
+-- Skills follow completed learning rather than being sprinkled on: a passport
+-- that shows skills nobody earned is the fabricated-dashboard problem the
+-- project's own docs warn against.
+do $$
+declare r record;
+begin
+  perform setseed(0.19);
+  for r in
+    select cp.trainee_id, count(*) filter (where cp.completed) as done
+      from public.course_progress cp group by cp.trainee_id
+  loop
+    insert into public.trainee_skills (trainee_id, skill_id, proficiency, verified, source, verified_at)
+    select r.trainee_id, s.id,
+           least(100, 45 + (r.done * 3) + (abs(hashtext(r.trainee_id::text || s.id::text)) % 20)),
+           r.done >= 5,
+           case when r.done >= 5 then 'COURSE' else 'SELF_DECLARED' end,
+           case when r.done >= 5 then now() - '10 days'::interval end
+      from public.skills s
+     where s.name in ('Cooperative Law','Cooperative Audit','Rural Development','Financial Management',
+                      'Digital Literacy','Communication','Accounting','Leadership')
+       and r.done > 0
+    on conflict (trainee_id, skill_id) do nothing;
+  end loop;
+end $$;
+
+-- --------------------------------------------------------- employment exchange
+-- jobs hangs off employers, which are already organization-scoped, so a job
+-- carries no organization_id of its own.
+do $$
+declare
+  e_iffco uuid; e_amul uuid; v_job uuid; v_tr uuid; n int;
+begin
+  select id into e_iffco from public.employers where user_id='00000000-0000-0000-0000-0000000000bc';
+  select id into e_amul  from public.employers where user_id='00000000-0000-0000-0000-0000000000bd';
+
+  insert into public.jobs (id, employer_id, title, description, location, employment_type, salary_min, salary_max, vacancies, experience_min, education_required, deadline, status)
+  values
+   ('00000000-0000-0000-0000-00000000f501', e_iffco, 'Cooperative Field Officer',      'Field liaison with PACS across the district: membership drives, credit follow-up and monthly reporting.', 'Lucknow, Uttar Pradesh', 'FULL_TIME', 280000, 360000, 6, 0, 'Graduate', current_date+30, 'OPEN'),
+   ('00000000-0000-0000-0000-00000000f502', e_iffco, 'Credit Analyst — Rural Lending', 'Appraise crop and allied-activity loan applications received from primary societies.',                    'Bhopal, Madhya Pradesh', 'FULL_TIME', 340000, 450000, 3, 1, 'Graduate (Commerce preferred)', current_date+21, 'OPEN'),
+   ('00000000-0000-0000-0000-00000000f503', e_iffco, 'PACS Computerisation Trainer',   'Train society staff on the national PACS package and support them through go-live.',                       'Bengaluru, Karnataka',   'CONTRACT',  300000, 400000, 4, 1, 'Graduate', current_date+45, 'OPEN'),
+   ('00000000-0000-0000-0000-00000000f504', e_amul,  'Dairy Procurement Assistant',    'Run a village collection route: quality testing, weighing and farmer payment records.',                    'Anand, Gujarat',         'FULL_TIME', 240000, 300000, 8, 0, '12th pass', current_date+25, 'OPEN'),
+   ('00000000-0000-0000-0000-00000000f505', e_amul,  'Quality Control Technician',     'Fat and SNF testing at a chilling centre, and keeping the cold-chain records.',                            'Bhopal, Madhya Pradesh', 'FULL_TIME', 260000, 330000, 5, 0, 'Diploma / Graduate', current_date+18, 'OPEN'),
+   ('00000000-0000-0000-0000-00000000f506', e_amul,  'FPO Business Coordinator',       'Support a Farmer Producer Organisation through aggregation, grading and market linkage.',                  'Ludhiana, Punjab',       'FULL_TIME', 300000, 380000, 2, 2, 'Graduate', current_date+40, 'OPEN')
+  on conflict (id) do nothing;
+
+  -- Required skills, so the match score on an application has something to be
+  -- a score of rather than being a decorative number.
+  insert into public.job_skills (job_id, skill_id, importance)
+  select j.id, s.id, v.importance
+    from (values
+      ('00000000-0000-0000-0000-00000000f501','Cooperative Law','REQUIRED'),
+      ('00000000-0000-0000-0000-00000000f501','Communication','REQUIRED'),
+      ('00000000-0000-0000-0000-00000000f501','Rural Development','PREFERRED'),
+      ('00000000-0000-0000-0000-00000000f502','Accounting','REQUIRED'),
+      ('00000000-0000-0000-0000-00000000f502','Financial Management','REQUIRED'),
+      ('00000000-0000-0000-0000-00000000f502','Cooperative Audit','PREFERRED'),
+      ('00000000-0000-0000-0000-00000000f503','Digital Literacy','REQUIRED'),
+      ('00000000-0000-0000-0000-00000000f503','Communication','REQUIRED'),
+      ('00000000-0000-0000-0000-00000000f504','Financial Management','PREFERRED'),
+      ('00000000-0000-0000-0000-00000000f504','Digital Literacy','NICE_TO_HAVE'),
+      ('00000000-0000-0000-0000-00000000f505','Digital Literacy','PREFERRED'),
+      ('00000000-0000-0000-0000-00000000f506','Rural Development','REQUIRED'),
+      ('00000000-0000-0000-0000-00000000f506','Leadership','PREFERRED'),
+      ('00000000-0000-0000-0000-00000000f506','Accounting','NICE_TO_HAVE')
+    ) as v(job_id, skill_name, importance)
+    join public.jobs j on j.id = v.job_id::uuid
+    join public.skills s on s.name = v.skill_name
+  on conflict (job_id, skill_id) do nothing;
+
+  -- Applications from trainees who have finished enough for one to be plausible.
+  perform setseed(0.57);
+  for v_job in select id from public.jobs where employer_id in (e_iffco, e_amul) loop
+    n := 0;
+    for v_tr in
+      select cp.trainee_id from public.course_progress cp
+       group by cp.trainee_id having count(*) filter (where cp.completed) >= 4
+       order by cp.trainee_id
+    loop
+      exit when n >= 5;
+      insert into public.job_applications (job_id, trainee_id, status, match_score, applied_at)
+      values (v_job, v_tr,
+              (array['APPLIED','SHORTLISTED','INTERVIEWED','APPLIED','OFFERED'])[1 + (abs(hashtext(v_tr::text || v_job::text)) % 5)],
+              45 + (abs(hashtext(v_job::text || v_tr::text)) % 50),
+              now() - ((2 + (abs(hashtext(v_tr::text)) % 20)) || ' days')::interval)
+      on conflict (job_id, trainee_id) do nothing;
+      n := n + 1;
+    end loop;
+  end loop;
+end $$;
+
+-- ------------------------------------------------------------------ attendance
+-- Sessions twice a week per active batch for the last six weeks, so the
+-- attendance trend is a line rather than a single point.
+do $$
+declare b record; d date; s_id uuid; e record;
+begin
+  perform setseed(0.31);
+  for b in select id, trainer_id from public.batches
+            where organization_id='00000000-0000-0000-0000-0000000000a0' and status='ACTIVE' loop
+    d := current_date - 42;
+    while d < current_date loop
+      if extract(dow from d) in (2, 4) then
+        insert into public.attendance_sessions (batch_id, trainer_id, date, session_type, session_slot, is_active, qr_token, qr_expires_at)
+        values (b.id, b.trainer_id, d, 'LECTURE', 'MORNING', false, gen_random_uuid()::text, d + interval '1 day')
+        returning id into s_id;
+
+        for e in select trainee_id from public.enrollments where batch_id = b.id and status='ENROLLED' loop
+          insert into public.attendance_records (session_id, trainee_id, status, method, marked_at)
+          values (s_id, e.trainee_id,
+                  -- ~82% present, with lateness and absence in believable proportion.
+                  case when random() < 0.82 then 'PRESENT'
+                       when random() < 0.6  then 'LATE'
+                       else 'ABSENT' end,
+                  case when random() < 0.7 then 'QR' else 'MANUAL' end,
+                  d + interval '9 hours');
+        end loop;
+      end if;
+      d := d + 1;
+    end loop;
+  end loop;
+end $$;
+
+-- ------------------------------------------------------------ achievements
+-- Awarded from the data just seeded, using the same thresholds the service
+-- evaluates at runtime, so a trainee's shelf matches what they actually did.
+do $$
+declare t record; a record; val int; streak int;
+begin
+  for t in select id from public.trainees where organization_id='00000000-0000-0000-0000-0000000000a0' loop
+    select count(*) filter (where completed) into val from public.course_progress where trainee_id = t.id;
+    select count(distinct occurred_at::date) into streak from public.lms_events where trainee_id = t.id;
+
+    for a in select * from public.achievements loop
+      val := case a.criteria->>'metric'
+        when 'modules_completed'  then (select count(*) from public.course_progress where trainee_id=t.id and completed)
+        when 'courses_completed'  then (select count(*) from (
+                                          select cp.course_id from public.course_progress cp
+                                           where cp.trainee_id=t.id group by cp.course_id
+                                          having count(*) filter (where cp.completed) >= (
+                                            select count(*) from public.course_modules m where m.course_id = cp.course_id)) z)
+        when 'assessments_passed' then (select count(*) from public.assessment_results where trainee_id=t.id and passed)
+        when 'perfect_scores'     then (select count(*) from public.assessment_results where trainee_id=t.id and score >= max_score)
+        when 'certificates'       then (select count(*) from public.certificates where trainee_id=t.id and status='ACTIVE')
+        when 'skills_verified'    then (select count(*) from public.trainee_skills where trainee_id=t.id and verified)
+        when 'streak_days'        then streak
+        when 'programmes_completed' then (select count(*) from public.enrollments where trainee_id=t.id and status='COMPLETED')
+        else 0 end;
+
+      if val >= (a.criteria->>'threshold')::int then
+        insert into public.trainee_achievements (trainee_id, achievement_id, unlocked_at, unlocked_value)
+        values (t.id, a.id,
+                now() - ((abs(hashtext(t.id::text || a.code)) % 40) || ' days')::interval, val)
+        on conflict (trainee_id, achievement_id) do nothing;
+      end if;
+    end loop;
+  end loop;
+end $$;

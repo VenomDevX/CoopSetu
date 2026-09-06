@@ -7,6 +7,8 @@ import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import { usePermission } from "@/lib/permissions/context";
 import { queueSubmission } from "@/lib/offline/db";
+import { GradeBadge } from '@/components/learning/grade-badge';
+import { toGrade } from '@/lib/lms/grade';
 import { useIsNative } from '@/components/native/native-provider';
 
 interface Course { id: string; title: string; }
@@ -157,6 +159,10 @@ export default function AssessmentsPage() {
 
   const visible = assessments.filter(a => (isStaff || a.is_published) && (!search || a.title.toLowerCase().includes(search.toLowerCase())));
 
+  /** passing_score is stored in marks; the grade scale wants a percentage. */
+  const gradePassPct = (a: { passing_score?: number; max_score?: number }) =>
+    a.passing_score && a.max_score ? Math.round((a.passing_score / a.max_score) * 100) : 40;
+
   const typeIcon = (passed: boolean) => passed
     ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
     : <XCircle className="w-3.5 h-3.5 text-red-500" />;
@@ -278,6 +284,9 @@ export default function AssessmentsPage() {
                           <div className={`flex items-center gap-2 p-4 border rounded text-sm font-mono ${state.result.passed ? 'border-green-500/40 bg-green-500/10 text-green-500' : 'border-red-500/40 bg-red-500/10 text-red-500'}`}>
                             {typeIcon(state.result.passed)}
                             {state.result.passed ? 'Passed' : 'Not passed'} — {state.result.score}/{state.result.max_score}
+                            {/* The percentage and letter come from lib/lms/grade, the same
+                                scale the trainee's own record and the API use. */}
+                            <GradeBadge grade={toGrade(state.result.score, state.result.max_score, gradePassPct(a))} />
                           </div>
                         ) : state.queued ? (
                           <div className="flex items-center gap-2 p-4 border border-orange-500/40 bg-orange-500/10 text-orange-500 rounded text-sm font-mono">
@@ -326,6 +335,7 @@ export default function AssessmentsPage() {
                               <div className="flex items-center gap-2">
                                 {typeIcon(r.passed)}
                                 {r.score}/{r.max_score} · Attempt {r.attempt_number}
+                                <GradeBadge grade={toGrade(r.score, r.max_score, gradePassPct(a))} showPercentage={false} />
                               </div>
                             </div>
                           ))}
