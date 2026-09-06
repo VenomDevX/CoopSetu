@@ -559,3 +559,78 @@ begin
     ('00000000-0000-0000-0000-0000000000bd', v_org, 'Amul (GCMMF)', 'Dairy Cooperative',  'Anand, Gujarat', 'ACTIVE')
   on conflict do nothing;
 end $$;
+
+
+-- ============================================================================
+-- Learning content for the NCCT programme
+--
+-- Gives the lesson player (components/learning/module-player.tsx) something
+-- real to render: a narrated video, two authored text lessons and a PDF. The
+-- text bodies are full lessons rather than lorem, because they are what a judge
+-- actually reads when they open the course.
+--
+-- The video and PDF are public sample assets over https. Course content in a
+-- real deployment is institute-hosted; middleware.ts's media-src/frame-src
+-- allow https: for exactly that reason.
+-- ============================================================================
+do $$
+declare
+  v_org       uuid := '00000000-0000-0000-0000-0000000000a0';
+  v_icm_lko   uuid := '00000000-0000-0000-0000-0000000000c5';
+  v_trainer   uuid;
+  v_programme uuid := '00000000-0000-0000-0000-0000000000d1';
+  v_course    uuid := '00000000-0000-0000-0000-0000000000d2';
+  v_batch     uuid := '00000000-0000-0000-0000-0000000000d3';
+begin
+  select id into v_trainer from public.trainers
+   where user_id = '00000000-0000-0000-0000-0000000000b8' and organization_id = v_org;
+
+  insert into public.programmes (id, organization_id, institution_id, title, description, duration_days, capacity, fee, status, start_date, end_date)
+  values (v_programme, v_org, v_icm_lko,
+          'Cooperative Management Foundation',
+          'Governance of primary agricultural credit societies, cooperative audit basics, and the digital tools a PACS secretary uses day to day.',
+          45, 40, 0, 'ACTIVE', current_date - 5, current_date + 40)
+  on conflict (id) do nothing;
+
+  insert into public.batches (id, organization_id, programme_id, trainer_id, name, start_date, end_date, capacity, status, room)
+  values (v_batch, v_org, v_programme, v_trainer, 'CMF-2026-LKO-01',
+          current_date - 5, current_date + 40, 40, 'ACTIVE', 'Hall A')
+  on conflict (id) do nothing;
+
+  -- courses reach the organization through programme_id; there is no
+  -- organization_id column on this table.
+  insert into public.courses (id, programme_id, trainer_id, title, description, duration_hours, order_index, status)
+  values (v_course, v_programme, v_trainer,
+          'Cooperative Governance Essentials',
+          'What a cooperative is, who is accountable for what, and how members hold a society to account.',
+          12, 1, 'ACTIVE')
+  on conflict (id) do nothing;
+
+  insert into public.course_modules (course_id, title, type, content_url, content_text, duration_minutes, order_index, is_mandatory)
+  values
+    (v_course, 'Welcome and how this course works', 'VIDEO',
+     'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4', null, 3, 1, true),
+
+    (v_course, 'What makes an organisation a cooperative', 'TEXT', null,
+E'A cooperative is an autonomous association of persons united voluntarily to meet their common economic, social and cultural needs through a jointly owned and democratically controlled enterprise.\n\nThat definition carries four commitments worth separating out.\n\n1. VOLUNTARY AND OPEN MEMBERSHIP\nMembership is open to anyone able to use the society''s services and willing to accept the responsibilities of belonging. A society may not refuse membership on grounds of gender, social status, race, political affiliation or religion.\n\n2. DEMOCRATIC MEMBER CONTROL\nOne member, one vote — regardless of shareholding. This is the sharpest difference between a cooperative and a company. In a company, control follows capital; in a cooperative, control follows membership. A member holding fifty shares has exactly the same voice at the general body as a member holding one.\n\n3. MEMBER ECONOMIC PARTICIPATION\nMembers contribute equitably to the capital of their cooperative and control it democratically. Surplus is not distributed in proportion to shareholding but in proportion to use — a farmer who sold more milk to the dairy receives a larger patronage bonus.\n\n4. AUTONOMY AND INDEPENDENCE\nWhen a cooperative enters into an agreement with government or raises capital externally, it must do so on terms that preserve democratic control by its members.\n\nWHY THIS MATTERS IN PRACTICE\nA PACS secretary who understands these principles can answer the questions that actually arise at a general body meeting: why a large depositor cannot demand a second vote, why the surplus was distributed the way it was, and why the society''s books are open to any member who asks.\n\nThe next lesson covers who is accountable for what, and what the Registrar can and cannot direct a society to do.',
+     18, 2, true),
+
+    (v_course, 'Accountability: board, secretary, Registrar', 'TEXT', null,
+E'Three roles carry statutory weight in a primary cooperative society, and confusing them is the most common cause of audit objections.\n\nTHE MANAGING COMMITTEE (BOARD)\nElected by the general body. Collectively responsible for the society''s decisions: sanctioning loans within limits, approving the budget, and appointing staff. Individual committee members have no executive authority acting alone — a resolution of the committee is the instrument, not the wish of its chair.\n\nTHE SECRETARY\nThe society''s executive officer. Maintains the books, gives effect to committee resolutions, and is answerable for the accuracy of records. The secretary does not decide policy; a secretary who sanctions a loan without a committee resolution has exceeded their authority regardless of how sound the loan is.\n\nTHE REGISTRAR OF COOPERATIVE SOCIETIES\nA statutory authority, not a member of the society. The Registrar registers societies, orders audits and inquiries, and can supersede a committee in defined circumstances. What the Registrar cannot do is manage the society''s day-to-day business or override the general body on matters the Act leaves to members.\n\nA WORKED EXAMPLE\nA member applies for a crop loan of Rs 80,000. The by-laws allow the secretary to sanction up to Rs 25,000. The correct sequence is: application recorded, placed before the managing committee, committee resolution passed and minuted, secretary disburses against that resolution and records it.\n\nSkipping the resolution is the single most frequent finding in cooperative audit — not because the money was misused, but because the authority to lend it was never properly created.',
+     22, 3, true),
+
+    (v_course, 'Model by-laws — reference PDF', 'PDF',
+     'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', null, 15, 4, false)
+  on conflict do nothing;
+
+  -- Enrol the three seeded trainees so the player has progress to record and
+  -- the trainer's batch roster is not empty.
+  insert into public.enrollments (trainee_id, programme_id, batch_id, status, source, enrolled_at)
+  select t.id, v_programme, v_batch, 'ENROLLED', 'NOMINATED', now()
+    from public.trainees t
+   where t.organization_id = v_org
+     and t.user_id in ('00000000-0000-0000-0000-0000000000b9',
+                       '00000000-0000-0000-0000-0000000000ba',
+                       '00000000-0000-0000-0000-0000000000bb')
+  on conflict (trainee_id, programme_id) do nothing;
+end $$;
