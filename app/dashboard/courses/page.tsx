@@ -46,6 +46,10 @@ export default function CoursesPage() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<Record<string, string>>({});
+  // The catalogue showed a trainee nothing about their own standing in a
+  // course — every card looked identical whether they had finished it or never
+  // opened it. One call fills in where they are.
+  const [courseProgress, setCourseProgress] = useState<Record<string, { percentage: number; completed_modules: number; total_modules: number }>>({});
 
   const load = useCallback(() => {
     fetch('/api/v1/courses').then(r => r.json()).then(j => {
@@ -62,8 +66,18 @@ export default function CoursesPage() {
     }
   }, []);
 
+  const loadProgress = useCallback(() => {
+    fetch('/api/v1/lms/progress').then(r => r.json()).then(j => {
+      const rows = j?.data?.progress?.courses ?? [];
+      setCourseProgress(Object.fromEntries(rows.map((c: any) => [c.course_id, c])));
+    }).catch(() => {
+      // A trainee with no learning record yet simply gets no bars.
+    });
+  }, []);
+
   useEffect(() => { load(); }, [load]);
   useEffect(() => { if (isTrainee) loadCachedModules(); }, [isTrainee, loadCachedModules]);
+  useEffect(() => { if (isTrainee) loadProgress(); }, [isTrainee, loadProgress]);
 
   const handleCreate = async () => {
     await fetch('/api/v1/courses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
@@ -97,12 +111,27 @@ export default function CoursesPage() {
       await saveModule(cached);
       setCachedModules(prev => ({ ...prev, [mod.id]: cached }));
 
-      // Downloading a module for offline is the trainee's real engagement
-      // signal here (there's no video-watch-time/scroll-depth tracking in
-      // this MVP) — queue it as progress and flush immediately if online,
-      // so the online case doesn't wait for the next `online` event.
-      await queueProgress({ courseId: course.id, moduleId: mod.id, moduleTitle: mod.title, progressPct: 100 });
-      if (navigator.onLine) await flushOfflineQueues();
+      // Downloading is not learning. This used to write progressPct: 100,
+      // which marked a module complete the moment it was saved for offline use
+      // — defensible when nothing tracked watch time, but the lesson player now
+      // reports real video position and scroll depth, so claiming completion
+      // here would overstate progress and inflate every completion figure.
+      //
+      // Recorded as a DOWNLOAD event instead: it is genuine engagement and
+      // belongs in the history, just not as a completion. Best-effort — failing
+      // to log must not fail the download the trainee asked for.
+      if (navigator.onLine) {
+        void fetch('/api/v1/lms/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event_type: 'DOWNLOAD',
+            course_id: course.id,
+            module_id: mod.id,
+          }),
+        }).catch(() => {});
+        await flushOfflineQueues();
+      }
     } catch (err: any) {
       setDownloadError(prev => ({ ...prev, [mod.id]: err.message || 'Download failed.' }));
     } finally {
@@ -182,6 +211,20 @@ export default function CoursesPage() {
                     {course.programmes && <span>{t('programme')}: {course.programmes.title}</span>}
                     <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" />{course.course_modules?.length || 0} {t('modules')}</span>
                   </div>
+
+                  {isTrainee && courseProgress[course.id] && (
+                    <div className="mb-4 space-y-1.5" data-testid={`course-progress-${course.id}`}>
+                      <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-widest text-muted-foreground tabular-nums">
+                        <span>
+                          {courseProgress[course.id].completed_modules} / {courseProgress[course.id].total_modules} {t('modules')}
+                        </span>
+                        <span>{courseProgress[course.id].percentage}%</span>
+                      </div>
+                      <div className="h-1.5 bg-border rounded overflow-hidden">
+                        <div className="h-full bg-accent rounded" style={{ width: `${courseProgress[course.id].percentage}%` }} />
+                      </div>
+                    </div>
+                  )}
 
                   {/* Modules */}
                   {course.course_modules && course.course_modules.length > 0 && (

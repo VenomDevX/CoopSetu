@@ -11,6 +11,9 @@ export interface AiStreamBody {
   task_id?: string;
   incident_id?: string;
   release_id?: string;
+  /** Prior turns, oldest first — lets a conversational intent resolve
+   *  references like "the second one". Server caps this at 12. */
+  history?: { role: 'user' | 'assistant'; text: string }[];
 }
 
 interface AiStreamState {

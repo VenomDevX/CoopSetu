@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
+import { getContentLocale } from '@/lib/i18n/content-locale';
 import { AssessmentService } from '@/services/course.service';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ assessmentId: string }> }) {
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { assessmentId } = await params;
     const supabase = await createClient();
     const svc = new AssessmentService(supabase);
-    const assessment = await svc.getById(assessmentId);
+    const assessment = await svc.getById(assessmentId, await getContentLocale());
 
     // svc.getById() embeds assessment_questions(*), which includes
     // correct_answer. RLS grants org-wide SELECT on assessment_questions (the

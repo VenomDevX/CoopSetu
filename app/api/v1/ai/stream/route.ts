@@ -23,6 +23,15 @@ export const runtime = 'nodejs';
 const schema = z.object({
   intent: z.string().min(1),
   prompt: z.string().max(2000).optional(),
+  // Prior turns, oldest first. Without this the career counsellor was a
+  // one-shot per message: the chat UI kept a transcript but the model saw only
+  // the latest line, so "what about the second one?" meant nothing to it.
+  // Capped at 12 turns and 1000 chars each — enough for a counselling thread,
+  // bounded so a client cannot push unlimited text into the prompt.
+  history: z.array(z.object({
+    role: z.enum(['user', 'assistant']),
+    text: z.string().max(1000),
+  })).max(12).optional(),
   project_id: z.string().uuid().optional(),
   sprint_id: z.string().uuid().optional(),
   task_id: z.string().uuid().optional(),
@@ -65,6 +74,7 @@ export async function POST(req: NextRequest) {
       intent: body.intent,
       params: {
         prompt: body.prompt,
+        history: body.history,
         projectId: body.project_id,
         sprintId: body.sprint_id,
         taskId: body.task_id,
