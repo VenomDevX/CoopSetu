@@ -26,6 +26,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { CreateReportModal } from '@/components/reports/create-report-modal';
 import { ScheduleReportModal } from '@/components/reports/schedule-report-modal';
+import { usePermission } from '@/lib/permissions/context';
+import { TrainingAnalytics } from '@/components/analytics/training-analytics';
 import {
   BarChart,
   Bar,
@@ -41,6 +43,12 @@ import {
   Cell
 } from 'recharts';
 
+// Training personas get the training tab first and land on it. The delivery
+// tabs stay for the delivery personas who actually use them — this is a
+// persona/nav correction, not a removal. Before this, an institute admin
+// clicking "Analytics" was shown sprint velocity and incident MTTR.
+const TRAINING_TAB = 'Training Outcomes';
+
 const tabs = [
   'Delivery Analytics',
   'Team Performance',
@@ -53,7 +61,11 @@ const tabs = [
 ];
 
 export default function AnalyticsPage() {
-  const [activeTab, setActiveTab] = useState('Delivery Analytics');
+  const { hasRole } = usePermission();
+  const isTrainingPersona = hasRole('INSTITUTE_ADMIN') || hasRole('TRAINER') || hasRole('SUPER_ADMIN');
+  const visibleTabs = isTrainingPersona ? [TRAINING_TAB, ...tabs] : tabs;
+
+  const [activeTab, setActiveTab] = useState(isTrainingPersona ? TRAINING_TAB : 'Delivery Analytics');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [scheduleReportId, setScheduleReportId] = useState<string | null>(null);
 
@@ -180,7 +192,7 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {tabs.map((tab) => (
+          {visibleTabs.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -197,6 +209,8 @@ export default function AnalyticsPage() {
 
       {/* Tab Content */}
       <div className="space-y-6 pb-12">
+        {activeTab === TRAINING_TAB && <TrainingAnalytics />}
+
         {activeTab === 'Delivery Analytics' && loading && (
           <div className="p-8 text-center text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
             Loading analytics...

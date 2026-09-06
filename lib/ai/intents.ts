@@ -16,6 +16,9 @@ import {
   buildEngineering,
   buildIncidents,
   buildMyLearning,
+  buildTrainerDashboard,
+  buildInstitutionReadiness,
+  buildNationalBriefing,
 } from '@/lib/ai/ai-context-builder';
 
 /** Definition of one AI intent: who may run it, how its grounded context is built, and its persona. */
@@ -166,6 +169,33 @@ const DEFS: IntentDef[] = [
     persona:
       'Give the trainee career guidance grounded in their real skill profile, job matches, and available courses: what jobs suit them now, what skills to close the gap on, and which courses would help.',
     defaultPrompt: 'What should I focus on to improve my job readiness?',
+  },
+  // These three were advertised in lib/constants/ai-insights.ts but never
+  // registered here, so clicking their tiles returned 422 "Unknown AI intent".
+  // Permissions match the ones that file already declares.
+  {
+    intent: 'trainer-dashboard',
+    permissions: ['qa:view', 'security:view', 'attendance:manage'],
+    build: buildTrainerDashboard,
+    persona:
+      'Brief a trainer on their own batches: who is enrolled, how attendance is tracking, and what still needs grading. Be concrete and short.',
+    defaultPrompt: 'What needs my attention across my batches today?',
+  },
+  {
+    intent: 'institution-readiness',
+    permissions: ['release:view', 'institution:manage', 'analytics:view'],
+    build: buildInstitutionReadiness,
+    persona:
+      'Assess how ready the institutes in scope are to deliver training: capacity use, programme activity, certification throughput, and which trainees are at risk of dropping out.',
+    defaultPrompt: 'How ready are my institutes, and where should I intervene?',
+  },
+  {
+    intent: 'national-briefing',
+    permissions: ['analytics:view'],
+    build: buildNationalBriefing,
+    persona:
+      'Brief NCCT leadership on training across the country: the registered-to-employed journey, where people fall out of it, geographic reach, and attendance health. Lead with the number that matters most.',
+    defaultPrompt: 'Give me the national training briefing.',
   },
 ];
 
