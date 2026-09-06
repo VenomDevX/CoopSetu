@@ -1,0 +1,1324 @@
+<title>Attendance Terminal Build Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --ground:      #FAF9FC;
+    --surface:     #FFFFFF;
+    --surface-2:   #F3F1F8;
+    --ink:         #16151C;
+    --ink-2:       #45424F;
+    --muted:       #6C6879;
+    --rule:        #E2DFEA;
+    --rule-strong: #C9C4D6;
+    --accent:      #6B45F5;
+    --accent-soft: #EFEAFE;
+    --warn:        #9A4A05;
+    --warn-soft:   #FDF0E2;
+    --warn-edge:   #E2921F;
+    --ok:          #0E6647;
+    --ok-soft:     #E2F4EC;
+    --ok-edge:     #26A578;
+    --danger:      #A32020;
+    --danger-soft: #FBEAEA;
+
+    --f-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+    --f-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --f-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+    --rail: 250px;
+    --measure: 68ch;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #0C0B11;
+      --surface:     #131219;
+      --surface-2:   #1B1926;
+      --ink:         #ECEAF3;
+      --ink-2:       #C3BFD1;
+      --muted:       #928DA3;
+      --rule:        #26232F;
+      --rule-strong: #3A3648;
+      --accent:      #A48BFF;
+      --accent-soft: #1E1836;
+      --warn:        #F0B265;
+      --warn-soft:   #2A1F0E;
+      --warn-edge:   #A9761C;
+      --ok:          #6FDBAC;
+      --ok-soft:     #0D2620;
+      --ok-edge:     #2E8D68;
+      --danger:      #FF8E8E;
+      --danger-soft: #2B1315;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #0C0B11;
+    --surface:     #131219;
+    --surface-2:   #1B1926;
+    --ink:         #ECEAF3;
+    --ink-2:       #C3BFD1;
+    --muted:       #928DA3;
+    --rule:        #26232F;
+    --rule-strong: #3A3648;
+    --accent:      #A48BFF;
+    --accent-soft: #1E1836;
+    --warn:        #F0B265;
+    --warn-soft:   #2A1F0E;
+    --warn-edge:   #A9761C;
+    --ok:          #6FDBAC;
+    --ok-soft:     #0D2620;
+    --ok-edge:     #2E8D68;
+    --danger:      #FF8E8E;
+    --danger-soft: #2B1315;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 16px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .shell {
+    display: grid;
+    grid-template-columns: var(--rail) minmax(0, 1fr);
+    gap: 0;
+    max-width: 1240px;
+    margin: 0 auto;
+  }
+
+  /* ------------------------------------------------------------ side rail */
+  .rail {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100dvh;
+    overflow-y: auto;
+    padding: 28px 20px 40px 24px;
+    border-right: 1px solid var(--rule);
+    background: var(--ground);
+  }
+  .brand {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .brand-sub {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+    margin-bottom: 26px;
+  }
+  .rail nav { display: flex; flex-direction: column; gap: 1px; }
+  .rail a {
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    gap: 8px;
+    align-items: baseline;
+    padding: 6px 8px;
+    border-radius: 5px;
+    text-decoration: none;
+    color: var(--ink-2);
+    font-size: 13.5px;
+    line-height: 1.35;
+    transition: background .12s, color .12s;
+  }
+  .rail a:hover { background: var(--surface-2); color: var(--ink); }
+  .rail a.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .rail a .n {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .rail a.on .n { color: var(--accent); }
+
+  .progress-box {
+    margin-top: 26px;
+    padding-top: 18px;
+    border-top: 1px solid var(--rule);
+  }
+  .progress-label {
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .progress-track {
+    height: 4px;
+    background: var(--surface-2);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width .25s ease;
+  }
+  .reset-btn {
+    margin-top: 12px;
+    font-family: var(--f-mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+  .reset-btn:hover { color: var(--ink); border-color: var(--rule-strong); }
+
+  /* --------------------------------------------------------------- content */
+  main { padding: 0 0 120px; min-width: 0; }
+  .wrap { padding: 0 44px; max-width: calc(var(--measure) + 120px); }
+
+  /* masthead */
+  .masthead { padding: 56px 44px 34px; border-bottom: 1px solid var(--rule); }
+  .eyebrow {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(30px, 4.4vw, 46px);
+    line-height: 1.04;
+    letter-spacing: -0.022em;
+    margin: 0 0 16px;
+    text-wrap: balance;
+  }
+  .standfirst {
+    font-size: 17.5px;
+    color: var(--ink-2);
+    max-width: 60ch;
+    margin: 0 0 26px;
+  }
+  .meta-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .meta-strip div {
+    flex: 1 1 130px;
+    padding: 11px 14px;
+    border-right: 1px solid var(--rule);
+  }
+  .meta-strip div:last-child { border-right: 0; }
+  .meta-strip dt {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 3px;
+  }
+  .meta-strip dd {
+    margin: 0;
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* sections */
+  section { padding-top: 52px; scroll-margin-top: 16px; }
+  h2 {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: 25px;
+    letter-spacing: -0.014em;
+    margin: 0 0 6px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    align-items: baseline;
+    text-wrap: balance;
+  }
+  h2 .num {
+    font-family: var(--f-mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  h3 {
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: -0.005em;
+    margin: 30px 0 8px;
+  }
+  .sec-note {
+    color: var(--muted);
+    font-size: 14.5px;
+    margin: 0 0 22px;
+    padding-left: 32px;
+  }
+  p { max-width: var(--measure); }
+  ul, ol { max-width: var(--measure); padding-left: 20px; }
+  li { margin-bottom: 5px; }
+  strong { font-weight: 600; }
+  a { color: var(--accent); }
+
+  code {
+    font-family: var(--f-mono);
+    font-size: 0.875em;
+    background: var(--surface-2);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--ink);
+  }
+  pre {
+    font-family: var(--f-mono);
+    font-size: 13px;
+    background: var(--surface-2);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    line-height: 1.6;
+    max-width: var(--measure);
+  }
+  pre code { background: none; padding: 0; }
+
+  /* callouts — stripe, not card, so they read as annotation not object */
+  .call {
+    border-left: 3px solid var(--rule-strong);
+    background: var(--surface);
+    padding: 14px 18px;
+    margin: 20px 0;
+    max-width: var(--measure);
+    border-radius: 0 7px 7px 0;
+  }
+  .call p { margin: 0 0 8px; }
+  .call p:last-child { margin-bottom: 0; }
+  .call .call-head {
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .call.warn { border-left-color: var(--warn-edge); background: var(--warn-soft); }
+  .call.warn .call-head { color: var(--warn); }
+  .call.danger { border-left-color: var(--danger); background: var(--danger-soft); }
+  .call.danger .call-head { color: var(--danger); }
+  .call.ok { border-left-color: var(--ok-edge); background: var(--ok-soft); }
+  .call.ok .call-head { color: var(--ok); }
+
+  /* tables */
+  .tw { overflow-x: auto; margin: 16px 0 22px; max-width: 100%; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 460px;
+    font-size: 14.5px;
+  }
+  th {
+    text-align: left;
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+    padding: 0 14px 8px 0;
+    border-bottom: 1px solid var(--rule-strong);
+    white-space: nowrap;
+  }
+  td {
+    padding: 9px 14px 9px 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: 0; }
+  td:last-child, th:last-child { padding-right: 0; }
+
+  /* GPIO chip — the recurring atom of this document */
+  .gp {
+    font-family: var(--f-mono);
+    font-size: 12.5px;
+    font-weight: 500;
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: 2px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .gp.in { background: var(--ok-soft); color: var(--ok); }
+  .gp.pwr { background: var(--warn-soft); color: var(--warn); }
+
+  /* pin map */
+  .pinmap {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+    gap: 10px;
+    margin: 18px 0 8px;
+  }
+  .pin {
+    border: 1px solid var(--rule);
+    border-radius: 7px;
+    padding: 10px 12px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .pin b {
+    font-family: var(--f-mono);
+    font-size: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .pin span { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+  .pin.d-tft b   { color: #3E7BD6; }
+  .pin.d-nfc b   { color: #C2571E; }
+  .pin.d-cam b   { color: #1E8C68; }
+  .pin.d-io  b   { color: var(--accent); }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-family: var(--f-mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 26px;
+  }
+  .legend i { font-style: normal; display: inline-flex; align-items: center; gap: 5px; }
+  .legend i::before {
+    content: '';
+    width: 8px; height: 8px; border-radius: 2px;
+    background: currentColor;
+  }
+
+  /* stages */
+  .stage {
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: 16px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .stage:last-of-type { border-bottom: 0; }
+  .tick {
+    width: 22px; height: 22px;
+    border: 1.5px solid var(--rule-strong);
+    border-radius: 5px;
+    background: var(--surface);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    margin-top: 3px;
+    color: transparent;
+    transition: background .13s, border-color .13s;
+  }
+  .tick::after { content: '✓'; font-size: 13px; font-weight: 700; line-height: 1; }
+  .tick[aria-pressed="true"] {
+    background: var(--ok-edge);
+    border-color: var(--ok-edge);
+    color: #fff;
+  }
+  .tick:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .stage-body { min-width: 0; }
+  .stage h3 { margin-top: 0; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .stage h3 .sn {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+  .stage.done .stage-body > *:not(h3) { opacity: .55; }
+
+  /* troubleshooting */
+  .tsgroup { margin-bottom: 26px; }
+  .tsgroup > h3 { margin-bottom: 10px; }
+
+  /* footer */
+  footer {
+    margin-top: 60px;
+    padding: 26px 44px 0;
+    border-top: 1px solid var(--rule);
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+  footer p { max-width: var(--measure); }
+
+  .toggle {
+    position: fixed;
+    top: 14px; right: 16px;
+    z-index: 20;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    color: var(--ink-2);
+    border-radius: 7px;
+    width: 34px; height: 34px;
+    cursor: pointer;
+    font-size: 15px;
+    display: grid;
+    place-items: center;
+  }
+  .toggle:hover { border-color: var(--rule-strong); color: var(--ink); }
+
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; }
+    .rail {
+      position: static;
+      height: auto;
+      border-right: 0;
+      border-bottom: 1px solid var(--rule);
+      padding: 22px 20px;
+    }
+    .rail nav {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 2px;
+    }
+    .wrap, .masthead, footer { padding-left: 20px; padding-right: 20px; }
+    .masthead { padding-top: 34px; }
+    .sec-note { padding-left: 0; }
+    h2 { grid-template-columns: 1fr; gap: 2px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+
+<button class="toggle" id="themeBtn" aria-label="Toggle colour theme">◐</button>
+
+<div class="shell">
+  <aside class="rail">
+    <div class="brand">CoopSetu</div>
+    <div class="brand-sub">firmware / hardware</div>
+    <nav id="nav">
+      <a href="#parts"><span class="n">01</span><span>Parts &amp; tools</span></a>
+      <a href="#gotchas"><span class="n">02</span><span>Before you solder</span></a>
+      <a href="#wiring"><span class="n">03</span><span>Wiring, stage by stage</span></a>
+      <a href="#pins"><span class="n">04</span><span>Connection reference</span></a>
+      <a href="#software"><span class="n">05</span><span>Software setup</span></a>
+      <a href="#config"><span class="n">06</span><span>Configuration</span></a>
+      <a href="#flash"><span class="n">07</span><span>Flashing</span></a>
+      <a href="#touch"><span class="n">08</span><span>Touch calibration</span></a>
+      <a href="#bringup"><span class="n">09</span><span>Bring-up tests</span></a>
+      <a href="#provision"><span class="n">10</span><span>Cards &amp; faces</span></a>
+      <a href="#operation"><span class="n">11</span><span>Daily operation</span></a>
+      <a href="#trouble"><span class="n">12</span><span>Troubleshooting</span></a>
+      <a href="#backend"><span class="n">13</span><span>Backend blockers</span></a>
+    </nav>
+    <div class="progress-box">
+      <div class="progress-label"><span>Wiring stages</span><span id="progTxt">0 / 8</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progFill"></div></div>
+      <button class="reset-btn" id="resetBtn">Reset progress</button>
+    </div>
+  </aside>
+
+  <main>
+    <header class="masthead">
+      <div class="eyebrow">Hardware build guide</div>
+      <h1>CoopSetu Attendance Terminal</h1>
+      <p class="standfirst">
+        From loose parts to a working terminal: every connection, the software
+        setup, flashing both boards, and a bring-up sequence that tells you which
+        subsystem to blame when something doesn't work.
+      </p>
+      <dl class="meta-strip">
+        <div><dt>Boards</dt><dd>2</dd></div>
+        <div><dt>GPIOs used</dt><dd>16</dd></div>
+        <div><dt>Wiring stages</dt><dd>8</dd></div>
+        <div><dt>Build time</dt><dd>3–5 h</dd></div>
+        <div><dt>Peak draw</dt><dd>~900 mA</dd></div>
+      </dl>
+
+      <div class="call danger" style="margin-top:24px">
+        <div class="call-head">Read this first</div>
+        <p>
+          None of this firmware has been run on hardware — there was no board
+          available when it was written. It was built from datasheets and the pin
+          map in <code>Hardware.md</code>. Follow the stages in order; each one
+          isolates a single subsystem so that when something fails you know
+          exactly what to blame. <strong>Do not wire everything and hope.</strong>
+        </p>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <!-- 01 ---------------------------------------------------------------->
+      <section id="parts">
+        <h2><span class="num">01</span><span>Parts and tools</span></h2>
+        <p class="sec-note">Thirteen components, one of which most people don't realise they need.</p>
+
+        <div class="tw">
+          <table>
+            <thead><tr><th>Part</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td>ESP32 devkit, 38-pin</td><td>The main controller</td></tr>
+              <tr><td>ESP32-CAM (AI-Thinker)</td><td>Camera, QR and face processing</td></tr>
+              <tr><td>PN532 NFC module</td><td><strong>Must support SPI</strong> — check it has DIP switches</td></tr>
+              <tr><td>ILI9341 2.8″ TFT, touch</td><td>The version with <code>T_CS</code> / <code>T_IRQ</code> pins</td></tr>
+              <tr><td>Buzzer</td><td>Active vs passive matters — see below</td></tr>
+              <tr><td>Pushbutton</td><td>Momentary, normally-open</td></tr>
+              <tr><td>5 V DC supply</td><td><strong>2 A minimum</strong></td></tr>
+              <tr><td>10 kΩ resistor × 1</td><td>Button pull-up — <strong>not 200 Ω</strong></td></tr>
+              <tr><td>220 Ω resistor × 2</td><td>LED current limiting</td></tr>
+              <tr><td>Green + red LED</td><td>One each</td></tr>
+              <tr><td>USB-to-serial adapter</td><td><strong>Required</strong> to flash the ESP32-CAM</td></tr>
+              <tr><td>NTAG213/215/216 cards</td><td>One per trainee</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="call warn">
+          <div class="call-head">Three parts to double-check</div>
+          <p>
+            <strong>The pull-up must be 10 kΩ.</strong> <code>Hardware.md</code>
+            records it as 200 Ω. <span class="gp in">GPIO34</span> is input-only
+            with <em>no</em> internal pull-up, so this resistor is the only thing
+            holding the pin high. At 200 Ω every press sinks 3.3 V ÷ 200 Ω ≈
+            <strong>16 mA</strong> — above the ESP32's ~12 mA recommended
+            continuous per-pin current.
+          </p>
+          <p>
+            <strong>LED resistors must be 220 Ω.</strong> Also recorded as 200 Ω.
+            Less serious (≈7 mA vs ≈6 mA) but use the right part.
+          </p>
+          <p>
+            <strong>Is your buzzer active or passive?</strong> Test it with a 3 V
+            coin cell — a beep means active, a single click means passive, in
+            which case set <code>BUZZER_IS_PASSIVE 1</code>. If it's rated 5 V or
+            draws over ~12 mA, do not wire it straight to
+            <span class="gp">GPIO32</span>; it needs a transistor or MOSFET.
+          </p>
+        </div>
+
+        <h3>Tools</h3>
+        <ul>
+          <li>Soldering iron and solder</li>
+          <li>Breadboard for testing, perfboard for the final build</li>
+          <li>Jumper wires, male-to-female and male-to-male</li>
+          <li><strong>Multimeter</strong> — not optional, you need it at stage 1</li>
+          <li>Small flat screwdriver for the PN532's DIP switches</li>
+        </ul>
+      </section>
+
+      <!-- 02 ---------------------------------------------------------------->
+      <section id="gotchas">
+        <h2><span class="num">02</span><span>Before you solder</span></h2>
+        <p class="sec-note">Not general advice — three specific consequences of this pin map.</p>
+
+        <h3>The CAM's UART pins are its programming pins</h3>
+        <p>
+          <code>Hardware.md</code> connects CAM <span class="gp">GPIO1</span> and
+          <span class="gp">GPIO3</span> to the terminal. Those are
+          <code>U0TXD</code> and <code>U0RXD</code> — the same pins a USB-serial
+          adapter uses to flash the board. Three consequences you cannot design
+          around:
+        </p>
+        <ul>
+          <li><strong>Disconnect both wires every time you flash the CAM.</strong> Leave them on and the flash fails, or half-succeeds.</li>
+          <li><strong>The CAM can never print debug output.</strong> <code>Serial</code> <em>is</em> the link. Anything printed becomes protocol noise — which is why the firmware reports problems as <code>ERR</code> frames.</li>
+          <li><strong>Every CAM reset dumps bootloader chatter into the terminal.</strong> Handled: messages are framed <code>#&lt;body&gt;*&lt;checksum&gt;</code> and unparseable input is dropped.</li>
+        </ul>
+        <div class="call">
+          <div class="call-head">Bench tip</div>
+          <p>Put a jumper or 2-pin header on those two wires. You will disconnect them more often than you expect.</p>
+        </div>
+
+        <h3>Three devices share one SPI bus, and one is backwards</h3>
+        <p>
+          <span class="gp">GPIO18</span> (clock),
+          <span class="gp">GPIO23</span> (MOSI) and
+          <span class="gp in">GPIO19</span> (MISO) are shared by the display, its
+          touch controller, the display's unused microSD slot, and the PN532.
+        </p>
+        <p>
+          <strong>The PN532 clocks SPI LSB-first. Everything else is
+          MSB-first.</strong> This works only because every pinned library wraps
+          transfers in <code>SPI.beginTransaction()</code>, which re-applies bit
+          order per transaction.
+        </p>
+        <div class="call warn">
+          <div class="call-head">If you substitute a library</div>
+          <p>
+            Verify it uses SPI transactions. The failure mode is intermittent
+            corruption that looks exactly like a bad solder joint — you will
+            spend hours reflowing joints that were fine.
+          </p>
+        </div>
+        <p>
+          The display's unused microSD <code>CS</code>
+          (<span class="gp">GPIO26</span>) is driven HIGH at boot and never
+          touched again. A floating SD <code>CS</code> lets the card drive MISO
+          and corrupt every transfer on the bus. Already handled in
+          <code>display.cpp</code> — just don't remove that wire.
+        </p>
+
+        <h3>Power budget</h3>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Load</th><th>Current</th></tr></thead>
+            <tbody>
+              <tr><td>ESP32, Wi-Fi transmitting</td><td>~250 mA peak</td></tr>
+              <tr><td>ESP32-CAM, face inference</td><td>~200 mA, peaks to 300</td></tr>
+              <tr><td>TFT with backlight</td><td>~100 mA</td></tr>
+              <tr><td>PN532 polling</td><td>~100 mA</td></tr>
+              <tr><td>LEDs and buzzer</td><td>~30 mA</td></tr>
+              <tr><td><strong>Total peak</strong></td><td><strong>~900 mA</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Use a <strong>2 A supply</strong>. A 1 A charger appears to work, then
+          browns out the first time a Wi-Fi transmit coincides with a camera
+          frame — which presents as random reboots and is very hard to attribute.
+        </p>
+        <p>
+          The TFT, touch and PN532 all run from the devkit's on-board 3.3 V
+          regulator, often rated only 500–800 mA. This combination has not been
+          measured. If you see instability under load, feed the 3.3 V rail from a
+          separate regulator.
+        </p>
+      </section>
+
+      <!-- 03 ---------------------------------------------------------------->
+      <section id="wiring">
+        <h2><span class="num">03</span><span>Wiring, stage by stage</span></h2>
+        <p class="sec-note">
+          Each stage ends in something you can measure. Tick them off as you go —
+          progress is saved in this browser.
+        </p>
+
+        <div class="call">
+          <div class="call-head">Rule for the whole section</div>
+          <p><strong>Power off before every wiring change.</strong> Power on only at a checkpoint.</p>
+        </div>
+
+        <div id="stages">
+          <div class="stage" data-stage="1">
+            <button class="tick" aria-pressed="false" aria-label="Mark stage 1 complete"></button>
+            <div class="stage-body">
+              <h3><span class="sn">STAGE 1</span> Power only</h3>
+              <p>Wire nothing but power. 5 V supply <strong>+</strong> to ESP32 <code>VIN</code>; 5 V supply <strong>−</strong> to ESP32 <code>GND</code>.</p>
+              <div class="call ok">
+                <div class="call-head">Checkpoint — measure it</div>
+                <p>Multimeter between <code>3V3</code> and <code>GND</code>. <strong>You must read 3.2–3.4 V.</strong> If you read 0 V or under 3 V, stop and check polarity — reversed power destroys the board.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="stage" data-stage="2">
+            <button class="tick" aria-pressed="false" aria-label="Mark stage 2 complete"></button>
+            <div class="stage-body">
+              <h3><span class="sn">STAGE 2</span> Ground and 3.3 V rails</h3>
+              <p>Use a breadboard rail or solder bus — don't daisy-chain grounds through modules.</p>
+              <p><strong>To ESP32 <code>GND</code>:</strong> CAM <code>GND</code>, ILI9341 <code>GND</code>, PN532 <code>GND</code>, buzzer <code>−</code>, pushbutton pin 2, both LED cathodes (short legs).</p>
+              <p><strong>To ESP32 <code>3V3</code>:</strong> ILI9341 <code>VCC</code>, ILI9341 <code>LED</code>, PN532 <code>VCC</code>, 10 kΩ pull-up pin 2.</p>
+              <p>The CAM is the exception — it takes <strong>5 V straight from the supply</strong>, not 3.3 V from the ESP32.</p>
+              <div class="call ok">
+                <div class="call-head">Checkpoint</div>
+                <p>3.3 V at the ILI9341 <code>VCC</code> and PN532 <code>VCC</code> pins. 5 V at the CAM's <code>5V</code> pin.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="stage" data-stage="3">
+            <button class="tick" aria-pressed="false" aria-label="Mark stage 3 complete"></button>
+            <div class="stage-body">
+              <h3><span class="sn">STAGE 3</span> LEDs and buzzer</h3>
+              <p><strong>Green:</strong> <span class="gp">GPIO21</span> → 220 Ω → LED anode (long leg); cathode → <code>GND</code>.</p>
+              <p><strong>Red:</strong> <span class="gp">GPIO22</span> → 220 Ω → LED anode; cathode → <code>GND</code>.</p>
+              <p><strong>Buzzer:</strong> <span class="gp">GPIO32</span> → buzzer <code>+</code>; buzzer <code>−</code> → <code>GND</code>.</p>
+              <p>LEDs are polarised — long leg toward the resistor. Backwards they simply don't light; no damage, easy to miss.</p>
+            </div>
+          </div>
+
+          <div class="stage" data-stage="4">
+            <button class="tick" aria-pressed="false" aria-label="Mark stage 4 complete"></button>
+            <div class="stage-body">
+              <h3><span class="sn">STAGE 4</span> Pushbutton and external pull-up</h3>
+              <p>
+                <code>3.3 V → 10 kΩ → </code><span class="gp in">GPIO34</span><code> → button → GND</code>.
+                Idle, the resistor holds the pin high; pressed, the button pulls
+                it to ground. The firmware reads active-LOW.
+              </p>
+              <p>A 4-pin tactile switch has pins joined in pairs. If the button seems permanently pressed, you've used two from the same pair — rotate it 90°.</p>
+              <div class="call ok">
+                <div class="call-head">Checkpoint</div>
+                <p>Measure <span class="gp in">GPIO34</span> to ground: <strong>3.3 V idle, 0 V pressed.</strong> Always 3.3 V means the button isn't connected; always 0 V means check the resistor.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="stage" data-stage="5">
+            <button class="tick" aria-pressed="false" aria-label="Mark stage 5 complete"></button>
+            <div class="stage-body">
+              <h3><span class="sn">STAGE 5</span> The shared SPI bus</h3>
+              <p>Three lines fan out. Keep these wires <strong>short</strong> — under 10 cm if you can.</p>
+              <div class="tw">
+                <table>
+                  <thead><tr><th>ESP32</th><th>Goes to</th></tr></thead>
+                  <tbody>
+                    <tr><td><span class="gp">GPIO18</span> clock</td><td>TFT <code>SCK</code>, <code>SD_SCK</code>, <code>T_CLK</code>; PN532 <code>SCK</code></td></tr>
+                    <tr><td><span class="gp">GPIO23</span> MOSI</td><td>TFT <code>SDI</code>, <code>SD_MOSI</code>, <code>T_DIN</code>; PN532 <code>MOSI</code></td></tr>
+                    <tr><td><span class="gp in">GPIO19</span> MISO</td><td>TFT <code>SDO</code>, <code>SD_MISO</code>, <code>T_DO</code>; PN532 <code>MISO</code></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="stage" data-stage="6">
+            <button class="tick" aria-pressed="false" aria-label="Mark stage 6 complete"></button>
+            <div class="stage-body">
+              <h3><span class="sn">STAGE 6</span> Display and touch</h3>
+              <div class="tw">
+                <table>
+                  <thead><tr><th>ILI9341</th><th>ESP32</th><th>Purpose</th></tr></thead>
+                  <tbody>
+                    <tr><td><code>CS</code></td><td><span class="gp">GPIO5</span></td><td>Display select</td></tr>
+                    <tr><td><code>D/C</code></td><td><span class="gp">GPIO27</span></td><td>Data / command</td></tr>
+                    <tr><td><code>RESET</code></td><td><span class="gp">GPIO4</span></td><td>Display reset</td></tr>
+                    <tr><td><code>T_CS</code></td><td><span class="gp">GPIO14</span></td><td>Touch select</td></tr>
+                    <tr><td><code>T_IRQ</code></td><td><span class="gp in">GPIO25</span></td><td>Touch interrupt</td></tr>
+                    <tr><td><code>SD_CS</code></td><td><span class="gp">GPIO26</span></td><td>Unused — but must be wired</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="call warn">
+                <div class="call-head">Do not omit SD_CS</div>
+                <p>No SD card is used, but if that pin floats the card slot can drive the shared MISO line and corrupt every transfer. <code>display.cpp</code> parks it HIGH at boot specifically to prevent this.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="stage" data-stage="7">
+            <button class="tick" aria-pressed="false" aria-label="Mark stage 7 complete"></button>
+            <div class="stage-body">
+              <h3><span class="sn">STAGE 7</span> PN532 NFC</h3>
+              <div class="call danger">
+                <div class="call-head">Set the DIP switches to SPI first</div>
+                <p>The PN532's interface is chosen by two switches on the board, <strong>not by firmware</strong>. Almost every "PN532 not found" report is this. <strong>SPI = SW1 OFF, SW2 ON.</strong> (I²C is ON/OFF; HSU is OFF/OFF.) Some boards label them 0 and 1 — check the silkscreen.</p>
+              </div>
+              <div class="tw">
+                <table>
+                  <thead><tr><th>PN532</th><th>ESP32</th></tr></thead>
+                  <tbody>
+                    <tr><td><code>SCK</code></td><td><span class="gp">GPIO18</span> shared</td></tr>
+                    <tr><td><code>MOSI</code></td><td><span class="gp">GPIO23</span> shared</td></tr>
+                    <tr><td><code>MISO</code></td><td><span class="gp in">GPIO19</span> shared</td></tr>
+                    <tr><td><code>SS</code></td><td><span class="gp">GPIO13</span></td></tr>
+                    <tr><td><code>VCC</code> / <code>GND</code></td><td>3.3 V / GND</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p><code>IRQ</code>, <code>RSTO</code>, <code>SDA</code> and <code>SCL</code> stay unconnected — the firmware polls instead of using interrupts.</p>
+            </div>
+          </div>
+
+          <div class="stage" data-stage="8">
+            <button class="tick" aria-pressed="false" aria-label="Mark stage 8 complete"></button>
+            <div class="stage-body">
+              <h3><span class="sn">STAGE 8</span> UART link to the CAM</h3>
+              <p>Note the crossover — transmit goes to receive.</p>
+              <div class="tw">
+                <table>
+                  <thead><tr><th>ESP32</th><th></th><th>ESP32-CAM</th></tr></thead>
+                  <tbody>
+                    <tr><td><span class="gp in">GPIO16</span> RX2</td><td>← receives from</td><td><code>GPIO1</code> U0TXD</td></tr>
+                    <tr><td><span class="gp">GPIO17</span> TX2</td><td>→ transmits to</td><td><code>GPIO3</code> U0RXD</td></tr>
+                    <tr><td><code>GND</code></td><td>↔</td><td><code>GND</code></td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>Both boards use 3.3 V logic, so no level shifting is needed. Fit that jumper here.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 04 ---------------------------------------------------------------->
+      <section id="pins">
+        <h2><span class="num">04</span><span>Connection reference</span></h2>
+        <p class="sec-note">All 16 GPIOs in use, grouped by what they drive. Use this to verify.</p>
+
+        <div class="pinmap">
+          <div class="pin d-tft"><b>GPIO4</b><span>ILI9341 RESET</span></div>
+          <div class="pin d-tft"><b>GPIO5</b><span>ILI9341 CS</span></div>
+          <div class="pin d-nfc"><b>GPIO13</b><span>PN532 SS</span></div>
+          <div class="pin d-tft"><b>GPIO14</b><span>Touch T_CS</span></div>
+          <div class="pin d-cam"><b>GPIO16</b><span>RX2 ← CAM GPIO1</span></div>
+          <div class="pin d-cam"><b>GPIO17</b><span>TX2 → CAM GPIO3</span></div>
+          <div class="pin d-tft"><b>GPIO18</b><span>Shared SPI clock</span></div>
+          <div class="pin d-tft"><b>GPIO19</b><span>Shared SPI MISO</span></div>
+          <div class="pin d-io"><b>GPIO21</b><span>Green LED, via 220 Ω</span></div>
+          <div class="pin d-io"><b>GPIO22</b><span>Red LED, via 220 Ω</span></div>
+          <div class="pin d-tft"><b>GPIO23</b><span>Shared SPI MOSI</span></div>
+          <div class="pin d-tft"><b>GPIO25</b><span>Touch T_IRQ</span></div>
+          <div class="pin d-tft"><b>GPIO26</b><span>SD_CS — parked HIGH</span></div>
+          <div class="pin d-tft"><b>GPIO27</b><span>ILI9341 D/C</span></div>
+          <div class="pin d-io"><b>GPIO32</b><span>Buzzer +</span></div>
+          <div class="pin d-io"><b>GPIO34</b><span>Button, input-only</span></div>
+        </div>
+        <div class="legend">
+          <i style="color:#3E7BD6">Display &amp; touch</i>
+          <i style="color:#C2571E">NFC</i>
+          <i style="color:#1E8C68">Camera link</i>
+          <i style="color:var(--accent)">LEDs, buzzer, button</i>
+        </div>
+
+        <h3>Power and rails</h3>
+        <div class="tw">
+          <table>
+            <thead><tr><th>From</th><th>To</th></tr></thead>
+            <tbody>
+              <tr><td>5 V supply +</td><td>ESP32 <code>VIN</code>, and ESP32-CAM <code>5V</code></td></tr>
+              <tr><td>5 V supply −</td><td>ESP32 <code>GND</code></td></tr>
+              <tr><td>ESP32 <code>GND</code></td><td>CAM, ILI9341, PN532, buzzer −, button pin 2, both LED cathodes</td></tr>
+              <tr><td>ESP32 <code>3V3</code></td><td>ILI9341 <code>VCC</code> + <code>LED</code>, PN532 <code>VCC</code>, 10 kΩ pull-up</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Deliberately unconnected</h3>
+        <p>
+          PN532 <code>IRQ</code>, <code>RSTO</code>, <code>SDA</code>/<code>TXD</code>,
+          <code>SCL</code>/<code>RXD</code>. In particular there is
+          <strong>no GPIO33 → <code>RSTO</code> wire</strong>, which
+          <code>Hardware.md</code> calls out explicitly. That's intentional:
+          <code>nfcBegin()</code> resets the reader through <code>SAMConfig()</code>.
+          GPIO33 is free for future use.
+        </p>
+      </section>
+
+      <!-- 05 ---------------------------------------------------------------->
+      <section id="software">
+        <h2><span class="num">05</span><span>Software setup</span></h2>
+        <p class="sec-note">One version choice decides whether the camera sketch compiles at all.</p>
+
+        <h3>Arduino IDE and the ESP32 core</h3>
+        <p>In <strong>Preferences → Additional Board Manager URLs</strong>, add:</p>
+        <pre><code>https://espressif.github.io/arduino-esp32/package_esp32_index.json</code></pre>
+        <p>Then <strong>Tools → Board → Boards Manager</strong>, search <code>esp32</code>, and install <strong>2.0.17</strong>.</p>
+
+        <div class="call danger">
+          <div class="call-head">Install 2.0.17, not 3.x</div>
+          <p>
+            The face recogniser (<code>face_recognition_112_v1_s8</code>) is an
+            ESP-DL model bundled with the 2.0.x core. <strong>It was removed in
+            3.x</strong>, so <code>CoopSetuCam</code> will not compile there. An
+            error reading <code>human_face_detect_msr01.hpp: No such file or
+            directory</code> means you're on 3.x — use the Boards Manager version
+            dropdown to select 2.0.17 and install again.
+          </p>
+        </div>
+
+        <h3>Libraries</h3>
+        <p>Versions are pinned because the shared-bus behaviour in §02 depends on them.</p>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Library</th><th>Version</th><th>For</th></tr></thead>
+            <tbody>
+              <tr><td>Adafruit GFX Library</td><td>1.11.9</td><td>Terminal</td></tr>
+              <tr><td>Adafruit ILI9341</td><td>1.6.0</td><td>Terminal</td></tr>
+              <tr><td>XPT2046_Touchscreen</td><td>1.4</td><td>Terminal</td></tr>
+              <tr><td>Adafruit PN532</td><td>1.3.3</td><td>Terminal</td></tr>
+              <tr><td>ArduinoJson</td><td>6.21.5</td><td>Terminal</td></tr>
+              <tr><td>ESP32QRCodeReader</td><td>0.2.1</td><td>CAM</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          ArduinoJson must be <strong>6.x</strong>, not 7.x — the code uses
+          <code>StaticJsonDocument</code>, which 7.x removed.
+          <code>ESP32QRCodeReader</code> is installed for the <code>quirc</code>
+          decoder bundled inside it; the sketch includes <code>quirc.h</code>
+          directly because it has to own the camera lifecycle to share it between
+          QR and face modes.
+        </p>
+
+        <h3>Board settings</h3>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Setting</th><th>CoopSetuTerminal</th><th>CoopSetuCam</th></tr></thead>
+            <tbody>
+              <tr><td>Board</td><td>ESP32 Dev Module</td><td>AI Thinker ESP32-CAM</td></tr>
+              <tr><td>Upload speed</td><td>921600</td><td>115200</td></tr>
+              <tr><td>Flash mode</td><td>QIO, 80 MHz</td><td>QIO, 80 MHz</td></tr>
+              <tr><td>Partition</td><td>Default 4 MB</td><td><strong>Huge APP (3 MB)</strong></td></tr>
+              <tr><td>PSRAM</td><td>Disabled</td><td><strong>Enabled</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="call warn">
+          <div class="call-head">Both CAM settings are mandatory</div>
+          <p><strong>PSRAM Enabled</strong> — quirc needs a full-frame buffer and the face model won't fit in internal RAM. <strong>Huge APP</strong> — otherwise you get <code>Sketch too big</code>.</p>
+        </div>
+      </section>
+
+      <!-- 06 ---------------------------------------------------------------->
+      <section id="config">
+        <h2><span class="num">06</span><span>Configuration</span></h2>
+        <p class="sec-note">Everything site-specific lives at the top of <code>config.h</code>.</p>
+        <pre><code>#define WIFI_SSID        "YourNetwork"
+#define WIFI_PASSWORD    "YourPassword"
+
+// No trailing slash. Must be reachable from the terminal's network.
+#define API_BASE_URL     "http://192.168.1.10:3000"
+
+#define API_DEVICE_TOKEN "your-device-token"</code></pre>
+        <p>
+          To find your server's IP, run <code>npm run dev</code> and read the
+          <code>Network:</code> line it prints.
+        </p>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Setting</th><th>Default</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td><code>BUZZER_IS_PASSIVE</code></td><td>0</td><td>Set 1 if your buzzer needs a tone</td></tr>
+              <tr><td><code>FACE_MIN_CONFIDENCE</code></td><td>0.62</td><td>Raise to reduce false matches</td></tr>
+              <tr><td><code>IDENTIFY_TIMEOUT_MS</code></td><td>12000</td><td>How long to wait for a face</td></tr>
+              <tr><td><code>QR_SESSION_TTL_MS</code></td><td>4 hours</td><td>Local re-arm prompt</td></tr>
+              <tr><td><code>API_TLS_INSECURE</code></td><td>true</td><td><strong>Set false before production</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 07 ---------------------------------------------------------------->
+      <section id="flash">
+        <h2><span class="num">07</span><span>Flashing both boards</span></h2>
+        <p class="sec-note">The terminal is ordinary. The CAM has a specific sequence.</p>
+
+        <h3>The terminal</h3>
+        <p>Connect by USB, select the port, open <code>CoopSetuTerminal.ino</code>, confirm the board settings, and upload. If it stalls at <code>Connecting........</code>, hold the <strong>BOOT</strong> button while it connects.</p>
+
+        <h3>The ESP32-CAM</h3>
+        <ol>
+          <li><strong>Disconnect both wires</strong> between CAM <code>GPIO1</code>/<code>GPIO3</code> and the terminal.</li>
+          <li>Wire the USB-serial adapter, set to <strong>3.3 V</strong>: <code>GND→GND</code>, <code>5V→5V</code>, adapter <code>TX→U0R</code>, adapter <code>RX→U0T</code>.</li>
+          <li><strong>Connect CAM <code>GPIO0</code> to <code>GND</code></strong> — the board only enters flash mode this way.</li>
+          <li>Press <strong>RESET</strong>, then upload. Expect 1–3 minutes; the binary is large.</li>
+          <li><strong>Remove the GPIO0 jumper</strong>, press RESET, disconnect the adapter, reconnect the two terminal wires.</li>
+        </ol>
+        <div class="call warn">
+          <div class="call-head">The most common mistake</div>
+          <p>Forgetting to remove the GPIO0 jumper. The board silently stays in bootloader mode and never runs your sketch.</p>
+        </div>
+      </section>
+
+      <!-- 08 ---------------------------------------------------------------->
+      <section id="touch">
+        <h2><span class="num">08</span><span>Touch calibration</span></h2>
+        <p class="sec-note">Every panel differs. Do this once.</p>
+        <ol>
+          <li>Set <code>TOUCH_CALIBRATION_MODE 1</code> and flash.</li>
+          <li>Open the Serial Monitor at <strong>115200</strong>.</li>
+          <li>Tap each of the four corners, as close to the edge as you can.</li>
+          <li>Put the extreme values into <code>TOUCH_RAW_MIN_X</code> / <code>MAX_X</code> / <code>MIN_Y</code> / <code>MAX_Y</code>.</li>
+          <li>Set <code>TOUCH_CALIBRATION_MODE 0</code> and reflash.</li>
+        </ol>
+        <p>If touch comes out mirrored, swap MIN and MAX for that axis.</p>
+      </section>
+
+      <!-- 09 ---------------------------------------------------------------->
+      <section id="bringup">
+        <h2><span class="num">09</span><span>Bring-up tests</span></h2>
+        <p class="sec-note">In order. Each isolates one thing, so a failure points somewhere specific.</p>
+        <div class="tw">
+          <table>
+            <thead><tr><th>#</th><th>Test</th><th>Expect</th><th>If it fails</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>Power</td><td>3.2–3.4 V on <code>3V3</code></td><td>Check polarity</td></tr>
+              <tr><td>2</td><td>LEDs + buzzer</td><td>Chirp, both LEDs flash</td><td>Swapped colours = GPIO21/22 reversed</td></tr>
+              <tr><td>3</td><td>Display</td><td><code>COOPSETU</code> on screen</td><td>White = RESET/D/C; blank = backlight</td></tr>
+              <tr><td>4</td><td>Touch</td><td>Raw values on serial</td><td>Check <code>T_CS</code>, <code>T_IRQ</code></td></tr>
+              <tr><td>5</td><td>PN532</td><td>No "not found" message</td><td><strong>Check the DIP switches</strong></td></tr>
+              <tr><td>6</td><td>CAM alone</td><td><code>#READY*</code> frame</td><td>Re-do the flash sequence</td></tr>
+              <tr><td>7</td><td>Link</td><td><code>status</code> shows <code>cam=1</code></td><td>Check the GPIO16/17 crossover</td></tr>
+              <tr><td>8</td><td>QR</td><td>"Session armed"</td><td>More light; hold 15–25 cm away</td></tr>
+              <tr><td>9</td><td>Face</td><td>"Face enrolled"</td><td>Face the camera squarely, even light</td></tr>
+              <tr><td>10</td><td>Attendance</td><td>"Marked"</td><td><strong>Blocked — see §13</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="call warn">
+          <div class="call-head">Test 10 will not pass yet</div>
+          <p>That's expected, and it isn't a wiring fault. See the backend blockers below.</p>
+        </div>
+      </section>
+
+      <!-- 10 ---------------------------------------------------------------->
+      <section id="provision">
+        <h2><span class="num">10</span><span>Cards and faces</span></h2>
+        <p class="sec-note">All administration happens over the Serial Monitor at 115200.</p>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Command</th><th>Does</th></tr></thead>
+            <tbody>
+              <tr><td><code>status</code></td><td>Wi-Fi, CAM link, session state, slot map</td></tr>
+              <tr><td><code>enrol &lt;slot&gt; &lt;uuid&gt;</code></td><td>Bind a face slot to a trainee, then capture</td></tr>
+              <tr><td><code>forget &lt;slot&gt;</code></td><td>Clear one slot — <code>255</code> clears all</td></tr>
+              <tr><td><code>session</code></td><td>Re-arm the session QR</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>Enrolling a face</h3>
+        <p>Get the trainee's UUID from the dashboard, then type <code>enrol 0 3f8c1e22-…</code>. The screen shows ENROL FACE; have them look at the camera while four frames are captured. Slots are 0–15, so <strong>16 faces maximum</strong> per terminal.</p>
+        <h3>Writing NFC cards</h3>
+        <p>Cards carry the trainee UUID in a single NDEF <strong>Text</strong> record. Use the free <strong>NFC Tools</strong> app: Write → Add a record → Text, paste the UUID and nothing else, then hold the card to the phone.</p>
+        <p>Tapping an unwritten card shows its UID with "Card not linked", so you can tell which card still needs writing.</p>
+      </section>
+
+      <!-- 11 ---------------------------------------------------------------->
+      <section id="operation">
+        <h2><span class="num">11</span><span>Daily operation</span></h2>
+        <p class="sec-note">Two steps to start a session, then it runs itself.</p>
+        <h3>Starting a session</h3>
+        <ol>
+          <li>The trainer opens the attendance session on the dashboard, which shows a QR code.</li>
+          <li><strong>Long-press</strong> the terminal button (~1.5 s) to enter arm mode.</li>
+          <li>Hold the QR to the camera. The screen confirms "Session armed".</li>
+        </ol>
+        <h3>During the session</h3>
+        <p><strong>NFC:</strong> the trainee taps their card, and is marked automatically. <strong>Face:</strong> the trainee presses the button briefly, then looks at the camera.</p>
+        <p>Green LED with rising beeps means marked. Red LED with one long beep means rejected, with the reason on screen.</p>
+        <p>The session is held for four hours, or until the server reports the token expired — at which point the terminal drops it and asks you to re-arm, rather than failing every tap identically.</p>
+      </section>
+
+      <!-- 12 ---------------------------------------------------------------->
+      <section id="trouble">
+        <h2><span class="num">12</span><span>Troubleshooting</span></h2>
+        <p class="sec-note">Grouped by subsystem. Start with the row that matches what you see.</p>
+
+        <div class="tsgroup">
+          <h3>Display</h3>
+          <div class="tw"><table>
+            <thead><tr><th>Symptom</th><th>Cause</th></tr></thead>
+            <tbody>
+              <tr><td>White screen</td><td><code>RESET</code> (GPIO4) or <code>D/C</code> (GPIO27) miswired</td></tr>
+              <tr><td>Backlight on, nothing drawn</td><td><code>CS</code> (GPIO5) or MOSI (GPIO23)</td></tr>
+              <tr><td>Nothing at all</td><td><code>LED</code> pin not on 3.3 V</td></tr>
+              <tr><td>Mirrored or rotated</td><td>Change <code>TFT_ROTATION</code></td></tr>
+              <tr><td>Random flicker or garbage</td><td>SPI wires too long, or a library not using transactions</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <div class="tsgroup">
+          <h3>PN532</h3>
+          <div class="tw"><table>
+            <thead><tr><th>Symptom</th><th>Cause</th></tr></thead>
+            <tbody>
+              <tr><td>"PN532 not found"</td><td><strong>DIP switches not set to SPI</strong> — check this first</td></tr>
+              <tr><td>Found, but cards never read</td><td><code>SS</code> (GPIO13), or the card isn't NTAG21x</td></tr>
+              <tr><td>Works alone, breaks with the display</td><td>SD <code>CS</code> (GPIO26) floating</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <div class="tsgroup">
+          <h3>ESP32-CAM</h3>
+          <div class="tw"><table>
+            <thead><tr><th>Symptom</th><th>Cause</th></tr></thead>
+            <tbody>
+              <tr><td><code>Failed to connect</code></td><td>GPIO0 not grounded, or RESET not pressed</td></tr>
+              <tr><td>Flashes, then does nothing</td><td>GPIO0 jumper still fitted</td></tr>
+              <tr><td><code>Sketch too big</code></td><td>Partition not set to Huge APP</td></tr>
+              <tr><td><code>human_face_detect_msr01.hpp: No such file</code></td><td><strong>Core 3.x — downgrade to 2.0.17</strong></td></tr>
+              <tr><td><code>Camera init failed 0x105</code></td><td>PSRAM not enabled, or a bad ribbon seat</td></tr>
+              <tr><td><code>cam=0</code> in status</td><td>GPIO16/17 crossover, or wires still off from flashing</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <div class="tsgroup">
+          <h3>Attendance and general</h3>
+          <div class="tw"><table>
+            <thead><tr><th>Symptom</th><th>Cause</th></tr></thead>
+            <tbody>
+              <tr><td>"No Wi-Fi"</td><td>ESP32 is <strong>2.4 GHz only</strong>, not 5 GHz</td></tr>
+              <tr><td>"QR code has expired"</td><td>Re-arm with a fresh QR</td></tr>
+              <tr><td>"Card not linked"</td><td>Card has no NDEF text record</td></tr>
+              <tr><td>"Unassigned face"</td><td>Slot recognised but no trainee bound — run <code>enrol</code></td></tr>
+              <tr><td>HTTP 401 / 403</td><td><strong>Expected today</strong> — see §13</td></tr>
+              <tr><td>Random reboots</td><td>Supply too weak — use 2 A</td></tr>
+              <tr><td>Serial prints garbage</td><td>Baud isn't 115200</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- 13 ---------------------------------------------------------------->
+      <section id="backend">
+        <h2><span class="num">13</span><span>Backend blockers</span></h2>
+        <p class="sec-note">Server-side gaps, not wiring or firmware faults.</p>
+
+        <h3>The terminal cannot post attendance yet</h3>
+        <p>
+          <code>app/api/v1/attendance/qr/route.ts</code> authenticates with
+          <code>createClient()</code>, which reads a <strong>cookie session
+          belonging to a signed-in human</strong>. A wall-mounted terminal has no
+          cookie, so its requests are rejected.
+        </p>
+        <p>
+          The firmware already sends
+          <code>Authorization: Bearer &lt;API_DEVICE_TOKEN&gt;</code>. The server
+          needs a matching device-token guard that resolves to a service-role
+          client for that route. <strong>No firmware change is needed once it
+          exists.</strong>
+        </p>
+
+        <h3>Face embeddings are not interchangeable</h3>
+        <p>Worth knowing before anyone tries to unify them:</p>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Source</th><th>Embedding</th><th>Metric</th></tr></thead>
+            <tbody>
+              <tr><td>Web app (face-api.js)</td><td>128-dim float</td><td>Euclidean, threshold 0.6</td></tr>
+              <tr><td>ESP32-CAM (ESP-DL)</td><td>512-dim int8</td><td>Cosine similarity</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Different dimensionality, scale and distance metric, with no conversion
+          between them. <strong>A face enrolled in the web app will never match
+          one enrolled on the terminal</strong>, and vice versa. The firmware
+          therefore recognises entirely on the CAM and maps a local slot to a
+          trainee id, so the server just sees an ordinary QR check-in.
+        </p>
+
+        <h3>Before production</h3>
+        <ul>
+          <li><strong>Set <code>API_TLS_INSECURE</code> to <code>false</code></strong> and use <code>https://</code>. At <code>true</code> the terminal accepts <em>any</em> certificate, so anything on the network path can read and rewrite attendance traffic.</li>
+          <li><strong>There is no offline queue.</strong> A check-in during a Wi-Fi outage is lost. <code>Hardware.md</code> records no SD module, and the display's slot is deliberately unused.</li>
+        </ul>
+      </section>
+    </div>
+
+    <footer>
+      <p>
+        Source of truth is <code>firmware/BUILD_GUIDE.md</code> in the CoopSetu
+        repository; this page mirrors it. Pin assignments were cross-checked
+        against <code>firmware/CoopSetuTerminal/config.h</code> — all 16 GPIOs
+        match, and every GPIO named in <code>Hardware.md</code> is accounted for.
+      </p>
+    </footer>
+  </main>
+</div>
+
+<script>
+  // ---- theme toggle -------------------------------------------------------
+  (function () {
+    var btn = document.getElementById('themeBtn');
+    btn.addEventListener('click', function () {
+      var cur = document.documentElement.getAttribute('data-theme');
+      var next;
+      if (cur === 'dark') next = 'light';
+      else if (cur === 'light') next = 'dark';
+      else next = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('cs-theme', next); } catch (e) {}
+    });
+    try {
+      var saved = localStorage.getItem('cs-theme');
+      if (saved === 'dark' || saved === 'light') {
+        document.documentElement.setAttribute('data-theme', saved);
+      }
+    } catch (e) {}
+  })();
+
+  // ---- stage progress -----------------------------------------------------
+  (function () {
+    var KEY = 'cs-build-stages';
+    var stages = Array.prototype.slice.call(document.querySelectorAll('.stage'));
+    var fill = document.getElementById('progFill');
+    var txt = document.getElementById('progTxt');
+    var done = {};
+
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) done = JSON.parse(raw) || {};
+    } catch (e) { done = {}; }
+
+    function persist() {
+      try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (e) {}
+    }
+
+    function render() {
+      var n = 0;
+      stages.forEach(function (s) {
+        var id = s.getAttribute('data-stage');
+        var on = !!done[id];
+        if (on) n++;
+        s.classList.toggle('done', on);
+        s.querySelector('.tick').setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      txt.textContent = n + ' / ' + stages.length;
+      fill.style.width = (stages.length ? (n / stages.length) * 100 : 0) + '%';
+    }
+
+    stages.forEach(function (s) {
+      s.querySelector('.tick').addEventListener('click', function () {
+        var id = s.getAttribute('data-stage');
+        done[id] = !done[id];
+        persist();
+        render();
+      });
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', function () {
+      done = {};
+      persist();
+      render();
+    });
+
+    render();
+  })();
+
+  // ---- active section in the rail ----------------------------------------
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('#nav a'));
+    var map = {};
+    links.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        links.forEach(function (a) { a.classList.remove('on'); });
+        var a = map[e.target.id];
+        if (a) a.classList.add('on');
+      });
+    }, { rootMargin: '-10% 0px -75% 0px' });
+
+    document.querySelectorAll('section[id]').forEach(function (s) { obs.observe(s); });
+  })();
+</script>
