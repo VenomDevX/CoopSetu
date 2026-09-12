@@ -4,6 +4,7 @@
 #define COOPSETU_DISPLAY_H
 
 #include <Arduino.h>
+#include <Adafruit_ILI9341.h>
 
 // CoopSetu accent (#7C5CFC) and greys, converted to RGB565 so the terminal
 // matches the web and mobile apps.
@@ -17,7 +18,11 @@
 
 void displayBegin();
 
-// Full-screen states.
+// Initialize the XPT2046 touch controller. Called once from setup() after
+// displayBegin(). Separated so touch can be brought up after SPI is stable.
+void touchInit();
+
+// Full-screen states (legacy — used by screen implementations).
 void screenBoot(const char *line);
 void screenArmSession();                 // "scan the trainer's QR"
 void screenIdle(const char *sessionLabel, int marked);
@@ -30,5 +35,22 @@ bool touchGet(int16_t *x, int16_t *y);
 
 // Prints raw touch counts to Serial for calibrating TOUCH_RAW_* in config.h.
 void touchCalibrationLoop();
+
+// Direct access to the TFT for screen implementations that need custom drawing.
+Adafruit_ILI9341& getTft();
+
+// Screen dimensions (after rotation).
+int16_t displayWidth();
+int16_t displayHeight();
+
+// Draw the standard CoopSetu header bar with a title.
+void drawHeader(const char *title);
+
+// Clear the content area below the header without touching the header itself.
+// Use this instead of fillScreen to avoid header flicker on screen transitions.
+void fillContentArea(uint16_t color = COL_BG);
+
+// Word-wraps text into a region. Exposed for screen implementations.
+void drawWrappedText(const char *s, int16_t x, int16_t y, uint8_t size, uint16_t colour);
 
 #endif  // COOPSETU_DISPLAY_H

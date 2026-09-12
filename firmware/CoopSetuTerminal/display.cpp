@@ -12,8 +12,16 @@ Adafruit_ILI9341 g_tft(PIN_TFT_CS, PIN_TFT_DC, PIN_TFT_RST);
 XPT2046_Touchscreen g_touch(PIN_TOUCH_CS, PIN_TOUCH_IRQ);
 
 int16_t W = 320, H = 240;
+bool g_touchInitialized = false;
 
-void header(const char *title) {
+}  // namespace
+
+// Public accessors
+Adafruit_ILI9341& getTft() { return g_tft; }
+int16_t displayWidth()  { return W; }
+int16_t displayHeight() { return H; }
+
+void drawHeader(const char *title) {
   g_tft.fillRect(0, 0, W, 28, COL_PANEL);
   g_tft.setTextColor(COL_ACCENT);
   g_tft.setTextSize(1);
@@ -24,8 +32,12 @@ void header(const char *title) {
   g_tft.print(title);
 }
 
+void fillContentArea(uint16_t color) {
+  g_tft.fillRect(0, 28, W, H - 28, color);
+}
+
 // Word-wraps into the content area at the given text size.
-void wrapText(const char *s, int16_t x, int16_t y, uint8_t size, uint16_t colour) {
+void drawWrappedText(const char *s, int16_t x, int16_t y, uint8_t size, uint16_t colour) {
   g_tft.setTextSize(size);
   g_tft.setTextColor(colour);
   const int16_t charW = 6 * size, lineH = 8 * size + 4;
@@ -49,14 +61,21 @@ void wrapText(const char *s, int16_t x, int16_t y, uint8_t size, uint16_t colour
   }
 }
 
+// Legacy wrapper kept for existing screen functions
+namespace {
+void header(const char *title) { drawHeader(title); }
+void wrapText(const char *s, int16_t x, int16_t y, uint8_t size, uint16_t colour) {
+  drawWrappedText(s, x, y, size, colour);
+}
 }  // namespace
 
 void displayBegin() {
-  // The TFT board's unused microSD share this bus. Deselect it before anything
-  // else talks, or the card drives MISO and corrupts every transfer.
-  pinMode(PIN_TFT_SD_CS, OUTPUT);
-  digitalWrite(PIN_TFT_SD_CS, HIGH);
-
+  // Every device on the shared VSPI bus (TFT's unused microSD, the XPT2046
+  // touch controller, the PN532) must be deselected before ANY of them talks —
+  // otherwise a floating CS can get selected by noise mid-transaction and
+  // drive MISO back, corrupting whichever transfer was actually in flight.
+  // The SD card CS was already handled here; touch and PN532 previously
+  // weren't deselected until touchInit()/nfcBegin() ran, well after this
   SPI.begin(PIN_SPI_SCK, PIN_SPI_MISO, PIN_SPI_MOSI);
 
   g_tft.begin();
@@ -64,6 +83,13 @@ void displayBegin() {
   W = g_tft.width();
   H = g_tft.height();
   g_tft.fillScreen(COL_BG);
+}
+
+void touchInit() {
+  // Now that SPI is safely initialized with ss=-1 in displayBegin(),
+  // we can safely call g_touch.begin() without it hijacking GPIO 5.
+  g_touch.begin();
+  g_touchInitialized = true;
 }
 
 void screenBoot(const char *line) {

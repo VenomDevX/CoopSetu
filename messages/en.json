@@ -32,7 +32,9 @@
     "settings": "Settings",
     "more": "More",
     "nominations": "Nominations",
-    "logistics": "Logistics"
+    "logistics": "Logistics",
+    "devices": "Devices",
+    "rfidRegistration": "RFID Registration"
   },
   "Shell": {
     "searchPlaceholder": "Search query...",

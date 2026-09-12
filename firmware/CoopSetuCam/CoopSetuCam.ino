@@ -17,6 +17,9 @@
 // Serial (UART0, GPIO1/GPIO3) is the link to the terminal, NOT a debug console.
 // Anything printed with Serial.print would be parsed as protocol noise, so all
 // diagnostics go out as ERR frames instead.
+//
+// To enable boot-time debug prints (which pollute the protocol UART), uncomment:
+// #define CAM_DEBUG
 
 #include <Arduino.h>
 #include <esp_camera.h>
@@ -43,6 +46,7 @@ static Mode g_mode = MODE_IDLE;
 static Mode g_wantMode = MODE_IDLE;
 static bool g_camReady = false;
 static pixformat_t g_camFormat = PIXFORMAT_GRAYSCALE;
+static bool g_previewEnabled = false;  // PREVIEW:ON/OFF toggle
 
 static ProtoReader g_reader;
 
@@ -262,6 +266,92 @@ static void faceTick() {
   ensureMode(MODE_IDLE);  // one answer per request; the terminal re-arms
 }
 
+// ------------------------------------------------------------------- preview
+// Thumbnail relay for the terminal's TFT. Downsamples the current camera
+// frame (whatever mode) to PREVIEW_W x PREVIEW_H grayscale, base64-encodes
+// it, and sends it as an EVT_FRAME.
+
+#define PREVIEW_W 96
+#define PREVIEW_H 72
+
+static const char kB64Chars[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+// Encodes `len` bytes from `src` into base64 at `dst` (must be ≥ 4*ceil(len/3)+1).
+// Returns the number of characters written (excluding NUL).
+static size_t b64Encode(const uint8_t *src, size_t len, char *dst, size_t dstSize) {
+  size_t o = 0;
+  size_t i = 0;
+  while (i < len && o + 4 < dstSize) {
+    uint32_t a = src[i++];
+    uint32_t b = (i < len) ? src[i++] : 0;
+    uint32_t c = (i < len) ? src[i++] : 0;
+    uint32_t triple = (a << 16) | (b << 8) | c;
+
+    dst[o++] = kB64Chars[(triple >> 18) & 0x3F];
+    dst[o++] = kB64Chars[(triple >> 12) & 0x3F];
+    dst[o++] = (i > len + 1) ? '=' : kB64Chars[(triple >> 6) & 0x3F];
+    dst[o++] = (i > len)     ? '=' : kB64Chars[triple & 0x3F];
+  }
+  dst[o] = '\0';
+  return o;
+}
+
+// Throttle: don't send preview frames faster than ~8 fps to avoid saturating
+// the UART (96*72 = 6912 bytes → ~9216 bytes base64 → ~10 KB framed → ~87 ms
+// at 921600 baud). A 130 ms interval gives ~7.7 fps with headroom.
+static uint32_t g_lastPreviewMs = 0;
+static const uint32_t kPreviewIntervalMs = 130;
+
+static void previewTick() {
+  if (!g_previewEnabled || !g_camReady) return;
+  if (millis() - g_lastPreviewMs < kPreviewIntervalMs) return;
+  g_lastPreviewMs = millis();
+
+  camera_fb_t *fb = esp_camera_fb_get();
+  if (!fb) return;
+
+  // Downsample to PREVIEW_W x PREVIEW_H grayscale.
+  // The source is either GRAYSCALE (QR mode) or RGB565 (FACE mode).
+  static uint8_t thumb[PREVIEW_W * PREVIEW_H];
+
+  const int srcW = fb->width;
+  const int srcH = fb->height;
+
+  for (int ty = 0; ty < PREVIEW_H; ty++) {
+    const int sy = ty * srcH / PREVIEW_H;
+    for (int tx = 0; tx < PREVIEW_W; tx++) {
+      const int sx = tx * srcW / PREVIEW_W;
+
+      if (g_camFormat == PIXFORMAT_GRAYSCALE) {
+        thumb[ty * PREVIEW_W + tx] = fb->buf[sy * srcW + sx];
+      } else {
+        // RGB565 → grayscale. Pixel at (sx, sy).
+        const uint16_t px = ((uint16_t *)fb->buf)[sy * srcW + sx];
+        const uint8_t r5 = (px >> 11) & 0x1F;
+        const uint8_t g6 = (px >> 5) & 0x3F;
+        const uint8_t b5 = px & 0x1F;
+        // Approximate Y = 0.299R + 0.587G + 0.114B with integer math:
+        // (r5*8*77 + g6*4*150 + b5*8*29) >> 8
+        thumb[ty * PREVIEW_W + tx] = (uint8_t)(
+          ((uint32_t)(r5 << 3) * 77 + (uint32_t)(g6 << 2) * 150 + (uint32_t)(b5 << 3) * 29) >> 8
+        );
+      }
+    }
+  }
+
+  esp_camera_fb_return(fb);
+
+  // Base64-encode the thumbnail.
+  // 6912 raw bytes → 9216 base64 chars + NUL.
+  static char b64Buf[9220];
+  const size_t b64Len = b64Encode(thumb, PREVIEW_W * PREVIEW_H, b64Buf, sizeof(b64Buf));
+  (void)b64Len;
+
+  // Send as EVT_FRAME:base64...
+  protoSendf(Serial, "%s:%s", EVT_FRAME, b64Buf);
+}
+
 // -------------------------------------------------------------------- command
 static void handleFrame(const char *body) {
   const char *rest = strchr(body, ':');
@@ -307,16 +397,23 @@ static void handleFrame(const char *body) {
     protoSendf(Serial, "%s:%d", EVT_LIST, g_recogniser->get_enrolled_id_num());
     return;
   }
+
+  if (is(CMD_PREVIEW) && rest) {
+    g_previewEnabled = (strcmp(rest, "ON") == 0);
+    return;
+  }
 }
 
 // ----------------------------------------------------------------------- main
 void setup() {
   // Must match CAM_BAUD on the terminal. This is the link, not a console.
-  Serial.begin(115200);
+  Serial.begin(921600);
   
-  // Give the serial port a moment to connect and print a visible startup message
+  // Give the serial port a moment to connect
   delay(1000);
+#ifdef CAM_DEBUG
   Serial.println("\n\n--- ESP32-CAM STARTING ---");
+#endif
 
   pinMode(FLASH_GPIO_NUM, OUTPUT);
   digitalWrite(FLASH_GPIO_NUM, LOW);
@@ -324,18 +421,24 @@ void setup() {
   if (!psramFound()) {
     // Both paths depend on PSRAM: quirc needs a full-frame buffer and the
     // recogniser's model does not fit in internal RAM.
+#ifdef CAM_DEBUG
     Serial.println("CRITICAL ERROR: PSRAM not found! Please enable PSRAM in Tools > PSRAM > Enabled.");
+#endif
     reportErr("no PSRAM - QR and face are both unavailable");
     while (true) { delay(100); } // Halt here to prevent ESP-DL from crashing
   }
 
+#ifdef CAM_DEBUG
   Serial.println("PSRAM found. Loading ESP-DL face recognition models...");
+#endif
 
   g_recogniser = new FaceRecognition112V1S8();
   g_recogniser->set_partition(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "fr");
   g_recogniser->set_ids_from_flash();
 
+#ifdef CAM_DEBUG
   Serial.println("Models loaded. Sending READY to terminal.");
+#endif
   protoSend(Serial, EVT_READY);
 }
 
@@ -350,4 +453,8 @@ void loop() {
   if (g_mode == MODE_QR) qrTick();
   else if (g_mode == MODE_FACE) faceTick();
   else delay(10);
+
+  // Preview thumbnails are sent alongside the active mode's work.
+  // This runs after the mode tick so QR/face processing gets priority.
+  previewTick();
 }

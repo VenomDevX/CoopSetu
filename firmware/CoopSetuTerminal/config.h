@@ -37,6 +37,22 @@
 #define BUTTON_LONG_PRESS_MS 1200    // long press = re-arm session
 #define FACE_MIN_CONFIDENCE  0.62f   // reject weaker matches from the CAM
 
+// RFID dedupe: ignore the same UID within this window.
+// 1000ms (debounce only) was the old value; 5 min is appropriate for real
+// attendance where re-tapping shouldn't re-submit.
+#define RFID_DEDUPE_MS      (5UL * 60UL * 1000UL)
+
+// ARM screen timeout: if the CAM doesn't respond within this window, show
+// "Camera not responding" and auto-pop to Home. Fixes diagnostic #3.
+#define ARM_TIMEOUT_MS      20000
+
+// Touch debounce window — the minimum time between successive touch events.
+#define TOUCH_DEBOUNCE_MS   40
+
+// Admin PIN for on-device RFID registration (4 digits). Change via the
+// serial console: `admin-pin <4digits>`.
+#define DEFAULT_ADMIN_PIN   "1234"
+
 // ----------------------------------------------------------------- LEDs/buzzer
 #define PIN_LED_GREEN  21
 #define PIN_LED_RED    22
@@ -88,6 +104,11 @@
 #define TOUCH_RAW_MIN_Y 300
 #define TOUCH_RAW_MAX_Y 3800
 
+// Camera preview thumbnail dimensions. The CAM downsamples its current frame
+// to this size before streaming over UART. Larger = more bandwidth, lower fps.
+#define PREVIEW_WIDTH  96
+#define PREVIEW_HEIGHT 72
+
 // --------------------------------------------------------------------- PN532
 #define PIN_PN532_SS   13
 
@@ -102,6 +123,8 @@
 // ------------------------------------------------------ UART link to ESP32-CAM
 #define PIN_CAM_RX     16  // ESP32 RX2  <- CAM GPIO1 (U0TXD)
 #define PIN_CAM_TX     17  // ESP32 TX2  -> CAM GPIO3 (U0RXD)
-#define CAM_BAUD       115200
+// Raised from 115200 to support camera preview thumbnails (~7 KB/frame).
+// Reliable over a short wired link (< 20 cm) on ESP32.
+#define CAM_BAUD       921600
 
 #endif  // COOPSETU_CONFIG_H
