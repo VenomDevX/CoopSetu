@@ -4,13 +4,20 @@
 #include <SPI.h>
 #include <Adafruit_PN532.h>
 
+// The PN532 sits on the shared SPI bus. Every access is bracketed with
+// beginTransaction/endTransaction to protect other devices (ILI9341, XPT2046).
+
 namespace {
 
-Adafruit_PN532 g_pn532(PIN_PN532_SS);
+Adafruit_PN532 g_nfc(PIN_PN532_SS);
+bool g_nfcOk = false;
+uint8_t g_lastUid[7] = {0};
+uint8_t g_lastUidLen = 0;
+uint32_t g_lastReadMs = 0;
 
-char g_lastUid[21] = {0};
-uint32_t g_lastSeen = 0;
-const uint32_t kRepeatLockoutMs = 1000;
+// Use the configurable value from config.h. Old hardcoded value was 1000ms
+// which was only a debounce — too short for real attendance.
+const uint32_t kRepeatLockoutMs = RFID_DEDUPE_MS;
 
 void uidToHex(const uint8_t *uid, uint8_t len, char *out, size_t outSize) {
   size_t n = 0;
@@ -38,7 +45,7 @@ bool readNdefText(char *out, size_t outSize) {
   uint8_t buf[64];
   // Pages 4..19 = 64 bytes of user memory; enough for a UUID plus overhead.
   for (uint8_t p = 0; p < 16; p++) {
-    if (!g_pn532.ntag2xx_ReadPage(4 + p, buf + p * 4)) return false;
+    if (!g_nfc.ntag2xx_ReadPage(4 + p, buf + p * 4)) return false;
   }
 
   if (buf[0] != 0x03) return false;  // not an NDEF message TLV
@@ -71,40 +78,57 @@ bool readNdefText(char *out, size_t outSize) {
 }  // namespace
 
 bool nfcBegin() {
-  g_pn532.begin();
+  g_nfc.begin();
   // Ensure TFT is absolutely deselected and decoupled from hardware SS
   pinMode(PIN_TFT_CS, OUTPUT);
   digitalWrite(PIN_TFT_CS, HIGH);
-  const uint32_t version = g_pn532.getFirmwareVersion();
-  if (!version) return false;
+  const uint32_t version = g_nfc.getFirmwareVersion();
+  if (!version) {
+    g_nfcOk = false;
+    return false;
+  }
 
   // One retry per call keeps nfcPoll() short enough not to stall the UI; the
   // default is 0xFF (retry forever), which would block the loop on every tick.
-  g_pn532.setPassiveActivationRetries(0x01);
-  g_pn532.SAMConfig();
+  g_nfc.setPassiveActivationRetries(0x01);
+  g_nfc.SAMConfig();
+  g_nfcOk = true;
   return true;
 }
 
 bool nfcPoll(NfcCard *out) {
+  // Without this guard, a terminal that booted without a responding PN532
+  // (see nfcBegin()) would still hit the chip's SPI transfer on every single
+  // loop tick from every screen's onTick — forever. That's continuous traffic
+  // on the bus the TFT/touch also share, and it's exactly the corruption
+  // config.h warns about: the display goes white after the splash and never
+  // recovers, because it's fighting a card reader that isn't there.
+  if (!g_nfcOk) return false;
+
   uint8_t uid[7] = {0};
   uint8_t uidLen = 0;
 
   // 50 ms timeout: long enough to catch a deliberate tap, short enough that the
   // touchscreen still feels responsive.
-  if (!g_pn532.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLen, 50)) {
-    if (millis() - g_lastSeen > kRepeatLockoutMs) g_lastUid[0] = '\0';
+  if (!g_nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLen, 50)) {
+    if (millis() - g_lastReadMs > kRepeatLockoutMs) {
+      memset(g_lastUid, 0, sizeof(g_lastUid));
+      g_lastUidLen = 0;
+    }
     return false;
   }
 
   char hex[21];
   uidToHex(uid, uidLen, hex, sizeof(hex));
 
-  const bool same = (strcmp(hex, g_lastUid) == 0);
-  g_lastSeen = millis();
-  if (same) return false;  // still the same card sitting on the reader
+  // Compare with the last-seen UID to suppress repeat reads from the same card
+  // sitting on the reader surface.
+  const bool same = (uidLen == g_lastUidLen && memcmp(uid, g_lastUid, uidLen) == 0);
+  g_lastReadMs = millis();
+  if (same) return false;
 
-  strncpy(g_lastUid, hex, sizeof(g_lastUid) - 1);
-  g_lastUid[sizeof(g_lastUid) - 1] = '\0';
+  memcpy(g_lastUid, uid, uidLen);
+  g_lastUidLen = uidLen;
 
   strncpy(out->uid, hex, sizeof(out->uid) - 1);
   out->uid[sizeof(out->uid) - 1] = '\0';

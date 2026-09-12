@@ -13,6 +13,7 @@ enum CamEventType {
   CAM_EV_QR,
   CAM_EV_FACE,      // slot >= 0 with confidence, or slot < 0 for "no match"
   CAM_EV_ENROLLED,
+  CAM_EV_FRAME,     // preview thumbnail received
   CAM_EV_ERR,
 };
 
@@ -33,5 +34,16 @@ bool camPoll(CamEvent *out);
 
 // True if the CAM has answered at any point since boot.
 bool camIsAlive();
+
+// Preview control — enables/disables thumbnail streaming from the CAM.
+void camPreviewOn();
+void camPreviewOff();
+
+// Returns true if a new preview frame is available since the last call.
+// Copies the raw grayscale thumbnail into `buf` (must be at least w*h bytes).
+bool camGetFrame(uint8_t *buf, uint16_t *w, uint16_t *h);
+
+// True if there's a frame waiting to be consumed.
+bool camHasFrame();
 
 #endif  // COOPSETU_CAMLINK_H

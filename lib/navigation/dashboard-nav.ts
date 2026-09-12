@@ -4,7 +4,7 @@ import {
   BarChart3, Settings, Users, AlertCircle,
   Building2, GraduationCap, BookOpen, ClipboardCheck, Award, UserCheck,
   BriefcaseBusiness, Target, Bot, QrCode, ClipboardList, User,
-  CalendarClock, Flame,
+  CalendarClock, Flame, Cpu, CreditCard,
   type LucideIcon,
 } from 'lucide-react';
 import type { DashboardPersona } from '@/lib/auth/dashboard-persona';
@@ -69,6 +69,8 @@ export function buildNavGroups(t: (key: string) => string, persona: DashboardPer
       { name: t('trainees'), href: '/dashboard/trainees', icon: UserCheck, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER'] },
       { name: t('trainers'), href: '/dashboard/trainers', icon: User, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
       { name: t('attendance'), href: '/dashboard/attendance', icon: QrCode, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
+      { name: t('devices'), href: '/dashboard/devices', icon: Cpu, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
+      { name: t('rfidRegistration'), href: '/dashboard/rfid-registration', icon: CreditCard, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
       { name: t('digitalId'), href: '/dashboard/id-card', icon: ShieldCheck, roles: ['TRAINEE'] },
     ]},
     { title: 'Learning_LMS', items: [

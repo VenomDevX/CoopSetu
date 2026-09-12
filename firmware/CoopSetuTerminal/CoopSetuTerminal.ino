@@ -4,22 +4,31 @@
 // before powering up, especially the two resistor values that are wrong in the
 // parts list.
 //
-// Flow:
-//   1. ARM      the trainer opens the session QR on the CoopSetu dashboard and
-//               holds it to the camera. The terminal stores the qr_token.
-//   2. IDENTIFY a trainee taps an NFC card, or presses the button for a face
-//               check-in. Either way the result is a trainee id.
-//   3. SUBMIT   POST /api/v1/attendance/qr { qr_token, trainee_id }.
-//
-// The token is held by the terminal rather than scanned per trainee, because
-// that is what the existing endpoint expects: one session token, many trainees.
+// Architecture (v2):
+//   - Touch-navigable screen stack (screens.h/cpp) replaces the flat enum switch
+//   - FreeRTOS network task (net_task.h/cpp) on core 0 handles WiFi/HTTP
+//   - Main loop on core 1 handles display, touch, NFC, CAM-link
+//   - Three attendance methods: RFID, QR, Face — all non-blocking
+//   - Admin mode: PIN-gated on-device RFID registration
 //
 // Face matching happens entirely on the ESP32-CAM. The terminal never sees an
-// embedding — it receives a slot number and maps it to a trainee id. See
-// firmware/README.md for why the embeddings cannot be sent to the server.
+// embedding — it receives a slot number and maps it to a member via the backend.
 
 #include <Arduino.h>
+#include <SPI.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_ILI9341.h>
+#include <Adafruit_PN532.h>
 #include <Preferences.h>
+
+// arduino-esp32's default loopTask stack is 8 KB. That's tight once you add
+// the FreeRTOS net-task queues, multiple ArduinoJson StaticJsonDocuments, and
+// several ~400-byte NetRequest/NetResponse locals all living on this same
+// task's stack (display/touch/NFC/CAM-link all run in loop() on core 1). The
+// observed symptom was a hard "stack overflow in task loopTask" panic/reboot
+// shortly after boot — not the display or PN532 wiring. Must be set before
+// setup() runs; this macro is arduino-esp32's supported way to do that.
+SET_LOOP_TASK_STACK_SIZE(16 * 1024);
 
 #include "config.h"
 #include "feedback.h"
@@ -27,6 +36,11 @@
 #include "nfc.h"
 #include "camlink.h"
 #include "api.h"
+#include "screens.h"
+#include "net_task.h"
+
+// Forward declaration for screensRegister() (defined in screens.cpp)
+extern void screensRegister();
 
 // --------------------------------------------------------------- face roster
 // Maps an on-CAM face slot to a CoopSetu trainee id. Enrol with the serial
@@ -40,30 +54,11 @@ static FaceSlot g_faces[kMaxFaces];
 
 Preferences g_prefs;
 
-enum State { S_BOOT, S_ARM, S_IDLE, S_IDENTIFY, S_SUBMIT, S_RESULT };
-State g_state = S_BOOT;
-uint32_t g_stateSince = 0;
-
-char g_qrToken[192] = {0};
-uint32_t g_qrArmedAt = 0;
-int g_markedCount = 0;
-
 int g_enrollSlot = -1;  // >= 0 while an enrolment is in flight
 
 // ---------------------------------------------------------------- persistence
 void loadState() {
   g_prefs.begin("coopsetu", false);
-  g_prefs.getString("qr", g_qrToken, sizeof(g_qrToken));
-  g_markedCount = g_prefs.getInt("marked", 0);
-
-  // The token survives a reboot but its age cannot: millis() restarts at 0 and
-  // there is no RTC, so elapsed wall-clock time across a power cycle is simply
-  // unknowable. Restart the local TTL clock and let the server be authoritative
-  // on expiry - markAttendanceByQR() checks qr_expires_at and returns
-  // "QR code has expired", which submitFor() turns into a re-arm. Persisting
-  // the old timestamp instead would make millis() - g_qrArmedAt underflow and
-  // expire every restored session immediately.
-  g_qrArmedAt = millis();
   for (int i = 0; i < kMaxFaces; i++) {
     char key[8];
     snprintf(key, sizeof(key), "f%d", i);
@@ -71,81 +66,10 @@ void loadState() {
   }
 }
 
-void saveSession() {
-  g_prefs.putString("qr", g_qrToken);
-  g_prefs.putInt("marked", g_markedCount);
-}
-
 void saveFace(int slot) {
   char key[8];
   snprintf(key, sizeof(key), "f%d", slot);
   g_prefs.putString(key, g_faces[slot].trainee);
-}
-
-bool sessionValid() {
-  if (g_qrToken[0] == '\0') return false;
-  // millis() wraps after ~49 days; the unsigned subtraction handles that.
-  return (millis() - g_qrArmedAt) < QR_SESSION_TTL_MS;
-}
-
-// -------------------------------------------------------------------- states
-void enter(State s) {
-  g_state = s;
-  g_stateSince = millis();
-
-  switch (s) {
-    case S_ARM:
-      camSetMode(CAM_QR);
-      screenArmSession();
-      feedbackSet(FB_WAITING);
-      break;
-    case S_IDLE: {
-      camSetMode(CAM_IDLE);
-      char label[24];
-      // Never render the whole token: it is a bearer credential for the session
-      // and the terminal is, by design, mounted somewhere public.
-      snprintf(label, sizeof(label), "%.4s...", g_qrToken);
-      screenIdle(label, g_markedCount);
-      feedbackSet(FB_WAITING);
-      break;
-    }
-    case S_IDENTIFY:
-      camSetMode(CAM_FACE);
-      screenBusy("Look at camera");
-      feedbackSet(FB_BUSY);
-      break;
-    case S_SUBMIT:
-      screenBusy("Marking...");
-      feedbackSet(FB_BUSY);
-      break;
-    default:
-      break;
-  }
-}
-
-void showResult(bool ok, const char *title, const char *detail) {
-  screenResult(ok, title, detail);
-  feedbackSet(ok ? FB_SUCCESS : FB_FAILURE);
-  g_state = S_RESULT;
-  g_stateSince = millis();
-}
-
-void submitFor(const char *traineeId) {
-  enter(S_SUBMIT);
-  const ApiResult r = apiMarkAttendance(g_qrToken, traineeId);
-  if (r.ok) {
-    g_markedCount++;
-    saveSession();
-    showResult(true, "Marked", r.message);
-  } else {
-    showResult(false, "Rejected", r.message);
-    // The server owns expiry. If it says the token is dead, stop retrying it -
-    // otherwise every subsequent tap fails the same way with no path out.
-    if (strstr(r.message, "expired") || strstr(r.message, "Invalid")) {
-      g_qrToken[0] = '\0';
-      saveSession();
-    }
-  }
 }
 
 // --------------------------------------------------------------------- button
@@ -187,7 +111,7 @@ int buttonEvent() {
 // Typed into the Arduino IDE serial monitor at 115200:
 //   enrol <slot> <trainee-uuid>   bind a slot, then capture the face
 //   forget <slot>                 clear a slot (255 = all)
-//   session                       re-arm the session QR
+//   admin-pin <4digits>           set the admin PIN for on-device registration
 //   status                        print current state
 void handleSerial() {
   if (!Serial.available()) return;
@@ -240,27 +164,63 @@ void handleSerial() {
     return;
   }
 
-  if (line == "session") {
-    enter(S_ARM);
+  if (line.startsWith("admin-pin")) {
+    const int sp = line.indexOf(' ');
+    if (sp < 0 || line.length() - sp - 1 != 4) {
+      Serial.println("usage: admin-pin <4digits>");
+      return;
+    }
+    const String pin = line.substring(sp + 1);
+    Preferences prefs;
+    prefs.begin("coopsetu", false);
+    prefs.putString("admin_pin", pin);
+    prefs.end();
+    Serial.printf("Admin PIN set to %s\n", pin.c_str());
     return;
   }
 
   if (line == "status") {
-    Serial.printf("wifi=%d cam=%d session=%s marked=%d\n", wifiIsUp(),
-                  camIsAlive(), sessionValid() ? "armed" : "none", g_markedCount);
+    Serial.printf("wifi=%d cam=%d screen=%d\n",
+                  netWifiConnected(), camIsAlive(), (int)currentScreen());
     for (int i = 0; i < kMaxFaces; i++) {
       if (g_faces[i].trainee[0]) Serial.printf("  slot %d -> %s\n", i, g_faces[i].trainee);
     }
     return;
   }
 
-  Serial.println("commands: enrol <slot> <uuid> | forget <slot|255> | session | status");
+  Serial.println("commands: enrol <slot> <uuid> | forget <slot|255> | admin-pin <4digits> | status");
+}
+
+// --------------------------------------------------------------- touch input
+// Edge-detected, debounced touch polling.
+namespace {
+  uint32_t g_lastTouchMs = 0;
+  bool     g_wasTouched  = false;
+}
+
+bool pollTouch(int16_t *x, int16_t *y) {
+  // Enforce debounce window
+  if (millis() - g_lastTouchMs < TOUCH_DEBOUNCE_MS) return false;
+
+  int16_t tx, ty;
+  bool touched = touchGet(&tx, &ty);
+
+  // Edge detect: only fire on press (not hold)
+  if (touched && !g_wasTouched) {
+    g_wasTouched = true;
+    g_lastTouchMs = millis();
+    *x = tx;
+    *y = ty;
+    return true;
+  }
+  if (!touched) g_wasTouched = false;
+  return false;
 }
 
 // ----------------------------------------------------------------------- main
 void setup() {
   Serial.begin(115200);
-  delay(200);
+  delay(1000);
 
   feedbackBegin();
   feedbackSet(FB_BOOT);
@@ -275,6 +235,9 @@ void setup() {
   screenBoot("Starting...");
   loadState();
 
+  // TEMP: Disabled touchInit() to match test script footprint and isolate SPI issue
+  // touchInit();
+
   camBegin();
 
   screenBoot("NFC...");
@@ -285,83 +248,56 @@ void setup() {
     delay(1200);
   }
 
-  screenBoot("Wi-Fi...");
-  if (!wifiBegin(12000)) {
-    Serial.println("Wi-Fi failed; will retry on first submit");
-    screenBoot("Wi-Fi failed (will retry)");
-    delay(1200);
-  }
+  // Start network task on core 0 — handles WiFi + HTTP non-blocking
+  screenBoot("Network...");
+  netTaskBegin();
 
-  enter(sessionValid() ? S_IDLE : S_ARM);
+  // Screen stack init
+  screensBegin();
+  screensRegister();
+
+  // Boot into Home screen
+  pushScreen(SCR_HOME);
+  feedbackSet(FB_WAITING);
 }
 
 void loop() {
   feedbackTick();
   handleSerial();
 
-  // ---- camera events
+  // ---- touch events -> active screen
+  // TEMP: Disabled to match test script
+  // int16_t tx, ty;
+  // if (pollTouch(&tx, &ty)) {
+  //   Screen *s = activeScreen();
+  //   if (s && s->onTouch) s->onTouch(tx, ty);
+  // }
+
+  // ---- screen tick (drives NFC polling, network response handling, etc.)
+  Screen *s = activeScreen();
+  if (s && s->onTick) s->onTick();
+
+  // ---- camera events that are not screen-specific (enrolment from serial)
   CamEvent ev;
   if (camPoll(&ev)) {
-    if (ev.type == CAM_EV_QR && g_state == S_ARM) {
-      strncpy(g_qrToken, ev.text, sizeof(g_qrToken) - 1);
-      g_qrToken[sizeof(g_qrToken) - 1] = '\0';
-      g_qrArmedAt = millis();
-      saveSession();
-      showResult(true, "Session armed", g_qrToken);
-    } else if (ev.type == CAM_EV_ENROLLED) {
-      if (g_enrollSlot >= 0) {
-        Serial.printf("slot %d enrolled\n", ev.slot);
-        g_enrollSlot = -1;
-        showResult(true, "Face enrolled", g_faces[ev.slot].trainee);
-      }
-    } else if (ev.type == CAM_EV_FACE && g_state == S_IDENTIFY) {
-      if (ev.slot < 0 || ev.slot >= kMaxFaces) {
-        showResult(false, "Not recognised", "No enrolled face matched");
-      } else if (ev.confidence < FACE_MIN_CONFIDENCE) {
-        showResult(false, "Not sure", "Move closer and try again");
-      } else if (g_faces[ev.slot].trainee[0] == '\0') {
-        showResult(false, "Unassigned face", "Slot has no trainee bound");
-      } else {
-        submitFor(g_faces[ev.slot].trainee);
-      }
+    if (ev.type == CAM_EV_ENROLLED && g_enrollSlot >= 0) {
+      Serial.printf("slot %d enrolled\n", ev.slot);
+      g_enrollSlot = -1;
+      showResultScreen(true, "Face enrolled", g_faces[ev.slot].trainee);
     } else if (ev.type == CAM_EV_ERR) {
       Serial.printf("cam error: %s\n", ev.text);
     }
+    // Screen-specific events (QR, FACE) are handled inside each screen's onTick
   }
 
-  // ---- button
+  // ---- button: long press = go home, short press = back
   const int be = buttonEvent();
   if (be == 2) {
-    enter(S_ARM);  // long press re-arms the session
+    // Long press: return to home
+    while (currentScreen() != SCR_HOME) popScreen();
   } else if (be == 1) {
-    if (g_state == S_IDLE && sessionValid()) enter(S_IDENTIFY);
-    else if (g_state == S_RESULT) enter(sessionValid() ? S_IDLE : S_ARM);
-  }
-
-  // ---- NFC (only while idle; the reader shares the bus with the display)
-  if (g_state == S_IDLE) {
-    NfcCard card;
-    if (nfcPoll(&card)) {
-      if (!sessionValid()) {
-        showResult(false, "No session", "Long-press to arm a session first");
-      } else if (card.trainee[0]) {
-        submitFor(card.trainee);
-      } else {
-        // A blank card is a provisioning problem, not a trainee problem — say
-        // which card, so it can be written.
-        showResult(false, "Card not linked", card.uid);
-      }
-    }
-  }
-
-  // ---- timeouts
-  const uint32_t held = millis() - g_stateSince;
-  if (g_state == S_IDENTIFY && held > IDENTIFY_TIMEOUT_MS) {
-    showResult(false, "Timed out", "No face detected");
-  } else if (g_state == S_RESULT && held > RESULT_DWELL_MS) {
-    enter(sessionValid() ? S_IDLE : S_ARM);
-  } else if (g_state == S_IDLE && !sessionValid()) {
-    enter(S_ARM);  // session expired underneath us
+    // Short press: back
+    popScreen();
   }
 
   delay(5);

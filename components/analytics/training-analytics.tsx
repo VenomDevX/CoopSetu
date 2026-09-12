@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
-  ResponsiveContainer, LineChart, Line,
+  ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell,
 } from 'recharts';
-import { AlertTriangle, Building2, MapPin, TrendingDown, Users } from 'lucide-react';
+import { AlertTriangle, Building2, Cpu, MapPin, TrendingDown, Users } from 'lucide-react';
 
 /**
  * The training-domain replacement for the inherited delivery analytics.
@@ -29,6 +29,13 @@ interface Data {
   geography: { state: string; trainees: number }[];
 }
 
+interface DeviceData {
+  total: number;
+  byMethod: { method: string; count: number; color: string }[];
+  byDevice: { label: string; count: number }[];
+  dailyTrend: { date: string; count: number }[];
+}
+
 const FUNNEL_STAGES: { key: keyof Funnel; label: string }[] = [
   { key: 'registered', label: 'Registered' },
   { key: 'nominated', label: 'Nominated' },
@@ -41,12 +48,16 @@ const FUNNEL_STAGES: { key: keyof Funnel; label: string }[] = [
 export function TrainingAnalytics() {
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState('');
+  const [deviceData, setDeviceData] = useState<DeviceData | null>(null);
 
   const load = useCallback(() => {
     fetch('/api/v1/analytics/training').then((r) => r.json()).then((j) => {
       if (j?.error) { setError(j.error); return; }
       setData(j?.data || null);
     });
+    fetch('/api/v1/analytics/device-attendance').then((r) => r.json()).then((j) => {
+      if (!j?.error) setDeviceData(j?.data || null);
+    }).catch(() => {/* device analytics is non-critical */});
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -230,6 +241,65 @@ export function TrainingAnalytics() {
           <Empty icon={<Users className="w-8 h-8" />} label="No enrolled trainee is showing drop-out signals." />
         )}
       </section>
+
+      {/* Device attendance breakdown */}
+      {deviceData && deviceData.total > 0 && (
+        <section className="border border-border rounded p-5 bg-surface">
+          <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold mb-1">
+            <Cpu className="w-3 h-3 inline mr-1" />Device Attendance
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            {deviceData.total.toLocaleString()} kiosk check-ins across {deviceData.byDevice.length} device{deviceData.byDevice.length === 1 ? '' : 's'}.
+          </p>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Method breakdown pie */}
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">By Method</p>
+              <ResponsiveContainer width="100%" height={180}>
+                <PieChart>
+                  <Pie data={deviceData.byMethod} dataKey="count" nameKey="method" cx="50%" cy="50%" outerRadius={60} label={(props: any) => `${props.method}: ${props.count}`}>
+                    {deviceData.byMethod.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Per-device bar chart */}
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">By Device</p>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={deviceData.byDevice} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis type="number" tick={{ fontSize: 10 }} />
+                  <YAxis dataKey="label" type="category" tick={{ fontSize: 10 }} width={100} />
+                  <RechartsTooltip />
+                  <Bar dataKey="count" fill="#7C5CFC" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Daily trend */}
+          {deviceData.dailyTrend.length > 1 && (
+            <div className="mt-6">
+              <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">Daily Device Check-ins (30 days)</p>
+              <ResponsiveContainer width="100%" height={160}>
+                <LineChart data={deviceData.dailyTrend}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" tick={{ fontSize: 9 }} angle={-45} textAnchor="end" height={50} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <RechartsTooltip />
+                  <Line type="monotone" dataKey="count" stroke="#7C5CFC" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }

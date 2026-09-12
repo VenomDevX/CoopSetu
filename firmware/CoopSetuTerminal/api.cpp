@@ -130,3 +130,144 @@ ApiResult apiMarkAttendance(const char *qrToken, const char *traineeId) {
   snprintf(r.message, sizeof(r.message), "HTTP %d", code);
   return r;
 }
+
+// ------------------------------------------- generic helpers for new endpoints
+
+static ApiResult apiPost(const char *path, const char *body) {
+  ApiResult r = {false, 0, ""};
+
+  if (!wifiIsUp() && !wifiBegin(6000)) {
+    r.status = -1;
+    strncpy(r.message, "No Wi-Fi", sizeof(r.message) - 1);
+    return r;
+  }
+
+  char url[192];
+  snprintf(url, sizeof(url), "%s%s", API_BASE_URL, path);
+
+  HTTPClient http;
+  WiFiClientSecure tls;
+  WiFiClient plain;
+  bool began = false;
+
+  if (kUseTls) {
+#if API_TLS_INSECURE
+    tls.setInsecure();
+#endif
+    began = http.begin(tls, url);
+  } else {
+    began = http.begin(plain, url);
+  }
+
+  if (!began) {
+    r.status = -2;
+    strncpy(r.message, "Bad API URL", sizeof(r.message) - 1);
+    return r;
+  }
+
+  http.setTimeout(HTTP_TIMEOUT_MS);
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("Authorization", "Bearer " API_DEVICE_TOKEN);
+  http.addHeader("User-Agent", "Mozilla/5.0 (compatible; CoopSetuTerminal/1)");
+
+  const int code = http.POST((uint8_t *)body, strlen(body));
+  r.status = code;
+
+  if (code <= 0) {
+    snprintf(r.message, sizeof(r.message), "Network error %d", code);
+    http.end();
+    return r;
+  }
+
+  const String payload = http.getString();
+  http.end();
+
+  r.ok = (code >= 200 && code < 300);
+  strncpy(r.message, payload.c_str(), sizeof(r.message) - 1);
+  r.message[sizeof(r.message) - 1] = '\0';
+  return r;
+}
+
+static ApiResult apiGet(const char *path) {
+  ApiResult r = {false, 0, ""};
+
+  if (!wifiIsUp() && !wifiBegin(6000)) {
+    r.status = -1;
+    strncpy(r.message, "No Wi-Fi", sizeof(r.message) - 1);
+    return r;
+  }
+
+  char url[256];
+  snprintf(url, sizeof(url), "%s%s", API_BASE_URL, path);
+
+  HTTPClient http;
+  WiFiClientSecure tls;
+  WiFiClient plain;
+  bool began = false;
+
+  if (kUseTls) {
+#if API_TLS_INSECURE
+    tls.setInsecure();
+#endif
+    began = http.begin(tls, url);
+  } else {
+    began = http.begin(plain, url);
+  }
+
+  if (!began) {
+    r.status = -2;
+    strncpy(r.message, "Bad API URL", sizeof(r.message) - 1);
+    return r;
+  }
+
+  http.setTimeout(HTTP_TIMEOUT_MS);
+  http.addHeader("Authorization", "Bearer " API_DEVICE_TOKEN);
+  http.addHeader("User-Agent", "Mozilla/5.0 (compatible; CoopSetuTerminal/1)");
+
+  const int code = http.GET();
+  r.status = code;
+
+  if (code <= 0) {
+    snprintf(r.message, sizeof(r.message), "Network error %d", code);
+    http.end();
+    return r;
+  }
+
+  const String payload = http.getString();
+  http.end();
+
+  r.ok = (code >= 200 && code < 300);
+  strncpy(r.message, payload.c_str(), sizeof(r.message) - 1);
+  r.message[sizeof(r.message) - 1] = '\0';
+  return r;
+}
+
+// ------------------------------------------------ new kiosk endpoints
+
+ApiResult apiPostRfidAttendance(const char *jsonBody) {
+  return apiPost("/api/v1/attendance/rfid", jsonBody);
+}
+
+ApiResult apiPostFaceAttendance(const char *jsonBody) {
+  return apiPost("/api/v1/attendance/device-face", jsonBody);
+}
+
+ApiResult apiPostRfidRegister(const char *jsonBody) {
+  return apiPost("/api/v1/rfid/register", jsonBody);
+}
+
+ApiResult apiFetchInstitutions(const char *queryParams) {
+  char path[192];
+  snprintf(path, sizeof(path), "/api/v1/institutions?%s", queryParams);
+  return apiGet(path);
+}
+
+ApiResult apiUserSearch(const char *queryParams) {
+  char path[192];
+  snprintf(path, sizeof(path), "/api/v1/users/search?%s", queryParams);
+  return apiGet(path);
+}
+
+ApiResult apiHeartbeat() {
+  return apiPost("/api/v1/device/heartbeat", "{}");
+}

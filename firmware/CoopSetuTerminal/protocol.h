@@ -22,7 +22,7 @@
 
 static const char PROTO_START = '#';
 static const char PROTO_CHECK = '*';
-static const size_t PROTO_MAX_BODY = 512;  // QR payloads dominate this
+static const size_t PROTO_MAX_BODY = 10240;  // Must fit base64-encoded thumbnails (~9.2 KB)
 
 // Host -> CAM
 #define CMD_PING     "PING"
@@ -30,6 +30,7 @@ static const size_t PROTO_MAX_BODY = 512;  // QR payloads dominate this
 #define CMD_ENROLL   "ENROLL"  // ENROLL:<slot>
 #define CMD_FORGET   "FORGET"  // FORGET:<slot>  (slot 255 = wipe all)
 #define CMD_LIST     "LIST"
+#define CMD_PREVIEW  "PREVIEW" // PREVIEW:ON | PREVIEW:OFF — enable/disable frame relay
 
 // CAM -> Host
 #define EVT_READY    "READY"
@@ -39,6 +40,7 @@ static const size_t PROTO_MAX_BODY = 512;  // QR payloads dominate this
 #define EVT_ENROLLED "ENROLLED" // ENROLLED:<slot>
 #define EVT_LIST     "LIST"     // LIST:<comma separated slots>
 #define EVT_ERR      "ERR"      // ERR:<message>
+#define EVT_FRAME    "FRAME"    // FRAME:<base64 encoded thumbnail>
 
 inline uint8_t protoChecksum(const char *body, size_t len) {
   uint8_t c = 0;
