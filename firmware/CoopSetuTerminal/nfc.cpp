@@ -72,6 +72,9 @@ bool readNdefText(char *out, size_t outSize) {
 
 bool nfcBegin() {
   g_pn532.begin();
+  // Ensure TFT is absolutely deselected and decoupled from hardware SS
+  pinMode(PIN_TFT_CS, OUTPUT);
+  digitalWrite(PIN_TFT_CS, HIGH);
   const uint32_t version = g_pn532.getFirmwareVersion();
   if (!version) return false;
 
