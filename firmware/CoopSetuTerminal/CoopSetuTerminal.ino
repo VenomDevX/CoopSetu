@@ -136,7 +136,7 @@ void submitFor(const char *traineeId) {
   if (r.ok) {
     g_markedCount++;
     saveSession();
-    showResult(true, "Marked", traineeId);
+    showResult(true, "Marked", r.message);
   } else {
     showResult(false, "Rejected", r.message);
     // The server owns expiry. If it says the token is dead, stop retrying it -
@@ -265,7 +265,7 @@ void setup() {
   feedbackBegin();
   feedbackSet(FB_BOOT);
 
-  pinMode(PIN_BUTTON, INPUT);  // external 10 kΩ pull-up; GPIO34 has none
+  pinMode(PIN_BUTTON, INPUT_PULLUP);  // internal pull-up enabled for GPIO33
 
   displayBegin();
 #if TOUCH_CALIBRATION_MODE

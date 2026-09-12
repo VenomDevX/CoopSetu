@@ -59,10 +59,10 @@ export class AttendanceService {
         method: input.method || 'MANUAL',
         status: input.status || 'PRESENT',
       })
-      .select()
+      .select('*, trainees(profiles:user_id(full_name))')
       .single();
     if (error) throw error;
-    return data as AttendanceRecord;
+    return data;
   }
 
   async markAttendanceByQR(qrToken: string, traineeId: string) {

@@ -64,9 +64,6 @@ void displayBegin() {
   W = g_tft.width();
   H = g_tft.height();
   g_tft.fillScreen(COL_BG);
-
-  g_touch.begin();
-  g_touch.setRotation(TFT_ROTATION);
 }
 
 void screenBoot(const char *line) {

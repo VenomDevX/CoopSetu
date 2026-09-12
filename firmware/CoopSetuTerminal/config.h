@@ -5,8 +5,8 @@
 #define COOPSETU_CONFIG_H
 
 // ---------------------------------------------------------------- Wi-Fi / API
-#define WIFI_SSID       "CHANGE_ME"
-#define WIFI_PASSWORD   "CHANGE_ME"
+#define WIFI_SSID       "YOUR_WIFI_SSID"
+#define WIFI_PASSWORD   "YOUR_WIFI_PASSWORD"
 
 // Base URL of the CoopSetu server, no trailing slash.
 // Must be reachable from the terminal's network. https:// is strongly
@@ -21,7 +21,7 @@
 // needs a device-token guard before the terminal can post attendance; see
 // firmware/README.md ("Backend work required"). The header is sent now so no
 // firmware change is needed once that lands.
-#define API_DEVICE_TOKEN "CHANGE_ME"
+#define API_DEVICE_TOKEN "coopsetu-device-icm-lucknow-demo"
 
 // Skips certificate validation on https://. Convenient on a LAN with a
 // self-signed cert, and unacceptable in production: it accepts any certificate,
@@ -55,7 +55,7 @@
 // specifies an external one. Fit the 10 kΩ it calls for: the 200 Ω part
 // currently listed would sink 3.3 V / 200 Ω ≈ 16 mA every time the button is
 // held — wasteful, hot, and near the pin's continuous rating.
-#define PIN_BUTTON     34
+#define PIN_BUTTON     33
 #define BUTTON_ACTIVE_LOW 1
 
 // ------------------------------------------------------------- Shared SPI bus

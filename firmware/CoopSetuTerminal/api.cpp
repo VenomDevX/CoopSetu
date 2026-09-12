@@ -106,7 +106,14 @@ ApiResult apiMarkAttendance(const char *qrToken, const char *traineeId) {
 
   if (code == 201 || code == 200) {
     r.ok = true;
-    strncpy(r.message, "Attendance marked", sizeof(r.message) - 1);
+    StaticJsonDocument<384> doc;
+    if (deserializeJson(doc, payload) == DeserializationError::Ok) {
+      const char *name = doc["data"]["trainees"]["profiles"]["full_name"] | "Attendance marked";
+      strncpy(r.message, name, sizeof(r.message) - 1);
+    } else {
+      strncpy(r.message, "Attendance marked", sizeof(r.message) - 1);
+    }
+    r.message[sizeof(r.message) - 1] = '\0';
     return r;
   }
 

@@ -22,6 +22,8 @@
 #include <esp_camera.h>
 #include <EEPROM.h>
 
+#include <ESP32QRCodeReader.h>
+
 #include "camera_pins.h"
 #include "protocol.h"
 
@@ -149,7 +151,7 @@ static bool ensureMode(Mode m) {
 // quirc ships inside the ESP32QRCodeReader library (src/quirc.h). We drive it
 // directly rather than using that library's own task+camera wrapper, because
 // this sketch has to own the camera lifecycle to share it with FACE mode.
-#include "quirc.h"
+#include "quirc/quirc.h"
 
 static struct quirc *g_qr = nullptr;
 
@@ -296,7 +298,7 @@ static void handleFrame(const char *body) {
 
   if (is(CMD_FORGET) && rest) {
     const int slot = atoi(rest);
-    if (slot == 255) g_recogniser->delete_all_id();
+    if (slot == 255) g_recogniser->delete_id(true);
     else g_recogniser->delete_id(slot + 1, true);
     return;
   }
@@ -311,6 +313,10 @@ static void handleFrame(const char *body) {
 void setup() {
   // Must match CAM_BAUD on the terminal. This is the link, not a console.
   Serial.begin(115200);
+  
+  // Give the serial port a moment to connect and print a visible startup message
+  delay(1000);
+  Serial.println("\n\n--- ESP32-CAM STARTING ---");
 
   pinMode(FLASH_GPIO_NUM, OUTPUT);
   digitalWrite(FLASH_GPIO_NUM, LOW);
@@ -318,13 +324,18 @@ void setup() {
   if (!psramFound()) {
     // Both paths depend on PSRAM: quirc needs a full-frame buffer and the
     // recogniser's model does not fit in internal RAM.
+    Serial.println("CRITICAL ERROR: PSRAM not found! Please enable PSRAM in Tools > PSRAM > Enabled.");
     reportErr("no PSRAM - QR and face are both unavailable");
+    while (true) { delay(100); } // Halt here to prevent ESP-DL from crashing
   }
+
+  Serial.println("PSRAM found. Loading ESP-DL face recognition models...");
 
   g_recogniser = new FaceRecognition112V1S8();
   g_recogniser->set_partition(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "fr");
   g_recogniser->set_ids_from_flash();
 
+  Serial.println("Models loaded. Sending READY to terminal.");
   protoSend(Serial, EVT_READY);
 }
 
