@@ -21,7 +21,7 @@
 // needs a device-token guard before the terminal can post attendance; see
 // firmware/README.md ("Backend work required"). The header is sent now so no
 // firmware change is needed once that lands.
-#define API_DEVICE_TOKEN "coopsetu-device-icm-lucknow-demo"
+#define API_DEVICE_TOKEN "PROVISION_A_UNIQUE_DEVICE_TOKEN"
 
 // Skips certificate validation on https://. Convenient on a LAN with a
 // self-signed cert, and unacceptable in production: it accepts any certificate,
@@ -51,7 +51,7 @@
 
 // Admin PIN for on-device RFID registration (4 digits). Change via the
 // serial console: `admin-pin <4digits>`.
-#define DEFAULT_ADMIN_PIN   "1234"
+#define DEFAULT_ADMIN_PIN   "0000"
 
 // ----------------------------------------------------------------- LEDs/buzzer
 #define PIN_LED_GREEN  21
@@ -86,7 +86,7 @@
 #define PIN_TFT_DC     27
 #define PIN_TFT_RST    4
 #define PIN_TOUCH_CS   14
-#define PIN_TOUCH_IRQ  25
+#define PIN_TOUCH_IRQ  255  // 255 disables hardware interrupts to prevent SPI bus crashing
 
 // The TFT carries a microSD slot this project does not use. Its select line is
 // wired (Hardware.md restored it), and a floating CS lets the card drive MISO
@@ -99,10 +99,10 @@
 // Touch calibration — raw XPT2046 counts at the corners. Re-measure per panel:
 // set TOUCH_CALIBRATION_MODE to 1, watch the serial monitor, tap each corner.
 #define TOUCH_CALIBRATION_MODE 0
-#define TOUCH_RAW_MIN_X 320
-#define TOUCH_RAW_MAX_X 3900
-#define TOUCH_RAW_MIN_Y 300
-#define TOUCH_RAW_MAX_Y 3800
+#define TOUCH_RAW_MIN_X 413
+#define TOUCH_RAW_MAX_X 3793
+#define TOUCH_RAW_MIN_Y 315
+#define TOUCH_RAW_MAX_Y 3761
 
 // Camera preview thumbnail dimensions. The CAM downsamples its current frame
 // to this size before streaming over UART. Larger = more bandwidth, lower fps.

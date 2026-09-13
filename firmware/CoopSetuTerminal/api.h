@@ -14,8 +14,8 @@ struct ApiResult {
   char message[384];  // server's response body or a local explanation
 };
 
-// WiFi management (called from netTask)
-bool wifiBegin(uint32_t timeoutMs);
+// True if WiFi is currently associated. Connecting/reconnecting is owned by
+// net_task.cpp's ensureWifi() state machine, not this file.
 bool wifiIsUp();
 
 // POST /api/v1/attendance/qr  { qr_token, trainee_id }

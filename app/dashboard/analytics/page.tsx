@@ -29,6 +29,7 @@ import { ScheduleReportModal } from '@/components/reports/schedule-report-modal'
 import { usePermission } from '@/lib/permissions/context';
 import { TrainingAnalytics } from '@/components/analytics/training-analytics';
 import { LmsEngagement } from '@/components/analytics/lms-engagement';
+import { AttendanceMarksOverview } from '@/components/analytics/attendance-marks-overview';
 import {
   BarChart,
   Bar,
@@ -53,6 +54,11 @@ const TRAINING_TAB = 'Training Outcomes';
 // rather than inside it: one answers "did they finish", the other "are they
 // even opening it", and staff look at them at different moments.
 const ENGAGEMENT_TAB = 'LMS Engagement';
+// One page for attendance + marks + progress + certificates, self-scoped by
+// /api/v1/analytics/overview: a trainee sees their own record here, staff see
+// their institution (or the whole organization). Visible to every persona —
+// unlike the two tabs above, a trainee has no other reason to open this page.
+const ATTENDANCE_MARKS_TAB = 'Attendance & Marks';
 
 const tabs = [
   'Delivery Analytics',
@@ -68,9 +74,16 @@ const tabs = [
 export default function AnalyticsPage() {
   const { hasRole } = usePermission();
   const isTrainingPersona = hasRole('INSTITUTE_ADMIN') || hasRole('TRAINER') || hasRole('SUPER_ADMIN');
-  const visibleTabs = isTrainingPersona ? [TRAINING_TAB, ENGAGEMENT_TAB, ...tabs] : tabs;
+  const isTrainee = hasRole('TRAINEE');
+  const visibleTabs = isTrainingPersona
+    ? [ATTENDANCE_MARKS_TAB, TRAINING_TAB, ENGAGEMENT_TAB, ...tabs]
+    : isTrainee
+      ? [ATTENDANCE_MARKS_TAB]
+      : [ATTENDANCE_MARKS_TAB, ...tabs];
 
-  const [activeTab, setActiveTab] = useState(isTrainingPersona ? TRAINING_TAB : 'Delivery Analytics');
+  const [activeTab, setActiveTab] = useState(
+    isTrainee ? ATTENDANCE_MARKS_TAB : isTrainingPersona ? TRAINING_TAB : 'Delivery Analytics',
+  );
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [scheduleReportId, setScheduleReportId] = useState<string | null>(null);
 
@@ -214,6 +227,7 @@ export default function AnalyticsPage() {
 
       {/* Tab Content */}
       <div className="space-y-6 pb-12">
+        {activeTab === ATTENDANCE_MARKS_TAB && <AttendanceMarksOverview />}
         {activeTab === TRAINING_TAB && <TrainingAnalytics />}
         {activeTab === ENGAGEMENT_TAB && <LmsEngagement />}
 
@@ -362,7 +376,7 @@ export default function AnalyticsPage() {
           </div>
         )}
 
-        {activeTab !== 'Delivery Analytics' && (
+        {![ATTENDANCE_MARKS_TAB, TRAINING_TAB, ENGAGEMENT_TAB, 'Delivery Analytics'].includes(activeTab) && (
           <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-border bg-surface/50 animate-in fade-in">
             <BarChart3 className="w-12 h-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-bold mb-2">{activeTab}</h3>

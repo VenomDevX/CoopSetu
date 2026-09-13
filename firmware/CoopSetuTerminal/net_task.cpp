@@ -23,18 +23,35 @@ TaskHandle_t  g_taskHandle = nullptr;
 uint32_t g_lastHeartbeat = 0;
 const uint32_t kHeartbeatIntervalMs = 60000;  // 60 seconds
 
-// WiFi reconnect with exponential backoff
-bool ensureWifi() {
-  if (WiFi.status() == WL_CONNECTED) return true;
-  WiFi.mode(WIFI_STA);
-  WiFi.setSleep(false);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+// Non-blocking WiFi connect with real exponential backoff. Earlier versions
+// of ensureWifi() busy-waited up to 8s per call (via vTaskDelay), and it was
+// called on every request plus once per heartbeat — a dropped AP could stall
+// this whole task, and every queued request behind it, for seconds at a time.
+// Now a connect attempt is issued at most once per backoff window and this
+// function returns immediately either way; the caller just sees "not
+// connected yet" instead of blocking.
+bool g_wifiConnecting = false;
+uint32_t g_wifiLastAttemptMs = 0;
+uint32_t g_wifiBackoffMs = 2000;
+const uint32_t kWifiBackoffMaxMs = 30000;
 
-  uint32_t start = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - start < 8000) {
-    vTaskDelay(pdMS_TO_TICKS(100));
+bool ensureWifi() {
+  if (WiFi.status() == WL_CONNECTED) {
+    g_wifiConnecting = false;
+    g_wifiBackoffMs = 2000;  // reset backoff once we're back up
+    return true;
   }
-  return WiFi.status() == WL_CONNECTED;
+
+  const uint32_t now = millis();
+  if (!g_wifiConnecting || (now - g_wifiLastAttemptMs >= g_wifiBackoffMs)) {
+    WiFi.mode(WIFI_STA);
+    WiFi.setSleep(false);
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    g_wifiConnecting = true;
+    g_wifiLastAttemptMs = now;
+    g_wifiBackoffMs = min(g_wifiBackoffMs * 2, kWifiBackoffMaxMs);
+  }
+  return false;
 }
 
 void sendResponse(NetRequestType type, bool ok, int status, const char *data) {
@@ -107,7 +124,7 @@ void netTaskFn(void *) {
       handleRequest(req);
     }
 
-    // Periodic heartbeat
+    // Periodic heartbeat or reconnect
     if (millis() - g_lastHeartbeat > kHeartbeatIntervalMs) {
       g_lastHeartbeat = millis();
       if (WiFi.status() == WL_CONNECTED) {
@@ -132,6 +149,9 @@ void netTaskFn(void *) {
           }
           drained++;
         }
+      } else {
+        // If disconnected, try to reconnect periodically in the background
+        ensureWifi();
       }
     }
 
@@ -169,6 +189,10 @@ bool netDequeue(NetResponse *resp) {
 
 bool netWifiConnected() {
   return WiFi.status() == WL_CONNECTED;
+}
+
+bool netWifiConnecting() {
+  return g_wifiConnecting && WiFi.status() != WL_CONNECTED;
 }
 
 int netPendingCount() {

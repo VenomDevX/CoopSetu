@@ -30,23 +30,17 @@ void jsonEscape(const char *src, char *dst, size_t dstSize) {
 
 }  // namespace
 
-bool wifiBegin(uint32_t timeoutMs) {
-  if (WiFi.status() == WL_CONNECTED) return true;
-  WiFi.mode(WIFI_STA);
-  WiFi.setSleep(false);  // sleep adds seconds of latency to a tap-and-go flow
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-  const uint32_t start = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - start < timeoutMs) delay(100);
-  return WiFi.status() == WL_CONNECTED;
-}
-
+// Every caller in this file runs inside net_task.cpp's handleRequest(), which
+// already calls ensureWifi() before dispatching — a second blocking connect
+// attempt here just doubled the worst-case stall per request. If WiFi still
+// isn't up by the time we get here, fail fast so the caller can offline-queue
+// the event immediately instead of waiting out another timeout.
 bool wifiIsUp() { return WiFi.status() == WL_CONNECTED; }
 
 ApiResult apiMarkAttendance(const char *qrToken, const char *traineeId) {
   ApiResult r = {false, 0, ""};
 
-  if (!wifiIsUp() && !wifiBegin(6000)) {
+  if (!wifiIsUp()) {
     r.status = -1;
     strncpy(r.message, "No Wi-Fi", sizeof(r.message) - 1);
     return r;
@@ -136,7 +130,7 @@ ApiResult apiMarkAttendance(const char *qrToken, const char *traineeId) {
 static ApiResult apiPost(const char *path, const char *body) {
   ApiResult r = {false, 0, ""};
 
-  if (!wifiIsUp() && !wifiBegin(6000)) {
+  if (!wifiIsUp()) {
     r.status = -1;
     strncpy(r.message, "No Wi-Fi", sizeof(r.message) - 1);
     return r;
@@ -191,7 +185,7 @@ static ApiResult apiPost(const char *path, const char *body) {
 static ApiResult apiGet(const char *path) {
   ApiResult r = {false, 0, ""};
 
-  if (!wifiIsUp() && !wifiBegin(6000)) {
+  if (!wifiIsUp()) {
     r.status = -1;
     strncpy(r.message, "No Wi-Fi", sizeof(r.message) - 1);
     return r;

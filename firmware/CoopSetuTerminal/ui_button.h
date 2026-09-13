@@ -21,6 +21,10 @@ struct UiButton {
   uint8_t  textSize;
 };
 
+// Standard bottom-left "< Back" button shared by every sub-screen, so the
+// drawn rect and the hit-tested rect can never drift apart.
+static const UiButton kBackBtn = {10, 220, 60, 20, "< Back", COL_PANEL, COL_MUTED, 1};
+
 // Returns true if the given screen coordinates are inside the button.
 inline bool hitTest(const UiButton &btn, int16_t tx, int16_t ty) {
   return tx >= btn.x && tx < btn.x + btn.w &&

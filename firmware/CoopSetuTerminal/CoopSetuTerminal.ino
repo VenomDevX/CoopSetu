@@ -228,15 +228,16 @@ void setup() {
   pinMode(PIN_BUTTON, INPUT_PULLUP);  // internal pull-up enabled for GPIO33
 
   displayBegin();
-#if TOUCH_CALIBRATION_MODE
-  touchCalibrationLoop();  // never returns
-#endif
 
   screenBoot("Starting...");
   loadState();
 
-  // TEMP: Disabled touchInit() to match test script footprint and isolate SPI issue
-  // touchInit();
+  // Initialize touch after SPI is stable
+  touchInit();
+
+#if TOUCH_CALIBRATION_MODE
+  touchCalibrationLoop();  // never returns
+#endif
 
   camBegin();
 
@@ -250,11 +251,16 @@ void setup() {
 
   // Start network task on core 0 — handles WiFi + HTTP non-blocking
   screenBoot("Network...");
+  delay(400);
   netTaskBegin();
 
   // Screen stack init
   screensBegin();
   screensRegister();
+
+  // Let the user see the final boot state for a moment before jumping to UI
+  screenBoot("Ready");
+  delay(800);
 
   // Boot into Home screen
   pushScreen(SCR_HOME);
@@ -266,12 +272,11 @@ void loop() {
   handleSerial();
 
   // ---- touch events -> active screen
-  // TEMP: Disabled to match test script
-  // int16_t tx, ty;
-  // if (pollTouch(&tx, &ty)) {
-  //   Screen *s = activeScreen();
-  //   if (s && s->onTouch) s->onTouch(tx, ty);
-  // }
+  int16_t tx, ty;
+  if (pollTouch(&tx, &ty)) {
+    Screen *s = activeScreen();
+    if (s && s->onTouch) s->onTouch(tx, ty);
+  }
 
   // ---- screen tick (drives NFC polling, network response handling, etc.)
   Screen *s = activeScreen();

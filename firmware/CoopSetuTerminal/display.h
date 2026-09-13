@@ -22,12 +22,9 @@ void displayBegin();
 // displayBegin(). Separated so touch can be brought up after SPI is stable.
 void touchInit();
 
-// Full-screen states (legacy — used by screen implementations).
+// Full-screen states still used directly by CoopSetuTerminal.ino. Everything
+// else lives in the screens.cpp screen-stack (see ScreenId in screens.h).
 void screenBoot(const char *line);
-void screenArmSession();                 // "scan the trainer's QR"
-void screenIdle(const char *sessionLabel, int marked);
-void screenBusy(const char *what);
-void screenResult(bool ok, const char *title, const char *detail);
 void screenEnroll(const char *who, int slot);
 
 // True if the panel was touched since the last call; fills screen coords.

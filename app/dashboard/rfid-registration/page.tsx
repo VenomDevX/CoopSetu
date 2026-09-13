@@ -13,6 +13,7 @@ interface UserResult {
   avatar_url: string | null;
   role: string;
   institution_id: string | null;
+  institution_name: string | null;
   has_rfid: boolean;
   rfid_uid: string | null;
 }
@@ -61,7 +62,6 @@ export default function RfidRegistrationPage() {
         body: JSON.stringify({
           rfid_uid: rfidUid.trim().toUpperCase(),
           member_id: selectedUser.id,
-          organization_id: '', // will be inferred from session
         }),
       });
       const data = await res.json();
@@ -98,6 +98,11 @@ export default function RfidRegistrationPage() {
       setRevoking(false);
     }
   };
+
+  // Only shown when results span more than one institution — an institution-
+  // pinned admin's results are all their own institute, so the column would
+  // be redundant noise; a national-scope admin's results can span several.
+  const showInstitutionColumn = new Set(users.map(u => u.institution_id).filter(Boolean)).size > 1;
 
   const roles = [
     { value: '', label: 'All Roles' },
@@ -226,7 +231,10 @@ export default function RfidRegistrationPage() {
                     </div>
                     <div>
                       <div className="font-medium text-sm">{user.name}</div>
-                      <div className="text-xs text-muted-foreground">{user.role}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {user.role}
+                        {showInstitutionColumn && user.institution_name && ` · ${user.institution_name}`}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

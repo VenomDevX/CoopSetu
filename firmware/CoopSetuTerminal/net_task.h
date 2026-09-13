@@ -45,6 +45,11 @@ bool netDequeue(NetResponse *resp);
 // True if WiFi is currently connected (safe to call from any core).
 bool netWifiConnected();
 
+// True if a connect attempt is in flight (backoff window elapsed, WiFi.begin()
+// issued, not yet resolved). Lets the UI show "Connecting..." instead of a
+// flat "No Wi-Fi" while a reconnect is actually underway.
+bool netWifiConnecting();
+
 // Number of pending requests in the queue (0 or 1 normally).
 int  netPendingCount();
 

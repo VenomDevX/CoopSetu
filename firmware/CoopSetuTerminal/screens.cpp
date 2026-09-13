@@ -129,21 +129,54 @@ static const UiButton kHomeBtns[] = {
   {170, 170, 130, 30, "Status",          COL_PANEL,  COL_MUTED, 1},
 };
 
+// Tracks what's currently drawn so homeTick() only repaints the status strip
+// when something actually changed, instead of flickering every tick.
+int g_homeStatusDrawn = -1;  // -1 = not drawn yet; else packed (wifi*100+pending)
+
+void drawHomeStatus() {
+  Adafruit_ILI9341 &tft = getTft();
+  tft.fillRect(0, 30, displayWidth(), 12, COL_BG);
+
+  tft.setTextSize(1);
+  const char *wifiLabel = netWifiConnected() ? "WiFi OK"
+                         : netWifiConnecting() ? "Connecting..."
+                         : "No WiFi";
+  tft.setTextColor(netWifiConnected() ? COL_OK
+                   : netWifiConnecting() ? COL_ACCENT
+                   : COL_ERR);
+  int wifiX = tft.width() - (strlen(wifiLabel) * 6) - 10;
+  tft.setCursor(wifiX, 32);
+  tft.print(wifiLabel);
+
+  const int pending = netPendingCount() + offlineCount();
+  if (pending > 0) {
+    tft.setTextColor(COL_MUTED);
+    tft.setCursor(8, 32);
+    tft.print("Pending: ");
+    tft.print(pending);
+  }
+}
+
 void homeEnter() {
   Adafruit_ILI9341 &tft = getTft();
   tft.fillScreen(COL_BG);
   drawHeader("Home");
 
-  // WiFi status indicator
-  tft.setTextSize(1);
-  tft.setTextColor(netWifiConnected() ? COL_OK : COL_ERR);
-  tft.setCursor(270, 10);
-  tft.print(netWifiConnected() ? "WiFi OK" : "No WiFi");
+  g_homeStatusDrawn = -1;
+  drawHomeStatus();
 
   for (int i = 0; i < 4; i++) drawButton(tft, kHomeBtns[i]);
 }
 
 void homeTick() {
+  // Repaint the WiFi/pending strip only when its state actually changed.
+  const int state = (netWifiConnected() ? 2 : netWifiConnecting() ? 1 : 0) * 1000 +
+                     (netPendingCount() + offlineCount());
+  if (state != g_homeStatusDrawn) {
+    g_homeStatusDrawn = state;
+    drawHomeStatus();
+  }
+
   // Poll NFC even on home screen for quick-tap attendance
   NfcCard card;
   if (nfcPoll(&card)) {
@@ -152,8 +185,11 @@ void homeTick() {
     req.type = NET_ATTENDANCE_RFID;
     snprintf(req.payload, sizeof(req.payload),
       "{\"rfid_uid\":\"%s\"}", card.uid);
-    netEnqueue(req);
-    replaceScreen(SCR_STATUS);
+    if (netEnqueue(req)) {
+      replaceScreen(SCR_STATUS);
+    } else {
+      showResultScreen(false, "System Busy", "Network queue full. Try again.");
+    }
   }
 
   // Check for network responses
@@ -234,8 +270,6 @@ namespace {
 
 static bool g_rfidWaiting = false;
 
-static const UiButton kRfidBackBtn = {10, 220, 60, 20, "< Back", COL_PANEL, COL_MUTED, 1};
-
 void rfidEnter() {
   g_rfidWaiting = false;
   Adafruit_ILI9341 &tft = getTft();
@@ -251,7 +285,7 @@ void rfidEnter() {
   tft.setTextSize(1);
   tft.print("Hold card near the reader...");
 
-  drawButton(tft, kRfidBackBtn);
+  drawButton(tft, kBackBtn);
 }
 
 void rfidTick() {
@@ -273,41 +307,45 @@ void rfidTick() {
     req.type = NET_ATTENDANCE_RFID;
     snprintf(req.payload, sizeof(req.payload),
       "{\"rfid_uid\":\"%s\"}", card.uid);
-    netEnqueue(req);
+    if (!netEnqueue(req)) {
+      showResultScreen(false, "System Busy", "Network queue full. Try again.");
+    }
   }
 
   // Check response
   NetResponse resp;
-  if (netDequeue(&resp) && resp.type == NET_ATTENDANCE_RFID) {
-    g_rfidWaiting = false;
-    if (resp.ok) {
-      StaticJsonDocument<384> doc;
-      deserializeJson(doc, resp.data);
-      const char *name = doc["user"]["name"] | "Unknown";
-      const char *role = doc["user"]["role"] | "";
-      bool marked = doc["attendance_marked"] | false;
+  while (netDequeue(&resp)) {
+    if (g_rfidWaiting && resp.type == NET_ATTENDANCE_RFID) {
+      g_rfidWaiting = false;
+      if (resp.ok) {
+        StaticJsonDocument<384> doc;
+        deserializeJson(doc, resp.data);
+        const char *name = doc["user"]["name"] | "Unknown";
+        const char *role = doc["user"]["role"] | "";
+        bool marked = doc["attendance_marked"] | false;
 
-      char title[64], detail[128];
-      if (marked) {
-        snprintf(title, sizeof(title), "%s", name);
-        snprintf(detail, sizeof(detail), "%s — Attendance Marked", role);
+        char title[64], detail[128];
+        if (marked) {
+          snprintf(title, sizeof(title), "%s", name);
+          snprintf(detail, sizeof(detail), "%s — Attendance Marked", role);
+        } else {
+          snprintf(title, sizeof(title), "%s", name);
+          snprintf(detail, sizeof(detail), "Already marked today");
+        }
+        showResultScreen(true, title, detail);
+      } else if (resp.status == 404) {
+        showResultScreen(false, "Unknown RFID", "Card not registered. Contact admin.");
+      } else if (resp.status == 403) {
+        showResultScreen(false, "Card Revoked", "This card has been deactivated.");
       } else {
-        snprintf(title, sizeof(title), "%s", name);
-        snprintf(detail, sizeof(detail), "Already marked today");
+        showResultScreen(false, "Error", resp.data);
       }
-      showResultScreen(true, title, detail);
-    } else if (resp.status == 404) {
-      showResultScreen(false, "Unknown RFID", "Card not registered. Contact admin.");
-    } else if (resp.status == 403) {
-      showResultScreen(false, "Card Revoked", "This card has been deactivated.");
-    } else {
-      showResultScreen(false, "Error", resp.data);
     }
   }
 }
 
 void rfidTouch(int16_t x, int16_t y) {
-  if (hitTest(kRfidBackBtn, x, y)) popScreen();
+  if (hitTest(kBackBtn, x, y)) popScreen();
 }
 
 }  // namespace
@@ -315,8 +353,6 @@ void rfidTouch(int16_t x, int16_t y) {
 // ================================================================== SCR_QR
 
 namespace {
-
-static const UiButton kQrBackBtn = {10, 220, 60, 20, "< Back", COL_PANEL, COL_MUTED, 1};
 
 void qrEnter() {
   Adafruit_ILI9341 &tft = getTft();
@@ -328,7 +364,7 @@ void qrEnter() {
   tft.setCursor(30, 60);
   tft.print("Point QR at camera");
 
-  drawButton(tft, kQrBackBtn);
+  drawButton(tft, kBackBtn);
 
   camSetMode(CAM_QR);
   camPreviewOn();
@@ -378,13 +414,16 @@ void qrTick() {
       snprintf(req.payload, sizeof(req.payload),
         "{\"qr_token\":\"%s\"}", ev.text);
     }
-    netEnqueue(req);
-    replaceScreen(SCR_STATUS);
+    if (netEnqueue(req)) {
+      replaceScreen(SCR_STATUS);
+    } else {
+      showResultScreen(false, "System Busy", "Network queue full. Try again.");
+    }
   }
 }
 
 void qrTouch(int16_t x, int16_t y) {
-  if (hitTest(kQrBackBtn, x, y)) {
+  if (hitTest(kBackBtn, x, y)) {
     camPreviewOff();
     camSetMode(CAM_IDLE);
     popScreen();
@@ -402,7 +441,6 @@ void qrExit() {
 
 namespace {
 
-static const UiButton kFaceBackBtn = {10, 220, 60, 20, "< Back", COL_PANEL, COL_MUTED, 1};
 static bool g_faceWaiting = false;
 
 void faceEnter() {
@@ -416,7 +454,7 @@ void faceEnter() {
   tft.setCursor(30, 60);
   tft.print("Position your face");
 
-  drawButton(tft, kFaceBackBtn);
+  drawButton(tft, kBackBtn);
 
   camSetMode(CAM_FACE);
   camPreviewOn();
@@ -474,36 +512,40 @@ void faceTick() {
       req.type = NET_ATTENDANCE_FACE;
       snprintf(req.payload, sizeof(req.payload),
         "{\"slot\":%d,\"confidence\":%.4f}", ev.slot, ev.confidence);
-      netEnqueue(req);
+      if (!netEnqueue(req)) {
+        showResultScreen(false, "System Busy", "Network queue full. Try again.");
+      }
     }
   }
 
   // Check network response
   NetResponse resp;
-  if (netDequeue(&resp) && resp.type == NET_ATTENDANCE_FACE) {
-    g_faceWaiting = false;
-    if (resp.ok) {
-      StaticJsonDocument<384> doc;
-      deserializeJson(doc, resp.data);
-      const char *name = doc["user"]["name"] | "Unknown";
-      const char *role = doc["user"]["role"] | "";
-      bool marked = doc["attendance_marked"] | false;
+  while (netDequeue(&resp)) {
+    if (g_faceWaiting && resp.type == NET_ATTENDANCE_FACE) {
+      g_faceWaiting = false;
+      if (resp.ok) {
+        StaticJsonDocument<384> doc;
+        deserializeJson(doc, resp.data);
+        const char *name = doc["user"]["name"] | "Unknown";
+        const char *role = doc["user"]["role"] | "";
+        bool marked = doc["attendance_marked"] | false;
 
-      char title[64], detail[128];
-      snprintf(title, sizeof(title), "%s", name);
-      snprintf(detail, sizeof(detail), "%s — %s",
-        role, marked ? "Attendance Marked" : "Already Marked");
-      showResultScreen(true, title, detail);
-    } else if (resp.status == 404) {
-      showResultScreen(false, "Unknown Face", "Face slot not registered on this device.");
-    } else {
-      showResultScreen(false, "Error", resp.data);
+        char title[64], detail[128];
+        snprintf(title, sizeof(title), "%s", name);
+        snprintf(detail, sizeof(detail), "%s — %s",
+          role, marked ? "Attendance Marked" : "Already Marked");
+        showResultScreen(true, title, detail);
+      } else if (resp.status == 404) {
+        showResultScreen(false, "Unknown Face", "Face slot not registered on this device.");
+      } else {
+        showResultScreen(false, "Error", resp.data);
+      }
     }
   }
 }
 
 void faceTouch(int16_t x, int16_t y) {
-  if (hitTest(kFaceBackBtn, x, y)) {
+  if (hitTest(kBackBtn, x, y)) {
     camPreviewOff();
     camSetMode(CAM_IDLE);
     popScreen();
@@ -675,8 +717,11 @@ void armTick() {
       req.type = NET_ATTENDANCE_QR;
       snprintf(req.payload, sizeof(req.payload),
         "{\"scanned_text\":\"%s\"}", ev.text);
-      netEnqueue(req);
-      replaceScreen(SCR_STATUS);
+      if (netEnqueue(req)) {
+        replaceScreen(SCR_STATUS);
+      } else {
+        showResultScreen(false, "System Busy", "Network queue full. Try again.");
+      }
     }
   }
 }
@@ -700,8 +745,8 @@ void settingsEnter() {
   tft.setTextColor(COL_MUTED);
   tft.setCursor(10, 50);
   tft.print("WiFi: ");
-  tft.setTextColor(netWifiConnected() ? COL_OK : COL_ERR);
-  tft.print(netWifiConnected() ? "Connected" : "Disconnected");
+  tft.setTextColor(netWifiConnected() ? COL_OK : netWifiConnecting() ? COL_ACCENT : COL_ERR);
+  tft.print(netWifiConnected() ? "Connected" : netWifiConnecting() ? "Connecting..." : "Disconnected");
 
   tft.setTextColor(COL_MUTED);
   tft.setCursor(10, 70);
@@ -709,16 +754,33 @@ void settingsEnter() {
   tft.setTextColor(camIsAlive() ? COL_OK : COL_ERR);
   tft.print(camIsAlive() ? "Online" : "Offline");
 
+  // Backend/sync status — the only other visibility into this today is the
+  // generic "Offline Mode" message on SCR_STATUS after a failed request.
+  const int pending = netPendingCount() + offlineCount();
   tft.setTextColor(COL_MUTED);
   tft.setCursor(10, 90);
+  tft.print("Backend: ");
+  if (pending > 0) {
+    tft.setTextColor(COL_ACCENT);
+    tft.print(pending);
+    tft.print(" pending sync");
+  } else if (netWifiConnected()) {
+    tft.setTextColor(COL_OK);
+    tft.print("Up to date");
+  } else {
+    tft.setTextColor(COL_ERR);
+    tft.print("Unreachable");
+  }
+
+  tft.setTextColor(COL_MUTED);
+  tft.setCursor(10, 110);
   tft.print("FW: CoopSetuTerminal v2.0");
 
-  static const UiButton backBtn = {10, 220, 60, 20, "< Back", COL_PANEL, COL_MUTED, 1};
-  drawButton(tft, backBtn);
+  drawButton(tft, kBackBtn);
 }
 
 void settingsTouch(int16_t x, int16_t y) {
-  if (y > 210) popScreen();
+  if (hitTest(kBackBtn, x, y)) popScreen();
 }
 
 }  // namespace
@@ -727,27 +789,33 @@ void settingsTouch(int16_t x, int16_t y) {
 
 namespace {
 
-static const int kPadX = 60, kPadY = 80, kBtnW = 50, kBtnH = 40, kGap = 8;
-static const char *kPadLabels[] = {"1","2","3","4","5","6","7","8","9","*","0","#"};
+static const int kPadX = 60, kPadY = 55, kBtnW = 50, kBtnH = 40, kGap = 8;
+
+// Built once from the same x/y math the draw and hit-test used to duplicate
+// separately — now there is exactly one source of truth for pad geometry.
+void buildPinPadButtons(UiButton out[12]) {
+  static const char *kPadLabels[] = {"1","2","3","4","5","6","7","8","9","*","0","#"};
+  for (int i = 0; i < 12; i++) {
+    int col = i % 3, row = i / 3;
+    out[i] = {int16_t(kPadX + col * (kBtnW + kGap)), int16_t(kPadY + row * (kBtnH + kGap)),
+               kBtnW, kBtnH, kPadLabels[i], COL_PANEL, COL_TEXT, 2};
+  }
+}
 
 void pinPadDraw() {
   Adafruit_ILI9341 &tft = getTft();
-  for (int i = 0; i < 12; i++) {
-    int col = i % 3, row = i / 3;
-    int16_t x = kPadX + col * (kBtnW + kGap);
-    int16_t y = kPadY + row * (kBtnH + kGap);
-    UiButton btn = {x, y, kBtnW, kBtnH, kPadLabels[i], COL_PANEL, COL_TEXT, 2};
-    drawButton(tft, btn);
-  }
+  UiButton pad[12];
+  buildPinPadButtons(pad);
+  for (int i = 0; i < 12; i++) drawButton(tft, pad[i]);
 }
 
 void pinDisplayUpdate() {
   Adafruit_ILI9341 &tft = getTft();
-  tft.fillRect(80, 50, 160, 20, COL_BG);
+  tft.fillRect(80, 25, 160, 20, COL_BG);
   tft.setTextSize(2);
   tft.setTextColor(COL_ACCENT);
-  tft.setCursor(80, 50);
-  for (int i = 0; i < g_pinLen; i++) tft.print('*');
+  tft.setCursor(80, 25);
+  for (int i = 0; i < g_pinLen; i++) tft.print(g_pinInput[i]);
   for (int i = g_pinLen; i < 4; i++) tft.print('_');
 }
 
@@ -767,61 +835,58 @@ void adminLoginEnter() {
   pinDisplayUpdate();
   pinPadDraw();
 
-  static const UiButton backBtn = {10, 220, 60, 20, "< Back", COL_PANEL, COL_MUTED, 1};
-  drawButton(tft, backBtn);
+  drawButton(tft, kBackBtn);
 }
 
 void adminLoginTouch(int16_t x, int16_t y) {
-  // Back button
-  if (y > 210 && x < 80) { popScreen(); return; }
+  if (hitTest(kBackBtn, x, y)) { popScreen(); return; }
 
-  // Pin pad hit test
-  for (int i = 0; i < 12; i++) {
-    int col = i % 3, row = i / 3;
-    int16_t bx = kPadX + col * (kBtnW + kGap);
-    int16_t by = kPadY + row * (kBtnH + kGap);
-    if (x >= bx && x < bx + kBtnW && y >= by && y < by + kBtnH) {
-      if (i == 9) {  // '*' = clear
+  // Pin pad hit test — built from the exact same geometry pinPadDraw() used.
+  UiButton pad[12];
+  buildPinPadButtons(pad);
+  int i = hitTestArray(pad, 12, x, y);
+  if (i < 0) return;
+
+  static const char *kPadLabels[] = {"1","2","3","4","5","6","7","8","9","*","0","#"};
+
+  if (i == 9) {  // '*' = clear
+    g_pinLen = 0;
+    memset(g_pinInput, 0, sizeof(g_pinInput));
+    pinDisplayUpdate();
+    return;
+  }
+  if (i == 11) {  // '#' = submit
+    if (g_pinLen == 4) {
+      if (strcmp(g_pinInput, g_adminPin) == 0) {
+        replaceScreen(SCR_ADMIN_RFID_REGISTER);
+      } else {
+        showResultScreen(false, "Wrong PIN", "Try again.");
+      }
+    }
+    return;
+  }
+  // Digit
+  if (g_pinLen < 4) {
+    g_pinInput[g_pinLen++] = kPadLabels[i][0];
+    g_pinInput[g_pinLen] = '\0';
+    pinDisplayUpdate();
+
+    // Auto-submit on 4th digit
+    if (g_pinLen == 4) {
+      delay(200);  // brief visual feedback
+      if (strcmp(g_pinInput, g_adminPin) == 0) {
+        replaceScreen(SCR_ADMIN_RFID_REGISTER);
+      } else {
         g_pinLen = 0;
         memset(g_pinInput, 0, sizeof(g_pinInput));
         pinDisplayUpdate();
-        return;
+        Adafruit_ILI9341 &tft = getTft();
+        tft.fillRect(80, 10, 200, 12, COL_BG);
+        tft.setTextSize(1);
+        tft.setTextColor(COL_ERR);
+        tft.setCursor(80, 10);
+        tft.print("Wrong PIN. Try again.");
       }
-      if (i == 11) {  // '#' = submit
-        if (g_pinLen == 4) {
-          if (strcmp(g_pinInput, g_adminPin) == 0) {
-            replaceScreen(SCR_ADMIN_RFID_REGISTER);
-          } else {
-            showResultScreen(false, "Wrong PIN", "Try again.");
-          }
-        }
-        return;
-      }
-      // Digit
-      if (g_pinLen < 4) {
-        g_pinInput[g_pinLen++] = kPadLabels[i][0];
-        g_pinInput[g_pinLen] = '\0';
-        pinDisplayUpdate();
-
-        // Auto-submit on 4th digit
-        if (g_pinLen == 4) {
-          delay(200);  // brief visual feedback
-          if (strcmp(g_pinInput, g_adminPin) == 0) {
-            replaceScreen(SCR_ADMIN_RFID_REGISTER);
-          } else {
-            g_pinLen = 0;
-            memset(g_pinInput, 0, sizeof(g_pinInput));
-            pinDisplayUpdate();
-            Adafruit_ILI9341 &tft = getTft();
-            tft.fillRect(80, 36, 200, 12, COL_BG);
-            tft.setTextSize(1);
-            tft.setTextColor(COL_ERR);
-            tft.setCursor(80, 36);
-            tft.print("Wrong PIN. Try again.");
-          }
-        }
-      }
-      return;
     }
   }
 }
@@ -832,7 +897,7 @@ void adminLoginTouch(int16_t x, int16_t y) {
 
 namespace {
 
-static const UiButton kRegBackBtn = {10, 220, 60, 20, "< Back", COL_PANEL, COL_MUTED, 1};
+static const UiButton kConfirmBtn = {60, 130, 200, 40, "CONFIRM", COL_OK, COL_TEXT, 2};
 
 static const UiButton kRoleBtns[] = {
   {20,  60, 130, 35, "Trainee",  COL_ACCENT, COL_TEXT, 1},
@@ -843,7 +908,7 @@ static const UiButton kRoleBtns[] = {
 void regDrawStep() {
   Adafruit_ILI9341 &tft = getTft();
   fillContentArea();
-  drawButton(tft, kRegBackBtn);
+  drawButton(tft, kBackBtn);
 
   switch (g_regStep) {
     case 0: {
@@ -901,8 +966,7 @@ void regDrawStep() {
       tft.print("RFID: ");
       tft.print(g_regRfidUid);
 
-      static const UiButton confirmBtn = {60, 130, 200, 40, "CONFIRM", COL_OK, COL_TEXT, 2};
-      drawButton(tft, confirmBtn);
+      drawButton(tft, kConfirmBtn);
       break;
     }
   }
@@ -972,7 +1036,7 @@ void adminRegTick() {
 }
 
 void adminRegTouch(int16_t x, int16_t y) {
-  if (hitTest(kRegBackBtn, x, y)) { popScreen(); return; }
+  if (hitTest(kBackBtn, x, y)) { popScreen(); return; }
 
   if (g_regStep == 0) {
     int idx = hitTestArray(kRoleBtns, 3, x, y);
@@ -991,7 +1055,7 @@ void adminRegTouch(int16_t x, int16_t y) {
     }
   } else if (g_regStep == 4) {
     // Confirm button
-    if (x >= 60 && x < 260 && y >= 130 && y < 170) {
+    if (hitTest(kConfirmBtn, x, y)) {
       // Submit registration
       NetRequest req;
       req.type = NET_RFID_REGISTER;
