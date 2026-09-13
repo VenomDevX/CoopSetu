@@ -560,6 +560,27 @@ begin
   on conflict do nothing;
 end $$;
 
+-- ============================================================================
+-- RFID card for the NCCT director's attendance terminal card (physical UID
+-- D7:02:73:06, stored uppercase/no-separators to match how the terminal
+-- firmware and /api/v1/attendance/rfid both normalise UIDs).
+-- ============================================================================
+do $$
+declare
+  v_org    uuid := '00000000-0000-0000-0000-0000000000a0';
+  v_member uuid;
+begin
+  select id into v_member from public.organization_members
+    where organization_id = v_org
+      and user_id = '00000000-0000-0000-0000-0000000000b1'; -- ncct.director@coopsetu.test
+
+  if v_member is not null then
+    insert into public.rfid_cards (organization_id, institution_id, member_id, rfid_uid, status, registered_at)
+    values (v_org, null, v_member, 'D7027306', 'ACTIVE', now())
+    on conflict (rfid_uid) do nothing;
+  end if;
+end $$;
+
 
 -- ============================================================================
 -- Learning content for the NCCT programme

@@ -2,13 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getCallerInstitutionId, hasPermission } from '@/lib/auth/institution-scope';
 import { randomBytes, createHash } from 'node:crypto';
 
 /**
  * Device management — authenticated admin only.
  *
- * GET:  List all device tokens for the current organization
- * POST: Issue a new device token (shows plaintext once)
+ * GET:  List device tokens for the current organization, scoped to the
+ *       caller's institution unless they have national scope.
+ * POST: Issue a new device token (shows plaintext once).
+ *
+ * Both use the service-role client (device_tokens has no SELECT policy for
+ * ordinary reads), so institution scoping and the attendance:manage gate are
+ * enforced here in application code rather than by RLS.
  */
 
 export async function GET(_request: NextRequest) {
@@ -17,18 +23,27 @@ export async function GET(_request: NextRequest) {
     if (!membership) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    if (!(await hasPermission(membership, 'attendance:manage'))) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
 
     const admin = createAdminClient();
+    const callerInstitutionId = await getCallerInstitutionId(membership.memberId);
 
-    const { data: devices, error } = await admin
+    let query = admin
       .from('device_tokens')
       .select(`
-        id, label, device_name, location, status,
+        id, label, device_name, location, status, serial_number,
         token_hint, institution_id, last_seen_at, revoked_at, created_at,
         institutions:institution_id ( name )
       `)
       .eq('organization_id', membership.organizationId)
       .order('created_at', { ascending: false });
+
+    // Institution-pinned admins only ever see their own institution's devices.
+    if (callerInstitutionId) query = query.eq('institution_id', callerInstitutionId);
+
+    const { data: devices, error } = await query;
 
     if (error) {
       console.error('Device list error:', error);
@@ -42,6 +57,7 @@ export async function GET(_request: NextRequest) {
         device_name: d.device_name,
         location: d.location,
         status: d.status,
+        serial_number: d.serial_number,
         token_hint: d.token_hint,
         institution: d.institutions?.name ?? null,
         institution_id: d.institution_id,
@@ -66,6 +82,9 @@ export async function POST(request: NextRequest) {
     if (!membership) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    if (!(await hasPermission(membership, 'attendance:manage'))) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
 
     const supabase = await createClient();
     const { data: auth } = await supabase.auth.getUser();
@@ -74,11 +93,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { label, device_name, location, institution_id } = body;
+    const { label, device_name, location, institution_id, serial_number } = body;
 
     if (!label || typeof label !== 'string') {
       return NextResponse.json({ error: 'label is required' }, { status: 400 });
     }
+
+    // An institution-pinned admin can only issue devices for their own
+    // institution — ignore/reject any other institution_id they send.
+    const callerInstitutionId = await getCallerInstitutionId(membership.memberId);
+    if (callerInstitutionId && institution_id && institution_id !== callerInstitutionId) {
+      return NextResponse.json({ error: 'Cannot assign a device outside your institution' }, { status: 403 });
+    }
+    const resolvedInstitutionId = callerInstitutionId || institution_id || null;
 
     // Generate a secure token
     const plaintext = `cst_${randomBytes(24).toString('hex')}`;
@@ -91,20 +118,24 @@ export async function POST(request: NextRequest) {
       .from('device_tokens')
       .insert({
         organization_id: membership.organizationId,
-        institution_id: institution_id || null,
+        institution_id: resolvedInstitutionId,
         label,
         device_name: device_name || null,
         location: location || null,
+        serial_number: serial_number || null,
         token_hash: tokenHash,
         token_hint: tokenHint,
         created_by: auth.user.id,
         status: 'ACTIVE',
       })
-      .select('id, label, token_hint, created_at')
+      .select('id, label, token_hint, serial_number, created_at')
       .single();
 
     if (error) {
       console.error('Device create error:', error);
+      if (error.code === '23505') {
+        return NextResponse.json({ error: 'That serial number is already registered' }, { status: 409 });
+      }
       return NextResponse.json({ error: 'Failed to create device token' }, { status: 500 });
     }
 
@@ -116,6 +147,7 @@ export async function POST(request: NextRequest) {
         id: device.id,
         label: device.label,
         token_hint: device.token_hint,
+        serial_number: device.serial_number,
         created_at: device.created_at,
       },
       token: plaintext,

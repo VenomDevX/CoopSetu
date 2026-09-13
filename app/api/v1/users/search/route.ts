@@ -22,21 +22,45 @@ export async function GET(request: NextRequest) {
   try {
     const device = await authenticateDevice(request);
     let orgId: string;
+    // The caller's own institution pin, if any. null means national scope
+    // (sees the whole organization); a value means the caller is confined to
+    // that institution and cannot widen the search by passing their own
+    // institution_id on the query string.
+    let callerInstitutionId: string | null = null;
+
+    const admin = createAdminClient();
 
     if (device) {
       orgId = device.organizationId;
+      callerInstitutionId = device.institutionId;
     } else {
       const membership = await getCurrentMembership();
       if (!membership) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
       orgId = membership.organizationId;
+
+      const { data: callerRow } = await admin
+        .from('organization_members')
+        .select('institution_id')
+        .eq('id', membership.memberId)
+        .maybeSingle();
+      callerInstitutionId = callerRow?.institution_id ?? null;
+
+      // Allow super admins and organization owners/admins to search across the whole workspace
+      const isGlobalAdmin = membership.roles.some((r: string) => ['SUPER_ADMIN', 'ORG_OWNER', 'ORG_ADMIN'].includes(r));
+      if (isGlobalAdmin) {
+        callerInstitutionId = null;
+      }
     }
 
     const url = new URL(request.url);
     const q = url.searchParams.get('q') || '';
     const role = url.searchParams.get('role') || '';
-    const institutionId = url.searchParams.get('institution_id') || '';
+    // A caller pinned to an institution can only ever search their own
+    // institution — the client-supplied institution_id is only honoured for
+    // a national-scope caller narrowing an org-wide search.
+    const institutionId = callerInstitutionId ?? (url.searchParams.get('institution_id') || '');
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 50);
 
     // Override with query-param org_id only for device auth (terminal may pass it)
@@ -45,14 +69,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Organization mismatch' }, { status: 403 });
     }
 
-    const admin = createAdminClient();
-
     // Query organization_members joined with profiles for the name search
     let query = admin
       .from('organization_members')
       .select(`
         id, role, institution_id, is_active,
-        profiles:user_id ( full_name, avatar_url )
+        profiles:user_id ( full_name, avatar_url ),
+        institutions:institution_id ( name )
       `)
       .eq('organization_id', orgId)
       .eq('is_active', true)
@@ -91,6 +114,7 @@ export async function GET(request: NextRequest) {
       avatar_url: m.profiles?.avatar_url ?? null,
       role: m.role,
       institution_id: m.institution_id,
+      institution_name: m.institutions?.name ?? null,
     }));
 
     if (q) {

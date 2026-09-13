@@ -19,6 +19,11 @@ export async function POST(request: NextRequest) {
     const device = await authenticateDevice(request);
     let isAuthorized = !!device;
     let registeredBy: string | null = null;
+    // Resolved server-side from the caller's own identity — never trust a
+    // client-supplied organization_id, and the dashboard page doesn't send
+    // one at all (it used to send an empty string, which this route rejected
+    // outright, making registration from the dashboard impossible).
+    let organizationId: string | null = device?.organizationId ?? null;
 
     // If no device auth, check for a web session with attendance:manage
     if (!device) {
@@ -46,6 +51,7 @@ export async function POST(request: NextRequest) {
 
       isAuthorized = true;
       registeredBy = auth.user.id;
+      organizationId = membership.organizationId;
     }
 
     if (!isAuthorized) {
@@ -53,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { action = 'register', rfid_uid, member_id, organization_id, institution_id } = body;
+    const { action = 'register', rfid_uid, member_id, institution_id } = body;
 
     const admin = createAdminClient();
 
@@ -80,9 +86,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Register or replace
-    if (!rfid_uid || !member_id || !organization_id) {
+    if (!rfid_uid || !member_id || !organizationId) {
       return NextResponse.json({
-        error: 'rfid_uid, member_id, and organization_id are required',
+        error: 'rfid_uid and member_id are required',
       }, { status: 400 });
     }
 
@@ -93,16 +99,11 @@ export async function POST(request: NextRequest) {
       .from('organization_members')
       .select('id, organization_id, institution_id, role')
       .eq('id', member_id)
-      .eq('organization_id', organization_id)
+      .eq('organization_id', organizationId)
       .maybeSingle();
 
     if (memberErr || !member) {
       return NextResponse.json({ error: 'Member not found in organization' }, { status: 404 });
-    }
-
-    // If device auth, verify device is in the same organization
-    if (device && device.organizationId !== organization_id) {
-      return NextResponse.json({ error: 'Organization mismatch' }, { status: 403 });
     }
 
     // Check if this UID is already registered to someone else
@@ -138,7 +139,7 @@ export async function POST(request: NextRequest) {
     const { data: card, error: insertErr } = await admin
       .from('rfid_cards')
       .insert({
-        organization_id,
+        organization_id: organizationId,
         institution_id: institution_id || member.institution_id || null,
         member_id,
         rfid_uid: normalizedUid,

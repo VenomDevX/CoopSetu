@@ -74,10 +74,17 @@ void displayBegin() {
   // touch controller, the PN532) must be deselected before ANY of them talks —
   // otherwise a floating CS can get selected by noise mid-transaction and
   // drive MISO back, corrupting whichever transfer was actually in flight.
-  // The SD card CS was already handled here; touch and PN532 previously
-  // weren't deselected until touchInit()/nfcBegin() ran, well after this
+  
+  // 1. FORCE the SPI bus to use our specific physical pins FIRST.
   SPI.begin(PIN_SPI_SCK, PIN_SPI_MISO, PIN_SPI_MOSI);
 
+  // 2. Deselect ALL devices sharing the SPI bus before initialization.
+  pinMode(PIN_TFT_SD_CS, OUTPUT); digitalWrite(PIN_TFT_SD_CS, HIGH);
+  pinMode(PIN_TOUCH_CS, OUTPUT);  digitalWrite(PIN_TOUCH_CS, HIGH);
+  pinMode(PIN_PN532_SS, OUTPUT);  digitalWrite(PIN_PN532_SS, HIGH);
+  pinMode(PIN_TFT_CS, OUTPUT);    digitalWrite(PIN_TFT_CS, HIGH);
+
+  // 4. Now the SPI bus is 100% clean and MISO is floating. Safe to boot TFT.
   g_tft.begin();
   g_tft.setRotation(TFT_ROTATION);
   W = g_tft.width();
@@ -86,10 +93,8 @@ void displayBegin() {
 }
 
 void touchInit() {
-  // Now that SPI is safely initialized with ss=-1 in displayBegin(),
-  // we can safely call g_touch.begin() without it hijacking GPIO 5.
+  // User fixed the hardware! Re-enabling touch initialization.
   g_touch.begin();
-  g_touchInitialized = true;
 }
 
 void screenBoot(const char *line) {
@@ -108,74 +113,6 @@ void screenBoot(const char *line) {
   g_tft.print(line);
 }
 
-void screenArmSession() {
-  g_tft.fillScreen(COL_BG);
-  header("SETUP");
-  g_tft.setTextSize(2);
-  g_tft.setTextColor(COL_TEXT);
-  g_tft.setCursor(10, 54);
-  g_tft.print("Arm a session");
-  wrapText("Hold the trainer's attendance QR in front of the camera.",
-           10, 88, 1, COL_MUTED);
-  g_tft.fillRect(0, H - 30, W, 30, COL_PANEL);
-  g_tft.setTextColor(COL_ACCENT);
-  g_tft.setTextSize(1);
-  g_tft.setCursor(10, H - 20);
-  g_tft.print("Long-press the button to re-arm later");
-}
-
-void screenIdle(const char *sessionLabel, int marked) {
-  g_tft.fillScreen(COL_BG);
-  header("READY");
-
-  g_tft.setTextSize(2);
-  g_tft.setTextColor(COL_TEXT);
-  g_tft.setCursor(10, 56);
-  g_tft.print("Tap card");
-  g_tft.setTextColor(COL_MUTED);
-  g_tft.setCursor(10, 82);
-  g_tft.setTextSize(1);
-  g_tft.print("or press the button for face check-in");
-
-  g_tft.drawFastHLine(10, 116, W - 20, COL_PANEL);
-  g_tft.setTextColor(COL_MUTED);
-  g_tft.setCursor(10, 128);
-  g_tft.print("SESSION ");
-  g_tft.setTextColor(COL_ACCENT);
-  g_tft.print(sessionLabel);
-
-  g_tft.setTextColor(COL_MUTED);
-  g_tft.setCursor(10, 146);
-  g_tft.print("MARKED   ");
-  g_tft.setTextColor(COL_TEXT);
-  g_tft.setTextSize(2);
-  g_tft.print(marked);
-}
-
-void screenBusy(const char *what) {
-  g_tft.fillScreen(COL_BG);
-  header("WORKING");
-  g_tft.setTextSize(2);
-  g_tft.setTextColor(COL_ACCENT);
-  g_tft.setCursor(10, 100);
-  g_tft.print(what);
-}
-
-void screenResult(bool ok, const char *title, const char *detail) {
-  const uint16_t c = ok ? COL_OK : COL_ERR;
-  g_tft.fillScreen(COL_BG);
-  g_tft.fillRect(0, 0, W, 6, c);
-  g_tft.setTextSize(3);
-  g_tft.setTextColor(c);
-  g_tft.setCursor(10, 46);
-  g_tft.print(ok ? "OK" : "NO");
-  g_tft.setTextSize(2);
-  g_tft.setTextColor(COL_TEXT);
-  g_tft.setCursor(10, 90);
-  g_tft.print(title);
-  if (detail && *detail) wrapText(detail, 10, 124, 1, COL_MUTED);
-}
-
 void screenEnroll(const char *who, int slot) {
   g_tft.fillScreen(COL_BG);
   header("ENROL FACE");
@@ -190,11 +127,35 @@ void screenEnroll(const char *who, int slot) {
 
 bool touchGet(int16_t *x, int16_t *y) {
   if (!g_touch.touched()) return false;
-  const TS_Point p = g_touch.getPoint();
-  if (p.z < 200) return false;  // reject feather-light noise
+  
+  TS_Point p = g_touch.getPoint();
 
-  int32_t sx = map(p.x, TOUCH_RAW_MIN_X, TOUCH_RAW_MAX_X, 0, W);
-  int32_t sy = map(p.y, TOUCH_RAW_MIN_Y, TOUCH_RAW_MAX_Y, 0, H);
+  // Hardware sanity check: if MISO is floating high (touch controller missing
+  // or not responding), the SPI reads return 0xFFFF. The library's math turns
+  // this into z = 4095 and x/y = 8191. If we see this, it's a fake touch!
+  if (p.z >= 4095 || p.x == 8191 || p.y == 8191) {
+    return false;
+  }
+
+  // The raw X/Y from the XPT2046 need mapping to the screen. The touch
+  // controller's raw axes are tied to the panel's native (portrait) wiring,
+  // not to g_tft.setRotation() — in landscape (rotation 1/3) the raw axes
+  // must be swapped or every tap lands on the wrong control relative to what
+  // was drawn. These calibration values must be tuned per physical assembly
+  // in config.h.
+  int32_t sx, sy;
+#if (TFT_ROTATION == 1) || (TFT_ROTATION == 3)
+  sx = map(p.y, TOUCH_RAW_MIN_Y, TOUCH_RAW_MAX_Y, 0, displayWidth());
+  sy = map(p.x, TOUCH_RAW_MIN_X, TOUCH_RAW_MAX_X, 0, displayHeight());
+#if (TFT_ROTATION == 1)
+  sy = displayHeight() - 1 - sy;  // rotation 1 also mirrors the swapped Y axis
+#else
+  sx = displayWidth() - 1 - sx;   // rotation 3 mirrors the swapped X axis instead
+#endif
+#else
+  sx = map(p.x, TOUCH_RAW_MIN_X, TOUCH_RAW_MAX_X, 0, displayWidth());
+  sy = map(p.y, TOUCH_RAW_MIN_Y, TOUCH_RAW_MAX_Y, 0, displayHeight());
+#endif
   *x = constrain(sx, 0, W - 1);
   *y = constrain(sy, 0, H - 1);
   return true;

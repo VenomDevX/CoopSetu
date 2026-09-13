@@ -13,6 +13,7 @@ interface Device {
   device_name: string | null;
   location: string | null;
   status: string;
+  serial_number: string | null;
   token_hint: string;
   institution: string | null;
   institution_id: string | null;
@@ -22,17 +23,28 @@ interface Device {
   is_online: boolean;
 }
 
+interface Institution {
+  id: string;
+  name: string;
+}
+
 export default function DevicesPage() {
   const t = useTranslations('Nav');
   const [devices, setDevices] = useState<Device[]>([]);
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newToken, setNewToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [form, setForm] = useState({ label: '', device_name: '', location: '' });
+  const [form, setForm] = useState({ label: '', device_name: '', location: '', serial_number: '', institution_id: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ label: '', device_name: '', location: '' });
+  const [editForm, setEditForm] = useState({ label: '', device_name: '', location: '', serial_number: '', institution_id: '' });
+
+  // A SUPER_ADMIN (national scope) gets every institution back from this
+  // endpoint; an INSTITUTE_ADMIN gets only their own subtree via RLS. Either
+  // way the picker just renders whatever the server already scoped for us.
+  const institutionLocked = institutions.length === 1;
 
   const fetchDevices = useCallback(async () => {
     setLoading(true);
@@ -47,7 +59,22 @@ export default function DevicesPage() {
     }
   }, []);
 
-  useEffect(() => { fetchDevices(); }, [fetchDevices]);
+  const fetchInstitutions = useCallback(async () => {
+    try {
+      const res = await fetch('/api/v1/institutions');
+      const data = await res.json();
+      const list: Institution[] = (data.data?.institutions || []).map((i: any) => ({ id: i.id, name: i.name }));
+      setInstitutions(list);
+      // Institution-pinned admins get exactly one row back — lock the form to it.
+      if (list.length === 1) {
+        setForm(f => ({ ...f, institution_id: list[0].id }));
+      }
+    } catch (e) {
+      console.error('Failed to fetch institutions:', e);
+    }
+  }, []);
+
+  useEffect(() => { fetchDevices(); fetchInstitutions(); }, [fetchDevices, fetchInstitutions]);
 
   const handleCreate = async () => {
     if (!form.label.trim()) return;
@@ -62,8 +89,10 @@ export default function DevicesPage() {
       if (data.token) {
         setNewToken(data.token);
         setShowCreate(false);
-        setForm({ label: '', device_name: '', location: '' });
+        setForm({ label: '', device_name: '', location: '', serial_number: '', institution_id: institutionLocked ? institutions[0].id : '' });
         fetchDevices();
+      } else if (data.error) {
+        alert(data.error);
       }
     } catch (e) {
       console.error('Failed to create device:', e);
@@ -200,6 +229,19 @@ export default function DevicesPage() {
                   value={form.device_name} onChange={e => setForm(f => ({ ...f, device_name: e.target.value }))} />
                 <input className="w-full p-2 border rounded bg-transparent" placeholder="Location (optional)"
                   value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} />
+                <input className="w-full p-2 border rounded bg-transparent font-mono" placeholder="Serial Number (optional, printed on the unit)"
+                  value={form.serial_number} onChange={e => setForm(f => ({ ...f, serial_number: e.target.value }))} />
+                <select
+                  className="w-full p-2 border rounded bg-transparent disabled:opacity-60"
+                  value={form.institution_id}
+                  disabled={institutionLocked}
+                  onChange={e => setForm(f => ({ ...f, institution_id: e.target.value }))}
+                >
+                  <option value="">No institution (organization-wide)</option>
+                  {institutions.map(i => (
+                    <option key={i.id} value={i.id}>{i.name}</option>
+                  ))}
+                </select>
                 <div className="flex gap-2">
                   <Button onClick={handleCreate} disabled={creating || !form.label.trim()}>
                     {creating ? 'Creating...' : 'Create'}
@@ -243,6 +285,19 @@ export default function DevicesPage() {
                               onChange={e => setEditForm(f => ({ ...f, device_name: e.target.value }))} />
                             <input className="p-1 border rounded text-sm bg-transparent" placeholder="Location" value={editForm.location}
                               onChange={e => setEditForm(f => ({ ...f, location: e.target.value }))} />
+                            <input className="p-1 border rounded text-sm bg-transparent font-mono" placeholder="Serial #" value={editForm.serial_number}
+                              onChange={e => setEditForm(f => ({ ...f, serial_number: e.target.value }))} />
+                            <select
+                              className="p-1 border rounded text-sm bg-transparent disabled:opacity-60"
+                              value={editForm.institution_id}
+                              disabled={institutionLocked}
+                              onChange={e => setEditForm(f => ({ ...f, institution_id: e.target.value }))}
+                            >
+                              <option value="">No institution</option>
+                              {institutions.map(i => (
+                                <option key={i.id} value={i.id}>{i.name}</option>
+                              ))}
+                            </select>
                             <Button size="sm" onClick={() => handleUpdate(device.id)}>Save</Button>
                             <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button>
                           </div>
@@ -251,6 +306,7 @@ export default function DevicesPage() {
                             <div className="font-medium">{device.label}</div>
                             <div className="text-xs text-muted-foreground">
                               {[device.device_name, device.location, device.institution].filter(Boolean).join(' · ') || 'No details'}
+                              {device.serial_number && <> · S/N: {device.serial_number}</>}
                               {' · '}Token: ···{device.token_hint}
                             </div>
                           </>
@@ -263,7 +319,13 @@ export default function DevicesPage() {
                         <>
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
                             setEditingId(device.id);
-                            setEditForm({ label: device.label, device_name: device.device_name || '', location: device.location || '' });
+                            setEditForm({
+                              label: device.label,
+                              device_name: device.device_name || '',
+                              location: device.location || '',
+                              serial_number: device.serial_number || '',
+                              institution_id: device.institution_id || '',
+                            });
                           }}>
                             <Edit className="w-3.5 h-3.5" />
                           </Button>
