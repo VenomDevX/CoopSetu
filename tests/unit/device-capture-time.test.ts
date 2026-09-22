@@ -21,9 +21,10 @@ describe('device capture time', () => {
       .toThrow(InvalidCaptureTimeError);
   });
 
-  it('allows national or unassigned members but rejects cross-institution use', () => {
+  it('lets a national device reach anyone but pins an institution device to its own members', () => {
     expect(canDeviceAccessInstitution(null, 'lucknow')).toBe(true);
-    expect(canDeviceAccessInstitution('lucknow', null)).toBe(true);
+    expect(canDeviceAccessInstitution(null, null)).toBe(true);
+    expect(canDeviceAccessInstitution('lucknow', null)).toBe(false);
     expect(canDeviceAccessInstitution('lucknow', 'lucknow')).toBe(true);
     expect(canDeviceAccessInstitution('lucknow', 'bengaluru')).toBe(false);
   });
