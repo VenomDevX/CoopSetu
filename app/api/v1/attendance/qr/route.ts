@@ -70,6 +70,35 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'This person is outside the device institution' }, { status: 403 });
       }
 
+      // The QR token must be a live session QR from this organization, and the
+      // trainee must be enrolled in that session's batch — the same check the
+      // web branch gets from markAttendanceByQR. Without it a device token alone
+      // could mark any trainee present.
+      const { data: qrSession } = await admin
+        .from('attendance_sessions')
+        .select('id, batch_id, qr_expires_at, batches!inner ( organization_id )')
+        .eq('qr_token', qr_token)
+        .eq('is_active', true)
+        .eq('batches.organization_id', device.organizationId)
+        .maybeSingle();
+      if (!qrSession) {
+        return NextResponse.json({ error: 'Invalid or expired QR code' }, { status: 400 });
+      }
+      if (!qrSession.qr_expires_at || new Date(qrSession.qr_expires_at) < new Date()) {
+        return NextResponse.json({ error: 'QR code has expired' }, { status: 400 });
+      }
+      const { data: enrollment } = await admin
+        .from('enrollments')
+        .select('id')
+        .eq('trainee_id', trainee.id)
+        .eq('batch_id', qrSession.batch_id)
+        .eq('status', 'ENROLLED')
+        .limit(1)
+        .maybeSingle();
+      if (!enrollment) {
+        return NextResponse.json({ error: 'Trainee is not enrolled in this session' }, { status: 403 });
+      }
+
       const result = await recordDeviceTap({
         admin,
         memberId: orgMember.id,

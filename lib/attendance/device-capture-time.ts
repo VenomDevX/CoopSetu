@@ -16,9 +16,15 @@ export function parseDeviceCaptureTime(value: unknown, now = new Date()): Date {
   return captured;
 }
 
+/**
+ * A national (unpinned) device may act on any member of its org. A device
+ * pinned to an institution may act only on members of that same institution —
+ * members with no institution are outside its scope, matching
+ * /api/v1/hardware/scan and the service-role scoping in lib/auth/institution-scope.
+ */
 export function canDeviceAccessInstitution(
   deviceInstitutionId: string | null,
   memberInstitutionId: string | null,
 ): boolean {
-  return !deviceInstitutionId || !memberInstitutionId || deviceInstitutionId === memberInstitutionId;
+  return !deviceInstitutionId || deviceInstitutionId === memberInstitutionId;
 }
