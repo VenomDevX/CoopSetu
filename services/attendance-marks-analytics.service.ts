@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { istDayKey } from '@/lib/attendance/time';
 
 /**
  * Attendance + academic-outcome analytics for the unified analytics page
@@ -78,7 +79,7 @@ export class AttendanceMarksAnalyticsService {
 
     const byDate = new Map<string, { present: number; total: number }>();
     for (const r of data || []) {
-      const date = (r.marked_at as string).slice(0, 10);
+      const date = istDayKey(r.marked_at as string);
       const bucket = byDate.get(date) || { present: 0, total: 0 };
       bucket.total += 1;
       if (r.status === 'PRESENT' || r.status === 'LATE') bucket.present += 1;

@@ -6,6 +6,7 @@ import {
   Tooltip as RechartsTooltip, ResponsiveContainer,
 } from 'recharts';
 import { Award, CalendarCheck, GraduationCap, Percent } from 'lucide-react';
+import { useAttendanceRealtime } from '@/hooks/use-attendance-realtime';
 
 /**
  * Single-page attendance + academic-outcome view, backed by
@@ -19,6 +20,13 @@ interface CourseMarks { course_id: string; course_title: string; avg_score_pct: 
 interface CourseProgressItem { course_id: string; course_title: string; avg_progress_pct: number; trainees_tracked: number }
 interface CertificateCounts { total: number; active: number; revoked: number; expired: number }
 interface Institution { id: string; name: string }
+interface AttendanceAnalytics {
+  byCourse: Array<{ id: string; title: string; present: number; total: number; pct: number }>;
+  byMethod: Array<{ method: string; count: number }>;
+  byDevice: Array<{ id: string; name: string; count: number }>;
+  absentDays: Array<{ date: string; count: number }>;
+  summary: { totalRecords: number; totalPresent: number; totalAbsent: number; overallPct: number };
+}
 
 interface OverviewData {
   scope: 'SELF' | 'INSTITUTION' | 'NATIONAL';
@@ -33,19 +41,28 @@ interface OverviewData {
 
 export function AttendanceMarksOverview() {
   const [data, setData] = useState<OverviewData | null>(null);
+  const [attendance, setAttendance] = useState<AttendanceAnalytics | null>(null);
   const [error, setError] = useState('');
   const [institutionFilter, setInstitutionFilter] = useState('');
 
   const load = useCallback((institutionId?: string) => {
     const qs = institutionId ? `?institution_id=${encodeURIComponent(institutionId)}` : '';
-    fetch(`/api/v1/analytics/overview${qs}`).then((r) => r.json()).then((j) => {
-      if (j?.error) { setError(j.error); return; }
+    Promise.all([
+      fetch(`/api/v1/analytics/overview${qs}`).then((r) => r.json()),
+      fetch(`/api/v1/analytics/attendance${qs}`).then((r) => r.json()),
+    ]).then(([overview, attendanceResult]) => {
+      if (overview?.error || attendanceResult?.error) {
+        setError(overview?.error || attendanceResult?.error);
+        return;
+      }
       setError('');
-      setData(j?.data || null);
+      setData(overview?.data || null);
+      setAttendance(attendanceResult?.data || null);
     }).catch(() => setError('Failed to load analytics'));
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useAttendanceRealtime(useCallback(() => load(institutionFilter || undefined), [institutionFilter, load]));
 
   if (error) {
     return (
@@ -145,6 +162,74 @@ export function AttendanceMarksOverview() {
           </div>
         )}
       </section>
+
+      {attendance && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <section className="border border-border rounded p-5 bg-surface">
+              <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold mb-6">Attendance by Course</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={attendance.byCourse} layout="vertical" margin={{ left: 12, right: 16 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
+                    <XAxis type="number" domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+                    <YAxis type="category" dataKey="title" width={110} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+                    <RechartsTooltip contentStyle={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)', borderRadius: '0', fontSize: '12px' }} />
+                    <Bar dataKey="pct" name="Attendance %" fill="var(--chart-2, var(--foreground))" radius={[0, 2, 2, 0]} barSize={18} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+
+            <section className="border border-border rounded p-5 bg-surface">
+              <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold mb-6">Absent Days</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={attendance.absentDays} margin={{ left: -20 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+                    <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+                    <RechartsTooltip contentStyle={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)', borderRadius: '0', fontSize: '12px' }} />
+                    <Bar dataKey="count" name="Absent" fill="var(--destructive)" radius={[2, 2, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <section className="border border-border rounded p-5 bg-surface">
+              <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold mb-6">Check-ins by Method</h3>
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={attendance.byMethod} margin={{ left: -20 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                    <XAxis dataKey="method" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+                    <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+                    <RechartsTooltip contentStyle={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)', borderRadius: '0', fontSize: '12px' }} />
+                    <Bar dataKey="count" name="Check-ins" fill="var(--chart-3, var(--foreground))" radius={[2, 2, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+
+            <section className="border border-border rounded p-5 bg-surface">
+              <h3 className="font-mono text-[10px] uppercase tracking-widest font-bold mb-6">Check-ins by Device</h3>
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={attendance.byDevice} layout="vertical" margin={{ left: 12, right: 16 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
+                    <XAxis type="number" allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+                    <YAxis type="category" dataKey="name" width={110} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+                    <RechartsTooltip contentStyle={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)', borderRadius: '0', fontSize: '12px' }} />
+                    <Bar dataKey="count" name="Check-ins" fill="var(--chart-4, var(--foreground))" radius={[0, 2, 2, 0]} barSize={18} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+          </div>
+        </>
+      )}
 
       {/* Marks by course + progress */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

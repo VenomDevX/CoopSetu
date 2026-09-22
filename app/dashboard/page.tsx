@@ -147,7 +147,7 @@ export default function CommandCenter() {
             {startOfWeek} — {endOfWeek}
           </div>
         </div>
-        
+
         {/* Actions based on Persona / Permissions */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 border border-border/50 rounded-sm bg-surface/20 px-3 py-1.5 mr-2">
@@ -457,7 +457,7 @@ export default function CommandCenter() {
                       <span className="font-mono text-xs border border-border rounded px-1.5 py-0.5 bg-background">{t.task_key}</span>
                       <span className="text-sm">{t.title}</span>
                     </div>
-                    <div className="flex items-center gap-4 text-xs font-mono uppercase tracking-widest text-muted-foreground">
+                    <div className="flex items-center gap-4 text-xs font-mono uppercase text-muted-foreground">
                       <span>{t.status}</span>
                       <span className="text-foreground">{t.due_date}</span>
                     </div>

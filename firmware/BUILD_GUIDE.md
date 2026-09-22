@@ -44,20 +44,18 @@ connection, software setup, flashing, configuration, and testing.
 | 5 | Buzzer | See the note below — active vs passive matters |
 | 6 | Pushbutton | Momentary, normally-open |
 | 7 | 5 V DC supply | **2 A minimum**; see §2.3 |
-| 8 | 10 kΩ resistor × 1 | Button pull-up — **not 200 Ω** |
+| 8 | Jumper wire × 1 | Button uses GPIO33's internal pull-up |
 | 9 | 220 Ω resistor × 2 | LED current limiting |
 | 10 | Green LED × 1 | |
 | 11 | Red LED × 1 | |
 | 12 | USB-to-serial adapter (FTDI/CP2102) | **Required** to flash the ESP32-CAM |
-| 13 | NTAG213/215/216 cards or tags | One per trainee |
+| 13 | NTAG213/215/216 cards or tags | Demo/standard use; terminal provisions a CS1 credential |
+| 14 | MIFARE DESFire EV2/EV3 cards | Required where cryptographic anti-cloning is mandatory |
 
 ### ⚠️ Three parts to double-check before you start
 
-**The pull-up resistor must be 10 kΩ.** `Hardware.md` records it as 200 Ω. GPIO34
-is input-only and has **no internal pull-up**, so this resistor is the only thing
-holding the pin high. At 200 Ω every button press sinks 3.3 V ÷ 200 Ω ≈ **16 mA**
-— above the ESP32's ~12 mA recommended continuous per-pin current. It will work,
-get warm, and waste power. Fit the 10 kΩ.
+**Do not use the stored 200 Ω part as a button pull-up.** The button now uses
+GPIO33 with the ESP32's internal pull-up, so it needs only a wire to ground.
 
 **The LED resistors must be 220 Ω.** Also recorded as 200 Ω. Less serious
 (≈7 mA vs ≈6 mA) but use the right part.
@@ -194,7 +192,6 @@ bus — do not daisy-chain grounds through modules.
 | ILI9341 | `VCC` |
 | ILI9341 | `LED` (backlight) |
 | PN532 | `VCC` |
-| 10 kΩ pull-up | pin 2 |
 
 > The ESP32-CAM is the exception: it takes **5 V** from the supply directly, not
 > 3.3 V from the ESP32. Its own regulator handles the rest.
@@ -230,37 +227,36 @@ The two LEDs, each through its own 220 Ω resistor.
 
 | From | To |
 |---|---|
-| ESP32 `GPIO32` | Buzzer `+` |
-| Buzzer `−` | `GND` |
+| ESP32 `GPIO32` | 1 kΩ resistor → transistor gate/base |
+| Transistor source/emitter | `GND` |
+| Transistor drain/collector | Buzzer `−` |
+| Buzzer `+` | Buzzer-rated supply |
+
+Fit a reverse-biased flyback diode across a magnetic buzzer. Do not connect the
+buzzer load directly to GPIO32.
 
 > LEDs are polarised. Long leg = anode = toward the resistor. Backwards, they
 > simply don't light — no damage, but easy to miss.
 
 **✅ Checkpoint:** tested in §9, step 2, after the first flash.
 
-### Stage 3.4 — Pushbutton with external pull-up
+### Stage 3.4 — Pushbutton
 
-GPIO34 is **input-only with no internal pull-up**, which is exactly why the
-external resistor exists. Without it the pin floats and the button reads as
-random noise.
+GPIO33 supports the internal pull-up enabled by the firmware.
 
 | From | To |
 |---|---|
-| ESP32 `3V3` | 10 kΩ resistor, leg 1 |
-| 10 kΩ resistor, leg 2 | ESP32 `GPIO34` |
-| ESP32 `GPIO34` | Pushbutton pin 1 |
+| ESP32 `GPIO33` | Pushbutton pin 1 |
 | Pushbutton pin 2 | `GND` |
 
-Electrically: `3.3 V → 10 kΩ → GPIO34 → button → GND`. Idle, the resistor holds
-GPIO34 high. Pressed, the button pulls it to ground. The firmware reads
-active-LOW (`BUTTON_ACTIVE_LOW 1`).
+Electrically: `GPIO33 → button → GND`. The internal pull-up holds GPIO33 high;
+pressed, the button pulls it low (`BUTTON_ACTIVE_LOW 1`).
 
 > A 4-pin tactile switch has pins connected in pairs. If the button seems always
 > pressed, you've used two pins from the same pair — rotate it 90°.
 
-**✅ Checkpoint:** with power on, measure GPIO34 against ground. **3.3 V idle,
-0 V pressed.** If it reads 3.3 V both ways, the button isn't connected. If it
-reads 0 V both ways, check the resistor.
+**✅ Checkpoint:** with power on, measure GPIO33 against ground. **3.3 V idle,
+0 V pressed.** If it does not change, check the button orientation and wiring.
 
 ### Stage 3.5 — The shared SPI bus
 
@@ -563,23 +559,28 @@ fine. **The board only enters flash mode with GPIO0 grounded.**
 
 ## 8. Calibrating the touchscreen
 
-Every panel differs. Do this once.
+Every panel differs. Do this once — no reflashing needed.
 
-1. In `config.h`, set `TOUCH_CALIBRATION_MODE 1`.
-2. Flash the terminal.
-3. Open **Serial Monitor at 115200**.
-4. Tap each of the four corners as close to the edge as you can.
-5. Note the raw values printed, e.g. `raw x=320 y=300 z=1100`.
-6. Put the extremes into `config.h`:
-   ```c
-   #define TOUCH_RAW_MIN_X 320    // smallest x, left edge
-   #define TOUCH_RAW_MAX_X 3900   // largest x, right edge
-   #define TOUCH_RAW_MIN_Y 300    // smallest y, top edge
-   #define TOUCH_RAW_MAX_Y 3800   // largest y, bottom edge
-   ```
-7. Set `TOUCH_CALIBRATION_MODE 0` and reflash.
+1. **Hold the button while powering on** the terminal (or set
+   `TOUCH_CALIBRATION_MODE 1` in `config.h` to force it on every boot).
+2. Tap the centre of each of the three targets with a stylus.
+3. A **Touch test** screen follows: dots should appear right under the stylus.
+   Press the button to finish booting.
 
-If touch is mirrored, swap the MIN and MAX for that axis.
+The result is saved to flash and used on every later boot. Axis swapping and
+mirroring are detected automatically. If the taps were too close together it
+asks you to repeat them.
+
+The Serial Monitor (115200) also prints the measured values as `config.h`
+lines. Copy them in if you want them as the default for a fresh flash:
+
+```c
+#define TOUCH_RAW_LEFT   320   // raw value at the left edge
+#define TOUCH_RAW_RIGHT  3900  // raw value at the right edge
+#define TOUCH_RAW_TOP    300   // raw value at the top edge
+#define TOUCH_RAW_BOTTOM 3800  // raw value at the bottom edge
+#define TOUCH_SWAP_XY    0
+```
 
 ---
 

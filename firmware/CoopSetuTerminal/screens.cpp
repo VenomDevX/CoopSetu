@@ -14,6 +14,8 @@
 #include <Preferences.h>
 #include "feedback.h"
 #include "offline.h"
+#include <WiFi.h>
+#include <TJpg_Decoder.h>
 
 // ======================================================================= stack
 
@@ -39,23 +41,30 @@ char g_pinInput[5] = {0};
 int  g_pinLen = 0;
 
 // Admin registration state machine
-int  g_regStep = 0;    // 0=role, 1=institution, 2=user, 3=scan, 4=confirm
+int  g_regStep = 0;    // 0=role, 3=scan, 4=confirm
 char g_regRole[16]  = {0};
 char g_regInstId[40] = {0};
 char g_regInstName[48] = {0};
 char g_regUserId[40]   = {0};
 char g_regUserName[64] = {0};
 char g_regRfidUid[21]  = {0};
+char g_regCardCredential[48] = {0};
 char g_regOrgId[40]    = {0};
+int  g_regUserOffset = 0;
+bool g_regResume = false;
 
 // ARM screen state
 uint32_t g_armEnteredAt = 0;
+uint32_t g_statusRequestId = 0;
+uint32_t g_adminRequestId = 0;
+uint32_t g_userPageRequestId = 0;
 
 }  // namespace
 
 // ================================================================== lifecycle
 
 void screensBegin() {
+
   // Zero everything
   memset(g_screens, 0, sizeof(g_screens));
   g_top = -1;
@@ -122,6 +131,33 @@ void showResultScreen(bool ok, const char *title, const char *detail) {
 
 namespace {
 
+// Turns a failed NetResponse into a short screen message. Transport failures
+// (status <= 0) never show raw JSON; RFID taps were already queued offline by
+// the network task, so they are reported as saved rather than failed.
+void showNetError(const NetResponse &resp) {
+  StaticJsonDocument<256> doc;
+  const bool parsed = !deserializeJson(doc, resp.data);
+  const char *msg = parsed ? (doc["message"] | (doc["error"] | "")) : "";
+
+  if (resp.status <= 0) {
+    if ((resp.type == NET_ATTENDANCE_RFID || resp.type == NET_ATTENDANCE_QR || resp.type == NET_ATTENDANCE_FACE) &&
+        strstr(resp.data, "Saved")) {
+      showResultScreen(true, "Saved Offline", "No connection. Will sync automatically.");
+    } else {
+      showResultScreen(false, netWifiConnected() ? "Server Unreachable" : "No Wi-Fi",
+                       "Check connection and try again.");
+    }
+    return;
+  }
+  char detail[96];
+  snprintf(detail, sizeof(detail), "%s (HTTP %d)", *msg ? msg : "Request failed", resp.status);
+  showResultScreen(false, "Error", detail);
+}
+
+}  // namespace
+
+namespace {
+
 static const UiButton kHomeBtns[] = {
   {20,  50, 280, 40, "Mark Attendance", COL_ACCENT, COL_TEXT, 2},
   {20, 110, 280, 40, "Admin Mode",      COL_PANEL,  COL_TEXT, 2},
@@ -184,8 +220,9 @@ void homeTick() {
     NetRequest req;
     req.type = NET_ATTENDANCE_RFID;
     snprintf(req.payload, sizeof(req.payload),
-      "{\"rfid_uid\":\"%s\"}", card.uid);
-    if (netEnqueue(req)) {
+      "{\"rfid_uid\":\"%s\",\"card_credential\":\"%s\"}", card.uid, card.credential);
+    g_statusRequestId = netEnqueue(req);
+    if (g_statusRequestId) {
       replaceScreen(SCR_STATUS);
     } else {
       showResultScreen(false, "System Busy", "Network queue full. Try again.");
@@ -194,7 +231,7 @@ void homeTick() {
 
   // Check for network responses
   NetResponse resp;
-  if (netDequeue(&resp)) {
+  if (g_statusRequestId && netDequeueFor(g_statusRequestId, &resp)) {
     if (resp.type == NET_ATTENDANCE_RFID) {
       if (resp.ok) {
         // Parse user name from response
@@ -202,12 +239,16 @@ void homeTick() {
         deserializeJson(doc, resp.data);
         const char *name = doc["user"]["name"] | "Unknown";
         const char *role = doc["user"]["role"] | "";
+        const char *course = doc["session"]["courseTitle"] | "";
+        const char *batch = doc["session"]["batchName"] | "";
+        const char *status = doc["status"] | "PRESENT";
+        const char *message = doc["message"] | "Attendance marked";
         bool marked = doc["attendance_marked"] | false;
 
         char title[64], detail[128];
         if (marked) {
           snprintf(title, sizeof(title), "%s", name);
-          snprintf(detail, sizeof(detail), "%s — Attendance Marked", role);
+          snprintf(detail, sizeof(detail), "%s | %s | %s", *course ? course : (*batch ? batch : role), status, message);
         } else {
           snprintf(title, sizeof(title), "%s", name);
           snprintf(detail, sizeof(detail), "%s — Already Marked", role);
@@ -216,7 +257,7 @@ void homeTick() {
       } else if (resp.status == 404) {
         showResultScreen(false, "Unknown RFID", "Card not registered");
       } else {
-        showResultScreen(false, "Error", resp.data);
+        showNetError(resp);
       }
     }
   }
@@ -228,7 +269,7 @@ void homeTouch(int16_t x, int16_t y) {
     case 0: pushScreen(SCR_ATTENDANCE_MENU); break;
     case 1: pushScreen(SCR_ADMIN_LOGIN);     break;
     case 2: pushScreen(SCR_SETTINGS);        break;
-    case 3: pushScreen(SCR_STATUS);          break;
+    case 3: pushScreen(SCR_DEVICE_STATUS);   break;
   }
 }
 
@@ -269,6 +310,7 @@ void menuTouch(int16_t x, int16_t y) {
 namespace {
 
 static bool g_rfidWaiting = false;
+static uint32_t g_rfidRequestId = 0;
 
 void rfidEnter() {
   g_rfidWaiting = false;
@@ -306,28 +348,37 @@ void rfidTick() {
     NetRequest req;
     req.type = NET_ATTENDANCE_RFID;
     snprintf(req.payload, sizeof(req.payload),
-      "{\"rfid_uid\":\"%s\"}", card.uid);
-    if (!netEnqueue(req)) {
+      "{\"rfid_uid\":\"%s\",\"card_credential\":\"%s\"}", card.uid, card.credential);
+    g_rfidRequestId = netEnqueue(req);
+    if (!g_rfidRequestId) {
       showResultScreen(false, "System Busy", "Network queue full. Try again.");
     }
   }
 
   // Check response
   NetResponse resp;
-  while (netDequeue(&resp)) {
-    if (g_rfidWaiting && resp.type == NET_ATTENDANCE_RFID) {
+  if (g_rfidWaiting && netDequeueFor(g_rfidRequestId, &resp)) {
+    if (resp.type == NET_ATTENDANCE_RFID) {
       g_rfidWaiting = false;
       if (resp.ok) {
         StaticJsonDocument<384> doc;
         deserializeJson(doc, resp.data);
+        if (doc["capture"] | false) {
+          showResultScreen(true, "Card Captured", "Complete enrollment in the dashboard.");
+          return;
+        }
         const char *name = doc["user"]["name"] | "Unknown";
         const char *role = doc["user"]["role"] | "";
+        const char *course = doc["session"]["courseTitle"] | "";
+        const char *batch = doc["session"]["batchName"] | "";
+        const char *status = doc["status"] | "PRESENT";
+        const char *message = doc["message"] | "Attendance marked";
         bool marked = doc["attendance_marked"] | false;
 
         char title[64], detail[128];
         if (marked) {
           snprintf(title, sizeof(title), "%s", name);
-          snprintf(detail, sizeof(detail), "%s — Attendance Marked", role);
+          snprintf(detail, sizeof(detail), "%s | %s | %s", *course ? course : (*batch ? batch : role), status, message);
         } else {
           snprintf(title, sizeof(title), "%s", name);
           snprintf(detail, sizeof(detail), "Already marked today");
@@ -338,7 +389,7 @@ void rfidTick() {
       } else if (resp.status == 403) {
         showResultScreen(false, "Card Revoked", "This card has been deactivated.");
       } else {
-        showResultScreen(false, "Error", resp.data);
+        showNetError(resp);
       }
     }
   }
@@ -354,67 +405,191 @@ void rfidTouch(int16_t x, int16_t y) {
 
 namespace {
 
-void qrEnter() {
+// The preview is the whole screen: the CAM sends 320x240, the panel is
+// 320x240. Labels are drawn back over the image in the corners each frame.
+const int16_t kHintY = 226;    // bottom strip, over the image
+const int16_t kStatusY = 210;  // result / warning line, just above it
+
+enum PreviewGuide { GUIDE_NONE, GUIDE_QR, GUIDE_FACE };
+PreviewGuide g_guide = GUIDE_NONE;
+uint32_t g_lastFrameMs = 0;
+uint32_t g_lastRequestMs = 0;
+bool g_noImageShown = false;
+char g_previewTitle[24] = {0};
+char g_previewHint[48] = {0};
+char g_previewStatus[64] = {0};
+uint16_t g_previewStatusColour = COL_TEXT;
+
+// Centred text with a dark plate behind it, so it stays readable over any
+// image without clearing the frame underneath.
+void overlayText(int16_t y, const char *text, uint16_t colour) {
+  if (!text || !*text) return;
+  Adafruit_ILI9341 &tft = getTft();
+  const int16_t w = (int16_t)strlen(text) * 6;
+  const int16_t x = (displayWidth() - w) / 2;
+  tft.fillRect(x - 3, y - 2, w + 6, 12, COL_BG);
+  tft.setTextSize(1);
+  tft.setTextColor(colour);
+  tft.setCursor(x, y);
+  tft.print(text);
+}
+
+// Aiming marks so the user can line up the code/face.
+void drawGuide() {
+  Adafruit_ILI9341 &tft = getTft();
+  const int16_t cx = displayWidth() / 2, cy = displayHeight() / 2;
+  if (g_guide == GUIDE_QR) {
+    const int16_t half = 72, arm = 20;
+    for (int sx = -1; sx <= 1; sx += 2) {
+      for (int sy = -1; sy <= 1; sy += 2) {
+        const int16_t x = cx + sx * half, y = cy + sy * half;
+        tft.drawFastHLine(sx < 0 ? x : x - arm + 1, y, arm, COL_OK);
+        tft.drawFastVLine(x, sy < 0 ? y : y - arm + 1, arm, COL_OK);
+      }
+    }
+  } else if (g_guide == GUIDE_FACE) {
+    // Upright ellipse (GFX has no ellipse primitive).
+    const float rx = 58, ry = 80;
+    for (int deg = 0; deg < 360; deg += 3) {
+      const float a = deg * DEG_TO_RAD;
+      tft.fillRect(cx + int16_t(rx * cos(a)), cy + int16_t(ry * sin(a)) - 6, 2, 2, COL_OK);
+    }
+  }
+}
+
+// Corner labels + guide, repainted over every frame.
+void drawPreviewChrome() {
+  Adafruit_ILI9341 &tft = getTft();
+  drawGuide();
+
+  // Title, top-left corner.
+  tft.fillRect(0, 0, (int16_t)strlen(g_previewTitle) * 6 + 8, 14, COL_BG);
+  tft.setTextSize(1);
+  tft.setTextColor(COL_ACCENT);
+  tft.setCursor(4, 3);
+  tft.print(g_previewTitle);
+
+  overlayText(kStatusY, g_previewStatus, g_previewStatusColour);
+  overlayText(kHintY, g_previewHint, COL_TEXT);
+  drawButton(tft, kBackBtn);  // bottom-left corner
+}
+
+// Sets the status line (shown until the screen is left or it is replaced).
+void previewStatus(const char *text, uint16_t colour) {
+  if (!text) g_previewStatus[0] = '\0';
+  else {
+    strncpy(g_previewStatus, text, sizeof(g_previewStatus) - 1);
+    g_previewStatus[sizeof(g_previewStatus) - 1] = '\0';
+  }
+  g_previewStatusColour = colour;
+  overlayText(kStatusY, g_previewStatus, colour);
+}
+
+// TJpg_Decoder hands back decoded blocks; push each straight to the panel.
+bool tftJpegBlock(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t *bitmap) {
+  if (y >= displayHeight()) return false;  // stop decoding below the screen
+  getTft().drawRGBBitmap(x, y, bitmap, w, h);
+  return true;
+}
+
+// First paint of a live-camera screen. The image itself fills the screen as
+// soon as the first frame lands.
+void beginPreviewScreen(const char *title, const char *hint, PreviewGuide guide) {
   Adafruit_ILI9341 &tft = getTft();
   tft.fillScreen(COL_BG);
-  drawHeader("QR Attendance");
+  strncpy(g_previewTitle, title, sizeof(g_previewTitle) - 1);
+  strncpy(g_previewHint, hint ? hint : "", sizeof(g_previewHint) - 1);
+  g_previewStatus[0] = '\0';
+  g_guide = guide;
+  g_lastFrameMs = millis();
+  g_lastRequestMs = millis();
+  g_noImageShown = false;
 
-  tft.setTextSize(2);
-  tft.setTextColor(COL_TEXT);
-  tft.setCursor(30, 60);
-  tft.print("Point QR at camera");
+  tft.setTextSize(1);
+  tft.setTextColor(COL_MUTED);
+  tft.setCursor(100, 112);
+  tft.print("Starting camera...");
+  drawPreviewChrome();
+}
 
-  drawButton(tft, kBackBtn);
+// Decodes the newest JPEG straight onto the panel (full screen), then repaints
+// the labels over it. Nothing is buffered here: TJpg_Decoder hands over one
+// block at a time and each goes to the TFT immediately.
+void drawPreviewFrame() {
+  size_t len = 0;
+  const uint8_t *jpg = camTakeJpeg(&len);
+  if (!jpg) {
+    // A request can be lost while the CAM is busy (a face inference blocks it
+    // for a few hundred ms); ask again rather than waiting forever.
+    if (millis() - g_lastRequestMs > 1500) {
+      g_lastRequestMs = millis();
+      camRequestFrame();
+    }
+    // Say why, instead of freezing on a stale image.
+    if (!g_noImageShown && millis() - g_lastFrameMs > 4000) {
+      g_noImageShown = true;
+      CamLinkStats st;
+      camGetStats(&st);
+      char why[64];
+      if (st.lastErr[0]) {
+        snprintf(why, sizeof(why), "CAM error: %.40s", st.lastErr);
+      } else if (st.badFrames > 0) {
+        snprintf(why, sizeof(why), "Image data corrupted (%lu) - check wires/GND",
+                 (unsigned long)st.badFrames);
+      } else if (st.lastRxMs == 0 || millis() - st.lastRxMs > 6000) {
+        snprintf(why, sizeof(why), "CAM silent - check CAM power/TX wire");
+      } else {
+        snprintf(why, sizeof(why), "CAM connected but sends no image");
+      }
+      previewStatus(why, COL_ERR);
+    }
+    return;
+  }
+  if (g_noImageShown) {
+    g_noImageShown = false;
+    previewStatus(nullptr, COL_BG);
+  }
+  g_lastFrameMs = millis();
 
+  TJpgDec.drawJpg(0, 0, jpg, len);
+  drawPreviewChrome();
+
+  // Ask for the next one only now, so the CAM never runs ahead of the panel.
+  g_lastRequestMs = millis();
+  camRequestFrame();
+}
+
+void qrEnter() {
+  beginPreviewScreen("QR Attendance", "Hold the QR code inside the green corners", GUIDE_QR);
   camSetMode(CAM_QR);
   camPreviewOn();
 }
 
 void qrTick() {
-  if (!camIsAlive()) {
+  // Poll first: IMG and QR frames are decoded here. Checking liveness before
+  // the first poll made a freshly booted camera fail this screen immediately.
+  CamEvent ev;
+  const bool hasEvent = camPoll(&ev);
+  if (!camIsAlive() && millis() - g_lastFrameMs > 3000) {
     showResultScreen(false, "Camera Error", "Camera not responding.");
     return;
   }
 
-  // Blit preview frame if available
-  if (camHasFrame()) {
-    uint8_t frame[PREVIEW_WIDTH * PREVIEW_HEIGHT];
-    uint16_t w, h;
-    if (camGetFrame(frame, &w, &h)) {
-      Adafruit_ILI9341 &tft = getTft();
-      // Draw scaled 2x into a 192x144 region centered
-      const int16_t ox = (displayWidth() - w * 2) / 2;
-      const int16_t oy = 80;
-      for (uint16_t py = 0; py < h; py++) {
-        for (uint16_t px = 0; px < w; px++) {
-          uint8_t g = frame[py * w + px];
-          uint16_t c = ((g >> 3) << 11) | ((g >> 2) << 5) | (g >> 3);
-          tft.fillRect(ox + px * 2, oy + py * 2, 2, 2, c);
-        }
-      }
-    }
-  }
+  // Blit the latest preview frame, if one arrived
+  drawPreviewFrame();
 
   // Check for QR decode result from CAM
-  CamEvent ev;
-  if (camPoll(&ev) && ev.type == CAM_EV_QR) {
+  if (hasEvent && ev.type == CAM_EV_QR) {
     camPreviewOff();
     camSetMode(CAM_IDLE);
+    previewStatus("QR code read - verifying...", COL_ACCENT);
 
-    // Format depends on whether it's a session QR or a TOTP QR
-    // Session QR: just the qr_token
-    // TOTP QR: coopsetu:TRAINEE_ID:TOTP_CODE
     NetRequest req;
-    if (strncmp(ev.text, "coopsetu:", 9) == 0) {
-      req.type = NET_ATTENDANCE_QR;
-      snprintf(req.payload, sizeof(req.payload),
-        "{\"scanned_text\":\"%s\"}", ev.text);
-    } else {
-      req.type = NET_ATTENDANCE_QR;
-      snprintf(req.payload, sizeof(req.payload),
-        "{\"qr_token\":\"%s\"}", ev.text);
-    }
-    if (netEnqueue(req)) {
+    req.type = NET_ATTENDANCE_QR;
+    snprintf(req.payload, sizeof(req.payload),
+      "{\"scanned_text\":\"%s\"}", ev.text);
+    g_statusRequestId = netEnqueue(req);
+    if (g_statusRequestId) {
       replaceScreen(SCR_STATUS);
     } else {
       showResultScreen(false, "System Busy", "Network queue full. Try again.");
@@ -442,46 +617,29 @@ void qrExit() {
 namespace {
 
 static bool g_faceWaiting = false;
+static uint32_t g_faceStartedAt = 0;
+static uint32_t g_faceRequestId = 0;
 
 void faceEnter() {
   g_faceWaiting = false;
-  Adafruit_ILI9341 &tft = getTft();
-  tft.fillScreen(COL_BG);
-  drawHeader("Face ID");
-
-  tft.setTextSize(2);
-  tft.setTextColor(COL_TEXT);
-  tft.setCursor(30, 60);
-  tft.print("Position your face");
-
-  drawButton(tft, kBackBtn);
-
+  g_faceStartedAt = millis();
+  beginPreviewScreen("Face ID", "Fit your face inside the green oval", GUIDE_FACE);
   camSetMode(CAM_FACE);
   camPreviewOn();
 }
 
 void faceTick() {
-  if (!camIsAlive()) {
+  if (!camIsAlive() && millis() - g_faceStartedAt > 3000) {
     showResultScreen(false, "Camera Error", "Camera not responding.");
     return;
   }
 
-  // Blit preview
-  if (camHasFrame()) {
-    uint8_t frame[PREVIEW_WIDTH * PREVIEW_HEIGHT];
-    uint16_t w, h;
-    if (camGetFrame(frame, &w, &h)) {
-      Adafruit_ILI9341 &tft = getTft();
-      const int16_t ox = (displayWidth() - w * 2) / 2;
-      const int16_t oy = 80;
-      for (uint16_t py = 0; py < h; py++) {
-        for (uint16_t px = 0; px < w; px++) {
-          uint8_t g = frame[py * w + px];
-          uint16_t c = ((g >> 3) << 11) | ((g >> 2) << 5) | (g >> 3);
-          tft.fillRect(ox + px * 2, oy + py * 2, 2, 2, c);
-        }
-      }
-    }
+  // Blit the latest preview frame, if one arrived
+  drawPreviewFrame();
+
+  if (!g_faceWaiting && millis() - g_faceStartedAt > IDENTIFY_TIMEOUT_MS) {
+    showResultScreen(false, "Face Timeout", "No verified face found. Please try again.");
+    return;
   }
 
   // Check for face recognition result
@@ -489,30 +647,24 @@ void faceTick() {
   if (camPoll(&ev) && ev.type == CAM_EV_FACE) {
     if (ev.slot < 0) {
       // No match
-      Adafruit_ILI9341 &tft = getTft();
-      tft.fillRect(0, 200, displayWidth(), 20, COL_BG);
-      tft.setTextSize(1);
-      tft.setTextColor(COL_ERR);
-      tft.setCursor(60, 205);
-      tft.print("Face not recognized. Try again.");
+      previewStatus("Face not recognized. Try again.", COL_ERR);
+      camSetMode(CAM_FACE);
     } else if (ev.confidence < FACE_MIN_CONFIDENCE) {
-      Adafruit_ILI9341 &tft = getTft();
-      tft.fillRect(0, 200, displayWidth(), 20, COL_BG);
-      tft.setTextSize(1);
-      tft.setTextColor(COL_ERR);
-      tft.setCursor(60, 205);
-      tft.print("Low confidence. Reposition face.");
+      previewStatus("Low confidence. Reposition face.", COL_ERR);
+      camSetMode(CAM_FACE);
     } else if (!g_faceWaiting) {
       g_faceWaiting = true;
       camPreviewOff();
       camSetMode(CAM_IDLE);
+      previewStatus("Face matched - verifying...", COL_ACCENT);
 
       // Submit to backend
       NetRequest req;
       req.type = NET_ATTENDANCE_FACE;
       snprintf(req.payload, sizeof(req.payload),
         "{\"slot\":%d,\"confidence\":%.4f}", ev.slot, ev.confidence);
-      if (!netEnqueue(req)) {
+      g_faceRequestId = netEnqueue(req);
+      if (!g_faceRequestId) {
         showResultScreen(false, "System Busy", "Network queue full. Try again.");
       }
     }
@@ -520,25 +672,30 @@ void faceTick() {
 
   // Check network response
   NetResponse resp;
-  while (netDequeue(&resp)) {
-    if (g_faceWaiting && resp.type == NET_ATTENDANCE_FACE) {
+  if (g_faceWaiting && netDequeueFor(g_faceRequestId, &resp)) {
+    if (resp.type == NET_ATTENDANCE_FACE) {
       g_faceWaiting = false;
       if (resp.ok) {
         StaticJsonDocument<384> doc;
         deserializeJson(doc, resp.data);
         const char *name = doc["user"]["name"] | "Unknown";
         const char *role = doc["user"]["role"] | "";
+        const char *course = doc["session"]["courseTitle"] | "";
+        const char *batch = doc["session"]["batchName"] | "";
+        const char *status = doc["status"] | "PRESENT";
+        const char *message = doc["message"] | "Attendance marked";
         bool marked = doc["attendance_marked"] | false;
 
         char title[64], detail[128];
         snprintf(title, sizeof(title), "%s", name);
-        snprintf(detail, sizeof(detail), "%s — %s",
-          role, marked ? "Attendance Marked" : "Already Marked");
+        snprintf(detail, sizeof(detail), "%s | %s | %s",
+          *course ? course : (*batch ? batch : role), status,
+          marked ? message : "Already marked");
         showResultScreen(true, title, detail);
       } else if (resp.status == 404) {
         showResultScreen(false, "Unknown Face", "Face slot not registered on this device.");
       } else {
-        showResultScreen(false, "Error", resp.data);
+        showNetError(resp);
       }
     }
   }
@@ -613,7 +770,13 @@ void resultTouch(int16_t, int16_t) {
 
 namespace {
 
+// Longer than one HTTP_TIMEOUT_MS round trip plus queueing, so a slow but
+// successful request still lands here rather than on the timeout.
+const uint32_t kStatusTimeoutMs = HTTP_TIMEOUT_MS * 2 + 4000;
+uint32_t g_statusEnteredAt = 0;
+
 void statusEnter() {
+  g_statusEnteredAt = millis();
   Adafruit_ILI9341 &tft = getTft();
   tft.fillScreen(COL_BG);
   drawHeader("Verifying...");
@@ -631,9 +794,16 @@ void statusEnter() {
 }
 
 void statusTick() {
+  if (millis() - g_statusEnteredAt > kStatusTimeoutMs) {
+    g_statusRequestId = 0;
+    showResultScreen(false, "No response", "Server did not reply. Check Home > Status.");
+    return;
+  }
+
   // Wait for any pending network response
   NetResponse resp;
-  if (netDequeue(&resp)) {
+  if (g_statusRequestId && netDequeueFor(g_statusRequestId, &resp)) {
+    g_statusRequestId = 0;
     if (resp.ok) {
       StaticJsonDocument<384> doc;
       deserializeJson(doc, resp.data);
@@ -641,8 +811,8 @@ void statusTick() {
       const char *msg  = doc["message"] | "Attendance marked";
       showResultScreen(true, name, msg);
     } else {
-      if (resp.status <= 0 && (resp.type == NET_ATTENDANCE_RFID || resp.type == NET_ATTENDANCE_QR || resp.type == NET_ATTENDANCE_FACE)) {
-        showResultScreen(true, "Offline Mode", "Stored locally, will sync when online.");
+      if (resp.status <= 0) {
+        showNetError(resp);
       } else {
         StaticJsonDocument<256> doc;
         deserializeJson(doc, resp.data);
@@ -661,6 +831,122 @@ void statusTick() {
         }
       }
     }
+  }
+}
+
+}  // namespace
+
+// ========================================================= SCR_DEVICE_STATUS
+
+namespace {
+
+static const UiButton kCheckBtn = {170, 200, 130, 30, "Check server", COL_ACCENT, COL_TEXT, 1};
+
+uint32_t g_devStatusLastDraw = 0;
+
+// One "Label: value" row; the value area is cleared first so repaints
+// don't leave stale characters behind.
+void statusRow(int16_t y, const char *label, const char *value, uint16_t colour) {
+  Adafruit_ILI9341 &tft = getTft();
+  tft.setTextSize(1);
+  tft.setTextColor(COL_MUTED);
+  tft.setCursor(10, y);
+  tft.print(label);
+  tft.fillRect(90, y, displayWidth() - 90, 8, COL_BG);
+  tft.setTextColor(colour);
+  tft.setCursor(90, y);
+  tft.print(value);
+}
+
+void formatAgo(uint32_t sinceMs, char *out, size_t n) {
+  const uint32_t s = (millis() - sinceMs) / 1000;
+  if (s < 60)        snprintf(out, n, "%lus ago", (unsigned long)s);
+  else if (s < 3600) snprintf(out, n, "%lum ago", (unsigned long)(s / 60));
+  else               snprintf(out, n, "%luh ago", (unsigned long)(s / 3600));
+}
+
+void drawDeviceStatus() {
+  char buf[64], ago[16];
+
+  // Wi-Fi
+  if (netWifiConnected()) {
+    snprintf(buf, sizeof(buf), "%s  (%d dBm)", WIFI_SSID, (int)WiFi.RSSI());
+    statusRow(40, "WiFi:", buf, COL_OK);
+    statusRow(54, "IP:", WiFi.localIP().toString().c_str(), COL_TEXT);
+  } else {
+    statusRow(40, "WiFi:", netWifiConnecting() ? "Connecting..." : "Disconnected",
+              netWifiConnecting() ? COL_ACCENT : COL_ERR);
+    statusRow(54, "IP:", "-", COL_MUTED);
+  }
+
+  // Server
+  statusRow(68, "Server:", API_BASE_URL, COL_TEXT);
+  const NetServerHealth h = netServerHealth();
+  if (h.lastCheckMs == 0) {
+    statusRow(82, "Link:", netWifiConnected() ? "Checking..." : "Waiting for WiFi", COL_ACCENT);
+  } else if (h.lastOkMs == h.lastCheckMs && h.lastStatus == 401) {
+    statusRow(82, "Link:", "Rejected: check API_DEVICE_TOKEN", COL_ERR);
+  } else if (h.lastOkMs == h.lastCheckMs) {
+    formatAgo(h.lastOkMs, ago, sizeof(ago));
+    snprintf(buf, sizeof(buf), "Connected (%s)", ago);
+    statusRow(82, "Link:", buf, COL_OK);
+  } else {
+    formatAgo(h.lastCheckMs, ago, sizeof(ago));
+    if (h.lastStatus <= 0) snprintf(buf, sizeof(buf), "Unreachable (%s)", ago);
+    else                   snprintf(buf, sizeof(buf), "Server error %d (%s)", h.lastStatus, ago);
+    statusRow(82, "Link:", buf, COL_ERR);
+  }
+
+  // Peripherals
+  statusRow(100, "RFID:", nfcReady() ? "Ready" : "Not detected", nfcReady() ? COL_OK : COL_ERR);
+  statusRow(114, "Camera:", camIsAlive() ? "Online" : "Offline", camIsAlive() ? COL_OK : COL_ERR);
+  {
+    CamLinkStats st;
+    camGetStats(&st);
+    if (st.lastErr[0]) snprintf(buf, sizeof(buf), "err: %.30s", st.lastErr);
+    else snprintf(buf, sizeof(buf), "%lu frames ok, %lu bad",
+                  (unsigned long)st.framesOk, (unsigned long)st.badFrames);
+    statusRow(178, "Cam link:", buf, st.lastErr[0] || st.badFrames ? COL_ERR : COL_TEXT);
+  }
+
+  // Sync queue
+  const int pending = netPendingCount() + offlineCount();
+  snprintf(buf, sizeof(buf), pending ? "%d waiting to sync" : "Up to date", pending);
+  statusRow(132, "Sync:", buf, pending ? COL_ACCENT : COL_OK);
+
+  // Uptime / memory
+  const uint32_t up = millis() / 1000;
+  snprintf(buf, sizeof(buf), "%luh %02lum %02lus", (unsigned long)(up / 3600),
+           (unsigned long)(up / 60 % 60), (unsigned long)(up % 60));
+  statusRow(150, "Uptime:", buf, COL_TEXT);
+  snprintf(buf, sizeof(buf), "%u KB free", (unsigned)(ESP.getFreeHeap() / 1024));
+  statusRow(164, "Memory:", buf, COL_TEXT);
+
+  g_devStatusLastDraw = millis();
+}
+
+void deviceStatusEnter() {
+  Adafruit_ILI9341 &tft = getTft();
+  tft.fillScreen(COL_BG);
+  drawHeader("Device Status");
+  drawButton(tft, kBackBtn);
+  drawButton(tft, kCheckBtn);
+  netCheckServerNow();
+  drawDeviceStatus();
+}
+
+void deviceStatusTick() {
+  // Values are live (uptime, "x s ago"), so a 1 s repaint of the value
+  // columns is enough and avoids flicker.
+  if (millis() - g_devStatusLastDraw >= 1000) drawDeviceStatus();
+}
+
+void deviceStatusTouch(int16_t x, int16_t y) {
+  if (hitTest(kBackBtn, x, y)) {
+    popScreen();
+  } else if (hitTest(kCheckBtn, x, y)) {
+    netCheckServerNow();
+    statusRow(82, "Link:", "Checking...", COL_ACCENT);
   }
 }
 
@@ -717,7 +1003,8 @@ void armTick() {
       req.type = NET_ATTENDANCE_QR;
       snprintf(req.payload, sizeof(req.payload),
         "{\"scanned_text\":\"%s\"}", ev.text);
-      if (netEnqueue(req)) {
+      g_statusRequestId = netEnqueue(req);
+      if (g_statusRequestId) {
         replaceScreen(SCR_STATUS);
       } else {
         showResultScreen(false, "System Busy", "Network queue full. Try again.");
@@ -774,7 +1061,8 @@ void settingsEnter() {
 
   tft.setTextColor(COL_MUTED);
   tft.setCursor(10, 110);
-  tft.print("FW: CoopSetuTerminal v2.0");
+  tft.print("FW: CoopSetuTerminal v");
+  tft.print(FIRMWARE_VERSION);
 
   drawButton(tft, kBackBtn);
 }
@@ -973,9 +1261,18 @@ void regDrawStep() {
 }
 
 void adminRegEnter() {
+  if (g_regResume) {
+    g_regResume = false;
+    Adafruit_ILI9341 &tft = getTft();
+    tft.fillScreen(COL_BG);
+    drawHeader("RFID Registration");
+    regDrawStep();
+    return;
+  }
   g_regStep = 0;
   memset(g_regRole, 0, sizeof(g_regRole));
   memset(g_regRfidUid, 0, sizeof(g_regRfidUid));
+  memset(g_regCardCredential, 0, sizeof(g_regCardCredential));
 
   Adafruit_ILI9341 &tft = getTft();
   tft.fillScreen(COL_BG);
@@ -988,7 +1285,12 @@ void adminRegTick() {
     // Wait for an RFID card scan
     NfcCard card;
     if (nfcPoll(&card)) {
+      if (!card.credential[0] && !nfcProvisionCredential(&card)) {
+        showResultScreen(false, "Card Error", "Use a writable NTAG213/215/216 card.");
+        return;
+      }
       strncpy(g_regRfidUid, card.uid, sizeof(g_regRfidUid) - 1);
+      strncpy(g_regCardCredential, card.credential, sizeof(g_regCardCredential) - 1);
       g_regStep = 4;
       regDrawStep();
     }
@@ -996,35 +1298,8 @@ void adminRegTick() {
 
   // Check for network responses at any step
   NetResponse resp;
-  if (netDequeue(&resp)) {
-    if (resp.type == NET_FETCH_INSTITUTIONS && g_regStep == 1) {
-      // For simplicity, skip institution selection (use first found)
-      // In a real implementation this would show a scrollable list
-      g_regStep = 2;
-
-      // Fetch users for this role
-      NetRequest req;
-      req.type = NET_USER_SEARCH;
-      snprintf(req.payload, sizeof(req.payload),
-        "role=%s&limit=10", g_regRole);
-      netEnqueue(req);
-      regDrawStep();
-    }
-    if (resp.type == NET_USER_SEARCH && g_regStep == 2) {
-      if (resp.ok) {
-        // Parse first user from results
-        StaticJsonDocument<384> doc;
-        deserializeJson(doc, resp.data);
-        JsonArray users = doc["users"];
-        if (users.size() > 0) {
-          strncpy(g_regUserId, users[0]["id"] | "", sizeof(g_regUserId) - 1);
-          strncpy(g_regUserName, users[0]["name"] | "Unknown", sizeof(g_regUserName) - 1);
-          strncpy(g_regOrgId, users[0]["organization_id"] | "", sizeof(g_regOrgId) - 1);
-        }
-      }
-      g_regStep = 3;
-      regDrawStep();
-    }
+  if (g_adminRequestId && netDequeueFor(g_adminRequestId, &resp)) {
+    g_adminRequestId = 0;
     if (resp.type == NET_RFID_REGISTER && g_regStep == 4) {
       if (resp.ok) {
         showResultScreen(true, "Registered!", "RFID card linked successfully.");
@@ -1043,15 +1318,13 @@ void adminRegTouch(int16_t x, int16_t y) {
     if (idx >= 0) {
       const char *roles[] = {"TRAINEE", "TRAINER", "EMPLOYEE"};
       strncpy(g_regRole, roles[idx], sizeof(g_regRole) - 1);
-      g_regStep = 1;
-
-      // Fetch institutions
+      g_regUserOffset = 0;
       NetRequest req;
-      req.type = NET_FETCH_INSTITUTIONS;
-      snprintf(req.payload, sizeof(req.payload), "limit=20");
-      netEnqueue(req);
-
-      regDrawStep();
+      req.type = NET_USER_SEARCH;
+      snprintf(req.payload, sizeof(req.payload),
+               "role=%s&limit=%u&offset=0&compact=1", g_regRole, NET_USER_PAGE_SIZE);
+      g_userPageRequestId = netEnqueue(req);
+      replaceScreen(SCR_ADMIN_USER_LIST);
     }
   } else if (g_regStep == 4) {
     // Confirm button
@@ -1060,9 +1333,9 @@ void adminRegTouch(int16_t x, int16_t y) {
       NetRequest req;
       req.type = NET_RFID_REGISTER;
       snprintf(req.payload, sizeof(req.payload),
-        "{\"rfid_uid\":\"%s\",\"member_id\":\"%s\",\"organization_id\":\"%s\"}",
-        g_regRfidUid, g_regUserId, g_regOrgId);
-      netEnqueue(req);
+        "{\"rfid_uid\":\"%s\",\"member_id\":\"%s\",\"card_credential\":\"%s\"}",
+        g_regRfidUid, g_regUserId, g_regCardCredential);
+      g_adminRequestId = netEnqueue(req);
 
       Adafruit_ILI9341 &tft = getTft();
       tft.fillRect(60, 180, 200, 20, COL_BG);
@@ -1076,34 +1349,124 @@ void adminRegTouch(int16_t x, int16_t y) {
 
 }  // namespace
 
+// ===================================================== SCR_ADMIN_USER_LIST
+
+namespace {
+
+static const UiButton kUserPrevBtn = {105, 205, 95, 28, "Prev", COL_PANEL, COL_TEXT, 1};
+static const UiButton kUserNextBtn = {210, 205, 95, 28, "Next", COL_ACCENT, COL_TEXT, 1};
+bool g_userPageWaiting = true;
+
+void drawUserPage(bool loading = false) {
+  Adafruit_ILI9341 &tft = getTft();
+  tft.fillRect(0, 30, displayWidth(), 170, COL_BG);
+  tft.setTextSize(1);
+  tft.setTextColor(COL_MUTED);
+  tft.setCursor(12, 34);
+  if (loading) {
+    tft.print("Loading members...");
+  } else if (netUserPageCount() == 0) {
+    tft.print("No members found for this role.");
+  } else {
+    for (uint8_t index = 0; index < netUserPageCount(); index++) {
+      const NetUserPageEntry *entry = netUserPageEntry(index);
+      const int16_t y = 34 + index * 27;
+      tft.drawRect(10, y, 300, 23, COL_MUTED);
+      tft.setTextColor(COL_TEXT);
+      tft.setCursor(16, y + 7);
+      tft.print(entry->name);
+      if (entry->hasRfid) {
+        tft.setTextColor(COL_OK);
+        tft.setCursor(270, y + 7);
+        tft.print("RFID");
+      }
+    }
+  }
+
+  char page[32];
+  const int first = netUserPageCount() ? netUserPageOffset() + 1 : 0;
+  const int last = netUserPageOffset() + netUserPageCount();
+  snprintf(page, sizeof(page), "%d-%d of %d", first, last, netUserPageTotal());
+  tft.fillRect(8, 205, 90, 28, COL_BG);
+  tft.setTextColor(COL_MUTED);
+  tft.setCursor(12, 215);
+  tft.print(page);
+  drawButton(tft, kUserPrevBtn);
+  drawButton(tft, kUserNextBtn);
+}
+
+void requestUserPage(int offset) {
+  g_regUserOffset = max(0, offset);
+  NetRequest req;
+  req.type = NET_USER_SEARCH;
+  snprintf(req.payload, sizeof(req.payload),
+           "role=%s&limit=%u&offset=%d&compact=1", g_regRole,
+           NET_USER_PAGE_SIZE, g_regUserOffset);
+  g_userPageRequestId = netEnqueue(req);
+  g_userPageWaiting = g_userPageRequestId != 0;
+  drawUserPage(true);
+}
+
+void adminUserListEnter() {
+  Adafruit_ILI9341 &tft = getTft();
+  tft.fillScreen(COL_BG);
+  drawHeader("Select Member");
+  drawButton(tft, kBackBtn);
+  g_userPageWaiting = true;
+  drawUserPage(true);
+}
+
+void adminUserListTick() {
+  NetResponse resp;
+  if (!g_userPageRequestId || !netDequeueFor(g_userPageRequestId, &resp)) return;
+  g_userPageRequestId = 0;
+  if (resp.type != NET_USER_SEARCH) return;
+  g_userPageWaiting = false;
+  if (resp.ok) drawUserPage();
+  else showNetError(resp);
+}
+
+void adminUserListTouch(int16_t x, int16_t y) {
+  if (hitTest(kBackBtn, x, y)) {
+    replaceScreen(SCR_ADMIN_RFID_REGISTER);
+    return;
+  }
+  if (g_userPageWaiting) return;
+  if (hitTest(kUserPrevBtn, x, y) && netUserPageOffset() > 0) {
+    requestUserPage(netUserPageOffset() - NET_USER_PAGE_SIZE);
+    return;
+  }
+  if (hitTest(kUserNextBtn, x, y) && netUserPageHasMore()) {
+    requestUserPage(netUserPageOffset() + NET_USER_PAGE_SIZE);
+    return;
+  }
+  if (x >= 10 && x <= 310 && y >= 34 && y < 34 + NET_USER_PAGE_SIZE * 27) {
+    const uint8_t index = (y - 34) / 27;
+    const NetUserPageEntry *entry = netUserPageEntry(index);
+    if (!entry) return;
+    strncpy(g_regUserId, entry->id, sizeof(g_regUserId) - 1);
+    g_regUserId[sizeof(g_regUserId) - 1] = '\0';
+    strncpy(g_regUserName, entry->name, sizeof(g_regUserName) - 1);
+    g_regUserName[sizeof(g_regUserName) - 1] = '\0';
+    g_regStep = 3;
+    g_regResume = true;
+    replaceScreen(SCR_ADMIN_RFID_REGISTER);
+  }
+}
+
+}  // namespace
+
 // ====================================================== SCR_CAMERA_PREVIEW
 
 namespace {
 
 void previewEnter() {
-  Adafruit_ILI9341 &tft = getTft();
-  tft.fillScreen(COL_BG);
-  drawHeader("Camera Preview");
+  beginPreviewScreen("Camera Preview", "Tap anywhere to close", GUIDE_NONE);
   camPreviewOn();
 }
 
 void previewTick() {
-  if (camHasFrame()) {
-    uint8_t frame[PREVIEW_WIDTH * PREVIEW_HEIGHT];
-    uint16_t w, h;
-    if (camGetFrame(frame, &w, &h)) {
-      Adafruit_ILI9341 &tft = getTft();
-      const int16_t ox = (displayWidth() - w * 2) / 2;
-      const int16_t oy = 50;
-      for (uint16_t py = 0; py < h; py++) {
-        for (uint16_t px = 0; px < w; px++) {
-          uint8_t g = frame[py * w + px];
-          uint16_t c = ((g >> 3) << 11) | ((g >> 2) << 5) | (g >> 3);
-          tft.fillRect(ox + px * 2, oy + py * 2, 2, 2, c);
-        }
-      }
-    }
-  }
+  drawPreviewFrame();
 }
 
 void previewTouch(int16_t, int16_t) {
@@ -1122,6 +1485,12 @@ void previewExit() {
 // This must be called AFTER screensBegin() — typically from setup().
 // It wires all screen handlers into the g_screens table.
 void screensRegister() {
+  // Preview JPEGs are decoded straight onto the panel, one block at a time.
+  // 1:1 scale: the CAM's QVGA frame is exactly the panel's 320x240.
+  TJpgDec.setJpgScale(1);
+  TJpgDec.setSwapBytes(PREVIEW_SWAP_BYTES);
+  TJpgDec.setCallback(tftJpegBlock);
+
   // HOME
   g_screens[SCR_HOME].onEnter = homeEnter;
   g_screens[SCR_HOME].onTick  = homeTick;
@@ -1171,10 +1540,20 @@ void screensRegister() {
   g_screens[SCR_ADMIN_RFID_REGISTER].onTick  = adminRegTick;
   g_screens[SCR_ADMIN_RFID_REGISTER].onTouch = adminRegTouch;
 
+  // ADMIN USER LIST
+  g_screens[SCR_ADMIN_USER_LIST].onEnter = adminUserListEnter;
+  g_screens[SCR_ADMIN_USER_LIST].onTick  = adminUserListTick;
+  g_screens[SCR_ADMIN_USER_LIST].onTouch = adminUserListTouch;
+
   // RESULT
   g_screens[SCR_RESULT].onEnter = resultEnter;
   g_screens[SCR_RESULT].onTick  = resultTick;
   g_screens[SCR_RESULT].onTouch = resultTouch;
+
+  // DEVICE STATUS (diagnostics)
+  g_screens[SCR_DEVICE_STATUS].onEnter = deviceStatusEnter;
+  g_screens[SCR_DEVICE_STATUS].onTick  = deviceStatusTick;
+  g_screens[SCR_DEVICE_STATUS].onTouch = deviceStatusTouch;
 
   // ARM (legacy session-arm flow)
   g_screens[SCR_ARM].onEnter = armEnter;

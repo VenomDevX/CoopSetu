@@ -3,6 +3,7 @@
 
 #include <SPI.h>
 #include <Adafruit_PN532.h>
+#include <esp_random.h>
 
 // The PN532 sits on the shared SPI bus. Every access is bracketed with
 // beginTransaction/endTransaction to protect other devices (ILI9341, XPT2046).
@@ -77,6 +78,8 @@ bool readNdefText(char *out, size_t outSize) {
 
 }  // namespace
 
+bool nfcReady() { return g_nfcOk; }
+
 bool nfcBegin() {
   g_nfc.begin();
   // Ensure TFT is absolutely deselected and decoupled from hardware SS
@@ -103,13 +106,22 @@ bool nfcPoll(NfcCard *out) {
   // on the bus the TFT/touch also share, and it's exactly the corruption
   // config.h warns about: the display goes white after the splash and never
   // recovers, because it's fighting a card reader that isn't there.
-  if (!g_nfcOk) return false;
+  if (!g_nfcOk) {
+    static uint32_t lastRecoveryMs = 0;
+    if (millis() - lastRecoveryMs > 10000) {
+      lastRecoveryMs = millis();
+      nfcBegin();
+    }
+    return false;
+  }
 
   uint8_t uid[7] = {0};
   uint8_t uidLen = 0;
 
-  // 50 ms timeout: long enough to catch a deliberate tap, short enough that the
-  // touchscreen still feels responsive.
+  // The timeout is how long the library waits for the InListPassiveTarget
+  // *response*, not just the ACK. Activation + anticollision takes tens of ms,
+  // so anything much below ~50 ms gives up before the answer arrives and the
+  // next poll's command aborts the one in flight — no card is ever read.
   if (!g_nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLen, 50)) {
     if (millis() - g_lastReadMs > kRepeatLockoutMs) {
       memset(g_lastUid, 0, sizeof(g_lastUid));
@@ -133,6 +145,47 @@ bool nfcPoll(NfcCard *out) {
   strncpy(out->uid, hex, sizeof(out->uid) - 1);
   out->uid[sizeof(out->uid) - 1] = '\0';
 
-  if (!readNdefText(out->trainee, sizeof(out->trainee))) out->trainee[0] = '\0';
+  char text[48] = {0};
+  if (readNdefText(text, sizeof(text)) && strncmp(text, "CS1:", 4) == 0) {
+    strncpy(out->credential, text, sizeof(out->credential) - 1);
+  } else {
+    out->credential[0] = '\0';
+  }
+  return true;
+}
+
+bool nfcProvisionCredential(NfcCard *card) {
+  if (!g_nfcOk || !card) return false;
+  uint8_t randomBytes[16];
+  for (uint8_t i = 0; i < sizeof(randomBytes); i += 4) {
+    const uint32_t value = esp_random();
+    memcpy(randomBytes + i, &value, 4);
+  }
+  char text[37] = "CS1:";
+  for (uint8_t i = 0; i < sizeof(randomBytes); i++) {
+    snprintf(text + 4 + i * 2, sizeof(text) - 4 - i * 2, "%02X", randomBytes[i]);
+  }
+
+  uint8_t ndef[64] = {0};
+  const uint8_t textLen = strlen(text);
+  const uint8_t payloadLen = 3 + textLen; // status + "en" + text
+  const uint8_t recordLen = 4 + payloadLen;
+  ndef[0] = 0x03;
+  ndef[1] = recordLen;
+  ndef[2] = 0xD1;
+  ndef[3] = 0x01;
+  ndef[4] = payloadLen;
+  ndef[5] = 'T';
+  ndef[6] = 0x02;
+  ndef[7] = 'e';
+  ndef[8] = 'n';
+  memcpy(ndef + 9, text, textLen);
+  ndef[9 + textLen] = 0xFE;
+  const size_t bytes = 10 + textLen;
+  for (uint8_t page = 0; page < (bytes + 3) / 4; page++) {
+    if (!g_nfc.ntag2xx_WritePage(4 + page, ndef + page * 4)) return false;
+  }
+  strncpy(card->credential, text, sizeof(card->credential) - 1);
+  card->credential[sizeof(card->credential) - 1] = '\0';
   return true;
 }

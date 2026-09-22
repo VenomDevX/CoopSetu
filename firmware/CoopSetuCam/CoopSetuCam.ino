@@ -23,6 +23,8 @@
 
 #include <Arduino.h>
 #include <esp_camera.h>
+#include <esp_heap_caps.h>
+#include <img_converters.h>
 #include <EEPROM.h>
 
 #include <ESP32QRCodeReader.h>
@@ -45,7 +47,7 @@ enum Mode { MODE_IDLE, MODE_QR, MODE_FACE };
 static Mode g_mode = MODE_IDLE;
 static Mode g_wantMode = MODE_IDLE;
 static bool g_camReady = false;
-static pixformat_t g_camFormat = PIXFORMAT_GRAYSCALE;
+static pixformat_t g_camFormat = PIXFORMAT_JPEG;
 static bool g_previewEnabled = false;  // PREVIEW:ON/OFF toggle
 
 static ProtoReader g_reader;
@@ -97,18 +99,15 @@ static bool cameraStart(pixformat_t fmt) {
   c.pixel_format = fmt;
   c.fb_location = CAMERA_FB_IN_PSRAM;
   c.grab_mode = CAMERA_GRAB_LATEST;  // always work on the freshest frame
+  c.jpeg_quality = 12;               // OV2640 scale: lower is better
 
-  if (fmt == PIXFORMAT_GRAYSCALE) {
-    // QR: more pixels means more decodable distance, and grayscale frames are
-    // cheap, so VGA is affordable here.
-    c.frame_size = FRAMESIZE_VGA;   // 640x480
-    c.fb_count = 1;
-  } else {
-    // Face: the recogniser resizes to 112x112 anyway; QVGA keeps two RGB565
-    // buffers plus the model inside PSRAM.
-    c.frame_size = FRAMESIZE_QVGA;  // 320x240
-    c.fb_count = 2;
-  }
+  // QR uses the OV2640's native JPEG output. This avoids capturing a 150 KB
+  // RGB frame and software-compressing it before every preview. FACE keeps
+  // RGB565 because the ESP-DL model consumes that format directly.
+  c.frame_size = FRAMESIZE_QVGA;  // 320x240
+  // Continuous double-buffering is supported for JPEG and substantially
+  // improves preview latency. RGB565 stays single-buffered for ESP-DL.
+  c.fb_count = (fmt == PIXFORMAT_JPEG) ? 2 : 1;
 
   const esp_err_t err = esp_camera_init(&c);
   if (err != ESP_OK) {
@@ -121,8 +120,22 @@ static bool cameraStart(pixformat_t fmt) {
     // The OV2640 ships mirrored/upside-down on most AI-Thinker boards.
     s->set_vflip(s, 1);
     s->set_hmirror(s, 0);
-    s->set_brightness(s, 1);
-    s->set_saturation(s, 0);
+
+    // Defaults render washed out and soft on this sensor. Auto exposure,
+    // gain and white balance keep indoor light usable; saturation and
+    // contrast put the colour back; lens correction fixes the dim corners
+    // the wide-angle lens leaves.
+    s->set_brightness(s, 0);
+    s->set_contrast(s, 1);
+    s->set_saturation(s, 2);
+    if (s->set_sharpness) s->set_sharpness(s, 2);
+    if (s->set_denoise) s->set_denoise(s, 0);
+    s->set_whitebal(s, 1);
+    s->set_awb_gain(s, 1);
+    s->set_exposure_ctrl(s, 1);
+    s->set_aec2(s, 1);
+    s->set_gain_ctrl(s, 1);
+    s->set_lenc(s, 1);
   }
 
   g_camFormat = fmt;
@@ -142,7 +155,7 @@ static bool ensureMode(Mode m) {
     return true;
   }
 
-  const pixformat_t want = (m == MODE_QR) ? PIXFORMAT_GRAYSCALE : PIXFORMAT_RGB565;
+  const pixformat_t want = (m == MODE_QR) ? PIXFORMAT_JPEG : PIXFORMAT_RGB565;
   if (!cameraStart(want)) {
     g_mode = MODE_IDLE;
     return false;
@@ -158,6 +171,8 @@ static bool ensureMode(Mode m) {
 #include "quirc/quirc.h"
 
 static struct quirc *g_qr = nullptr;
+static uint8_t *g_qrRgb = nullptr;
+static size_t g_qrRgbSize = 0;
 
 static bool qrStart(int w, int h) {
   if (g_qr) {
@@ -174,23 +189,52 @@ static bool qrStart(int w, int h) {
   return true;
 }
 
-static void qrTick() {
-  camera_fb_t *fb = esp_camera_fb_get();
-  if (!fb) return;
-
+// Takes a borrowed JPEG/RGB565 frame; the caller owns fb and returns it.
+// Returns true when a QR event was sent, allowing the loop to skip an obsolete
+// preview frame and let the terminal advance immediately.
+static bool qrProcess(camera_fb_t *fb) {
   if (!g_qr && !qrStart(fb->width, fb->height)) {
-    esp_camera_fb_return(fb);
     reportErr("quirc alloc failed");
-    return;
+    return false;
   }
 
   int w = 0, h = 0;
   uint8_t *image = quirc_begin(g_qr, &w, &h);
   if ((int)fb->width == w && (int)fb->height == h) {
-    memcpy(image, fb->buf, (size_t)w * h);  // GRAYSCALE == 1 byte per pixel
+    const size_t n = (size_t)w * h;
+    if (fb->format == PIXFORMAT_JPEG) {
+      const size_t need = n * 3;
+      if (g_qrRgbSize < need) {
+        free(g_qrRgb);
+        g_qrRgb = (uint8_t *)heap_caps_malloc(
+            need, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+        g_qrRgbSize = g_qrRgb ? need : 0;
+      }
+      if (!g_qrRgb || !fmt2rgb888(fb->buf, fb->len, fb->format, g_qrRgb)) {
+        quirc_end(g_qr);
+        reportErr("jpeg decode failed");
+        return false;
+      }
+      // esp32-camera's RGB888 conversion is B, G, R byte order.
+      for (size_t i = 0; i < n; i++) {
+        const uint8_t b = g_qrRgb[i * 3], g = g_qrRgb[i * 3 + 1], r = g_qrRgb[i * 3 + 2];
+        image[i] = (uint8_t)(((uint32_t)r * 77 + (uint32_t)g * 150 +
+                              (uint32_t)b * 29) >> 8);
+      }
+    } else {
+      // Camera RGB565 is big-endian. Reading it as uint16_t on ESP32 swaps
+      // the bytes and was the reason QR contrast detection was unreliable.
+      for (size_t i = 0; i < n; i++) {
+        const uint8_t hi = fb->buf[i * 2], lo = fb->buf[i * 2 + 1];
+        const uint8_t r = hi & 0xF8;
+        const uint8_t g = (uint8_t)(((hi & 0x07) << 5) | ((lo & 0xE0) >> 3));
+        const uint8_t b = (lo & 0x1F) << 3;
+        image[i] = (uint8_t)(((uint32_t)r * 77 + (uint32_t)g * 150 +
+                              (uint32_t)b * 29) >> 8);
+      }
+    }
   }
   quirc_end(g_qr);
-  esp_camera_fb_return(fb);
 
   const int count = quirc_count(g_qr);
   for (int i = 0; i < count; i++) {
@@ -199,7 +243,7 @@ static void qrTick() {
     quirc_extract(g_qr, i, &code);
     if (quirc_decode(&code, &data) != QUIRC_SUCCESS) continue;
 
-    char text[PROTO_MAX_BODY];
+    static char text[PROTO_MAX_BODY];  // 10 KB: keep it off the loop stack
     const size_t n = min((size_t)data.payload_len, sizeof(text) - 1);
     memcpy(text, data.payload, n);
     text[n] = '\0';
@@ -212,33 +256,26 @@ static void qrTick() {
     g_lastQrAt = millis();
 
     protoSendf(Serial, "%s:%s", EVT_QR, text);
-    return;
+    return true;
   }
+  return false;
 }
 
 // ---------------------------------------------------------------------- faces
 // Enrolled identities live in the recogniser's own flash-backed store. The
 // terminal owns the slot -> trainee mapping; this side only knows slot numbers.
-static void faceTick() {
-  camera_fb_t *fb = esp_camera_fb_get();
-  if (!fb) return;
-
+static void faceProcess(camera_fb_t *fb) {
   std::vector<int> shape = {(int)fb->height, (int)fb->width, 3};
   std::list<dl::detect::result_t> candidates =
       g_detector.infer((uint16_t *)fb->buf, shape);
   std::list<dl::detect::result_t> faces =
       g_detector2.infer((uint16_t *)fb->buf, shape, candidates);
 
-  if (faces.empty()) {
-    esp_camera_fb_return(fb);
-    return;
-  }
+  if (faces.empty()) return;
 
   if (g_enrolTarget >= 0) {
     const int id = g_recogniser->enroll_id((uint16_t *)fb->buf, shape,
                                            faces.front().keypoint, "", true);
-    esp_camera_fb_return(fb);
-
     if (id < 0) {
       reportErr("enrol failed");
       g_enrolTarget = -1;
@@ -249,107 +286,54 @@ static void faceTick() {
       protoSendf(Serial, "%s:%d", EVT_ENROLLED, g_enrolTarget);
       g_enrolTarget = -1;
       g_enrolCount = 0;
-      ensureMode(MODE_IDLE);
+      // Requested, not applied here: ensureMode() would deinit the camera
+      // while this function still borrows fb. loop() applies it after the
+      // frame is returned.
+      g_wantMode = MODE_IDLE;
     }
     return;
   }
 
   face_info_t r = g_recogniser->recognize((uint16_t *)fb->buf, shape,
                                           faces.front().keypoint);
-  esp_camera_fb_return(fb);
-
   if (r.id > 0) {
     protoSendf(Serial, "%s:%d:%d", EVT_FACE, r.id - 1, (int)(r.similarity * 100));
   } else {
     protoSendf(Serial, "%s:NONE", EVT_FACE);
   }
-  ensureMode(MODE_IDLE);  // one answer per request; the terminal re-arms
+  g_wantMode = MODE_IDLE;  // one answer per request; the terminal re-arms
 }
 
 // ------------------------------------------------------------------- preview
-// Thumbnail relay for the terminal's TFT. Downsamples the current camera
-// frame (whatever mode) to PREVIEW_W x PREVIEW_H grayscale, base64-encodes
-// it, and sends it as an EVT_FRAME.
+// The terminal's TFT is 320x240, exactly this sensor mode, so the frame is
+// JPEG-encoded and sent whole: full screen and in colour, where the old path
+// downsampled to a 96x72 grayscale thumbnail to fit a text frame.
 
-#define PREVIEW_W 96
-#define PREVIEW_H 72
+// Software JPEG quality is 1-100 (unlike the OV2640 sensor's 0-63 scale).
+// FACE frames need conversion; 70 keeps colour/detail without oversized UART
+// payloads. QR frames are already JPEG and bypass this encoder entirely.
+#define PREVIEW_JPEG_QUALITY 70
 
-static const char kB64Chars[] =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+// Set by CMD_SNAP: the terminal has drawn the last image and wants the next.
+static bool g_snapRequested = false;
 
-// Encodes `len` bytes from `src` into base64 at `dst` (must be ≥ 4*ceil(len/3)+1).
-// Returns the number of characters written (excluding NUL).
-static size_t b64Encode(const uint8_t *src, size_t len, char *dst, size_t dstSize) {
-  size_t o = 0;
-  size_t i = 0;
-  while (i < len && o + 4 < dstSize) {
-    uint32_t a = src[i++];
-    uint32_t b = (i < len) ? src[i++] : 0;
-    uint32_t c = (i < len) ? src[i++] : 0;
-    uint32_t triple = (a << 16) | (b << 8) | c;
+static void sendPreview(camera_fb_t *fb) {
+  if (!g_previewEnabled || !g_snapRequested) return;
+  g_snapRequested = false;
 
-    dst[o++] = kB64Chars[(triple >> 18) & 0x3F];
-    dst[o++] = kB64Chars[(triple >> 12) & 0x3F];
-    dst[o++] = (i > len + 1) ? '=' : kB64Chars[(triple >> 6) & 0x3F];
-    dst[o++] = (i > len)     ? '=' : kB64Chars[triple & 0x3F];
-  }
-  dst[o] = '\0';
-  return o;
-}
-
-// Throttle: don't send preview frames faster than ~8 fps to avoid saturating
-// the UART (96*72 = 6912 bytes → ~9216 bytes base64 → ~10 KB framed → ~87 ms
-// at 921600 baud). A 130 ms interval gives ~7.7 fps with headroom.
-static uint32_t g_lastPreviewMs = 0;
-static const uint32_t kPreviewIntervalMs = 130;
-
-static void previewTick() {
-  if (!g_previewEnabled || !g_camReady) return;
-  if (millis() - g_lastPreviewMs < kPreviewIntervalMs) return;
-  g_lastPreviewMs = millis();
-
-  camera_fb_t *fb = esp_camera_fb_get();
-  if (!fb) return;
-
-  // Downsample to PREVIEW_W x PREVIEW_H grayscale.
-  // The source is either GRAYSCALE (QR mode) or RGB565 (FACE mode).
-  static uint8_t thumb[PREVIEW_W * PREVIEW_H];
-
-  const int srcW = fb->width;
-  const int srcH = fb->height;
-
-  for (int ty = 0; ty < PREVIEW_H; ty++) {
-    const int sy = ty * srcH / PREVIEW_H;
-    for (int tx = 0; tx < PREVIEW_W; tx++) {
-      const int sx = tx * srcW / PREVIEW_W;
-
-      if (g_camFormat == PIXFORMAT_GRAYSCALE) {
-        thumb[ty * PREVIEW_W + tx] = fb->buf[sy * srcW + sx];
-      } else {
-        // RGB565 → grayscale. Pixel at (sx, sy).
-        const uint16_t px = ((uint16_t *)fb->buf)[sy * srcW + sx];
-        const uint8_t r5 = (px >> 11) & 0x1F;
-        const uint8_t g6 = (px >> 5) & 0x3F;
-        const uint8_t b5 = px & 0x1F;
-        // Approximate Y = 0.299R + 0.587G + 0.114B with integer math:
-        // (r5*8*77 + g6*4*150 + b5*8*29) >> 8
-        thumb[ty * PREVIEW_W + tx] = (uint8_t)(
-          ((uint32_t)(r5 << 3) * 77 + (uint32_t)(g6 << 2) * 150 + (uint32_t)(b5 << 3) * 29) >> 8
-        );
-      }
-    }
+  if (fb->format == PIXFORMAT_JPEG) {
+    protoSendImage(Serial, fb->buf, fb->len);
+    return;
   }
 
-  esp_camera_fb_return(fb);
-
-  // Base64-encode the thumbnail.
-  // 6912 raw bytes → 9216 base64 chars + NUL.
-  static char b64Buf[9220];
-  const size_t b64Len = b64Encode(thumb, PREVIEW_W * PREVIEW_H, b64Buf, sizeof(b64Buf));
-  (void)b64Len;
-
-  // Send as EVT_FRAME:base64...
-  protoSendf(Serial, "%s:%s", EVT_FRAME, b64Buf);
+  uint8_t *jpg = nullptr;
+  size_t jpgLen = 0;
+  if (!frame2jpg(fb, PREVIEW_JPEG_QUALITY, &jpg, &jpgLen)) {
+    reportErr("jpeg encode failed");
+    return;
+  }
+  protoSendImage(Serial, jpg, jpgLen);
+  free(jpg);
 }
 
 // -------------------------------------------------------------------- command
@@ -400,14 +384,26 @@ static void handleFrame(const char *body) {
 
   if (is(CMD_PREVIEW) && rest) {
     g_previewEnabled = (strcmp(rest, "ON") == 0);
+    g_snapRequested = g_previewEnabled;  // send one right away
+    return;
+  }
+
+  if (is(CMD_SNAP)) {
+    g_snapRequested = true;
     return;
   }
 }
 
 // ----------------------------------------------------------------------- main
+// The default 8 KB loopTask stack is too small once preview frames
+// (~10 KB base64) and the ESP-DL calls run in loop(); overflowing it rebooted
+// the CAM on the first frame. Kept here, after every other definition,
+// because the IDE's prototype generator mistakes this macro for a function.
+SET_LOOP_TASK_STACK_SIZE(16 * 1024);
+
 void setup() {
   // Must match CAM_BAUD on the terminal. This is the link, not a console.
-  Serial.begin(921600);
+  Serial.begin(PROTO_BAUD);
   
   // Give the serial port a moment to connect
   delay(1000);
@@ -443,18 +439,34 @@ void setup() {
 }
 
 void loop() {
-  char body[PROTO_MAX_BODY];
+  static char body[PROTO_MAX_BODY];  // static: see SET_LOOP_TASK_STACK_SIZE
   while (Serial.available()) {
     if (g_reader.feed((char)Serial.read(), body, sizeof(body))) handleFrame(body);
   }
 
   if (g_wantMode != g_mode) ensureMode(g_wantMode);
 
-  if (g_mode == MODE_QR) qrTick();
-  else if (g_mode == MODE_FACE) faceTick();
-  else delay(10);
+  if (g_mode == MODE_IDLE) {
+    delay(10);
+    return;
+  }
 
-  // Preview thumbnails are sent alongside the active mode's work.
-  // This runs after the mode tick so QR/face processing gets priority.
-  previewTick();
+  // One capture per pass, shared by the preview and the mode's own work —
+  // grabbing twice (as the old previewTick did) doubled the sensor latency.
+  camera_fb_t *fb = esp_camera_fb_get();
+  if (!fb) {
+    delay(5);
+    return;
+  }
+
+  if (g_mode == MODE_QR) {
+    // Recognition wins over preview. Once a code is found, sending another
+    // image only delays the QR event and makes the UI appear stuck.
+    if (!qrProcess(fb)) sendPreview(fb);
+  } else if (g_mode == MODE_FACE) {
+    sendPreview(fb);
+    faceProcess(fb);
+  }
+
+  esp_camera_fb_return(fb);
 }

@@ -34,7 +34,9 @@
     "nominations": "Nominations",
     "logistics": "Logistics",
     "devices": "Devices",
-    "rfidRegistration": "RFID Registration"
+    "rfidRegistration": "RFID Registration",
+    "attendanceLive": "Live Attendance",
+    "attendanceRegister": "Attendance Register"
   },
   "Shell": {
     "searchPlaceholder": "Search query...",

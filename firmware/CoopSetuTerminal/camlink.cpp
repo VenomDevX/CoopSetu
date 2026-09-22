@@ -8,40 +8,21 @@ HardwareSerial &Cam = Serial2;
 ProtoReader g_reader;
 bool g_alive = false;
 uint32_t g_lastPing = 0;
+uint32_t g_lastRecovery = 0;
+CamMode g_mode = CAM_IDLE;
 
-// Preview frame buffer
-static uint8_t g_frameBuf[PREVIEW_WIDTH * PREVIEW_HEIGHT];
-static uint16_t g_frameW = 0, g_frameH = 0;
+// Newest decoded preview JPEG.
+static uint8_t g_jpg[PREVIEW_MAX_JPEG];
+static size_t g_jpgLen = 0;
 static bool g_frameReady = false;
-
-// Minimal base64 decode for frame data from the CAM
-static const int8_t kB64[256] = {
-  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,
-  52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,
-  -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,
-  15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,
-  -1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,
-  41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1,
-};
-
-static size_t b64Decode(const char *src, size_t srcLen, uint8_t *dst, size_t dstSize) {
-  size_t j = 0;
-  uint32_t acc = 0;
-  int bits = 0;
-  for (size_t i = 0; i < srcLen && j < dstSize; i++) {
-    int8_t v = (uint8_t)src[i] < 128 ? kB64[(uint8_t)src[i]] : -1;
-    if (v < 0) continue;  // skip padding and whitespace
-    acc = (acc << 6) | (uint32_t)v;
-    bits += 6;
-    if (bits >= 8) {
-      bits -= 8;
-      dst[j++] = (uint8_t)(acc >> bits);
-    }
-  }
-  return j;
-}
+static uint32_t g_framesOk = 0;
+static uint32_t g_lastRxMs = 0;
+static char g_lastErr[64] = {0};
+static uint32_t g_badImages = 0;
+static size_t g_imageExpected = 0;
+static size_t g_imageReceived = 0;
+static size_t g_imageDiscard = 0;
+static uint32_t g_imageCrc = 0;
 
 // Splits "HEAD:rest" — returns the head length, or the whole length if no colon.
 size_t headLen(const char *s) {
@@ -57,6 +38,10 @@ bool headIs(const char *body, const char *want) {
 }  // namespace
 
 void camBegin() {
+  // A preview frame is ~10 KB and arrives in ~110 ms at CAM_BAUD. The default
+  // 256-byte RX buffer overflows whenever loop() is busy drawing, corrupting
+  // nearly every frame. Must be set before begin().
+  Cam.setRxBufferSize(16 * 1024);
   Cam.begin(CAM_BAUD, SERIAL_8N1, PIN_CAM_RX, PIN_CAM_TX);
   // The CAM's ROM bootloader prints on this line at every reset. Drop whatever
   // is already buffered; the checksum handles the rest.
@@ -65,26 +50,36 @@ void camBegin() {
 }
 
 void camSetMode(CamMode m) {
+  g_mode = m;
   const char *name = m == CAM_QR ? "QR" : (m == CAM_FACE ? "FACE" : "IDLE");
   protoSendf(Cam, "%s:%s", CMD_MODE, name);
 }
 
 void camEnroll(int slot) { protoSendf(Cam, "%s:%d", CMD_ENROLL, slot); }
 void camForget(int slot) { protoSendf(Cam, "%s:%d", CMD_FORGET, slot); }
-bool camIsAlive() { return g_alive; }
+bool camIsAlive() {
+  return g_alive && g_lastRxMs && millis() - g_lastRxMs < 7500;
+}
 
 void camPreviewOn()  { protoSendf(Cam, "%s:ON",  CMD_PREVIEW); }
+void camRequestFrame() { protoSend(Cam, CMD_SNAP); }
 void camPreviewOff() { protoSendf(Cam, "%s:OFF", CMD_PREVIEW); }
 
 bool camHasFrame() { return g_frameReady; }
 
-bool camGetFrame(uint8_t *buf, uint16_t *w, uint16_t *h) {
-  if (!g_frameReady) return false;
-  *w = g_frameW;
-  *h = g_frameH;
-  memcpy(buf, g_frameBuf, (size_t)g_frameW * g_frameH);
+const uint8_t *camTakeJpeg(size_t *len) {
+  if (!g_frameReady) return nullptr;
   g_frameReady = false;
-  return true;
+  *len = g_jpgLen;
+  return g_jpg;
+}
+
+void camGetStats(CamLinkStats *out) {
+  out->framesOk = g_framesOk;
+  out->badFrames = g_reader.badFrames() + g_badImages;
+  out->lastRxMs = g_lastRxMs;
+  strncpy(out->lastErr, g_lastErr, sizeof(out->lastErr) - 1);
+  out->lastErr[sizeof(out->lastErr) - 1] = '\0';
 }
 
 bool camPoll(CamEvent *out) {
@@ -94,11 +89,53 @@ bool camPoll(CamEvent *out) {
     protoSend(Cam, CMD_PING);
   }
 
-  char body[PROTO_MAX_BODY];
+  // Recover the UART state after a camera brownout. This cannot power-cycle the
+  // CAM, but it clears boot chatter and reapplies the requested mode once the
+  // module returns.
+  if (g_lastRxMs && millis() - g_lastRxMs > 15000 && millis() - g_lastRecovery > 15000) {
+    g_lastRecovery = millis();
+    g_alive = false;
+    while (Cam.available()) Cam.read();
+    Cam.end();
+    Cam.begin(CAM_BAUD, SERIAL_8N1, PIN_CAM_RX, PIN_CAM_TX);
+    camSetMode(g_mode);
+  }
+
+  // Consume at most 2 KB of a binary JPEG per UI tick. The previous readBytes
+  // loop monopolised core 1 for up to 500 ms, freezing touch and animation.
+  size_t budget = 2048;
+  while (budget && Cam.available() && (g_imageExpected || g_imageDiscard)) {
+    if (g_imageDiscard) {
+      Cam.read();
+      g_imageDiscard--;
+    } else {
+      g_jpg[g_imageReceived++] = (uint8_t)Cam.read();
+      if (g_imageReceived == g_imageExpected) {
+        if (protoCrc32(g_jpg, g_imageExpected) == g_imageCrc) {
+          g_jpgLen = g_imageExpected;
+          g_frameReady = true;
+          g_framesOk++;
+        } else {
+          g_badImages++;
+        }
+        g_imageExpected = 0;
+        g_imageReceived = 0;
+      }
+    }
+    budget--;
+  }
+  if (g_imageExpected || g_imageDiscard) return false;
+
+  // static, not a local: PROTO_MAX_BODY is 10 KB, and callers (qrTick,
+  // faceTick) already hold several KB of their own. On loopTask's stack this
+  // overflowed and rebooted the terminal the moment QR or Face ID opened.
+  // camPoll() only ever runs on loopTask, so sharing the buffer is safe.
+  static char body[PROTO_MAX_BODY];
   while (Cam.available()) {
     if (!g_reader.feed((char)Cam.read(), body, sizeof(body))) continue;
 
     g_alive = true;
+    g_lastRxMs = millis();
     out->type = CAM_EV_NONE;
     out->slot = -1;
     out->confidence = 0.0f;
@@ -137,24 +174,27 @@ bool camPoll(CamEvent *out) {
       out->slot = atoi(rest);
       return true;
     }
-    if (headIs(body, EVT_FRAME) && rest) {
-      // Base64-encoded grayscale thumbnail from the CAM
-      const size_t restLen = strlen(rest);
-      const size_t decoded = b64Decode(rest, restLen, g_frameBuf, sizeof(g_frameBuf));
-      if (decoded == PREVIEW_WIDTH * PREVIEW_HEIGHT) {
-        g_frameW = PREVIEW_WIDTH;
-        g_frameH = PREVIEW_HEIGHT;
-        g_frameReady = true;
+    if (headIs(body, EVT_IMG) && rest) {
+      // "<len>:<crc32 hex>" followed by len raw bytes.
+      const size_t len = (size_t)strtoul(rest, nullptr, 10);
+      const char *crcTxt = strchr(rest, ':');
+      const uint32_t wantCrc = crcTxt ? (uint32_t)strtoul(crcTxt + 1, nullptr, 16) : 0;
+
+      if (len == 0 || len > sizeof(g_jpg) || !crcTxt) {
+        g_imageDiscard = len;
+      } else {
+        g_imageExpected = len;
+        g_imageReceived = 0;
+        g_imageCrc = wantCrc;
       }
-      // Frame events are consumed silently by the preview screen;
-      // don't propagate them as CamEvents to the main loop.
-      continue;
+      return false;  // binary payload is consumed incrementally on later ticks
     }
     if (headIs(body, EVT_ERR)) {
       out->type = CAM_EV_ERR;
       if (rest) {
         strncpy(out->text, rest, sizeof(out->text) - 1);
         out->text[sizeof(out->text) - 1] = '\0';
+        strncpy(g_lastErr, rest, sizeof(g_lastErr) - 1);
       }
       return true;
     }

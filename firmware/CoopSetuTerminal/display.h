@@ -30,8 +30,11 @@ void screenEnroll(const char *who, int slot);
 // True if the panel was touched since the last call; fills screen coords.
 bool touchGet(int16_t *x, int16_t *y);
 
-// Prints raw touch counts to Serial for calibrating TOUCH_RAW_* in config.h.
-void touchCalibrationLoop();
+// Interactive 3-point touch calibration. Draws targets, derives edge values
+// and axis orientation, saves them to NVS (used on every later boot), prints
+// the equivalent config.h lines to Serial, then shows a tap-test screen until
+// the button is pressed. Returns so boot can continue.
+void touchCalibrate();
 
 // Direct access to the TFT for screen implementations that need custom drawing.
 Adafruit_ILI9341& getTft();

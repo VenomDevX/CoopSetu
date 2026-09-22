@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateDevice, type DeviceIdentity } from '@/lib/auth/device-auth';
+import { authenticateDevice } from '@/lib/auth/device-auth';
+import { memberRoleCode } from '@/lib/auth/member-role';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { recordDeviceTap } from '@/lib/attendance/record-device-tap';
+import { canDeviceAccessInstitution, InvalidCaptureTimeError, parseDeviceCaptureTime } from '@/lib/attendance/device-capture-time';
+import { hashCardCredential, verifyCardCredential } from '@/lib/attendance/rfid-credential';
 
 /**
  * RFID attendance — device-auth only.
  *
  * Called by the terminal's SCR_RFID screen after nfcPoll() reads a card UID.
- * Looks up the UID in rfid_cards → organization_members, checks for duplicates
- * within a configurable window, and inserts a device_attendance_event.
+ * Looks up the UID in rfid_cards → organization_members, validates the card,
+ * then delegates to the shared attendance core which handles deduplication,
+ * session resolution, and record creation.
+ *
+ * Response includes session/course info so the terminal can show:
+ *   "Name — Course, Morning — Marked Present 10:42:07"
  */
-
-const DEDUPE_WINDOW_MINUTES = 30;
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,25 +26,54 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { rfid_uid, idempotency_key } = body;
+    const { rfid_uid, idempotency_key, captured_at, card_credential } = body;
 
     if (!rfid_uid || typeof rfid_uid !== 'string') {
       return NextResponse.json({ error: 'rfid_uid is required' }, { status: 400 });
     }
 
     const admin = createAdminClient();
+    const normalizedUid = rfid_uid.toUpperCase().trim();
+
+    // A waiting enrollment capture owns the next card tap. Do this before card
+    // lookup so brand-new cards can be captured without creating attendance.
+    const { data: waitingCapture } = await admin
+      .from('rfid_capture_requests')
+      .select('id')
+      .eq('device_id', device.id)
+      .eq('status', 'WAITING')
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (waitingCapture) {
+      const { error: captureError } = await admin
+        .from('rfid_capture_requests')
+        .update({
+          rfid_uid: normalizedUid,
+          credential_hash: typeof card_credential === 'string'
+            ? hashCardCredential(card_credential)
+            : null,
+          status: 'CAPTURED',
+        })
+        .eq('id', waitingCapture.id)
+        .eq('status', 'WAITING');
+      if (captureError) throw new Error(`Failed to capture RFID: ${captureError.message}`);
+      return NextResponse.json({ success: true, capture: true, attendance_marked: false, message: 'Card captured for enrollment' });
+    }
 
     // Look up the RFID card
     const { data: card, error: cardErr } = await admin
       .from('rfid_cards')
       .select(`
-        id, member_id, organization_id, institution_id, status,
+        id, member_id, organization_id, institution_id, status, credential_hash, security_level,
         organization_members!inner (
-          id, role, user_id, institution_id,
-          profiles:user_id ( full_name, avatar_url )
+          id, user_id, institution_id,
+          member_roles!organization_member_id ( roles ( code ) ),
+          profiles:user_id ( full_name )
         )
       `)
-      .eq('rfid_uid', rfid_uid.toUpperCase().trim())
+      .eq('rfid_uid', normalizedUid)
       .maybeSingle();
 
     if (cardErr) {
@@ -65,6 +100,15 @@ export async function POST(request: NextRequest) {
       }, { status: 403 });
     }
 
+    if (card.credential_hash) {
+      if (typeof card_credential !== 'string') {
+        return NextResponse.json({ error: 'card_credential_required', message: 'Secure card credential is missing' }, { status: 403 });
+      }
+      if (!verifyCardCredential(card_credential, card.credential_hash)) {
+        return NextResponse.json({ error: 'invalid_card_credential', message: 'Secure card authentication failed' }, { status: 403 });
+      }
+    }
+
     // Verify the card belongs to the same organization as the device
     if (card.organization_id !== device.organizationId) {
       return NextResponse.json({
@@ -75,73 +119,30 @@ export async function POST(request: NextRequest) {
       }, { status: 403 });
     }
 
-    // Dedupe check: has this member already marked attendance on this device recently?
-    const windowStart = new Date(Date.now() - DEDUPE_WINDOW_MINUTES * 60 * 1000).toISOString();
-    const { data: existing } = await admin
-      .from('device_attendance_events')
-      .select('id, marked_at')
-      .eq('member_id', card.member_id)
-      .eq('device_id', device.id)
-      .eq('method', 'RFID')
-      .gte('marked_at', windowStart)
-      .limit(1)
-      .maybeSingle();
-
-    if (existing) {
-      const member = card.organization_members as any;
+    if (!canDeviceAccessInstitution(device.institutionId, card.institution_id)) {
       return NextResponse.json({
-        success: true,
+        success: false,
         attendance_marked: false,
-        message: 'Attendance already marked',
-        user: {
-          id: member.id,
-          name: member.profiles?.full_name ?? 'Unknown',
-          role: member.role,
-          institute: card.institution_id,
-        },
-        marked_at: existing.marked_at,
-      });
-    }
-
-    // Insert the attendance event
-    const now = new Date().toISOString();
-    const { data: event, error: insertErr } = await admin
-      .from('device_attendance_events')
-      .insert({
-        member_id: card.member_id,
-        organization_id: card.organization_id,
-        institution_id: card.institution_id,
-        device_id: device.id,
-        method: 'RFID',
-        status: 'PRESENT',
-        raw_uid: rfid_uid.toUpperCase().trim(),
-        idempotency_key: idempotency_key || null,
-        marked_at: now,
-      })
-      .select('id, marked_at')
-      .single();
-
-    if (insertErr) {
-      // Idempotency key conflict means this is a replay — treat as success
-      if (insertErr.code === '23505' && idempotency_key) {
-        const member = card.organization_members as any;
-        return NextResponse.json({
-          success: true,
-          attendance_marked: false,
-          message: 'Attendance already recorded (replay)',
-          user: {
-            id: member.id,
-            name: member.profiles?.full_name ?? 'Unknown',
-            role: member.role,
-            institute: card.institution_id,
-          },
-        });
-      }
-      console.error('Attendance insert error:', insertErr);
-      return NextResponse.json({ error: 'Failed to record attendance' }, { status: 500 });
+        error: 'institution_mismatch',
+        message: 'Card is not valid at this institution',
+      }, { status: 403 });
     }
 
     const member = card.organization_members as any;
+
+    // Delegate to the shared attendance core
+    const result = await recordDeviceTap({
+      admin,
+      memberId: card.member_id,
+      organizationId: card.organization_id,
+      institutionId: card.institution_id,
+      deviceId: device.id,
+      deviceInstitutionId: device.institutionId,
+      method: 'RFID',
+      rawUid: normalizedUid,
+      idempotencyKey: idempotency_key || null,
+      at: parseDeviceCaptureTime(captured_at),
+    });
 
     // Fetch institution name for the response
     let instituteName: string | null = null;
@@ -156,21 +157,28 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      attendance_marked: true,
-      message: 'Attendance marked successfully',
+      attendance_marked: result.attendanceMarked,
+      message: result.message,
       user: {
         id: member.id,
         name: member.profiles?.full_name ?? 'Unknown',
-        role: member.role,
+        role: memberRoleCode(member),
         institute: instituteName,
         institution_id: card.institution_id,
       },
-      event_id: event.id,
-      marked_at: event.marked_at,
+      event_id: result.eventId,
+      record_id: result.recordId,
+      marked_at: result.markedAt,
       method: 'RFID',
-    }, { status: 201 });
+      status: result.status,
+      session: result.session,
+      resolution: result.resolution,
+    }, { status: result.attendanceMarked ? 201 : 200 });
 
   } catch (err: any) {
+    if (err instanceof InvalidCaptureTimeError) {
+      return NextResponse.json({ error: 'invalid_capture_time', message: err.message }, { status: 400 });
+    }
     console.error('RFID attendance error:', err);
     return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
   }

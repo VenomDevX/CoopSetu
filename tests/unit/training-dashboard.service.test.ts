@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getTrainingOverview } from '@/services/dashboard.service';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -49,7 +49,11 @@ function buildMockSupabase(perTable: Record<string, (call: number) => any>): Sup
 describe('Dashboard Service - getTrainingOverview', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-08T06:30:00.000Z'));
   });
+
+  afterEach(() => vi.useRealTimers());
 
   it('INSTITUTE_ADMIN: computes org-wide training counts and an ending-batches attention queue', async () => {
     const supabase = buildMockSupabase({

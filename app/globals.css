@@ -308,3 +308,4 @@
     scrollbar-color: var(--border) transparent;
   }
 }
+body { background-color: #000000 !important; }

@@ -28,7 +28,7 @@
 // observed symptom was a hard "stack overflow in task loopTask" panic/reboot
 // shortly after boot — not the display or PN532 wiring. Must be set before
 // setup() runs; this macro is arduino-esp32's supported way to do that.
-SET_LOOP_TASK_STACK_SIZE(16 * 1024);
+SET_LOOP_TASK_STACK_SIZE(20 * 1024);
 
 #include "config.h"
 #include "feedback.h"
@@ -43,8 +43,8 @@ SET_LOOP_TASK_STACK_SIZE(16 * 1024);
 extern void screensRegister();
 
 // --------------------------------------------------------------- face roster
-// Maps an on-CAM face slot to a CoopSetu trainee id. Enrol with the serial
-// command `enrol <slot> <trainee-uuid>` (see handleSerial), which is how a
+// Maps an on-CAM face slot to a CoopSetu organization_member id. Enrol with the
+// serial command `enrol <slot> <member-uuid>` (see handleSerial), which is how a
 // trainer registers a face without a keyboard on the terminal.
 struct FaceSlot {
   char trainee[64];
@@ -55,6 +55,9 @@ static FaceSlot g_faces[kMaxFaces];
 Preferences g_prefs;
 
 int g_enrollSlot = -1;  // >= 0 while an enrolment is in flight
+uint32_t g_faceSyncRequestId = 0;
+uint32_t g_lastFaceSyncMs = 0;
+int g_nextFaceSyncSlot = 0;
 
 // ---------------------------------------------------------------- persistence
 void loadState() {
@@ -109,7 +112,7 @@ int buttonEvent() {
 
 // -------------------------------------------------- serial admin (enrolment)
 // Typed into the Arduino IDE serial monitor at 115200:
-//   enrol <slot> <trainee-uuid>   bind a slot, then capture the face
+//   enrol <slot> <member-uuid>    bind a slot, then capture the face
 //   forget <slot>                 clear a slot (255 = all)
 //   admin-pin <4digits>           set the admin PIN for on-device registration
 //   status                        print current state
@@ -123,7 +126,7 @@ void handleSerial() {
     const int sp1 = line.indexOf(' ');
     const int sp2 = line.indexOf(' ', sp1 + 1);
     if (sp1 < 0 || sp2 < 0) {
-      Serial.println("usage: enrol <slot> <trainee-uuid>");
+      Serial.println("usage: enrol <slot> <member-uuid>");
       return;
     }
     const int slot = line.substring(sp1 + 1, sp2).toInt();
@@ -134,8 +137,6 @@ void handleSerial() {
     const String uuid = line.substring(sp2 + 1);
     strncpy(g_faces[slot].trainee, uuid.c_str(), sizeof(g_faces[slot].trainee) - 1);
     g_faces[slot].trainee[sizeof(g_faces[slot].trainee) - 1] = '\0';
-    saveFace(slot);
-
     g_enrollSlot = slot;
     camSetMode(CAM_FACE);
     camEnroll(slot);
@@ -160,6 +161,10 @@ void handleSerial() {
       return;
     }
     camForget(slot);
+    NetRequest request{};
+    request.type = NET_FACE_SLOT_DELETE;
+    snprintf(request.payload, sizeof(request.payload), "%d", slot);
+    g_faceSyncRequestId = netEnqueue(request);
     Serial.println("ok");
     return;
   }
@@ -188,7 +193,30 @@ void handleSerial() {
     return;
   }
 
-  Serial.println("commands: enrol <slot> <uuid> | forget <slot|255> | admin-pin <4digits> | status");
+  Serial.println("commands: enrol <slot> <member-uuid> | forget <slot|255> | admin-pin <4digits> | status");
+}
+
+void faceSyncTick() {
+  if (g_faceSyncRequestId) {
+    NetResponse response;
+    if (!netDequeueFor(g_faceSyncRequestId, &response)) return;
+    if (!response.ok) Serial.printf("face slot sync failed: %s\n", response.data);
+    g_faceSyncRequestId = 0;
+    g_lastFaceSyncMs = millis();
+    return;
+  }
+  if (!netWifiConnected() || millis() - g_lastFaceSyncMs < 10000) return;
+  for (int checked = 0; checked < kMaxFaces; checked++) {
+    const int slot = g_nextFaceSyncSlot++ % kMaxFaces;
+    if (!g_faces[slot].trainee[0]) continue;
+    NetRequest request{};
+    request.type = NET_FACE_SLOT_SYNC;
+    snprintf(request.payload, sizeof(request.payload),
+             "{\"slot\":%d,\"member_id\":\"%s\"}", slot, g_faces[slot].trainee);
+    g_faceSyncRequestId = netEnqueue(request);
+    break;
+  }
+  g_lastFaceSyncMs = millis();
 }
 
 // --------------------------------------------------------------- touch input
@@ -235,9 +263,13 @@ void setup() {
   // Initialize touch after SPI is stable
   touchInit();
 
-#if TOUCH_CALIBRATION_MODE
-  touchCalibrationLoop();  // never returns
-#endif
+  // Hold the button while powering on to (re)calibrate the touch panel.
+  const bool buttonHeldAtBoot =
+      digitalRead(PIN_BUTTON) == (BUTTON_ACTIVE_LOW ? LOW : HIGH);
+  if (TOUCH_CALIBRATION_MODE || buttonHeldAtBoot) {
+    touchCalibrate();
+    screenBoot("Starting...");
+  }
 
   camBegin();
 
@@ -270,6 +302,7 @@ void setup() {
 void loop() {
   feedbackTick();
   handleSerial();
+  faceSyncTick();
 
   // ---- touch events -> active screen
   int16_t tx, ty;
@@ -283,10 +316,15 @@ void loop() {
   if (s && s->onTick) s->onTick();
 
   // ---- camera events that are not screen-specific (enrolment from serial)
+  // Screens that consume CAM events poll it themselves; polling here too
+  // would race them and silently drop QR/face results.
+  const ScreenId cur = currentScreen();
+  const bool screenOwnsCam = cur == SCR_QR || cur == SCR_FACE || cur == SCR_ARM;
   CamEvent ev;
-  if (camPoll(&ev)) {
+  if (!screenOwnsCam && camPoll(&ev)) {
     if (ev.type == CAM_EV_ENROLLED && g_enrollSlot >= 0) {
       Serial.printf("slot %d enrolled\n", ev.slot);
+      saveFace(ev.slot);
       g_enrollSlot = -1;
       showResultScreen(true, "Face enrolled", g_faces[ev.slot].trainee);
     } else if (ev.type == CAM_EV_ERR) {

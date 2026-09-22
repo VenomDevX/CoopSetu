@@ -14,6 +14,7 @@ tsconfig.tsbuildinfo
 metadata.json
 .next-dev-*.log
 .vercel
+firmware/CoopSetuTerminal/config.local.h
 
 # JetBrains IDE state - machine-specific (SDK paths, emulator lists).
 .idea/

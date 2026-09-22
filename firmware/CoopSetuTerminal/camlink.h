@@ -32,18 +32,32 @@ void camForget(int slot);  // 255 wipes every enrolled face
 // True once per decoded frame from the CAM.
 bool camPoll(CamEvent *out);
 
-// True if the CAM has answered at any point since boot.
+// True only while the CAM has answered recently.
 bool camIsAlive();
 
-// Preview control — enables/disables thumbnail streaming from the CAM.
+// Preview control. camPreviewOn() also asks for the first image.
 void camPreviewOn();
 void camPreviewOff();
 
-// Returns true if a new preview frame is available since the last call.
-// Copies the raw grayscale thumbnail into `buf` (must be at least w*h bytes).
-bool camGetFrame(uint8_t *buf, uint16_t *w, uint16_t *h);
+// Ask the CAM for the next image. One request = one image, so the screen is
+// never behind more than the frame it is drawing.
+void camRequestFrame();
+
+// Borrow the newest preview JPEG, or nullptr when none has arrived since the
+// last call. The buffer stays valid until the next camPoll(), which is never
+// called while a screen is drawing.
+const uint8_t *camTakeJpeg(size_t *len);
 
 // True if there's a frame waiting to be consumed.
 bool camHasFrame();
+
+// Link diagnostics for the UI.
+struct CamLinkStats {
+  uint32_t framesOk;      // preview frames decoded
+  uint32_t badFrames;     // frames dropped by the protocol parser
+  uint32_t lastRxMs;      // millis() of the last valid message, 0 = never
+  char lastErr[64];       // last ERR:<message> from the CAM, "" = none
+};
+void camGetStats(CamLinkStats *out);
 
 #endif  // COOPSETU_CAMLINK_H

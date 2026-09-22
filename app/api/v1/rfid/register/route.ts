@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateDevice } from '@/lib/auth/device-auth';
+import { MEMBER_ROLES_EMBED, memberRoleCode } from '@/lib/auth/member-role';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { hashCardCredential } from '@/lib/attendance/rfid-credential';
 
 /**
  * RFID registration — dual-auth.
@@ -24,6 +26,7 @@ export async function POST(request: NextRequest) {
     // one at all (it used to send an empty string, which this route rejected
     // outright, making registration from the dashboard impossible).
     let organizationId: string | null = device?.organizationId ?? null;
+    let callerInstitutionId: string | null = device?.institutionId ?? null;
 
     // If no device auth, check for a web session with attendance:manage
     if (!device) {
@@ -38,20 +41,19 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
 
-      // Verify the user has attendance:manage permission
-      const admin = createAdminClient();
-      const { data: perms } = await admin.rpc('has_permission', {
-        p_org: membership.organizationId,
-        p_perm: 'attendance:manage',
-      });
-
-      if (!perms) {
+      // Verify the user has attendance:manage permission.
+      // This was previously admin.rpc('has_permission', ...) which calls
+      // public.has_permission — a function that does not exist. The DB
+      // function is coopsetu.has_permission. Use the server-side helper.
+      const { getCallerInstitutionId, hasPermission } = await import('@/lib/auth/institution-scope');
+      if (!(await hasPermission(membership, 'attendance:manage'))) {
         return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
       }
 
       isAuthorized = true;
       registeredBy = auth.user.id;
       organizationId = membership.organizationId;
+      callerInstitutionId = await getCallerInstitutionId(membership.memberId);
     }
 
     if (!isAuthorized) {
@@ -59,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { action = 'register', rfid_uid, member_id, institution_id } = body;
+    const { action = 'register', rfid_uid, member_id, card_credential } = body;
 
     const admin = createAdminClient();
 
@@ -70,7 +72,10 @@ export async function POST(request: NextRequest) {
 
       const query = admin
         .from('rfid_cards')
-        .update({ status: 'REVOKED', updated_at: new Date().toISOString() });
+        .update({ status: 'REVOKED', updated_at: new Date().toISOString() })
+        .eq('organization_id', organizationId);
+
+      if (callerInstitutionId) query.eq('institution_id', callerInstitutionId);
 
       if (rfid_uid) query.eq('rfid_uid', rfid_uid.toUpperCase().trim());
       else if (member_id) query.eq('member_id', member_id);
@@ -93,17 +98,35 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedUid = rfid_uid.toUpperCase().trim();
+    let credentialHash = typeof card_credential === 'string' && card_credential.startsWith('CS1:')
+      ? hashCardCredential(card_credential)
+      : null;
+    if (!credentialHash) {
+      const { data: captured } = await admin.from('rfid_capture_requests')
+        .select('credential_hash')
+        .eq('organization_id', organizationId)
+        .eq('rfid_uid', normalizedUid)
+        .in('status', ['CAPTURED', 'CLAIMED'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      credentialHash = captured?.credential_hash ?? null;
+    }
 
     // Verify the member exists and belongs to the organization
     const { data: member, error: memberErr } = await admin
       .from('organization_members')
-      .select('id, organization_id, institution_id, role')
+      .select(`id, organization_id, institution_id, ${MEMBER_ROLES_EMBED}`)
       .eq('id', member_id)
       .eq('organization_id', organizationId)
       .maybeSingle();
 
     if (memberErr || !member) {
       return NextResponse.json({ error: 'Member not found in organization' }, { status: 404 });
+    }
+
+    if (callerInstitutionId && member.institution_id !== callerInstitutionId) {
+      return NextResponse.json({ error: 'Member is outside your institution scope' }, { status: 403 });
     }
 
     // Check if this UID is already registered to someone else
@@ -140,12 +163,14 @@ export async function POST(request: NextRequest) {
       .from('rfid_cards')
       .insert({
         organization_id: organizationId,
-        institution_id: institution_id || member.institution_id || null,
+        institution_id: member.institution_id || null,
         member_id,
         rfid_uid: normalizedUid,
         status: 'ACTIVE',
         registered_by: registeredBy,
         registered_at: new Date().toISOString(),
+        credential_hash: credentialHash,
+        security_level: credentialHash ? 'SHARED_SECRET' : 'UID',
       })
       .select('id, rfid_uid, registered_at')
       .single();
@@ -162,7 +187,7 @@ export async function POST(request: NextRequest) {
         id: card.id,
         rfid_uid: card.rfid_uid,
         member_id,
-        role: member.role,
+        role: memberRoleCode(member),
         registered_at: card.registered_at,
       },
     }, { status: 201 });
