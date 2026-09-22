@@ -11,7 +11,9 @@
 struct ApiResult {
   bool ok;
   int status;         // HTTP status, or a negative HTTPClient error
-  char message[384];  // server's response body or a local explanation
+  // User search is compact JSON for six rows and is parsed by net_task into a
+  // fixed page before anything reaches the response queue.
+  char message[1024]; // server response body or a local explanation
 };
 
 // True if WiFi is currently associated. Connecting/reconnecting is owned by
@@ -20,7 +22,7 @@ bool wifiIsUp();
 
 // POST /api/v1/attendance/qr  { qr_token, trainee_id }
 // Legacy session-scoped attendance — payload is pre-built JSON.
-ApiResult apiMarkAttendance(const char *qrToken, const char *traineeId);
+ApiResult apiPostQrScan(const char *jsonBody);
 
 // POST /api/v1/attendance/rfid  { rfid_uid }
 // Kiosk RFID attendance. `jsonBody` is the pre-built JSON payload.
@@ -32,14 +34,14 @@ ApiResult apiPostFaceAttendance(const char *jsonBody);
 // POST /api/v1/rfid/register  { rfid_uid, member_id, organization_id, ... }
 ApiResult apiPostRfidRegister(const char *jsonBody);
 
-// GET /api/v1/institutions?organization_id=...
-// `queryParams` is the query string (without leading '?').
-ApiResult apiFetchInstitutions(const char *queryParams);
+// POST/DELETE /api/v1/face-slots for durable CAM slot mappings.
+ApiResult apiSyncFaceSlot(const char *jsonBody);
+ApiResult apiDeleteFaceSlot(int slot);
 
 // GET /api/v1/users/search?q=&role=&institution_id=
 ApiResult apiUserSearch(const char *queryParams);
 
 // POST /api/v1/device/heartbeat
-ApiResult apiHeartbeat();
+ApiResult apiHeartbeat(const char *jsonBody);
 
 #endif  // COOPSETU_API_H

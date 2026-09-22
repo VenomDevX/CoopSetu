@@ -11,6 +11,23 @@ const MULTIPART_API_PATHS = new Set([
   '/api/v1/profile/avatar',
 ]);
 
+// Routes that call authenticateDevice() themselves and so may be reached with
+// only a device bearer token. /api/v1/rfid/* (register, [uid]) is matched by
+// prefix at the call site. Every endpoint in firmware/CoopSetuTerminal/api.cpp
+// that validates a device token must be listed, or the terminal gets a 401 here
+// before its route ever runs.
+const DEVICE_AUTH_PATHS = new Set([
+  '/api/v1/attendance/qr',
+  '/api/v1/attendance/face',
+  '/api/v1/attendance/rfid',
+  '/api/v1/attendance/device-face',
+  '/api/v1/device/heartbeat',
+  '/api/v1/hardware/scan',
+  '/api/v1/users/search',
+  '/api/v1/rfid/capture',
+  '/api/v1/face-slots',
+]);
+
 function isPublic(pathname: string) {
   if (PUBLIC_PATHS.includes(pathname)) return true;
   return (
@@ -95,7 +112,7 @@ export async function updateSession(request: NextRequest) {
   // route still validates it, so a bogus bearer gains nothing.
   const bearsDeviceToken =
     /^Bearer\s+\S+/i.test(request.headers.get('authorization') || '') &&
-    (pathname === '/api/v1/attendance/qr' || pathname === '/api/v1/attendance/face');
+    (DEVICE_AUTH_PATHS.has(pathname) || pathname.startsWith('/api/v1/rfid/'));
 
   if (!user && pathname.startsWith('/api/v1/') && !isPublic(pathname) && !bearsDeviceToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

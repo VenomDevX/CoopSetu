@@ -3,4 +3,7 @@ nvs, data, nvs, 0x9000, 0x5000,
 otadata, data, ota, 0xe000, 0x2000,
 app0, app, ota_0, 0x10000, 0x240000,
 spiffs, data, spiffs, 0x250000,0x80000,
-fr, data, any, 0x2D0000,0x100000,
+# Face-recognition store. Found by label ("fr") with SUBTYPE_ANY in
+# CoopSetuCam.ino, so the subtype only has to be valid: 'any' is rejected
+# by the ESP32 core 2.x partition tool, 0x40 is an unused custom value.
+fr, data, 0x40, 0x2D0000,0x100000,

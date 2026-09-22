@@ -6,12 +6,18 @@ ILI9341 Touch 2.8"
 Buzzer
 Pushbutton
 5V DC Power Supply
-Pull-up resistor — labeled 10k pull-up, currently stored as 200 Ω
+Logic-level N-MOSFET or NPN transistor, 1 kΩ gate/base resistor, and flyback diode for buzzer
+470 µF electrolytic capacitor for the 5 V rail
+10 µF + 0.1 µF decoupling pair beside each ESP32 board
+Button jumper wire — GPIO33 uses its internal pull-up
 Green LED
 Red LED
 Green LED resistor — labeled 220 Ω, currently stored as 200 Ω
 Red LED resistor — labeled 220 Ω, currently stored as 200 Ω
 No separate MicroSD module is currently in the project.
+Use MIFARE DESFire EV2/EV3 cards for high-security deployments. NTAG cards use
+the implemented CS1 shared credential, which blocks UID-only copies but is not
+equivalent to cryptographic card authentication.
 
 Power and ground
 5V supply Positive → ESP32 VIN
@@ -25,7 +31,6 @@ ESP32 GND → Pushbutton Pin 2 (in)
 ESP32 GND → Green LED Cathode
 ESP32 GND → Red LED Cathode
 3.3 V connections
-ESP32 3.3 → Pull-up resistor pin2
 ESP32 3.3 → ILI9341 VCC
 ESP32 3.3 → ILI9341 LED
 ESP32 3.3 → PN532 VCC
@@ -41,18 +46,17 @@ Red LED resistor pin2 → Red LED Anode
 Red LED Cathode → ESP32 GND
 GPIO22 → 220 Ω resistor → Red LED Anode
 Red LED Cathode → GND
-Pushbutton and pull-up
-Pull-up resistor pin1 → ESP32 GPIO34
-Pull-up resistor pin2 → ESP32 3.3
-ESP32 GPIO34 → Pushbutton Pin 1 (in)
+Pushbutton
+ESP32 GPIO33 → Pushbutton Pin 1 (in)
 Pushbutton Pin 2 (in) → ESP32 GND
-3.3 V → 10 kΩ resistor → GPIO34 → Pushbutton → GND
-The wiring topology is correct, but the resistor’s stored value is currently 200 Ω. It must physically be 10 kΩ.
+GPIO33 → Pushbutton → GND. Firmware enables GPIO33's internal pull-up.
 
-Buzzer
-ESP32 GPIO32 → Buzzer +
-Buzzer − → common GND
-This is suitable only for a confirmed low-current 3.3 V buzzer. A higher-current or 5 V buzzer requires a transistor/MOSFET driver.
+Buzzer driver
+ESP32 GPIO32 → 1 kΩ resistor → transistor gate/base
+Transistor source/emitter → common GND
+Transistor drain/collector → buzzer −
+Buzzer + → its rated supply
+Fit a reverse-biased flyback diode across magnetic buzzers. Never drive the buzzer load directly from GPIO32.
 
 ILI9341 Touch TFT
 ILI9341 pin	ESP32 pin
@@ -106,6 +110,7 @@ ESP32 GPIO23 → TFT MOSI + TFT SD_MOSI + TFT T_DIN + PN532 MOSI
 ESP32 GPIO19 → TFT MISO + TFT SDO(MISO) + TFT T_DO + PN532 MISO
 Current limitations
 No separate MicroSD component is present.
-The project stores the pull-up and LED resistors as 200 Ω, so use the correct physical values: 10 kΩ for the button and 220 Ω for each LED.
-The 3.3 V regulator load and buzzer electrical requirements remain unverified.
-No simulation or physical electrical test has been performed.
+Do not use the stored 200 Ω resistor as a button pull-up. Use 220 Ω for each LED.
+Use a regulated 5 V, 2 A minimum supply with star power/ground wiring. Fit 470 µF
+across 5 V/GND near the two boards and 10 µF + 0.1 µF beside each board. Verify
+3.2-3.4 V at the ESP32 rail while Wi-Fi, camera, TFT, PN532, and buzzer are active.

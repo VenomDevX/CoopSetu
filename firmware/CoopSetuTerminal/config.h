@@ -4,14 +4,20 @@
 #ifndef COOPSETU_CONFIG_H
 #define COOPSETU_CONFIG_H
 
+#include "protocol.h"  // PROTO_BAUD
+
+#define FIRMWARE_VERSION "2.1.0"
+
 // ---------------------------------------------------------------- Wi-Fi / API
-#define WIFI_SSID       "YOUR_WIFI_SSID"
-#define WIFI_PASSWORD   "YOUR_WIFI_PASSWORD"
+#if __has_include("config.local.h")
+#include "config.local.h"
+#else
+#error "Missing config.local.h; copy config.local.example.h and provision this terminal"
+#endif
 
 // Base URL of the CoopSetu server, no trailing slash.
 // Must be reachable from the terminal's network. https:// is strongly
 // preferred; see API_TLS_INSECURE below before using it.
-#define API_BASE_URL    "http://192.168.1.10:3000"
 
 // Sent as `Authorization: Bearer <token>`.
 //
@@ -21,12 +27,19 @@
 // needs a device-token guard before the terminal can post attendance; see
 // firmware/README.md ("Backend work required"). The header is sent now so no
 // firmware change is needed once that lands.
-#define API_DEVICE_TOKEN "PROVISION_A_UNIQUE_DEVICE_TOKEN"
 
 // Skips certificate validation on https://. Convenient on a LAN with a
 // self-signed cert, and unacceptable in production: it accepts any certificate,
 // so anything on the path can read and rewrite attendance traffic. Ship false.
-#define API_TLS_INSECURE true
+#ifndef API_TLS_INSECURE
+#define API_TLS_INSECURE 0
+#endif
+#ifndef API_ALLOW_PLAINTEXT_HTTP
+#define API_ALLOW_PLAINTEXT_HTTP 0
+#endif
+#ifndef API_ROOT_CA
+#define API_ROOT_CA ""
+#endif
 
 #define HTTP_TIMEOUT_MS  8000
 
@@ -37,10 +50,12 @@
 #define BUTTON_LONG_PRESS_MS 1200    // long press = re-arm session
 #define FACE_MIN_CONFIDENCE  0.62f   // reject weaker matches from the CAM
 
-// RFID dedupe: ignore the same UID within this window.
-// 1000ms (debounce only) was the old value; 5 min is appropriate for real
-// attendance where re-tapping shouldn't re-submit.
-#define RFID_DEDUPE_MS      (5UL * 60UL * 1000UL)
+// RFID repeat lockout: the same UID is ignored until the card has been off
+// the reader for this long. Only meant to stop a card resting on the reader
+// from re-submitting; "already marked" is decided by the server (30 min
+// window). A long value here made the terminal ignore a card for minutes
+// after a failed attempt (e.g. tapped while Wi-Fi was down).
+#define RFID_DEDUPE_MS      2000UL
 
 // ARM screen timeout: if the CAM doesn't respond within this window, show
 // "Camera not responding" and auto-pop to Home. Fixes diagnostic #3.
@@ -58,10 +73,8 @@
 #define PIN_LED_RED    22
 #define PIN_BUZZER     32
 
-// Hardware.md wires the buzzer straight to GPIO32. That is only safe for a
-// low-current 3.3 V *active* buzzer (ESP32 pins are rated ~12 mA continuous,
-// 40 mA absolute max). If yours is passive, set this to 1 to drive it with a
-// LEDC tone instead of a DC level.
+// GPIO32 drives the transistor/MOSFET input documented in Hardware.md, never
+// the buzzer load directly. Set this to 1 for a passive buzzer tone.
 #define BUZZER_IS_PASSIVE 0
 #define BUZZER_LEDC_CH    0
 #define BUZZER_TONE_HZ    2700
@@ -96,18 +109,31 @@
 
 #define TFT_ROTATION   1  // 0/2 portrait, 1/3 landscape
 
-// Touch calibration — raw XPT2046 counts at the corners. Re-measure per panel:
-// set TOUCH_CALIBRATION_MODE to 1, watch the serial monitor, tap each corner.
+// Touch calibration — raw XPT2046 counts at the screen edges, *after* the
+// touch library applies TFT_ROTATION (display.cpp calls setRotation on it).
+// These are only the fallback: the on-screen calibration saves measured values
+// to flash and those take precedence. To run it, hold the button while the
+// terminal powers on (or set TOUCH_CALIBRATION_MODE to 1 to force it).
+// A LEFT greater than RIGHT (or TOP greater than BOTTOM) is valid and means
+// that axis is mirrored on this panel; TOUCH_SWAP_XY means the raw axes are
+// crossed relative to the display.
 #define TOUCH_CALIBRATION_MODE 0
-#define TOUCH_RAW_MIN_X 413
-#define TOUCH_RAW_MAX_X 3793
-#define TOUCH_RAW_MIN_Y 315
-#define TOUCH_RAW_MAX_Y 3761
+#define TOUCH_RAW_LEFT   413
+#define TOUCH_RAW_RIGHT  3793
+#define TOUCH_RAW_TOP    315
+#define TOUCH_RAW_BOTTOM 3761
+#define TOUCH_SWAP_XY    0
 
-// Camera preview thumbnail dimensions. The CAM downsamples its current frame
-// to this size before streaming over UART. Larger = more bandwidth, lower fps.
-#define PREVIEW_WIDTH  96
-#define PREVIEW_HEIGHT 72
+// Preview images are full-screen QVGA JPEGs from the CAM (320x240, the panel's
+// own resolution), decoded straight onto the TFT. This is the receive buffer
+// cap — a quality-12 QVGA frame is ~10-15 KB.
+#define PREVIEW_MAX_JPEG 32768
+
+// Byte order of the decoded RGB565 pixels. Adafruit_GFX's drawRGBBitmap()
+// takes native-endian uint16_t and swaps for the panel itself, so the decoder
+// must NOT pre-swap — doing that is what turns the picture into green/purple
+// blocky noise. (TFT_eSPI's pushImage is the opposite; set this to 1 there.)
+#define PREVIEW_SWAP_BYTES 0
 
 // --------------------------------------------------------------------- PN532
 #define PIN_PN532_SS   13
@@ -123,8 +149,7 @@
 // ------------------------------------------------------ UART link to ESP32-CAM
 #define PIN_CAM_RX     16  // ESP32 RX2  <- CAM GPIO1 (U0TXD)
 #define PIN_CAM_TX     17  // ESP32 TX2  -> CAM GPIO3 (U0RXD)
-// Raised from 115200 to support camera preview thumbnails (~7 KB/frame).
-// Reliable over a short wired link (< 20 cm) on ESP32.
-#define CAM_BAUD       921600
+// Defined once in protocol.h (PROTO_BAUD) so the CAM and terminal always match.
+#define CAM_BAUD       PROTO_BAUD
 
 #endif  // COOPSETU_CONFIG_H

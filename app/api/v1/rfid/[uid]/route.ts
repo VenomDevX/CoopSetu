@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateDevice } from '@/lib/auth/device-auth';
+import { memberRoleCode } from '@/lib/auth/member-role';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
 
@@ -37,8 +38,9 @@ export async function GET(
         id, rfid_uid, status, registered_at, updated_at,
         organization_id, institution_id, member_id,
         organization_members!inner (
-          id, role, user_id, institution_id,
-          profiles:user_id ( full_name, avatar_url )
+          id, user_id, institution_id,
+          member_roles!organization_member_id ( roles ( code ) ),
+          profiles:user_id ( full_name )
         )
       `)
       .eq('rfid_uid', uid.toUpperCase().trim())
@@ -69,7 +71,7 @@ export async function GET(
         member: {
           id: member.id,
           name: member.profiles?.full_name ?? 'Unknown',
-          role: member.role,
+          role: memberRoleCode(member),
           institution_id: member.institution_id,
         },
       },

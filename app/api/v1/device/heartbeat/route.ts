@@ -18,12 +18,26 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = createAdminClient();
+    const body = await request.json().catch(() => ({}));
+    const telemetry = body?.telemetry && typeof body.telemetry === 'object' && !Array.isArray(body.telemetry)
+      ? body.telemetry
+      : {};
+    if (JSON.stringify(telemetry).length > 4096) {
+      return NextResponse.json({ error: 'Telemetry payload too large' }, { status: 413 });
+    }
+    const bootedAt = typeof body.booted_at === 'string' && Number.isFinite(Date.parse(body.booted_at))
+      ? new Date(body.booted_at).toISOString()
+      : null;
 
     const { error } = await admin
       .from('device_tokens')
       .update({
         last_seen_at: new Date().toISOString(),
         status: 'ACTIVE',
+        firmware_version: typeof body.firmware_version === 'string' ? body.firmware_version.slice(0, 64) : null,
+        telemetry,
+        last_boot_at: bootedAt,
+        last_reset_reason: typeof body.reset_reason === 'string' ? body.reset_reason.slice(0, 128) : null,
       })
       .eq('id', device.id);
 

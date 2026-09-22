@@ -21,6 +21,16 @@ interface Device {
   revoked_at: string | null;
   created_at: string;
   is_online: boolean;
+  firmware_version: string | null;
+  telemetry: {
+    rssi?: number;
+    free_heap?: number;
+    cam_alive?: boolean;
+    cam_bad_frames?: number;
+    nfc_ready?: boolean;
+    offline_pending?: number;
+    offline_dropped?: number;
+  } | null;
 }
 
 interface Institution {
@@ -33,6 +43,7 @@ export default function DevicesPage() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState<number | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newToken, setNewToken] = useState<string | null>(null);
@@ -74,7 +85,18 @@ export default function DevicesPage() {
     }
   }, []);
 
-  useEffect(() => { fetchDevices(); fetchInstitutions(); }, [fetchDevices, fetchInstitutions]);
+  useEffect(() => {
+    const loadTimer = setTimeout(() => {
+      void fetchDevices();
+      void fetchInstitutions();
+      setNow(Date.now());
+    }, 0);
+    const clockTimer = setInterval(() => setNow(Date.now()), 30_000);
+    return () => {
+      clearTimeout(loadTimer);
+      clearInterval(clockTimer);
+    };
+  }, [fetchDevices, fetchInstitutions]);
 
   const handleCreate = async () => {
     if (!form.label.trim()) return;
@@ -135,7 +157,8 @@ export default function DevicesPage() {
 
   const relativeTime = (iso: string | null) => {
     if (!iso) return 'Never';
-    const diff = Date.now() - new Date(iso).getTime();
+    if (now === null) return 'Checking...';
+    const diff = now - new Date(iso).getTime();
     if (diff < 60000) return 'Just now';
     if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
@@ -309,6 +332,11 @@ export default function DevicesPage() {
                               {device.serial_number && <> · S/N: {device.serial_number}</>}
                               {' · '}Token: ···{device.token_hint}
                             </div>
+                            {device.telemetry && (
+                              <div className="mt-1 text-xs text-muted-foreground">
+                                FW {device.firmware_version || 'unknown'} · RSSI {device.telemetry.rssi ?? 'n/a'} dBm · Heap {device.telemetry.free_heap ? `${Math.round(device.telemetry.free_heap / 1024)} KB` : 'n/a'} · Camera {device.telemetry.cam_alive ? 'OK' : 'offline'} · NFC {device.telemetry.nfc_ready ? 'OK' : 'offline'} · Queue {device.telemetry.offline_pending ?? 0}{device.telemetry.offline_dropped ? ` (${device.telemetry.offline_dropped} lost)` : ''}
+                              </div>
+                            )}
                           </>
                         )}
                       </div>

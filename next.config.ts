@@ -51,6 +51,14 @@ const nextConfig: NextConfig = {
       config.watchOptions = {
         ignored: /.*/,
       };
+    } else if (dev) {
+      // Editor tooling (e.g. the C/C++ Runner extension used for firmware/)
+      // rewrites .vscode/settings.json every ~1.5 s; watching it made the dev
+      // server recompile and full-reload open pages in a loop.
+      config.watchOptions = {
+        ...config.watchOptions,
+        ignored: ['**/node_modules/**', '**/.git/**', '**/.next/**', '**/.vscode/**', '**/.idea/**', '**/.playwright-mcp/**', '**/firmware/**', '**/android/**'],
+      };
     }
     return config;
   },

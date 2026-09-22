@@ -23,8 +23,10 @@ enum ScreenId {
   SCR_SETTINGS,
   SCR_ADMIN_LOGIN,
   SCR_ADMIN_RFID_REGISTER,
+  SCR_ADMIN_USER_LIST,
   SCR_RESULT,
   SCR_ARM,
+  SCR_DEVICE_STATUS,  // diagnostics page opened from Home > Status
   SCR_COUNT
 };
 

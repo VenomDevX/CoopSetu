@@ -1,20 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateDevice } from '@/lib/auth/device-auth';
+import { memberRoleCode } from '@/lib/auth/member-role';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { recordDeviceTap } from '@/lib/attendance/record-device-tap';
+import { canDeviceAccessInstitution, InvalidCaptureTimeError, parseDeviceCaptureTime } from '@/lib/attendance/device-capture-time';
+
+const MIN_FACE_CONFIDENCE = 0.62;
 
 /**
  * Device face attendance — device-auth only.
  *
  * Called by the terminal's SCR_FACE screen after the CAM reports
  * FACE:<slot>:<confidence>. Resolves the slot→member via face_slots,
- * then inserts a device_attendance_event.
+ * then delegates to the shared attendance core which handles deduplication,
+ * session resolution, and record creation.
  *
  * This is separate from /api/v1/attendance/face which handles the web-based
  * embedding verification flow (session-scoped). This route handles the kiosk's
  * on-device ESP-DL recognition result (slot-based, not embedding-based).
  */
-
-const DEDUPE_WINDOW_MINUTES = 30;
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,22 +28,27 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { slot, confidence, idempotency_key } = body;
+    const { slot, confidence, idempotency_key, captured_at } = body;
 
     if (typeof slot !== 'number' || slot < 0) {
       return NextResponse.json({ error: 'slot (non-negative integer) is required' }, { status: 400 });
     }
+    if (typeof confidence !== 'number' || !Number.isFinite(confidence) || confidence < MIN_FACE_CONFIDENCE || confidence > 1) {
+      return NextResponse.json({ error: 'low_confidence', message: 'Face match confidence is below the required threshold' }, { status: 422 });
+    }
 
     const admin = createAdminClient();
 
-    // Resolve the face slot to a member
+    // Resolve the face slot to a member — this is device-specific and stays
+    // inline (the shared core expects a memberId up front).
     const { data: faceSlot, error: slotErr } = await admin
       .from('face_slots')
       .select(`
         id, member_id, organization_id, institution_id,
         organization_members!inner (
-          id, role, user_id,
-          profiles:user_id ( full_name, avatar_url )
+          id, user_id,
+          member_roles!organization_member_id ( roles ( code ) ),
+          profiles:user_id ( full_name )
         )
       `)
       .eq('device_id', device.id)
@@ -61,73 +70,29 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Dedupe check
-    const windowStart = new Date(Date.now() - DEDUPE_WINDOW_MINUTES * 60 * 1000).toISOString();
-    const { data: existing } = await admin
-      .from('device_attendance_events')
-      .select('id, marked_at')
-      .eq('member_id', faceSlot.member_id)
-      .eq('device_id', device.id)
-      .eq('method', 'FACE')
-      .gte('marked_at', windowStart)
-      .limit(1)
-      .maybeSingle();
-
-    if (existing) {
-      const member = faceSlot.organization_members as any;
-      return NextResponse.json({
-        success: true,
-        attendance_marked: false,
-        message: 'Attendance already marked',
-        user: {
-          id: member.id,
-          name: member.profiles?.full_name ?? 'Unknown',
-          role: member.role,
-          institute: faceSlot.institution_id,
-        },
-        marked_at: existing.marked_at,
-      });
-    }
-
-    // Insert attendance event
-    const now = new Date().toISOString();
-    const { data: event, error: insertErr } = await admin
-      .from('device_attendance_events')
-      .insert({
-        member_id: faceSlot.member_id,
-        organization_id: faceSlot.organization_id,
-        institution_id: faceSlot.institution_id,
-        device_id: device.id,
-        method: 'FACE',
-        status: 'PRESENT',
-        confidence: typeof confidence === 'number' ? confidence : null,
-        idempotency_key: idempotency_key || null,
-        marked_at: now,
-      })
-      .select('id, marked_at')
-      .single();
-
-    if (insertErr) {
-      if (insertErr.code === '23505' && idempotency_key) {
-        const member = faceSlot.organization_members as any;
-        return NextResponse.json({
-          success: true,
-          attendance_marked: false,
-          message: 'Attendance already recorded (replay)',
-          user: {
-            id: member.id,
-            name: member.profiles?.full_name ?? 'Unknown',
-            role: member.role,
-            institute: faceSlot.institution_id,
-          },
-        });
-      }
-      console.error('Face attendance insert error:', insertErr);
-      return NextResponse.json({ error: 'Failed to record attendance' }, { status: 500 });
+    if (faceSlot.organization_id !== device.organizationId ||
+        !canDeviceAccessInstitution(device.institutionId, faceSlot.institution_id)) {
+      return NextResponse.json({ error: 'institution_mismatch', message: 'Face slot is outside this device scope' }, { status: 403 });
     }
 
     const member = faceSlot.organization_members as any;
 
+    // Delegate to the shared attendance core — handles deduplication,
+    // session resolution, attendance_records upsert, and resolution stamping.
+    const result = await recordDeviceTap({
+      admin,
+      memberId: faceSlot.member_id,
+      organizationId: faceSlot.organization_id,
+      institutionId: faceSlot.institution_id,
+      deviceId: device.id,
+      deviceInstitutionId: device.institutionId,
+      method: 'FACE',
+      confidence: typeof confidence === 'number' ? confidence : null,
+      idempotencyKey: idempotency_key || null,
+      at: parseDeviceCaptureTime(captured_at),
+    });
+
+    // Fetch institution name for the response
     let instituteName: string | null = null;
     if (faceSlot.institution_id) {
       const { data: inst } = await admin
@@ -140,22 +105,29 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      attendance_marked: true,
-      message: 'Attendance marked successfully',
+      attendance_marked: result.attendanceMarked,
+      message: result.message,
       user: {
         id: member.id,
         name: member.profiles?.full_name ?? 'Unknown',
-        role: member.role,
+        role: memberRoleCode(member),
         institute: instituteName,
         institution_id: faceSlot.institution_id,
       },
-      event_id: event.id,
-      marked_at: event.marked_at,
+      event_id: result.eventId,
+      record_id: result.recordId,
+      marked_at: result.markedAt,
       method: 'FACE',
+      status: result.status,
+      session: result.session,
+      resolution: result.resolution,
       confidence,
-    }, { status: 201 });
+    }, { status: result.attendanceMarked ? 201 : 200 });
 
   } catch (err: any) {
+    if (err instanceof InvalidCaptureTimeError) {
+      return NextResponse.json({ error: 'invalid_capture_time', message: err.message }, { status: 400 });
+    }
     console.error('Device face attendance error:', err);
     return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
   }

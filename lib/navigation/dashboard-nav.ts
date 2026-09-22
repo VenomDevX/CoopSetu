@@ -4,7 +4,7 @@ import {
   BarChart3, Settings, Users, AlertCircle,
   Building2, GraduationCap, BookOpen, ClipboardCheck, Award, UserCheck,
   BriefcaseBusiness, Target, Bot, QrCode, ClipboardList, User,
-  CalendarClock, Flame, Cpu, CreditCard,
+  CalendarClock, Flame, Cpu, CreditCard, RadioTower, TableProperties,
   type LucideIcon,
 } from 'lucide-react';
 import type { DashboardPersona } from '@/lib/auth/dashboard-persona';
@@ -69,6 +69,8 @@ export function buildNavGroups(t: (key: string) => string, persona: DashboardPer
       { name: t('trainees'), href: '/dashboard/trainees', icon: UserCheck, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER'] },
       { name: t('trainers'), href: '/dashboard/trainers', icon: User, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
       { name: t('attendance'), href: '/dashboard/attendance', icon: QrCode, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER', 'TRAINEE'] },
+      { name: t('attendanceLive'), href: '/dashboard/attendance/live', icon: RadioTower, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER'] },
+      { name: t('attendanceRegister'), href: '/dashboard/attendance/register', icon: TableProperties, roles: ['ADMIN', 'INSTITUTE_ADMIN', 'TRAINER'] },
       { name: t('devices'), href: '/dashboard/devices', icon: Cpu, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
       { name: t('rfidRegistration'), href: '/dashboard/rfid-registration', icon: CreditCard, roles: ['ADMIN', 'INSTITUTE_ADMIN'] },
       { name: t('digitalId'), href: '/dashboard/id-card', icon: ShieldCheck, roles: ['TRAINEE'] },

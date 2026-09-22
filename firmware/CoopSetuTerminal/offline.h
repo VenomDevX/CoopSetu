@@ -14,6 +14,7 @@
 #define OFFLINE_MAX_EVENTS 50
 
 struct OfflineEvent {
+  uint8_t requestType;
   char json[384];  // pre-built JSON body for the API call
   char idempotencyKey[37];  // UUID-like key
 };
@@ -23,16 +24,19 @@ void offlineBegin();
 
 // Push an event onto the ring buffer. Returns false if full (should not
 // happen at 50 events, but the caller can log a warning).
-bool offlinePush(const char *json, const char *idempotencyKey);
+bool offlinePush(uint8_t requestType, const char *json, const char *idempotencyKey);
 
 // Pop the oldest event. Returns false if the buffer is empty.
 bool offlinePop(OfflineEvent *out);
+bool offlinePeek(OfflineEvent *out);
+bool offlineDropOldest();
 
 // Number of events currently buffered.
 int offlineCount();
 
 // True if there are events waiting to be replayed.
 bool offlineHasPending();
+uint32_t offlineDroppedCount();
 
 // Generate a simple idempotency key (ESP32 doesn't have a UUID library).
 void offlineGenerateKey(char *buf, size_t bufSize);

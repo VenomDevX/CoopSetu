@@ -35,6 +35,7 @@ export async function GET(_request: NextRequest) {
       .select(`
         id, label, device_name, location, status, serial_number,
         token_hint, institution_id, last_seen_at, revoked_at, created_at,
+        firmware_version, telemetry, last_boot_at, last_reset_reason,
         institutions:institution_id ( name )
       `)
       .eq('organization_id', membership.organizationId)
@@ -64,6 +65,10 @@ export async function GET(_request: NextRequest) {
         last_seen_at: d.last_seen_at,
         revoked_at: d.revoked_at,
         created_at: d.created_at,
+        firmware_version: d.firmware_version,
+        telemetry: d.telemetry,
+        last_boot_at: d.last_boot_at,
+        last_reset_reason: d.last_reset_reason,
         is_online: d.last_seen_at
           ? (Date.now() - new Date(d.last_seen_at).getTime()) < 5 * 60 * 1000
           : false,

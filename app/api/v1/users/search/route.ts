@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateDevice } from '@/lib/auth/device-auth';
+import { MEMBER_ROLES_EMBED, memberRoleCode } from '@/lib/auth/member-role';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
 
@@ -57,11 +58,13 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const q = url.searchParams.get('q') || '';
     const role = url.searchParams.get('role') || '';
+    const compact = url.searchParams.get('compact') === '1';
     // A caller pinned to an institution can only ever search their own
     // institution — the client-supplied institution_id is only honoured for
     // a national-scope caller narrowing an org-wide search.
     const institutionId = callerInstitutionId ?? (url.searchParams.get('institution_id') || '');
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 50);
+    const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '20', 10), 1), 50);
+    const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10), 0);
 
     // Override with query-param org_id only for device auth (terminal may pass it)
     const requestedOrgId = url.searchParams.get('organization_id');
@@ -69,30 +72,36 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Organization mismatch' }, { status: 403 });
     }
 
-    // Query organization_members joined with profiles for the name search
+    // Roles live in member_roles → roles. With a role filter the embed is
+    // !inner so members without that role drop out of the result.
+    const roleMap: Record<string, string> = {
+      TRAINEE: 'TRAINEE',
+      TRAINER: 'TRAINER',
+      // The terminal's registration screen says EMPLOYEE; the role code is EMPLOYER.
+      EMPLOYEE: 'EMPLOYER',
+      EMPLOYER: 'EMPLOYER',
+      INSTITUTE_ADMIN: 'INSTITUTE_ADMIN',
+    };
+    const mappedRole = role ? roleMap[role.toUpperCase()] : undefined;
+    const rolesEmbed = mappedRole
+      ? 'member_roles!organization_member_id!inner ( roles!inner ( code ) )'
+      : MEMBER_ROLES_EMBED;
+
     let query = admin
       .from('organization_members')
       .select(`
-        id, role, institution_id, is_active,
-        profiles:user_id ( full_name, avatar_url ),
+        id, institution_id, is_active,
+        ${rolesEmbed},
+        profiles:user_id!inner ( full_name ),
         institutions:institution_id ( name )
-      `)
+      `, { count: 'exact' })
       .eq('organization_id', orgId)
       .eq('is_active', true)
-      .limit(limit);
+      .order('id', { ascending: true })
+      .range(offset, offset + limit - 1);
 
-    // Filter by role (map to organization_members role values)
-    if (role) {
-      const roleMap: Record<string, string> = {
-        TRAINEE: 'TRAINEE',
-        TRAINER: 'TRAINER',
-        EMPLOYEE: 'EMPLOYEE',
-        INSTITUTE_ADMIN: 'INSTITUTE_ADMIN',
-      };
-      const mappedRole = roleMap[role.toUpperCase()];
-      if (mappedRole) {
-        query = query.eq('role', mappedRole);
-      }
+    if (mappedRole) {
+      query = query.eq('member_roles.roles.code', mappedRole);
     }
 
     // Filter by institution
@@ -100,27 +109,26 @@ export async function GET(request: NextRequest) {
       query = query.eq('institution_id', institutionId);
     }
 
-    const { data: members, error } = await query;
+    if (q.trim()) {
+      query = query.ilike('profiles.full_name', `%${q.trim()}%`);
+    }
+
+    const { data: members, error, count } = await query;
 
     if (error) {
       console.error('User search error:', error);
       return NextResponse.json({ error: 'Search failed' }, { status: 500 });
     }
 
-    // Apply name filter client-side (Supabase doesn't support ilike on joined tables easily)
     let results = (members || []).map((m: any) => ({
       id: m.id,
       name: m.profiles?.full_name ?? 'Unknown',
-      avatar_url: m.profiles?.avatar_url ?? null,
-      role: m.role,
+      // profiles has avatar_path (a private-bucket key), not a public URL.
+      avatar_url: null,
+      role: mappedRole ?? memberRoleCode(m),
       institution_id: m.institution_id,
       institution_name: m.institutions?.name ?? null,
     }));
-
-    if (q) {
-      const lower = q.toLowerCase();
-      results = results.filter((r: any) => r.name.toLowerCase().includes(lower));
-    }
 
     // For each result, check if they already have an RFID card
     if (results.length > 0) {
@@ -140,8 +148,12 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      users: results,
-      total: results.length,
+      users: compact
+        ? results.map(({ id, name, has_rfid }: any) => ({ id, name, has_rfid }))
+        : results,
+      total: count ?? results.length,
+      offset,
+      has_more: offset + results.length < (count ?? results.length),
     });
 
   } catch (err: any) {

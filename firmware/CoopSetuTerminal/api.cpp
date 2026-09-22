@@ -10,6 +10,17 @@ namespace {
 
 const bool kUseTls = (strncmp(API_BASE_URL, "https://", 8) == 0);
 
+bool transportAllowed(ApiResult *r) {
+#if !API_ALLOW_PLAINTEXT_HTTP
+  if (!kUseTls) {
+    r->status = -5;
+    strncpy(r->message, "Plain HTTP disabled", sizeof(r->message) - 1);
+    return false;
+  }
+#endif
+  return true;
+}
+
 // Copies `src` into a JSON string body with the characters JSON forbids
 // escaped. Only the ones that can appear in a QR payload or a UUID are handled
 // — control characters are dropped rather than escaped, since a token
@@ -39,6 +50,7 @@ bool wifiIsUp() { return WiFi.status() == WL_CONNECTED; }
 
 ApiResult apiMarkAttendance(const char *qrToken, const char *traineeId) {
   ApiResult r = {false, 0, ""};
+  if (!transportAllowed(&r)) return r;
 
   if (!wifiIsUp()) {
     r.status = -1;
@@ -67,6 +79,13 @@ ApiResult apiMarkAttendance(const char *qrToken, const char *traineeId) {
   if (kUseTls) {
 #if API_TLS_INSECURE
     tls.setInsecure();
+#else
+    if (!API_ROOT_CA[0]) {
+      r.status = -6;
+      strncpy(r.message, "Missing API root CA", sizeof(r.message) - 1);
+      return r;
+    }
+    tls.setCACert(API_ROOT_CA);
 #endif
     began = http.begin(tls, url);
   } else {
@@ -129,6 +148,7 @@ ApiResult apiMarkAttendance(const char *qrToken, const char *traineeId) {
 
 static ApiResult apiPost(const char *path, const char *body) {
   ApiResult r = {false, 0, ""};
+  if (!transportAllowed(&r)) return r;
 
   if (!wifiIsUp()) {
     r.status = -1;
@@ -147,6 +167,13 @@ static ApiResult apiPost(const char *path, const char *body) {
   if (kUseTls) {
 #if API_TLS_INSECURE
     tls.setInsecure();
+#else
+    if (!API_ROOT_CA[0]) {
+      r.status = -6;
+      strncpy(r.message, "Missing API root CA", sizeof(r.message) - 1);
+      return r;
+    }
+    tls.setCACert(API_ROOT_CA);
 #endif
     began = http.begin(tls, url);
   } else {
@@ -184,6 +211,7 @@ static ApiResult apiPost(const char *path, const char *body) {
 
 static ApiResult apiGet(const char *path) {
   ApiResult r = {false, 0, ""};
+  if (!transportAllowed(&r)) return r;
 
   if (!wifiIsUp()) {
     r.status = -1;
@@ -202,6 +230,13 @@ static ApiResult apiGet(const char *path) {
   if (kUseTls) {
 #if API_TLS_INSECURE
     tls.setInsecure();
+#else
+    if (!API_ROOT_CA[0]) {
+      r.status = -6;
+      strncpy(r.message, "Missing API root CA", sizeof(r.message) - 1);
+      return r;
+    }
+    tls.setCACert(API_ROOT_CA);
 #endif
     began = http.begin(tls, url);
   } else {
@@ -242,6 +277,10 @@ ApiResult apiPostRfidAttendance(const char *jsonBody) {
   return apiPost("/api/v1/attendance/rfid", jsonBody);
 }
 
+ApiResult apiPostQrScan(const char *jsonBody) {
+  return apiPost("/api/v1/hardware/scan", jsonBody);
+}
+
 ApiResult apiPostFaceAttendance(const char *jsonBody) {
   return apiPost("/api/v1/attendance/device-face", jsonBody);
 }
@@ -250,10 +289,14 @@ ApiResult apiPostRfidRegister(const char *jsonBody) {
   return apiPost("/api/v1/rfid/register", jsonBody);
 }
 
-ApiResult apiFetchInstitutions(const char *queryParams) {
-  char path[192];
-  snprintf(path, sizeof(path), "/api/v1/institutions?%s", queryParams);
-  return apiGet(path);
+ApiResult apiSyncFaceSlot(const char *jsonBody) {
+  return apiPost("/api/v1/face-slots", jsonBody);
+}
+
+ApiResult apiDeleteFaceSlot(int slot) {
+  char body[48];
+  snprintf(body, sizeof(body), "{\"delete_slot\":%d}", slot);
+  return apiPost("/api/v1/face-slots", body);
 }
 
 ApiResult apiUserSearch(const char *queryParams) {
@@ -262,6 +305,6 @@ ApiResult apiUserSearch(const char *queryParams) {
   return apiGet(path);
 }
 
-ApiResult apiHeartbeat() {
-  return apiPost("/api/v1/device/heartbeat", "{}");
+ApiResult apiHeartbeat(const char *jsonBody) {
+  return apiPost("/api/v1/device/heartbeat", jsonBody);
 }

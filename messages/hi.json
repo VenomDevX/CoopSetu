@@ -34,7 +34,9 @@
     "nominations": "नामांकन",
     "logistics": "लॉजिस्टिक्स",
     "devices": "उपकरण",
-    "rfidRegistration": "RFID पंजीकरण"
+    "rfidRegistration": "RFID पंजीकरण",
+    "attendanceLive": "लाइव उपस्थिति",
+    "attendanceRegister": "उपस्थिति रजिस्टर"
   },
   "Shell": {
     "searchPlaceholder": "खोज क्वेरी...",

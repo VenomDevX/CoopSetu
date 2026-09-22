@@ -16,6 +16,7 @@
     "android:build": "npm run android:sync && cd android && ./gradlew assembleDebug",
     "android:run": "npm run android:sync && cap run android",
     "worker:reports": "node scripts/report-worker.js",
+    "seed:attendance": "node scripts/seed-attendance-env.mjs",
     "load:smoke": "k6 run tests/load/k6/coopsetu-smoke.js",
     "load:auth": "k6 run tests/load/k6/coopsetu-authenticated.js"
   },

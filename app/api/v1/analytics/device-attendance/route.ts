@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { istDayKey } from '@/lib/attendance/time';
 
 /**
  * Device attendance analytics — session-auth only.
@@ -64,7 +65,7 @@ export async function GET() {
 
     const dailyCounts: Record<string, number> = {};
     (dailyEvents || []).forEach((r: any) => {
-      const day = r.marked_at.substring(0, 10);
+      const day = istDayKey(r.marked_at);
       dailyCounts[day] = (dailyCounts[day] || 0) + 1;
     });
     const dailyTrend = Object.entries(dailyCounts).map(([date, count]) => ({ date, count }));

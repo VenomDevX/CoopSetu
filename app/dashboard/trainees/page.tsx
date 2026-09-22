@@ -28,15 +28,15 @@ export default function TraineesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showCreate, setShowCreate] = useState(false);
-  
-  // Note: in a real app, user_id would be selected from a list of users or generated via invite. 
+
+  // Note: in a real app, user_id would be selected from a list of users or generated via invite.
   // For this prototype, we'll allow passing a mock user_id or a generic one.
-  const [form, setForm] = useState({ 
-    user_id: '00000000-0000-0000-0000-000000000000', 
-    education: '', 
-    location: '', 
-    digital_literacy_level: 'INTERMEDIATE', 
-    employment_status: 'UNEMPLOYED' 
+  const [form, setForm] = useState({
+    user_id: '00000000-0000-0000-0000-000000000000',
+    education: '',
+    location: '',
+    digital_literacy_level: 'INTERMEDIATE',
+    employment_status: 'UNEMPLOYED'
   });
 
   const load = useCallback(() => {
@@ -107,13 +107,13 @@ export default function TraineesPage() {
                 <input className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" placeholder="User ID (UUID)" value={form.user_id} onChange={e => setForm({ ...form, user_id: e.target.value })} />
                 <input className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" placeholder="Education (e.g. B.Tech)" value={form.education} onChange={e => setForm({ ...form, education: e.target.value })} />
                 <input className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" placeholder="Location (e.g. Pune)" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} />
-                
+
                 <select className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" value={form.digital_literacy_level} onChange={e => setForm({ ...form, digital_literacy_level: e.target.value })}>
                   <option value="BEGINNER">Beginner</option>
                   <option value="INTERMEDIATE">Intermediate</option>
                   <option value="ADVANCED">Advanced</option>
                 </select>
-                
+
                 <select className="px-3 py-2 border border-border rounded bg-background text-sm font-mono" value={form.employment_status} onChange={e => setForm({ ...form, employment_status: e.target.value })}>
                   <option value="UNEMPLOYED">Unemployed</option>
                   <option value="EMPLOYED">Employed</option>
