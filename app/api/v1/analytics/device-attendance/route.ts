@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { istDayKey } from '@/lib/attendance/time';
+import { getCallerInstitutionId } from '@/lib/auth/institution-scope';
 
 /**
  * Device attendance analytics — session-auth only.
@@ -20,12 +21,16 @@ export async function GET() {
 
     const admin = createAdminClient();
     const orgId = membership.organizationId;
+    // Service-role client bypasses RLS: an institution-pinned caller must only
+    // see their own institution's events.
+    const callerInstitutionId = await getCallerInstitutionId(membership.memberId);
 
     // Method breakdown
     const { data: methodBreakdown } = await admin
       .from('device_attendance_events')
       .select('method')
-      .eq('organization_id', orgId);
+      .eq('organization_id', orgId)
+      .match(callerInstitutionId ? { institution_id: callerInstitutionId } : {});
 
     const methodCounts: Record<string, number> = { RFID: 0, QR: 0, FACE: 0 };
     (methodBreakdown || []).forEach((r: any) => {
@@ -39,7 +44,8 @@ export async function GET() {
         device_id,
         device_tokens!inner ( label, device_name, location )
       `)
-      .eq('organization_id', orgId);
+      .eq('organization_id', orgId)
+      .match(callerInstitutionId ? { institution_id: callerInstitutionId } : {});
 
     const deviceCounts: Record<string, { label: string; count: number }> = {};
     (deviceBreakdown || []).forEach((r: any) => {
@@ -60,6 +66,7 @@ export async function GET() {
       .from('device_attendance_events')
       .select('marked_at')
       .eq('organization_id', orgId)
+      .match(callerInstitutionId ? { institution_id: callerInstitutionId } : {})
       .gte('marked_at', thirtyDaysAgo)
       .order('marked_at', { ascending: true });
 

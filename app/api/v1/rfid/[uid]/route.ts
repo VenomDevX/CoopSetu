@@ -3,6 +3,7 @@ import { authenticateDevice } from '@/lib/auth/device-auth';
 import { memberRoleCode } from '@/lib/auth/member-role';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
+import { getCallerInstitutionId } from '@/lib/auth/institution-scope';
 
 /**
  * RFID lookup by UID.
@@ -16,13 +17,21 @@ export async function GET(
   { params }: { params: Promise<{ uid: string }> }
 ) {
   try {
-    // Either device-auth or web session
+    // Either device-auth or web session. The lookup runs on the service-role
+    // client, so the caller's org + institution scope must be applied here.
+    let organizationId: string;
+    let institutionId: string | null;
     const device = await authenticateDevice(_request);
-    if (!device) {
+    if (device) {
+      organizationId = device.organizationId;
+      institutionId = device.institutionId;
+    } else {
       const membership = await getCurrentMembership();
       if (!membership) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
+      organizationId = membership.organizationId;
+      institutionId = await getCallerInstitutionId(membership.memberId);
     }
 
     const { uid } = await params;
@@ -32,7 +41,7 @@ export async function GET(
 
     const admin = createAdminClient();
 
-    const { data: card, error } = await admin
+    let query = admin
       .from('rfid_cards')
       .select(`
         id, rfid_uid, status, registered_at, updated_at,
@@ -44,7 +53,10 @@ export async function GET(
         )
       `)
       .eq('rfid_uid', uid.toUpperCase().trim())
-      .maybeSingle();
+      .eq('organization_id', organizationId);
+    if (institutionId) query = query.eq('institution_id', institutionId);
+
+    const { data: card, error } = await query.maybeSingle();
 
     if (error) {
       console.error('RFID lookup error:', error);
