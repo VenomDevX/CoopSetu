@@ -4,6 +4,8 @@ import { memberRoleCode } from '@/lib/auth/member-role';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
 import { getCallerInstitutionId } from '@/lib/auth/institution-scope';
+import { hasPermission } from '@/lib/auth/require-organization';
+import { ADMIN_ROLES, type RoleCode } from '@/lib/constants/roles';
 
 /**
  * RFID lookup by UID.
@@ -29,6 +31,10 @@ export async function GET(
       const membership = await getCurrentMembership();
       if (!membership) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const isGlobalAdmin = membership.roles.some((r: string) => ADMIN_ROLES.includes(r as RoleCode));
+      if (!isGlobalAdmin && !hasPermission(membership, 'attendance:manage')) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
       }
       organizationId = membership.organizationId;
       institutionId = await getCallerInstitutionId(membership.memberId);
