@@ -3,6 +3,8 @@ import { authenticateDevice } from '@/lib/auth/device-auth';
 import { MEMBER_ROLES_EMBED, memberRoleCode } from '@/lib/auth/member-role';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
+import { hasPermission } from '@/lib/auth/require-organization';
+import { ADMIN_ROLES, type RoleCode } from '@/lib/constants/roles';
 
 /**
  * User search — for RFID registration flows.
@@ -39,6 +41,12 @@ export async function GET(request: NextRequest) {
       if (!membership) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
+      // Member directory for RFID registration — staff only. Without this any
+      // member (e.g. a trainee) could enumerate the whole organization.
+      const isGlobalAdmin = membership.roles.some((r: string) => ADMIN_ROLES.includes(r as RoleCode));
+      if (!isGlobalAdmin && !hasPermission(membership, 'attendance:manage')) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      }
       orgId = membership.organizationId;
 
       const { data: callerRow } = await admin
@@ -49,7 +57,6 @@ export async function GET(request: NextRequest) {
       callerInstitutionId = callerRow?.institution_id ?? null;
 
       // Allow super admins and organization owners/admins to search across the whole workspace
-      const isGlobalAdmin = membership.roles.some((r: string) => ['SUPER_ADMIN', 'ORG_OWNER', 'ORG_ADMIN'].includes(r));
       if (isGlobalAdmin) {
         callerInstitutionId = null;
       }
