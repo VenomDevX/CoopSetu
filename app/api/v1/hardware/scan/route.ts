@@ -95,7 +95,11 @@ export async function POST(request: NextRequest) {
         .eq('user_id', userId)
         .eq('organization_id', device.organizationId)
         .eq('is_active', true);
-      if (device.institutionId) memberQuery = memberQuery.eq('institution_id', device.institutionId);
+      // Same rule as canDeviceAccessInstitution: a pinned device accepts its own
+      // institution's members and national-scope members (institution NULL).
+      if (device.institutionId) {
+        memberQuery = memberQuery.or(`institution_id.eq.${device.institutionId},institution_id.is.null`);
+      }
       const { data: member } = await memberQuery.maybeSingle();
       if (!member) {
         return NextResponse.json(

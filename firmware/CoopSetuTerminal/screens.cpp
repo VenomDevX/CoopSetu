@@ -154,6 +154,36 @@ void showNetError(const NetResponse &resp) {
   showResultScreen(false, "Error", detail);
 }
 
+// Maps an /api/v1/attendance/rfid rejection to a screen by its `error` code.
+// The endpoint returns 403 for several unrelated reasons, so the HTTP status
+// alone must not decide the message — reporting every 403 as "Card Revoked"
+// sent staff chasing revocations on cards that were ACTIVE. Returns false for
+// codes it does not recognise so the caller can fall back to a generic error.
+bool showRfidRejection(const NetResponse &resp) {
+  StaticJsonDocument<256> doc;
+  if (deserializeJson(doc, resp.data)) return false;
+  const char *err = doc["error"] | "";
+
+  if (strcmp(err, "unknown_rfid") == 0) {
+    const char *uid = doc["rfid_uid"] | "";
+    char msg[96];
+    snprintf(msg, sizeof(msg), "Card %s not registered. Contact admin.", uid);
+    showResultScreen(false, "Unknown RFID", msg);
+  } else if (strcmp(err, "card_revoked") == 0) {
+    showResultScreen(false, "Card Revoked", "This card has been deactivated.");
+  } else if (strcmp(err, "institution_mismatch") == 0) {
+    showResultScreen(false, "Wrong Institution", "Card is not valid at this terminal's institution.");
+  } else if (strcmp(err, "org_mismatch") == 0) {
+    showResultScreen(false, "Wrong Organisation", "Card belongs to a different organisation.");
+  } else if (strcmp(err, "card_credential_required") == 0 ||
+             strcmp(err, "invalid_card_credential") == 0) {
+    showResultScreen(false, "Card Not Verified", "Secure card check failed. Tap again or re-enrol.");
+  } else {
+    return false;
+  }
+  return true;
+}
+
 }  // namespace
 
 namespace {
@@ -384,11 +414,7 @@ void rfidTick() {
           snprintf(detail, sizeof(detail), "Already marked today");
         }
         showResultScreen(true, title, detail);
-      } else if (resp.status == 404) {
-        showResultScreen(false, "Unknown RFID", "Card not registered. Contact admin.");
-      } else if (resp.status == 403) {
-        showResultScreen(false, "Card Revoked", "This card has been deactivated.");
-      } else {
+      } else if (resp.status <= 0 || !showRfidRejection(resp)) {
         showNetError(resp);
       }
     }
@@ -813,22 +839,12 @@ void statusTick() {
     } else {
       if (resp.status <= 0) {
         showNetError(resp);
-      } else {
+      } else if (!showRfidRejection(resp)) {
         StaticJsonDocument<256> doc;
         deserializeJson(doc, resp.data);
         const char *err = doc["error"] | "Unknown error";
-        
-        if (strcmp(err, "unknown_rfid") == 0) {
-          const char *uid = doc["rfid_uid"] | "Unknown";
-          char msg[128];
-          snprintf(msg, sizeof(msg), "Card %s not registered. Contact administrator.", uid);
-          showResultScreen(false, "Unknown RFID", msg);
-        } else if (strcmp(err, "card_revoked") == 0) {
-          showResultScreen(false, "Card Revoked", "This card has been deactivated.");
-        } else {
-          const char *msg = doc["message"] | err;
-          showResultScreen(false, "Error", msg);
-        }
+        const char *msg = doc["message"] | err;
+        showResultScreen(false, "Error", msg);
       }
     }
   }
