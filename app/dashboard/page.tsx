@@ -2,10 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line
-} from 'recharts';
 import { Terminal, AlertTriangle, CheckCircle2, Clock, ShieldAlert, Plus, Users, FolderKanban, Calendar, ArrowRight, Activity, Server, GraduationCap, Award, Briefcase, ClipboardCheck } from 'lucide-react';
 import { useTheme } from "next-themes";
 import { useEffect, useState, useCallback } from "react";
@@ -20,6 +16,12 @@ import { CreateProjectModal } from "@/components/dashboard/create-project-modal"
 import { CreateTaskModal } from "@/components/tasks/create-task-modal";
 import { InviteMemberModal } from "@/components/dashboard/invite-member-modal";
 import { AskAiButton } from "@/components/ai/ask-ai-button";
+import dynamic from "next/dynamic";
+
+// recharts is loaded separately so the rest of the Overview paints without it.
+const chartPlaceholder = () => <div className="h-[300px] animate-pulse rounded bg-surface-hover/40" />;
+const VelocityChart = dynamic(() => import("@/components/dashboard/overview-charts").then(m => m.VelocityChart), { ssr: false, loading: chartPlaceholder });
+const WorkloadChart = dynamic(() => import("@/components/dashboard/overview-charts").then(m => m.WorkloadChart), { ssr: false, loading: chartPlaceholder });
 
 interface DashboardData {
   persona: DashboardPersona;
@@ -83,6 +85,7 @@ export default function CommandCenter() {
   const gridColor = mounted && resolvedTheme === 'dark' ? '#2A2A2A' : '#E2E2E2';
   const textColor = mounted && resolvedTheme === 'dark' ? '#A1A1A1' : '#707070';
   const tooltipBg = mounted && resolvedTheme === 'dark' ? '#171717' : '#FFFFFF';
+  const chartColors = { chartColor, gridColor, textColor, tooltipBg };
 
   if (!mounted) return null;
   if (!data) return <div className="p-8 font-mono text-sm uppercase tracking-widest text-muted-foreground animate-pulse">{t('initializing')}</div>;
@@ -297,18 +300,7 @@ export default function CommandCenter() {
                   {t('noSprintData')}<br/>{t('createSprintPrompt')}
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={velocity} margin={{ top: 10, right: 10, bottom: 10, left: -20 }}>
-                    <CartesianGrid strokeDasharray="2 2" vertical={false} stroke={gridColor} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} dy={15} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} />
-                    <Tooltip
-                      contentStyle={{ borderRadius: '0', border: `1px solid ${chartColor}`, fontSize: '12px', fontFamily: 'monospace', backgroundColor: tooltipBg, textTransform: 'uppercase' }}
-                      cursor={{ stroke: gridColor, strokeWidth: 1, strokeDasharray: '4 4' }}
-                    />
-                    <Line type="step" dataKey="points" stroke={chartColor} strokeWidth={2} dot={{ r: 4, fill: tooltipBg, stroke: chartColor, strokeWidth: 2 }} activeDot={{ r: 6, fill: chartColor }} />
-                  </LineChart>
-                </ResponsiveContainer>
+                <VelocityChart data={velocity} colors={chartColors} />
               )}
             </CardContent>
           </Card>
@@ -324,18 +316,7 @@ export default function CommandCenter() {
                   {t('noActiveWork')}
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={workload} margin={{ top: 10, right: 10, bottom: 10, left: -20 }}>
-                    <CartesianGrid strokeDasharray="2 2" vertical={false} stroke={gridColor} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} dy={15} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontFamily: 'monospace', fill: textColor }} />
-                    <Tooltip
-                      cursor={{ fill: gridColor, opacity: 0.5 }}
-                      contentStyle={{ borderRadius: '0', border: `1px solid ${chartColor}`, fontSize: '12px', fontFamily: 'monospace', backgroundColor: tooltipBg, textTransform: 'uppercase' }}
-                    />
-                    <Bar dataKey="open" fill={chartColor} maxBarSize={40} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <WorkloadChart data={workload} colors={chartColors} />
               )}
             </CardContent>
           </Card>

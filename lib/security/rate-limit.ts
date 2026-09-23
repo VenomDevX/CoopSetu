@@ -65,20 +65,27 @@ export function rateLimit(identifier: string, limit: number, windowMs: number): 
   };
 }
 
+export type RateLimitCategory = 'auth' | 'api' | 'page';
+
 /**
  * Returns configuration for different route categories.
+ *
+ * `category` is the counter the request is charged to, and it must match the
+ * limit: when pages and API calls shared one 'api' counter, page navigations
+ * and <Link> prefetches (1000/min budget) used up the API's 100/min, so a user
+ * clicking through the sidebar got 429s on every page's data fetches.
  */
-export function getRateLimitConfig(pathname: string) {
+export function getRateLimitConfig(pathname: string): { category: RateLimitCategory; limit: number; windowMs: number } {
   if (pathname.startsWith('/api/v1/auth') || pathname === '/login' || pathname === '/signup') {
     // 500 requests per 5 minutes for auth endpoints
-    return { limit: 500, windowMs: 5 * 60 * 1000 };
+    return { category: 'auth', limit: 500, windowMs: 5 * 60 * 1000 };
   }
-  
+
   if (pathname.startsWith('/api/v1/')) {
     // 100 requests per minute for standard API routes
-    return { limit: 100, windowMs: 60 * 1000 };
+    return { category: 'api', limit: 100, windowMs: 60 * 1000 };
   }
 
   // 1000 requests per minute for static/page assets
-  return { limit: 1000, windowMs: 60 * 1000 };
+  return { category: 'page', limit: 1000, windowMs: 60 * 1000 };
 }

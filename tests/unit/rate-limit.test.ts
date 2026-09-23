@@ -56,4 +56,13 @@ describe('Rate Limiter', () => {
     expect(getRateLimitConfig('/api/v1/projects').limit).toBe(100);
     expect(getRateLimitConfig('/dashboard').limit).toBe(1000);
   });
+
+  it('charges pages, API calls and auth to separate counters', () => {
+    // Pages and API routes once shared one counter, so navigation + prefetch
+    // traffic exhausted the 100/min API budget and page data fetches got 429s.
+    expect(getRateLimitConfig('/dashboard/calendar').category).toBe('page');
+    expect(getRateLimitConfig('/api/v1/tasks').category).toBe('api');
+    expect(getRateLimitConfig('/api/v1/auth/login').category).toBe('auth');
+    expect(getRateLimitConfig('/login').category).toBe('auth');
+  });
 });

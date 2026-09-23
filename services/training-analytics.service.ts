@@ -27,6 +27,50 @@ export interface Funnel {
   employed: number;
 }
 
+type RowsPage<T> = PromiseLike<{ data: T[] | null; error: unknown }>;
+/** Builds one page: rows with id > `after` (all rows when null), ordered by id, at most `limit`. */
+type PageQuery<T> = (after: string | null, limit: number) => RowsPage<T>;
+
+// PostgREST returns at most max_rows (1000, supabase/config.toml) per request
+// and silently drops the rest, so a single query here under-counted as soon as
+// there were more than 1000 attendance records. Pages must be <= max_rows.
+const PAGE_SIZE = 1000;
+// A UUID is 36 chars, so an IN list of every session id ran to ~40 KB and the
+// gateway rejected the request with "URI too long". 150 ids keeps it ~6 KB.
+const IN_CHUNK = 150;
+
+/**
+ * Every row of a query, fetched page by page with keyset paging (id > last id).
+ * Not OFFSET: row-level security is evaluated per row, and OFFSET makes each
+ * page re-check every row before it — 8 pages of attendance_records took 3.2 s
+ * that way, versus one pass over the rows with keyset paging.
+ */
+export async function allRows<T extends { id: string }>(page: PageQuery<T>): Promise<T[]> {
+  const rows: T[] = [];
+  let after: string | null = null;
+  for (;;) {
+    const { data, error } = await page(after, PAGE_SIZE);
+    if (error) throw error;
+    const batch = data ?? [];
+    rows.push(...batch);
+    if (batch.length < PAGE_SIZE) return rows;
+    after = batch[batch.length - 1].id;
+  }
+}
+
+/** Applies `page`'s keyset window to a query builder. */
+function keyset<Q extends { gt: (c: string, v: string) => Q; order: (c: string) => Q; limit: (n: number) => Q }>(q: Q, after: string | null, limit: number): Q {
+  return (after ? q.gt('id', after) : q).order('id').limit(limit);
+}
+
+/** Every row matching `column IN ids`, with the id list split to keep URLs short. */
+export async function allRowsIn<T extends { id: string }>(ids: string[], page: (ids: string[], after: string | null, limit: number) => RowsPage<T>): Promise<T[]> {
+  const chunks: string[][] = [];
+  for (let i = 0; i < ids.length; i += IN_CHUNK) chunks.push(ids.slice(i, i + IN_CHUNK));
+  const parts = await Promise.all(chunks.map((chunk) => allRows<T>((after, limit) => page(chunk, after, limit))));
+  return parts.flat();
+}
+
 export class TrainingAnalyticsService {
   constructor(private supabase: SupabaseClient, private orgId: string) {}
 
@@ -50,14 +94,13 @@ export class TrainingAnalyticsService {
       return { registered: 0, nominated: 0, enrolled: 0, completed: 0, certified: 0, employed: 0 };
     }
 
-    const [enrolments, certs] = await Promise.all([
-      this.supabase.from('enrollments').select('status, trainee_id').in('trainee_id', traineeIds),
-      this.supabase.from('certificates').select('id, trainee_id').in('trainee_id', traineeIds),
+    const [rows, certs] = await Promise.all([
+      allRowsIn<{ id: string; status: string; trainee_id: string }>(traineeIds, (ids, after, limit) =>
+        keyset(this.supabase.from('enrollments').select('id, status, trainee_id').in('trainee_id', ids), after, limit)),
+      allRowsIn<{ id: string; trainee_id: string }>(traineeIds, (ids, after, limit) =>
+        keyset(this.supabase.from('certificates').select('id, trainee_id').in('trainee_id', ids), after, limit)),
     ]);
-    if (enrolments.error) throw enrolments.error;
-    if (certs.error) throw certs.error;
 
-    const rows = enrolments.data || [];
     // Counting distinct trainees per stage, not rows: a trainee enrolled in two
     // programmes is one person who reached "enrolled", and counting rows would
     // inflate every stage for the most active trainees.
@@ -69,7 +112,7 @@ export class TrainingAnalyticsService {
       nominated: distinct(() => true),
       enrolled: distinct((r) => ['ENROLLED', 'COMPLETED'].includes(r.status)),
       completed: distinct((r) => r.status === 'COMPLETED'),
-      certified: new Set((certs.data || []).map((c) => c.trainee_id)).size,
+      certified: new Set(certs.map((c) => c.trainee_id)).size,
       employed: (trainees || []).filter((t) =>
         ['EMPLOYED', 'SELF_EMPLOYED'].includes(t.employment_status),
       ).length,
@@ -80,14 +123,12 @@ export class TrainingAnalyticsService {
   async getAttendanceTrend(days = 30, institutionIds?: string[]) {
     const since = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
 
-    let sessionQ = this.supabase
+    const sessions = await allRows<any>((after, limit) => keyset(this.supabase
       .from('attendance_sessions')
       .select('id, date, batches(programme_id, programmes(institution_id))')
-      .gte('date', since);
-    const { data: sessions, error } = await sessionQ;
-    if (error) throw error;
+      .gte('date', since), after, limit));
 
-    const relevant = (sessions || []).filter((s: any) => {
+    const relevant = sessions.filter((s: any) => {
       if (!institutionIds?.length) return true;
       const inst = s.batches?.programmes?.institution_id;
       // A session whose programme has no institute is org-wide, so it counts
@@ -96,16 +137,18 @@ export class TrainingAnalyticsService {
     });
     if (!relevant.length) return [];
 
-    const { data: records, error: recError } = await this.supabase
-      .from('attendance_records')
-      .select('session_id, status')
-      .in('session_id', relevant.map((s: any) => s.id));
-    if (recError) throw recError;
+    const records = await allRowsIn<{ id: string; session_id: string; status: string }>(
+      relevant.map((s: any) => s.id),
+      (ids, after, limit) => keyset(this.supabase
+        .from('attendance_records')
+        .select('id, session_id, status')
+        .in('session_id', ids), after, limit),
+    );
 
     const byDate = new Map<string, { present: number; total: number }>();
     const dateOf = new Map(relevant.map((s: any) => [s.id, s.date]));
 
-    for (const r of records || []) {
+    for (const r of records) {
       const date = dateOf.get(r.session_id);
       if (!date) continue;
       const bucket = byDate.get(date) || { present: 0, total: 0 };
@@ -126,30 +169,30 @@ export class TrainingAnalyticsService {
    * list and disagree with it.
    */
   async getDropoutRisk(institutionIds?: string[]) {
-    let q = this.supabase
+    const enrolled = await allRows<any>((after, limit) => keyset(this.supabase
       .from('enrollments')
       .select('id, trainee_id, status, trainees(id, institution_id, profiles:user_id(full_name))')
-      .eq('status', 'ENROLLED');
-    const { data: enrolled, error } = await q;
-    if (error) throw error;
+      .eq('status', 'ENROLLED'), after, limit));
 
-    const scoped = (enrolled || []).filter((e: any) =>
+    const scoped = enrolled.filter((e: any) =>
       !institutionIds?.length || institutionIds.includes(e.trainees?.institution_id),
     );
     if (!scoped.length) return [];
 
     const traineeIds = scoped.map((e: any) => e.trainee_id);
     const [attendance, progress] = await Promise.all([
-      this.supabase.from('attendance_records').select('trainee_id, status').in('trainee_id', traineeIds),
-      this.supabase.from('course_progress').select('trainee_id, completed').in('trainee_id', traineeIds),
+      allRowsIn<{ id: string; trainee_id: string; status: string }>(traineeIds, (ids, after, limit) =>
+        keyset(this.supabase.from('attendance_records').select('id, trainee_id, status').in('trainee_id', ids), after, limit)),
+      allRowsIn<{ id: string; trainee_id: string; completed: boolean }>(traineeIds, (ids, after, limit) =>
+        keyset(this.supabase.from('course_progress').select('id, trainee_id, completed').in('trainee_id', ids), after, limit)),
     ]);
 
     return scoped
       .map((e: any) => {
-        const att = (attendance.data || []).filter((a) => a.trainee_id === e.trainee_id);
+        const att = attendance.filter((a) => a.trainee_id === e.trainee_id);
         const present = att.filter((a) => a.status === 'PRESENT' || a.status === 'LATE').length;
         const attendancePct = att.length ? Math.round((present / att.length) * 100) : null;
-        const prog = (progress.data || []).filter((p) => p.trainee_id === e.trainee_id);
+        const prog = progress.filter((p) => p.trainee_id === e.trainee_id);
         const modulesDone = prog.filter((p) => p.completed).length;
 
         const reasons: string[] = [];
