@@ -24,7 +24,8 @@ describe('device capture time', () => {
   it('lets a national device reach anyone but pins an institution device to its own members', () => {
     expect(canDeviceAccessInstitution(null, 'lucknow')).toBe(true);
     expect(canDeviceAccessInstitution(null, null)).toBe(true);
-    expect(canDeviceAccessInstitution('lucknow', null)).toBe(false);
+    // National-scope member (no institution) is valid at any pinned terminal.
+    expect(canDeviceAccessInstitution('lucknow', null)).toBe(true);
     expect(canDeviceAccessInstitution('lucknow', 'lucknow')).toBe(true);
     expect(canDeviceAccessInstitution('lucknow', 'bengaluru')).toBe(false);
   });
