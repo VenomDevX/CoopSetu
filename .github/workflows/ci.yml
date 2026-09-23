@@ -118,13 +118,17 @@ jobs:
       - name: Start local Supabase
         # Skip services nothing here uses (no edge functions; Studio, logging,
         # image proxy and pooler are dev tooling) to pull fewer images, and
-        # retry because ghcr.io can still throttle a burst of pulls.
+        # retry. setup-cli points the CLI at ghcr.io, which throttles the whole
+        # shared-runner pool even for logged-in pulls, so retries fall back to
+        # the same images on AWS ECR Public, which has separate limits.
         run: |
-          for attempt in 1 2 3; do
-            supabase start -x edge-runtime,imgproxy,vector,logflare,studio,supavisor && exit 0
-            echo "supabase start failed (attempt $attempt/3); retrying in 30s"
+          attempt=0
+          for registry in ghcr.io public.ecr.aws public.ecr.aws; do
+            attempt=$((attempt + 1))
+            echo "supabase start: attempt $attempt/3 via $registry"
+            SUPABASE_INTERNAL_IMAGE_REGISTRY=$registry supabase start -x edge-runtime,imgproxy,vector,logflare,studio,supavisor && exit 0
             supabase stop --no-backup || true
-            sleep 30
+            sleep 20
           done
           exit 1
 
@@ -186,13 +190,17 @@ jobs:
       - name: Start local Supabase
         # Skip services nothing here uses (no edge functions; Studio, logging,
         # image proxy and pooler are dev tooling) to pull fewer images, and
-        # retry because ghcr.io can still throttle a burst of pulls.
+        # retry. setup-cli points the CLI at ghcr.io, which throttles the whole
+        # shared-runner pool even for logged-in pulls, so retries fall back to
+        # the same images on AWS ECR Public, which has separate limits.
         run: |
-          for attempt in 1 2 3; do
-            supabase start -x edge-runtime,imgproxy,vector,logflare,studio,supavisor && exit 0
-            echo "supabase start failed (attempt $attempt/3); retrying in 30s"
+          attempt=0
+          for registry in ghcr.io public.ecr.aws public.ecr.aws; do
+            attempt=$((attempt + 1))
+            echo "supabase start: attempt $attempt/3 via $registry"
+            SUPABASE_INTERNAL_IMAGE_REGISTRY=$registry supabase start -x edge-runtime,imgproxy,vector,logflare,studio,supavisor && exit 0
             supabase stop --no-backup || true
-            sleep 30
+            sleep 20
           done
           exit 1
 
