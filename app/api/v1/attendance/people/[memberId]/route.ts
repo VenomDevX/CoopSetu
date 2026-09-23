@@ -29,7 +29,7 @@ export async function GET(
     // Member info
     const { data: member, error: memberErr } = await supabase
       .from('organization_members')
-      .select('id, user_id, institution_id, profiles:user_id(full_name, avatar_url, email)')
+      .select('id, user_id, institution_id, profiles:user_id(full_name, avatar_path, email)')
       .eq('id', memberId)
       .eq('organization_id', membership.organizationId)
       .maybeSingle();
@@ -179,7 +179,7 @@ export async function GET(
       member: {
         id: member.id,
         name: (member as any).profiles?.full_name ?? 'Unknown',
-        avatar: (member as any).profiles?.avatar_url ?? null,
+        avatar: (member as any).profiles?.avatar_path ?? null,
         email: (member as any).profiles?.email ?? null,
       },
       stats: {

@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         device_id, device_event_id, recorded_by_member_id,
         member:member_id (
           id, user_id, institution_id,
-          profiles:user_id ( full_name, avatar_url )
+          profiles:user_id ( full_name, avatar_path )
         ),
         session:session_id (
           id, date, session_type, session_slot, batch_id,
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
         id: r.id,
         memberId: r.member_id,
         memberName: r.member?.profiles?.full_name ?? 'Unknown',
-        memberAvatar: r.member?.profiles?.avatar_url ?? null,
+        memberAvatar: r.member?.profiles?.avatar_path ?? null,
         method: r.method,
         status: r.status,
         markedAt: r.marked_at,

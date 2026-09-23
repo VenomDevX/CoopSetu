@@ -4,7 +4,7 @@ import {
   BarChart3, Settings, Users, AlertCircle,
   Building2, GraduationCap, BookOpen, ClipboardCheck, Award, UserCheck,
   BriefcaseBusiness, Target, Bot, QrCode, ClipboardList, User,
-  CalendarClock, Flame, Cpu, CreditCard, RadioTower, TableProperties,
+  CalendarClock, CalendarCheck, Flame, Cpu, CreditCard, RadioTower, TableProperties,
   type LucideIcon,
 } from 'lucide-react';
 import type { DashboardPersona } from '@/lib/auth/dashboard-persona';
@@ -43,6 +43,7 @@ export function buildNavGroups(t: (key: string) => string, persona: DashboardPer
     { title: 'Main_SYS', items: [
       { name: t('overview'), href: '/dashboard', icon: LayoutDashboard },
       { name: t('myWork'), href: '/dashboard/my-work', icon: Briefcase },
+      { name: t('myAttendance'), href: '/dashboard/attendance/me', icon: CalendarCheck },
       { name: t('inbox'), href: '/dashboard/inbox', icon: Inbox },
       { name: t('calendar'), href: '/dashboard/calendar', icon: Calendar },
     ]},

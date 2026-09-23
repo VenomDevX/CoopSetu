@@ -37,6 +37,7 @@ describe('buildNavGroups', () => {
     // Unrestricted (no `roles` key) — everyone sees these.
     expect(hrefs).toContain('/dashboard');
     expect(hrefs).toContain('/dashboard/my-work');
+    expect(hrefs).toContain('/dashboard/attendance/me');
     expect(hrefs).toContain('/dashboard/career-ai');
     // Explicitly tagged TRAINEE.
     expect(hrefs).toContain('/dashboard/attendance');
@@ -85,7 +86,7 @@ describe('buildNavGroups', () => {
     for (const persona of ['PROJECT_MANAGER', 'TEAM_MANAGER', 'EMPLOYEE'] as DashboardPersona[]) {
       const hrefs = hrefsOf(buildNavGroups(t, persona));
       expect(hrefs).toEqual([
-        '/dashboard', '/dashboard/my-work', '/dashboard/inbox',
+        '/dashboard', '/dashboard/my-work', '/dashboard/attendance/me', '/dashboard/inbox',
         '/dashboard/calendar', '/dashboard/career-ai',
       ]);
     }
