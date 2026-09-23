@@ -13,6 +13,15 @@ await pm.auth.signInWithPassword({ email: 'pm@apexfintech.test', password: proce
 await dev.auth.signInWithPassword({ email: 'dev@apexfintech.test', password: process.env.TEST_USER_PASSWORD ?? (() => { throw new Error('TEST_USER_PASSWORD is required'); })() });
 
 const { data: proj } = await pm.from('projects').select('id,code').limit(1).single();
+
+// Tasks are private by default (visibility_scope PRIVATE_ASSIGNMENT): only the
+// reporter, assignees, project managers and admins may read one, and Realtime
+// only delivers rows the subscriber can read. So the check models the real
+// flow — the PM assigns the task to dev — rather than expecting dev to see an
+// unassigned private task, which RLS correctly withholds.
+const { data: devUser } = await dev.auth.getUser();
+const { data: devMember } = await pm.from('organization_members')
+  .select('id').eq('organization_id', ORG).eq('user_id', devUser.user.id).single();
 let received = null;
 const ch = dev.channel('project:' + proj.id)
   .on('postgres_changes',
@@ -22,7 +31,7 @@ const ch = dev.channel('project:' + proj.id)
 
 await wait(2500);
 const { data: task, error } = await pm.from('tasks')
-  .insert({ organization_id: ORG, project_id: proj.id, title: 'realtime check', status: 'BACKLOG' })
+  .insert({ organization_id: ORG, project_id: proj.id, title: 'realtime check', status: 'BACKLOG', primary_assignee_member_id: devMember.id })
   .select().single();
 if (error) { console.error('insert failed:', error.message); process.exit(1); }
 console.log('PM inserted', task.task_key);
@@ -33,9 +42,6 @@ console.log(taskPass ? `PASS: dev received live event for ${received.task_key}` 
 
 // --- Notifications realtime: drives Inbox counts, unread badge, My Work. -----
 // dev subscribes to their own notifications; pm creates one → dev sees it live.
-const { data: devUser } = await dev.auth.getUser();
-const { data: devMember } = await pm.from('organization_members')
-  .select('id').eq('organization_id', ORG).eq('user_id', devUser.user.id).single();
 
 let notif = null;
 const nch = dev.channel('notifications:' + devMember.id)
