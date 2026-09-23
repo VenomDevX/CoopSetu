@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         trainee_id,
         trainees (
           id, user_id,
-          profiles:user_id ( full_name, avatar_url )
+          profiles:user_id ( full_name, avatar_path )
         )
       `)
       .eq('batch_id', batchId)
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       return {
         traineeId: e.trainee_id,
         name: trainee?.profiles?.full_name ?? 'Unknown',
-        avatar: trainee?.profiles?.avatar_url ?? null,
+        avatar: trainee?.profiles?.avatar_path ?? null,
         status: record?.status ?? 'ABSENT',
         method: record?.method ?? null,
         markedAt: record?.marked_at ?? null,
