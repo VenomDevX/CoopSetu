@@ -1,12 +1,43 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight, Terminal, Loader2, RefreshCw, Square } from 'lucide-react';
 import { AiLogo } from '@/components/ai/ai-logo';
-import { usePermission } from '@/lib/permissions/context';
+import { usePermission, useCurrentMembership } from '@/lib/permissions/context';
 import { sourceHref } from '@/lib/ai/source-href';
 import { useAiStream } from '@/components/ai/use-ai-stream';
+import type { AiSource } from '@/components/ai/ai-panel';
+
+// A generated brief is reused for this long within the tab, so returning to
+// My Work shows it instantly instead of re-running a ~5 s model call (and
+// spending AI quota) on every visit. Regenerate always makes a fresh one.
+const BRIEF_TTL_MS = 15 * 60 * 1000;
+
+interface CachedBrief { answer: string; sources: AiSource[]; at: number }
+
+function briefKey(memberId: string, organizationId: string) {
+  return `coopsetu:ai-daily-brief:${organizationId}:${memberId}`;
+}
+
+function readBrief(key: string): CachedBrief | null {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const brief = JSON.parse(raw) as CachedBrief;
+    return Date.now() - brief.at < BRIEF_TTL_MS && brief.answer ? brief : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeBrief(key: string, brief: CachedBrief) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(brief));
+  } catch {
+    // Storage unavailable (private mode, quota) — the brief just isn't reused.
+  }
+}
 
 /**
  * Inline AI Daily Brief for My Work. Streams from the real `/api/v1/ai/stream`
@@ -16,15 +47,45 @@ import { useAiStream } from '@/components/ai/use-ai-stream';
 export function AiDailyBrief() {
   const { has } = usePermission();
   const allowed = has('ai:use');
-  const { answer, sources, loading, error, done, run, stop } = useAiStream();
+  const { memberId, organizationId } = useCurrentMembership();
+  const cacheKey = briefKey(memberId, organizationId);
+  const stream = useAiStream();
+  const { loading, error, done, run, stop } = stream;
+  const [cached, setCached] = useState<CachedBrief | null>(null);
   const ran = useRef(false);
 
   useEffect(() => {
-    if (allowed && !ran.current) {
-      ran.current = true;
-      run({ intent: 'daily-brief' });
+    if (!allowed || ran.current) return;
+    ran.current = true;
+    // Deferred so the saved brief is applied after hydration (sessionStorage
+    // doesn't exist during the server render).
+    const timer = setTimeout(() => {
+      const saved = readBrief(cacheKey);
+      if (saved) setCached(saved);
+      else run({ intent: 'daily-brief' });
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      ran.current = false;
+    };
+  }, [allowed, run, cacheKey]);
+
+  useEffect(() => {
+    if (done && !error && stream.answer) {
+      writeBrief(cacheKey, { answer: stream.answer, sources: stream.sources, at: Date.now() });
     }
-  }, [allowed, run]);
+  }, [done, error, stream.answer, stream.sources, cacheKey]);
+
+  // Show the saved brief until a new run starts.
+  const showCached = cached !== null && !loading && !done && !error;
+  const answer = showCached ? cached.answer : stream.answer;
+  const sources = showCached ? cached.sources : stream.sources;
+  const finished = showCached || done;
+
+  const regenerate = () => {
+    setCached(null);
+    run({ intent: 'daily-brief' });
+  };
 
   if (!allowed) return null;
 
@@ -42,7 +103,7 @@ export function AiDailyBrief() {
           </button>
         ) : (
           <button
-            onClick={() => run({ intent: 'daily-brief' })}
+            onClick={regenerate}
             title="Regenerate"
             className="text-muted-foreground hover:text-foreground"
           >
@@ -66,7 +127,7 @@ export function AiDailyBrief() {
             {loading && <span className="inline-block w-2 h-4 bg-foreground/50 ml-0.5 animate-pulse align-middle" />}
           </p>
         )}
-        {done && !error && sources.length > 0 && (
+        {finished && !error && sources.length > 0 && (
           <div className="border-t border-border/50 pt-3 space-y-1.5">
             {sources.map((s, i) => {
               const href = sourceHref(s);
@@ -82,7 +143,7 @@ export function AiDailyBrief() {
             })}
           </div>
         )}
-        {done && !error && (
+        {finished && !error && (
           <div className="text-[10px] font-mono text-muted-foreground border-t border-border/50 pt-2 flex items-center gap-1">
             <Terminal className="w-3 h-3" /> Logged query · sources above are real workspace records.
           </div>

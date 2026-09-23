@@ -24,10 +24,9 @@ export async function middleware(request: NextRequest) {
   // itself stays fully enforced in dev and prod.
   const rateLimitDisabled = process.env.DISABLE_RATE_LIMIT === 'true';
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
-  const { limit, windowMs } = getRateLimitConfig(request.nextUrl.pathname);
-
-  // Group paths loosely for rate limiting to avoid bypassing by slight path changes
-  const category = request.nextUrl.pathname.startsWith('/api/v1/auth') ? 'auth' : 'api';
+  // Paths are grouped loosely into categories so slight path changes can't
+  // bypass the limit; each category has its own counter.
+  const { category, limit, windowMs } = getRateLimitConfig(request.nextUrl.pathname);
   const identifier = `${ip}:${category}`;
 
   const rl = rateLimitDisabled
