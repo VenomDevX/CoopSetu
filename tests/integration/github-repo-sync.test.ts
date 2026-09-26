@@ -39,7 +39,7 @@ describe('GitHub repo import + sync (service layer, GitHub API mocked)', () => {
 
   beforeAll(async () => {
     const email = `gh-sync-${Date.now()}@example.com`;
-    const { data: user } = await adminClient.auth.admin.createUser({ email, password: 'password123', email_confirm: true });
+    const { data: user } = await adminClient.auth.admin.createUser({ email, password: 'TestPassword123!', email_confirm: true });
     createdUserIds.push(user!.user!.id);
 
     const { data: org } = await adminClient.from('organizations').insert({ name: 'GH Sync Org', slug: `gh-sync-${Date.now()}` }).select('id').single();
@@ -51,7 +51,7 @@ describe('GitHub repo import + sync (service layer, GitHub API mocked)', () => {
     await adminClient.from('member_roles').insert({ organization_member_id: member!.id, role_id: ownerRole!.id });
 
     userClient = createClient(URL, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
-    await userClient.auth.signInWithPassword({ email, password: 'password123' });
+    await userClient.auth.signInWithPassword({ email, password: 'TestPassword123!' });
   });
 
   afterAll(async () => {

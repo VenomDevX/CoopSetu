@@ -73,7 +73,9 @@ export async function provisionDemoWorkspace(authUserId: string, requestedRole: 
         // Dummy demo personas are never logged into directly — only the
         // anonymous visitor logs in. Give them a random, discarded password so
         // they can't be signed into with a guessable/shared credential.
-        password: `${crypto.randomUUID()}${crypto.randomUUID()}`,
+        // UUIDs are lowercase hex only; the 'A' satisfies the auth policy's
+        // upper-case requirement (lower_upper_letters_digits_symbols).
+        password: `A${crypto.randomUUID()}${crypto.randomUUID()}`,
         email_confirm: true,
         user_metadata: { full_name: persona.name },
       });
