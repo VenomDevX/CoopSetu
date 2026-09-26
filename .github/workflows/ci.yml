@@ -103,7 +103,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.116.0
 
       - name: Log in to GHCR
         # supabase start pulls ~12 images from ghcr.io; anonymous pulls from
@@ -175,7 +175,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.116.0
 
       - name: Log in to GHCR
         # supabase start pulls ~12 images from ghcr.io; anonymous pulls from
