@@ -20,9 +20,9 @@ describe('Approval Request Visibility', () => {
     const email3 = `cross-${Date.now()}@example.com`;
     
     // Setup users
-    const { data: user1 } = await adminClient.auth.admin.createUser({ email: email1, password: 'password123', email_confirm: true });
-    const { data: user2 } = await adminClient.auth.admin.createUser({ email: email2, password: 'password123', email_confirm: true });
-    const { data: user3 } = await adminClient.auth.admin.createUser({ email: email3, password: 'password123', email_confirm: true });
+    const { data: user1 } = await adminClient.auth.admin.createUser({ email: email1, password: 'TestPassword123!', email_confirm: true });
+    const { data: user2 } = await adminClient.auth.admin.createUser({ email: email2, password: 'TestPassword123!', email_confirm: true });
+    const { data: user3 } = await adminClient.auth.admin.createUser({ email: email3, password: 'TestPassword123!', email_confirm: true });
     
     // Create Orgs
     const { data: org1 } = await adminClient.from('organizations').insert({ name: 'Org 1', slug: `org1-${Date.now()}` }).select('id').single();
@@ -46,13 +46,13 @@ describe('Approval Request Visibility', () => {
 
     // Clients
     authClient1 = createClient(URL, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
-    await authClient1.auth.signInWithPassword({ email: email1, password: 'password123' });
+    await authClient1.auth.signInWithPassword({ email: email1, password: 'TestPassword123!' });
     
     authClient2 = createClient(URL, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
-    await authClient2.auth.signInWithPassword({ email: email2, password: 'password123' });
+    await authClient2.auth.signInWithPassword({ email: email2, password: 'TestPassword123!' });
     
     authClient3 = createClient(URL, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
-    await authClient3.auth.signInWithPassword({ email: email3, password: 'password123' });
+    await authClient3.auth.signInWithPassword({ email: email3, password: 'TestPassword123!' });
 
     // Project (Public in org, well, we need to assign user2 to see it)
     const { data: proj } = await adminClient.from('projects').insert({ organization_id: orgId1, name: 'Project', code: 'PRJ' }).select('id').single();

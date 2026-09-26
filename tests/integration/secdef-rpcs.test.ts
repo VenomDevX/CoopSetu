@@ -23,8 +23,8 @@ describe('Security Definer RPCs Hardening', () => {
     const email2 = `unauth2-${Date.now()}@example.com`;
     
     // Setup users...
-    const { data: user1 } = await adminClient.auth.admin.createUser({ email: email1, password: 'password123', email_confirm: true });
-    const { data: user2 } = await adminClient.auth.admin.createUser({ email: email2, password: 'password123', email_confirm: true });
+    const { data: user1 } = await adminClient.auth.admin.createUser({ email: email1, password: 'TestPassword123!', email_confirm: true });
+    const { data: user2 } = await adminClient.auth.admin.createUser({ email: email2, password: 'TestPassword123!', email_confirm: true });
     
     // Create Orgs
     const { data: org1 } = await adminClient.from('organizations').insert({ name: 'Org 1', slug: `org1-${Date.now()}` }).select('id').single();
@@ -43,10 +43,10 @@ describe('Security Definer RPCs Hardening', () => {
 
     // Sign in users
     authClient = createClient(URL, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
-    await authClient.auth.signInWithPassword({ email: email1, password: 'password123' });
+    await authClient.auth.signInWithPassword({ email: email1, password: 'TestPassword123!' });
     
     unauthorizedClient = createClient(URL, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
-    await unauthorizedClient.auth.signInWithPassword({ email: email2, password: 'password123' });
+    await unauthorizedClient.auth.signInWithPassword({ email: email2, password: 'TestPassword123!' });
 
     // Setup a project and release in org1
     const { data: proj } = await adminClient.from('projects').insert({ organization_id: orgId, name: 'Project 1', code: 'P1' }).select('id').single();
