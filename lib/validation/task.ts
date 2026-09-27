@@ -9,7 +9,7 @@ import {
 } from '@/lib/constants/task-statuses';
 
 export const createTaskSchema = z.object({
-  project_id: z.string().uuid(),
+  project_id: z.guid(),
   title: z.string().min(1).max(300),
   description: z.string().max(20000).optional(),
   task_type: z.enum(TASK_TYPES).optional(),
@@ -17,9 +17,9 @@ export const createTaskSchema = z.object({
   priority: z.enum(PRIORITIES).optional(),
   security_classification: z.enum(SECURITY_CLASSIFICATIONS).optional(),
   visibility_scope: z.enum(TASK_VISIBILITY_SCOPES).optional(),
-  epic_id: z.string().uuid().optional(),
-  sprint_id: z.string().uuid().optional(),
-  primary_assignee_member_id: z.string().uuid().optional(),
+  epic_id: z.guid().optional(),
+  sprint_id: z.guid().optional(),
+  primary_assignee_member_id: z.guid().optional(),
   due_date: z.string().date().optional(),
   start_date: z.string().date().optional(),
   estimated_hours: z.number().nonnegative().optional(),
@@ -35,9 +35,9 @@ export const updateTaskSchema = z.object({
   priority: z.enum(PRIORITIES).optional(),
   security_classification: z.enum(SECURITY_CLASSIFICATIONS).optional(),
   visibility_scope: z.enum(TASK_VISIBILITY_SCOPES).optional(),
-  epic_id: z.string().uuid().nullable().optional(),
-  sprint_id: z.string().uuid().nullable().optional(),
-  primary_assignee_member_id: z.string().uuid().nullable().optional(),
+  epic_id: z.guid().nullable().optional(),
+  sprint_id: z.guid().nullable().optional(),
+  primary_assignee_member_id: z.guid().nullable().optional(),
   due_date: z.string().date().nullable().optional(),
   start_date: z.string().date().nullable().optional(),
   estimated_hours: z.number().nonnegative().nullable().optional(),
@@ -50,12 +50,12 @@ export const updateTaskSchema = z.object({
 }).strict();
 
 export const bulkUpdateSchema = z.object({
-  task_ids: z.array(z.string().uuid()).min(1).max(200),
+  task_ids: z.array(z.guid()).min(1).max(200),
   patch: updateTaskSchema,
 }).strict();
 
 export const addAssigneeSchema = z.object({
-  organization_member_id: z.string().uuid(),
+  organization_member_id: z.guid(),
   assignment_role: z.string().max(40).optional(),
   assignment_type: z.enum(TASK_ASSIGNMENT_TYPES).optional(),
 }).strict();

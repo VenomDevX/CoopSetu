@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const connectRepositorySchema = z.object({
-  integration_id: z.string().uuid().optional(),
+  integration_id: z.guid().optional(),
   name: z.string().min(1).max(255),
   provider: z.enum(['github', 'gitlab', 'bitbucket', 'azure_devops']).default('github'),
   default_branch: z.string().min(1).max(255).default('main'),
@@ -15,7 +15,7 @@ export const connectRepositorySchema = z.object({
  * see services/integration.service.ts's importGithubRepository.
  */
 export const importGithubRepositorySchema = z.object({
-  integration_id: z.string().uuid(),
+  integration_id: z.guid(),
   github_repo_id: z.number(),
   full_name: z.string().min(1).max(255),
   default_branch: z.string().min(1).max(255),

@@ -32,11 +32,11 @@ const schema = z.object({
     role: z.enum(['user', 'assistant']),
     text: z.string().max(1000),
   })).max(12).optional(),
-  project_id: z.string().uuid().optional(),
-  sprint_id: z.string().uuid().optional(),
-  task_id: z.string().uuid().optional(),
-  incident_id: z.string().uuid().optional(),
-  release_id: z.string().uuid().optional(),
+  project_id: z.guid().optional(),
+  sprint_id: z.guid().optional(),
+  task_id: z.guid().optional(),
+  incident_id: z.guid().optional(),
+  release_id: z.guid().optional(),
 }).strict();
 
 /**

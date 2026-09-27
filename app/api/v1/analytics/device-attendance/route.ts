@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { legacyError } from '@/lib/api/response';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { istDayKey } from '@/lib/attendance/time';
@@ -97,6 +98,6 @@ export async function GET() {
 
   } catch (err: any) {
     console.error('Device attendance analytics error:', err);
-    return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
+    return legacyError(err);
   }
 }

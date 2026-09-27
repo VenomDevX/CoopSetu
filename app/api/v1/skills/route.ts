@@ -1,4 +1,6 @@
+import { skillCreate, traineeSkillAdd } from '@/lib/validation/training';
 import { NextRequest, NextResponse } from 'next/server';
+import { legacyError } from '@/lib/api/response';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
 import { SkillService } from '@/services/skill.service';
@@ -23,7 +25,7 @@ export async function GET(request: NextRequest) {
     const skills = await svc.listSkills(category);
     return NextResponse.json({ data: { skills } });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return legacyError(err);
   }
 }
 
@@ -37,13 +39,13 @@ export async function POST(request: NextRequest) {
     const svc = new SkillService(supabase);
 
     if (body.trainee_id && body.skill_id) {
-      const result = await svc.addTraineeSkill(body);
+      const result = await svc.addTraineeSkill(traineeSkillAdd.parse(body));
       return NextResponse.json({ data: result }, { status: 201 });
     }
 
-    const skill = await svc.createSkill(body);
+    const skill = await svc.createSkill(skillCreate.parse(body));
     return NextResponse.json({ data: skill }, { status: 201 });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return legacyError(err);
   }
 }

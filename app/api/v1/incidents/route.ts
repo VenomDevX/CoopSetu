@@ -7,7 +7,7 @@ import { listIncidents, createIncident } from '@/services/incident.service';
 const schema = z.object({
   title: z.string().min(1).max(200),
   severity: z.enum(['SEV1', 'SEV2', 'SEV3', 'SEV4']).optional(),
-  project_id: z.string().uuid().optional(),
+  project_id: z.guid().optional(),
   customer_impact: z.string().max(2000).optional(),
 }).strict();
 

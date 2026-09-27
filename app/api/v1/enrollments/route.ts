@@ -1,3 +1,4 @@
+import { legacyError } from '@/lib/api/response';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ data: { enrollments, stats } });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return legacyError(err);
   }
 }
 
@@ -55,6 +56,6 @@ export async function POST(request: NextRequest) {
     // "already has a ... record" and capacity refusals are the caller's
     // problem to fix, not server faults.
     const status = /already has|is full|required/i.test(err.message) ? 400 : 500;
-    return NextResponse.json({ error: err.message }, { status });
+    return legacyError(err, status);
   }
 }

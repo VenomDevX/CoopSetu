@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { legacyError } from '@/lib/api/response';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -77,7 +78,7 @@ export async function GET(_request: NextRequest) {
 
   } catch (err: any) {
     console.error('Device list error:', err);
-    return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
+    return legacyError(err);
   }
 }
 
@@ -160,6 +161,6 @@ export async function POST(request: NextRequest) {
 
   } catch (err: any) {
     console.error('Device create error:', err);
-    return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
+    return legacyError(err);
   }
 }

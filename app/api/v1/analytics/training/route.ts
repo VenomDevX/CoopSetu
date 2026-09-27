@@ -1,3 +1,4 @@
+import { legacyError } from '@/lib/api/response';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
@@ -39,6 +40,6 @@ export async function GET(_request: NextRequest) {
       data: { funnel, attendanceTrend, dropoutRisk, institutions, geography },
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return legacyError(err);
   }
 }

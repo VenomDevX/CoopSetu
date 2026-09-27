@@ -1,3 +1,4 @@
+import { legacyError } from '@/lib/api/response';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
@@ -15,7 +16,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const svc = new EnrollmentService(supabase, membership.organizationId);
     return NextResponse.json({ data: await svc.getById(enrollmentId) });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return legacyError(err);
   }
 }
 
@@ -41,6 +42,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   } catch (err: any) {
     // Illegal transitions and full batches are client errors.
     const status = /Cannot move|must be assigned|is full/i.test(err.message) ? 400 : 500;
-    return NextResponse.json({ error: err.message }, { status });
+    return legacyError(err, status);
   }
 }

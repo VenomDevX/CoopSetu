@@ -235,7 +235,7 @@ export class AssessmentService {
     };
   }
 
-  async create(input: { course_id: string; title: string; description?: string; type?: string; max_score?: number; passing_score?: number; duration_minutes?: number; attempts_allowed?: number }) {
+  async create(input: { course_id: string; title: string; description?: string; type?: string; max_score?: number; passing_score?: number; duration_minutes?: number; attempts_allowed?: number; is_published?: boolean }) {
     const { data, error } = await this.supabase
       .from('assessments')
       .insert(input)

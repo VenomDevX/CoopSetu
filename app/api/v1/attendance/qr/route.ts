@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { legacyError } from '@/lib/api/response';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
 import { AttendanceService } from '@/services/attendance.service';
@@ -158,6 +159,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'invalid_capture_time', message: err.message }, { status: 400 });
     }
     const status = err.message.includes('expired') || err.message.includes('Invalid') ? 400 : 500;
-    return NextResponse.json({ error: err.message }, { status });
+    return legacyError(err, status);
   }
 }

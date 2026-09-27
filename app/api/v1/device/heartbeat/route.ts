@@ -1,3 +1,4 @@
+import { legacyError } from '@/lib/api/response';
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateDevice } from '@/lib/auth/device-auth';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -53,6 +54,6 @@ export async function POST(request: NextRequest) {
 
   } catch (err: any) {
     console.error('Heartbeat error:', err);
-    return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
+    return legacyError(err);
   }
 }

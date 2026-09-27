@@ -9,9 +9,9 @@ const embedding = z.array(z.number().finite()).length(128);
 
 const bodySchema = z.discriminatedUnion('action', [
   // trainee_id omitted = the caller enrols their own face (id-card page).
-  z.object({ action: z.literal('register'), trainee_id: z.string().uuid().optional(), embedding }),
+  z.object({ action: z.literal('register'), trainee_id: z.guid().optional(), embedding }),
   // trainee_id omitted = identify who it is among the session's batch.
-  z.object({ action: z.literal('verify'), trainee_id: z.string().uuid().optional(), session_id: z.string().uuid(), embedding }),
+  z.object({ action: z.literal('verify'), trainee_id: z.guid().optional(), session_id: z.guid(), embedding }),
 ]);
 
 async function ownTraineeId(

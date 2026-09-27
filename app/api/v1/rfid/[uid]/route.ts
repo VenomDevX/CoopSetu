@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { legacyError } from '@/lib/api/response';
 import { authenticateDevice } from '@/lib/auth/device-auth';
 import { memberRoleCode } from '@/lib/auth/member-role';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -97,6 +98,6 @@ export async function GET(
 
   } catch (err: any) {
     console.error('RFID lookup error:', err);
-    return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
+    return legacyError(err);
   }
 }

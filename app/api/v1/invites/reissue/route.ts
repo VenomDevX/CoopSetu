@@ -5,7 +5,7 @@ import { Errors } from '@/lib/api/errors';
 import { requireUser } from '@/lib/auth/require-user';
 import { createAdminClient } from '@/lib/supabase/admin';
 
-const schema = z.object({ inviteId: z.string().uuid() });
+const schema = z.object({ inviteId: z.guid() });
 
 /**
  * Reissue a token for a pending invite.

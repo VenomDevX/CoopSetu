@@ -8,7 +8,7 @@ const schema = z.object({
   title: z.string().min(1).max(200),
   content_markdown: z.string().max(200000).optional(),
   document_type: z.string().max(40).optional(),
-  project_id: z.string().uuid().optional(),
+  project_id: z.guid().optional(),
   classification: z.enum(['PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED']).optional(),
 }).strict();
 
