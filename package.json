@@ -68,7 +68,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@playwright/test": "^1.61.1",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "4.1.11",
     "@types/node": "^20",
     "@types/pdfkit": "^0.17.6",
