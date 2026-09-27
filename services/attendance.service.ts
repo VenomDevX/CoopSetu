@@ -202,7 +202,7 @@ export class AttendanceService {
     // Calculate Euclidean distance
     const distance = this.euclideanDistance(embedding, storedEmbedding);
     const toSimilarity = (d: number) => AttendanceService.toSimilarityImpl(d);
-    const threshold = 0.6; // Standard threshold for face-api.js
+    const threshold = AttendanceService.FACE_MATCH_THRESHOLD;
     const verified = distance < threshold;
 
     if (verified) {
@@ -223,6 +223,78 @@ export class AttendanceService {
     // threshold impossible to reason about from the API alone.
     return { verified: false, distance, similarity: toSimilarity(distance) };
   }
+
+  /**
+   * Staff face check-in without knowing who is in front of the camera: match
+   * the embedding against every enrolled trainee in the session's batch and
+   * mark the closest one, if it is both under the threshold and clearly closer
+   * than the runner-up.
+   */
+  async identifyFaceAndMarkAttendance(sessionId: string, embedding: number[]) {
+    if (!embedding || embedding.length !== 128) {
+      throw new Error('Invalid face embedding. Expected 128-dimensional vector.');
+    }
+
+    const { data: session } = await this.supabase
+      .from('attendance_sessions')
+      .select('batch_id, is_active')
+      .eq('id', sessionId)
+      .maybeSingle();
+    if (!session) throw new Error('Session not found.');
+    if (!session.is_active) throw new Error('Session is closed.');
+
+    const { data: enrolled, error } = await this.supabase
+      .from('enrollments')
+      .select('trainee_id, trainees ( face_embedding, profiles:user_id ( full_name ) )')
+      .eq('batch_id', session.batch_id)
+      .in('status', ['APPROVED', 'ENROLLED']);
+    if (error) throw error;
+
+    const candidates = (enrolled ?? [])
+      .map((e: any) => ({
+        traineeId: e.trainee_id as string,
+        name: (e.trainees?.profiles?.full_name as string | undefined) ?? null,
+        stored: e.trainees?.face_embedding as number[] | null,
+      }))
+      .filter((c) => Array.isArray(c.stored) && c.stored.length === 128)
+      .map((c) => ({ ...c, distance: this.euclideanDistance(embedding, c.stored!) }))
+      .sort((a, b) => a.distance - b.distance);
+
+    if (candidates.length === 0) throw new Error('No face registered for any trainee in this batch.');
+
+    const [best, runnerUp] = candidates;
+    const similarity = AttendanceService.toSimilarityImpl(best.distance);
+    if (best.distance >= AttendanceService.FACE_MATCH_THRESHOLD) {
+      return { verified: false, distance: best.distance, similarity };
+    }
+    // Two enrolled faces both under the threshold and nearly equidistant:
+    // marking either could credit the wrong person.
+    if (runnerUp && runnerUp.distance - best.distance < AttendanceService.FACE_AMBIGUITY_MARGIN) {
+      return { verified: false, ambiguous: true, distance: best.distance, similarity };
+    }
+
+    const { data: existing } = await this.supabase
+      .from('attendance_records')
+      .select('*')
+      .eq('session_id', sessionId)
+      .eq('trainee_id', best.traineeId)
+      .maybeSingle();
+    const record = existing ?? (await this.markAttendance({ session_id: sessionId, trainee_id: best.traineeId, method: 'FACE' }));
+
+    return {
+      verified: true,
+      alreadyMarked: Boolean(existing),
+      trainee: { id: best.traineeId, name: best.name },
+      distance: best.distance,
+      similarity,
+      record,
+    };
+  }
+
+  // face-api.js descriptors: < 0.6 is the library's standard same-person cut.
+  // The margin is a calibration knob — raise it if look-alikes get confused.
+  private static readonly FACE_MATCH_THRESHOLD = 0.6;
+  private static readonly FACE_AMBIGUITY_MARGIN = 0.05;
 
   /**
    * Euclidean distance between two embedding vectors.
