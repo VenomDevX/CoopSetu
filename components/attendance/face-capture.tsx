@@ -135,13 +135,23 @@ export function FaceCapture({ mode, sessionId, traineeId, onDone }: Props) {
 
       stopCamera();
       setStatus('done');
-      const verified = json?.data?.verified !== false;
+      const data = json?.data;
+      const verified = data?.verified !== false;
+      const name: string | undefined = data?.trainee?.name ?? undefined;
       const done =
         mode === 'register'
           ? 'Face registered. It can now be used to check in.'
-          : verified
-            ? 'Checked in.'
-            : 'That face did not match the registered one.';
+          : data?.ambiguous
+            ? 'Two registered faces match closely. Mark this person manually.'
+            : !verified
+              ? traineeId
+                ? 'That face did not match the registered one.'
+                : 'No registered face in this batch matched.'
+              : data?.alreadyMarked
+                ? `${name ?? 'This trainee'} is already checked in.`
+                : name
+                  ? `Checked in: ${name}.`
+                  : 'Checked in.';
       setMessage(done);
       onDone?.({ verified, message: done });
     } catch (err: any) {
