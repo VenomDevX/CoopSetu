@@ -23,6 +23,9 @@ const nextConfig: NextConfig = {
   },
   output: 'standalone',
   transpilePackages: ['motion'],
+  // pdfkit reads its .afm font files from disk at runtime; bundling it breaks
+  // those paths (ENOENT vendor-chunks/data/Helvetica.afm on PDF export).
+  serverExternalPackages: ['pdfkit'],
   async headers() {
     return [
       {
