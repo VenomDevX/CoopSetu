@@ -18,7 +18,6 @@ const MULTIPART_API_PATHS = new Set([
 // before its route ever runs.
 const DEVICE_AUTH_PATHS = new Set([
   '/api/v1/attendance/qr',
-  '/api/v1/attendance/face',
   '/api/v1/attendance/rfid',
   '/api/v1/attendance/device-face',
   '/api/v1/device/heartbeat',

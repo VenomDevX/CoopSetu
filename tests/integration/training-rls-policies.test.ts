@@ -184,7 +184,7 @@ describe('Training-domain RLS: previously zero-policy tables now readable and wr
     expect(othersErr).not.toBeNull();
   });
 
-  it('a trainee can mark their own attendance but not another trainee\'s', async () => {
+  it('a trainee cannot write attendance rows directly, for themselves or anyone else', async () => {
     const { data: batch } = await admin.from('batches').insert({
       organization_id: ORG, programme_id: programmeId, name: 'RLS Attendance Batch', status: 'ACTIVE',
     }).select('id').single();
@@ -192,10 +192,13 @@ describe('Training-domain RLS: previously zero-policy tables now readable and wr
       batch_id: batch!.id, session_type: 'LECTURE',
     }).select('id').single();
 
-    const { error: ownErr } = await trainee.from('attendance_records').insert({
+    // Check-ins go through QR / RFID / device routes (service role) or staff;
+    // a direct PostgREST insert would let a member mark themselves PRESENT.
+    const { data: ownRows, error: ownErr } = await trainee.from('attendance_records').insert({
       session_id: session!.id, trainee_id: ownTraineeRowId, method: 'MANUAL', status: 'PRESENT',
-    });
-    expect(ownErr).toBeNull();
+    }).select('id');
+    expect(ownRows ?? []).toHaveLength(0);
+    expect(ownErr).not.toBeNull();
 
     const { data: othersRows, error: othersErr } = await trainee.from('attendance_records').insert({
       session_id: session!.id, trainee_id: otherTraineeRowId, method: 'MANUAL', status: 'PRESENT',
@@ -269,5 +272,56 @@ describe('Training-domain RLS: org isolation still holds after adding write poli
     }).select('id');
     expect(data ?? []).toHaveLength(0);
     expect(error).not.toBeNull();
+  });
+});
+
+describe('Self-service column locks (trainees_guard_self_service / employers_guard_self_service)', () => {
+  const embeddingA = Array.from({ length: 128 }, (_, i) => i / 128);
+  const embeddingB = Array.from({ length: 128 }, (_, i) => 1 - i / 128);
+
+  beforeAll(async () => {
+    await admin.from('trainees').update({ face_embedding: null, status: 'ACTIVE', institution_id: null }).eq('id', ownTraineeRowId);
+    await admin.from('employers').update({ status: 'PENDING_VERIFICATION' }).eq('id', employerRowId);
+  });
+
+  it('a trainee can still edit their own profile fields', async () => {
+    const { error } = await trainee.from('trainees').update({ location: 'Pune' }).eq('id', ownTraineeRowId);
+    expect(error).toBeNull();
+  });
+
+  it.each([
+    ['status', { status: 'GRADUATED' }],
+    ['institution_id', () => ({ institution_id: institutionId })],
+    ['organization_id', { organization_id: '00000000-0000-0000-0000-0000000000ff' }],
+    ['aadhaar_hash', { aadhaar_hash: 'forged' }],
+  ])('a trainee cannot change their own %s', async (_col, patch) => {
+    const values = typeof patch === 'function' ? patch() : patch;
+    const { error } = await trainee.from('trainees').update(values).eq('id', ownTraineeRowId);
+    expect(error).not.toBeNull();
+    const { data } = await admin.from('trainees').select('status, institution_id, organization_id, aadhaar_hash').eq('id', ownTraineeRowId).single();
+    expect(data).toMatchObject({ status: 'ACTIVE', institution_id: null, organization_id: ORG });
+    expect(data!.aadhaar_hash).not.toBe('forged');
+  });
+
+  it('a trainee can enrol a face once but cannot replace it; staff can', async () => {
+    const first = await trainee.from('trainees').update({ face_embedding: embeddingA }).eq('id', ownTraineeRowId);
+    expect(first.error).toBeNull();
+
+    const swap = await trainee.from('trainees').update({ face_embedding: embeddingB }).eq('id', ownTraineeRowId);
+    expect(swap.error?.code).toBe('42501');
+
+    const staff = await instituteAdmin.from('trainees').update({ face_embedding: embeddingB }).eq('id', ownTraineeRowId).select('id');
+    expect(staff.error).toBeNull();
+    expect(staff.data).toHaveLength(1);
+  });
+
+  it('an employer cannot approve their own verification', async () => {
+    const { error } = await employer.from('employers').update({ status: 'ACTIVE' }).eq('id', employerRowId);
+    expect(error).not.toBeNull();
+    const { data } = await admin.from('employers').select('status').eq('id', employerRowId).single();
+    expect(data!.status).toBe('PENDING_VERIFICATION');
+
+    const ok = await employer.from('employers').update({ description: 'We hire cooperative graduates.' }).eq('id', employerRowId);
+    expect(ok.error).toBeNull();
   });
 });
