@@ -16,7 +16,7 @@
   <a href="https://supabase.com/"><img src="https://img.shields.io/badge/Supabase-Postgres%20%2B%20RLS-3ECF8E?style=flat-square&logo=supabase" alt="Supabase" /></a>
   <a href="https://ai.google.dev/"><img src="https://img.shields.io/badge/Gemini-AI%20Assistant-4285F4?style=flat-square&logo=googlegemini" alt="Gemini" /></a>
   <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?style=flat-square&logo=tailwindcss" alt="Tailwind CSS" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="MIT License" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Proprietary-red?style=flat-square" alt="Proprietary License" /></a>
 </p>
 
 ---
@@ -306,4 +306,4 @@ The app is served on port `3000` using `.env.local` for configuration ([`Dockerf
 
 ## 📄 License
 
-Distributed under the MIT License. See [`LICENSE`](LICENSE) for details.
+Proprietary — all rights reserved. No use, copying, modification or distribution without written permission. See [`LICENSE`](LICENSE).
