@@ -166,12 +166,16 @@ export class AttendanceService {
       throw new Error('Invalid face embedding. Expected 128-dimensional vector.');
     }
 
-    const { error } = await this.supabase
+    const { data, error } = await this.supabase
       .from('trainees')
       .update({ face_embedding: embedding })
-      .eq('id', traineeId);
+      .eq('id', traineeId)
+      .select('id');
 
     if (error) throw error;
+    // RLS hides rows the caller may not update; without this check a denied
+    // update reported "Face registered".
+    if (!data?.length) throw new Error('Trainee not found.');
   }
 
   /**

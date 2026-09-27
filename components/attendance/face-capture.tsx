@@ -129,7 +129,7 @@ export function FaceCapture({ mode, sessionId, traineeId, onDone }: Props) {
 
       if (!res.ok) {
         setStatus('ready');
-        setMessage(json?.error || 'That did not work. Try again.');
+        setMessage(json?.error?.message || 'That did not work. Try again.');
         return;
       }
 

@@ -1,45 +1,62 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { z } from 'zod';
+import { handle, ok } from '@/lib/api/response';
+import { ApiError, Errors } from '@/lib/api/errors';
+import { requireUser } from '@/lib/auth/require-user';
+import { requireOrganization, hasPermission, requirePermission } from '@/lib/auth/require-organization';
 import { AttendanceService } from '@/services/attendance.service';
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { action, trainee_id, session_id, embedding } = body;
+const embedding = z.array(z.number().finite()).length(128);
 
-    if (!action || !trainee_id) {
-      return NextResponse.json({ error: 'action and trainee_id required' }, { status: 400 });
-    }
+const bodySchema = z.discriminatedUnion('action', [
+  // trainee_id omitted = the caller enrols their own face (id-card page).
+  z.object({ action: z.literal('register'), trainee_id: z.string().uuid().optional(), embedding }),
+  z.object({ action: z.literal('verify'), trainee_id: z.string().uuid(), session_id: z.string().uuid(), embedding }),
+]);
 
-    if (!embedding || !Array.isArray(embedding)) {
-      return NextResponse.json({ error: 'Face embedding data required' }, { status: 400 });
-    }
+async function ownTraineeId(
+  supabase: Awaited<ReturnType<typeof requireUser>>['supabase'],
+  userId: string,
+  organizationId: string,
+): Promise<string> {
+  const { data } = await supabase
+    .from('trainees')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('organization_id', organizationId)
+    .maybeSingle();
+  if (!data) throw Errors.notFound('No trainee record for your account in this organization.');
+  return data.id;
+}
 
-    const supabase = await createClient();
+// Browser face capture. The embedding is computed client-side, so it proves
+// nothing on its own: enrolling someone else and verifying (which marks
+// attendance) are staff actions. Hardware terminals use /attendance/device-face.
+export async function POST(req: Request) {
+  return handle(async () => {
+    const { supabase, user } = await requireUser();
+    const m = await requireOrganization();
+    const body = bodySchema.parse(await req.json());
     const svc = new AttendanceService(supabase);
 
-    if (action === 'register') {
-      // Store the face embedding for the trainee
-      await svc.registerFaceEmbedding(trainee_id, embedding);
-      return NextResponse.json({ data: { success: true, message: 'Face registered successfully' } }, { status: 201 });
-    }
-
-    if (action === 'verify') {
-      if (!session_id) {
-        return NextResponse.json({ error: 'session_id required for verification' }, { status: 400 });
+    try {
+      if (body.action === 'register') {
+        if (body.trainee_id) requirePermission(m, 'trainee:manage');
+        const traineeId = body.trainee_id ?? (await ownTraineeId(supabase, user.id, m.organizationId));
+        await svc.registerFaceEmbedding(traineeId, body.embedding);
+        return ok({ success: true, message: 'Face registered successfully' }, undefined, 201);
       }
 
-      // Verify face and mark attendance
-      const result = await svc.verifyFaceAndMarkAttendance(trainee_id, session_id, embedding);
-      return NextResponse.json({ data: result });
+      if (!hasPermission(m, 'attendance:manage')) throw Errors.forbidden();
+      return ok(await svc.verifyFaceAndMarkAttendance(body.trainee_id, body.session_id, body.embedding));
+    } catch (err) {
+      if (err instanceof ApiError) throw err;
+      // 42501 = raised by trainees_guard_self_service (e.g. re-enrolling a face).
+      const e = err as { code?: string; message?: string };
+      if (e?.code === '42501') throw Errors.forbidden(e.message);
+      if (err instanceof Error && /not found|No face registered/i.test(err.message)) {
+        throw Errors.badRequest(err.message);
+      }
+      throw err;
     }
-
-    return NextResponse.json({ error: 'Invalid action. Use "register" or "verify".' }, { status: 400 });
-  } catch (err: any) {
-    // A malformed embedding is the caller's mistake, not a server fault. It
-    // previously returned 500, which told a client to retry something that
-    // could never succeed.
-    const status = /not registered|No face|Invalid face embedding|required/i.test(err.message) ? 400 : 500;
-    return NextResponse.json({ error: err.message }, { status });
-  }
+  });
 }
