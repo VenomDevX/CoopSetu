@@ -1,3 +1,5 @@
+import { trainerUpdate } from '@/lib/validation/training';
+import { legacyError } from '@/lib/api/response';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
@@ -22,7 +24,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const svc = new TrainerService(supabase);
     return NextResponse.json({ data: await svc.getTrainerById(id) });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return legacyError(err);
   }
 }
 
@@ -32,16 +34,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (!membership) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { id } = await params;
-    const body = await request.json();
-    // Identity columns are never taken from the body: moving a record between
-    // organizations or reassigning its owner is not an edit.
-    const { id: _id, organization_id: _org, user_id: _user, created_at: _created, ...patch } = body;
+    const body = trainerUpdate.parse(await request.json());
+    // The schema whitelists editable fields; identity columns never pass.
+    const patch = body;
 
     const supabase = await createClient();
     const svc = new TrainerService(supabase);
     return NextResponse.json({ data: await svc.updateTrainer(id, patch) });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return legacyError(err);
   }
 }
 
@@ -56,6 +57,6 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     await svc.deleteTrainer(id);
     return NextResponse.json({ data: { success: true } });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return legacyError(err);
   }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { legacyError } from '@/lib/api/response';
 import { authenticateDevice } from '@/lib/auth/device-auth';
 import { MEMBER_ROLES_EMBED, memberRoleCode } from '@/lib/auth/member-role';
 import { createClient } from '@/lib/supabase/server';
@@ -194,6 +195,6 @@ export async function POST(request: NextRequest) {
 
   } catch (err: any) {
     console.error('RFID registration error:', err);
-    return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
+    return legacyError(err);
   }
 }

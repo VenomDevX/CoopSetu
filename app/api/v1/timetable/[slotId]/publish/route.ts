@@ -1,3 +1,4 @@
+import { legacyError } from '@/lib/api/response';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
@@ -15,6 +16,6 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ data: await svc.publishSlot(slotId) });
   } catch (err: any) {
     const status = /cannot be published/i.test(err.message) ? 400 : 500;
-    return NextResponse.json({ error: err.message }, { status });
+    return legacyError(err, status);
   }
 }

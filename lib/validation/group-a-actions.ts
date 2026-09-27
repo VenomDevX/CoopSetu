@@ -1,14 +1,14 @@
 import { z } from 'zod';
 
 export const createProjectDeadlineSchema = z.object({
-  project_id: z.string().uuid(),
-  sprint_id: z.string().uuid().optional(),
-  task_id: z.string().uuid().optional(),
-  release_id: z.string().uuid().optional(),
+  project_id: z.guid(),
+  sprint_id: z.guid().optional(),
+  task_id: z.guid().optional(),
+  release_id: z.guid().optional(),
   title: z.string().min(1).max(200),
   description: z.string().max(2000).optional(),
   due_date: z.string().date(),
-  owner_member_id: z.string().uuid().optional(),
+  owner_member_id: z.guid().optional(),
   status: z.enum(['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'MISSED', 'CANCELLED']).optional(),
 }).strict();
 

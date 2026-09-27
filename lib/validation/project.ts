@@ -6,10 +6,10 @@ export const createProjectSchema = z.object({
   description: z.string().max(5000).optional(),
   business_objective: z.string().max(5000).optional(),
   scope: z.string().max(5000).optional(),
-  portfolio_id: z.string().uuid().optional(),
-  program_id: z.string().uuid().optional(),
-  owner_member_id: z.string().uuid().optional(),
-  project_manager_member_id: z.string().uuid().optional(),
+  portfolio_id: z.guid().optional(),
+  program_id: z.guid().optional(),
+  owner_member_id: z.guid().optional(),
+  project_manager_member_id: z.guid().optional(),
   status: z.enum(['PLANNING','ACTIVE','ON_HOLD','COMPLETED','CANCELLED']).optional(),
   priority: z.enum(['LOW','MEDIUM','HIGH','CRITICAL']).optional(),
   security_classification: z.enum(['PUBLIC','INTERNAL','CONFIDENTIAL','RESTRICTED']).optional(),
@@ -24,7 +24,7 @@ export const updateProjectSchema = createProjectSchema.partial().extend({
 }).strict();
 
 export const addProjectMemberSchema = z.object({
-  organization_member_id: z.string().uuid(),
+  organization_member_id: z.guid(),
   project_role: z.string().max(80).optional(),
   can_view: z.boolean().optional(),
   can_comment: z.boolean().optional(),
@@ -36,7 +36,7 @@ export const createMilestoneSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().max(2000).optional(),
   due_date: z.string().date().optional(),
-  owner_member_id: z.string().uuid().optional(),
+  owner_member_id: z.guid().optional(),
   status: z.enum(['PLANNED','IN_PROGRESS','COMPLETED','MISSED']).optional(),
 }).strict();
 
@@ -47,7 +47,7 @@ export const createRiskSchema = z.object({
   probability: z.enum(['LOW','MEDIUM','HIGH']).optional(),
   impact: z.enum(['LOW','MEDIUM','HIGH']).optional(),
   status: z.enum(['OPEN','MITIGATING','CLOSED','ACCEPTED']).optional(),
-  owner_member_id: z.string().uuid().optional(),
+  owner_member_id: z.guid().optional(),
   mitigation_plan: z.string().max(2000).optional(),
   due_date: z.string().date().optional(),
 }).strict();

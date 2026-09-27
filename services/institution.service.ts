@@ -47,7 +47,8 @@ export class InstitutionService {
     return data as Institution;
   }
 
-  async create(input: Omit<Institution, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) {
+  // capacity and status have column defaults.
+  async create(input: Omit<Institution, 'id' | 'organization_id' | 'created_at' | 'updated_at' | 'capacity' | 'status'> & Partial<Pick<Institution, 'capacity' | 'status'>>) {
     const { data, error } = await this.supabase
       .from('institutions')
       .insert({ ...input, organization_id: this.orgId })

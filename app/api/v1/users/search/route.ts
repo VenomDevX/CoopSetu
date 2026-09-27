@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { legacyError } from '@/lib/api/response';
 import { authenticateDevice } from '@/lib/auth/device-auth';
 import { MEMBER_ROLES_EMBED, memberRoleCode } from '@/lib/auth/member-role';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -165,6 +166,6 @@ export async function GET(request: NextRequest) {
 
   } catch (err: any) {
     console.error('User search error:', err);
-    return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
+    return legacyError(err);
   }
 }

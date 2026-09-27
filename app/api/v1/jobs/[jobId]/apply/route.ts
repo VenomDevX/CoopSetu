@@ -1,3 +1,4 @@
+import { legacyError } from '@/lib/api/response';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
@@ -47,6 +48,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (alreadyApplied) {
       return NextResponse.json({ error: 'You have already applied to this job.' }, { status: 409 });
     }
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return legacyError(err);
   }
 }

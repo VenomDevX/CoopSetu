@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { legacyError } from '@/lib/api/response';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCallerInstitutionId, hasPermission } from '@/lib/auth/institution-scope';
@@ -77,7 +78,7 @@ export async function PATCH(
 
   } catch (err: any) {
     console.error('Device update error:', err);
-    return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
+    return legacyError(err);
   }
 }
 
@@ -129,6 +130,6 @@ export async function DELETE(
 
   } catch (err: any) {
     console.error('Device revoke error:', err);
-    return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
+    return legacyError(err);
   }
 }

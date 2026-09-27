@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { legacyError } from '@/lib/api/response';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
 import { AttendanceMarksAnalyticsService } from '@/services/attendance-marks-analytics.service';
@@ -104,7 +105,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (err: any) {
     console.error('Analytics overview error:', err);
-    return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
+    return legacyError(err);
   }
 }
 

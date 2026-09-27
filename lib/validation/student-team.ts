@@ -40,7 +40,7 @@ export const coLeadToggleSchema = z.object({
 }).strict();
 
 export const transferLeadershipSchema = z.object({
-  toMemberId: z.string().uuid(),
+  toMemberId: z.guid(),
   demoteTo: z.enum(['STUDENT_CO_LEAD', 'STUDENT_MEMBER']).default('STUDENT_CO_LEAD'),
 }).strict();
 

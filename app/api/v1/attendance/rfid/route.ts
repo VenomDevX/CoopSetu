@@ -1,3 +1,4 @@
+import { legacyError } from '@/lib/api/response';
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateDevice } from '@/lib/auth/device-auth';
 import { memberRoleCode } from '@/lib/auth/member-role';
@@ -180,6 +181,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'invalid_capture_time', message: err.message }, { status: 400 });
     }
     console.error('RFID attendance error:', err);
-    return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
+    return legacyError(err);
   }
 }

@@ -2,9 +2,9 @@ import { z } from 'zod';
 
 export const createCommentSchema = z.object({
   body: z.string().min(1).max(10000),
-  parent_comment_id: z.string().uuid().optional(),
+  parent_comment_id: z.guid().optional(),
   // organization_member_ids mentioned in the comment
-  mentions: z.array(z.string().uuid()).max(50).optional(),
+  mentions: z.array(z.guid()).max(50).optional(),
 }).strict();
 
 export type CreateCommentInput = z.infer<typeof createCommentSchema>;

@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 export const createSprintSchema = z.object({
-  project_id: z.string().uuid(),
+  project_id: z.guid(),
   name: z.string().min(1).max(160),
   goal: z.string().max(2000).optional(),
-  team_id: z.string().uuid().optional(),
+  team_id: z.guid().optional(),
   start_date: z.string().date().optional(),
   end_date: z.string().date().optional(),
   capacity_hours: z.number().nonnegative().optional(),
@@ -13,11 +13,11 @@ export const createSprintSchema = z.object({
 export const updateSprintSchema = createSprintSchema.partial().omit({ project_id: true }).strict();
 
 export const createReleaseSchema = z.object({
-  project_id: z.string().uuid(),
+  project_id: z.guid(),
   name: z.string().min(1).max(160),
   version: z.string().min(1).max(40),
   description: z.string().max(5000).optional(),
-  release_manager_member_id: z.string().uuid().optional(),
+  release_manager_member_id: z.guid().optional(),
   planned_release_at: z.string().datetime().optional(),
   requires_compliance_approval: z.boolean().optional(),
   rollback_plan: z.string().max(5000).optional(),
@@ -35,9 +35,9 @@ export const decideReleaseApprovalSchema = z.object({
 
 export const createApprovalRequestSchema = z.object({
   approval_type: z.string().min(1).max(60),
-  project_id: z.string().uuid().optional(),
-  task_id: z.string().uuid().optional(),
-  release_id: z.string().uuid().optional(),
+  project_id: z.guid().optional(),
+  task_id: z.guid().optional(),
+  release_id: z.guid().optional(),
   required_role: z.string().max(60).optional(),
   due_date: z.string().date().optional(),
 }).strict();
@@ -48,5 +48,5 @@ export const decideApprovalSchema = z.object({
 }).strict();
 
 export const deployReleaseSchema = z.object({
-  environment_id: z.string().uuid().optional(),
+  environment_id: z.guid().optional(),
 }).strict();

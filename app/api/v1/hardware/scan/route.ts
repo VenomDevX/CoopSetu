@@ -1,3 +1,4 @@
+import { legacyError } from '@/lib/api/response';
 import { NextRequest, NextResponse } from 'next/server';
 import { AttendanceService } from '@/services/attendance.service';
 import { authenticateDevice } from '@/lib/auth/device-auth';
@@ -155,6 +156,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'invalid_capture_time', message: err.message }, { status: 400 });
     }
     const status = err.message.includes('No active') || err.message.includes('Invalid') || err.message.includes('not currently assigned') ? 400 : 500;
-    return NextResponse.json({ error: err.message }, { status });
+    return legacyError(err, status);
   }
 }

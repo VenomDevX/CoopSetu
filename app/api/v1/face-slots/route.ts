@@ -1,3 +1,4 @@
+import { legacyError } from '@/lib/api/response';
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateDevice } from '@/lib/auth/device-auth';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
     let query = admin.from('face_slots').delete().eq('device_id', device.id);
     if (slotToDelete !== 255) query = query.eq('slot', slotToDelete);
     const { error } = await query;
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return legacyError(error);
     return NextResponse.json({ success: true });
   }
   const slot = body.slot;
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
     organization_id: member.organization_id,
     institution_id: member.institution_id,
   }, { onConflict: 'device_id,slot' }).select('id, slot, member_id').single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 409 });
+  if (error) return legacyError(error);
   return NextResponse.json({ success: true, face_slot: data });
 }
 
@@ -56,6 +57,6 @@ export async function DELETE(request: NextRequest) {
   let query = admin.from('face_slots').delete().eq('device_id', device.id);
   if (slot !== 255) query = query.eq('slot', slot);
   const { error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return legacyError(error);
   return NextResponse.json({ success: true });
 }

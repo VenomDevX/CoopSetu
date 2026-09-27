@@ -1,4 +1,6 @@
+import { courseCreate } from '@/lib/validation/training';
 import { NextRequest, NextResponse } from 'next/server';
+import { legacyError } from '@/lib/api/response';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
 import { CourseService } from '@/services/course.service';
@@ -17,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ data: { courses } });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return legacyError(err);
   }
 }
 
@@ -26,13 +28,13 @@ export async function POST(request: NextRequest) {
     const membership = await getCurrentMembership();
     if (!membership) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const body = await request.json();
+    const body = courseCreate.parse(await request.json());
     const supabase = await createClient();
     const svc = new CourseService(supabase);
     const course = await svc.create(body);
 
     return NextResponse.json({ data: course }, { status: 201 });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return legacyError(err);
   }
 }

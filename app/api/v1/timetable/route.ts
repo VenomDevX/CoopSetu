@@ -1,3 +1,5 @@
+import { slotCreate } from '@/lib/validation/training';
+import { legacyError } from '@/lib/api/response';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentMembership } from '@/lib/auth/get-current-membership';
@@ -18,7 +20,7 @@ export async function GET(request: NextRequest) {
     });
     return NextResponse.json({ data: { slots } });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return legacyError(err);
   }
 }
 
@@ -27,7 +29,7 @@ export async function POST(request: NextRequest) {
     const membership = await getCurrentMembership();
     if (!membership) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const body = await request.json();
+    const body = slotCreate.parse(await request.json());
     if (!body.batch_id || !body.title || !body.date || !body.start_time || !body.end_time) {
       return NextResponse.json(
         { error: 'batch_id, title, date, start_time and end_time are required' },
@@ -42,6 +44,6 @@ export async function POST(request: NextRequest) {
   } catch (err: any) {
     // A clash is the planner's to resolve, not a server fault.
     const status = /clashes with/i.test(err.message) ? 409 : 500;
-    return NextResponse.json({ error: err.message }, { status });
+    return legacyError(err, status);
   }
 }

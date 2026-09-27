@@ -5,7 +5,7 @@ import { requireUser } from '@/lib/auth/require-user';
 import { requireOrganization, requirePermission } from '@/lib/auth/require-organization';
 import { AttendanceService } from '@/services/attendance.service';
 
-const uuid = z.string().uuid();
+const uuid = z.guid();
 
 // Only the listed fields reach the service: the body used to be spread into the
 // insert, letting a caller set any attendance column.

@@ -88,10 +88,10 @@ export default function LogisticsPage() {
   useEffect(() => { loadSlots(); }, [loadSlots]);
   useEffect(() => { loadHostels(); }, [loadHostels]);
 
-  const post = async (url: string, body: unknown, onOk: () => void) => {
+  const post = async (url: string, body: unknown, onOk: () => void, method: 'POST' | 'PATCH' = 'POST') => {
     setError('');
     const res = await fetch(url, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     });
     const json = await res.json();
     if (!res.ok) { setError(json?.error || 'That did not work.'); return; }
@@ -349,7 +349,7 @@ export default function LogisticsPage() {
                   {a.hostels?.name}{a.room_number ? ` · Room ${a.room_number}` : ''} · {a.dietary_preference}
                 </span>
                 <Button variant="outline" data-native-tap className="rounded font-mono text-[10px] uppercase"
-                  onClick={() => post('/api/v1/hostels/allocations', { allocation_id: a.id }, loadHostels)}>
+                  onClick={() => post('/api/v1/hostels/allocations', { allocation_id: a.id }, loadHostels, 'PATCH')}>
                   Check out
                 </Button>
               </div>
