@@ -121,7 +121,7 @@ export default function AboutPage() {
               </div>
               <div className="flex flex-col gap-4 justify-center border-t md:border-t-0 md:border-l border-border pt-6 md:pt-0 md:pl-8 font-mono text-xs uppercase tracking-widest">
                 <a 
-                  href="https://www.linkedin.com/in/parth-sharma-b96661245" 
+                  href="https://www.linkedin.com/in/parthsharma-venomdevx" 
                   target="_blank" 
                   rel="noopener noreferrer" 
                   aria-label="LinkedIn Profile of VenomDevX"
